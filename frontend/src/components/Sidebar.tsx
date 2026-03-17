@@ -5,15 +5,30 @@ import { useAuthStore } from '@/stores/authStore';
 import {
     LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
     Calendar, CreditCard, BarChart3, Settings, LogOut, Phone,
-    UserCheck, FileText, Bell, ChevronDown, Menu, X, Target,
-    Home, PenTool, Award
+    UserCheck, FileText, Bell, ChevronDown, ChevronRight, Menu, X, Target,
+    Home, PenTool, Award, Library, GraduationCap as StudentIcon
 } from 'lucide-react';
 import { useState } from 'react';
 
 const adminNav = [
-    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { label: 'Students', href: '/admin/students', icon: GraduationCap },
-    { label: 'Teachers', href: '/admin/teachers', icon: Users },
+    {
+        label: 'Home',
+        icon: Home,
+        isParent: true,
+        subItems: [
+            { label: 'Admin', href: '/admin' }
+        ]
+    },
+    {
+        label: 'Students',
+        icon: GraduationCap,
+        isParent: true,
+        subItems: [
+            { label: 'All Students', href: '/admin/students' },
+            { label: 'Student Details', href: '/admin/students/details' }
+        ]
+    },
+    { label: 'Teachers', href: '/admin/teachers', icon: Users, isParent: true },
     { label: 'Classes', href: '/admin/classes', icon: BookOpen },
     { label: 'Enquiries', href: '/admin/enquiries', icon: Phone },
     { label: 'Demo Classes', href: '/admin/demos', icon: Target },
@@ -57,28 +72,20 @@ export default function Sidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuthStore();
     const [isOpen, setIsOpen] = useState(false);
+    const [expandedMenu, setExpandedMenu] = useState<string | null>('Home');
 
-    if (!user) return null;
+    // Default to admin nav if testing without login, but normally user is required.
+    const navItems = user?.role === 'admin' ? adminNav
+        : user?.role === 'teacher' ? teacherNav
+            : user?.role === 'student' ? studentNav
+                : user?.role === 'parent' ? parentNav : adminNav; 
 
-    const navItems = user.role === 'admin' ? adminNav
-        : user.role === 'teacher' ? teacherNav
-            : user.role === 'student' ? studentNav
-                : parentNav;
-
-    const roleLabel = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-    const userName = user.profile?.first_name
-        ? `${user.profile.first_name} ${user.profile.last_name || ''}`
-        : user.email;
-
-    const initials = user.profile?.first_name
-        ? `${user.profile.first_name[0]}${(user.profile.last_name || '')[0] || ''}`
-        : user.email[0].toUpperCase();
-
-    const roleColors: Record<string, string> = {
-        admin: '#3B82F6',
-        teacher: '#8B5CF6',
-        student: '#10B981',
-        parent: '#F97316',
+    const toggleMenu = (label: string) => {
+        if (expandedMenu === label) {
+            setExpandedMenu(null);
+        } else {
+            setExpandedMenu(label);
+        }
     };
 
     return (
@@ -100,82 +107,124 @@ export default function Sidebar() {
                 />
             )}
 
-            <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+            <aside className={`sidebar ${isOpen ? 'open' : ''}`} style={{ borderRight: 'none', width: '280px' }}>
                 {/* Logo */}
-                <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--border-primary)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ padding: '32px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)',
+                        fontWeight: 800, fontSize: '24px', fontFamily: 'Poppins'
+                    }}>
                         <div style={{
-                            width: '40px', height: '40px', borderRadius: '12px',
-                            background: 'var(--gradient-primary)', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center', color: 'white',
-                            fontWeight: 800, fontSize: '18px', fontFamily: 'Poppins'
+                            width: '32px', height: '32px', borderRadius: '8px',
+                            background: 'var(--primary)', display: 'flex',
+                            alignItems: 'center', justifyItems: 'center', padding: '0 8px', color: 'white',
+                            fontSize: '18px', fontStyle: 'italic', fontWeight: 'bold'
                         }}>
-                            P
+                            ia
                         </div>
-                        <div>
-                            <h1 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-                                Proton LMS
-                            </h1>
-                            <span style={{
-                                fontSize: '11px', fontWeight: 600, color: roleColors[user.role],
-                                textTransform: 'uppercase', letterSpacing: '0.05em'
-                            }}>
-                                {roleLabel} Portal
-                            </span>
-                        </div>
+                        ia Academy
                     </div>
                 </div>
 
                 {/* Navigation */}
-                <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+                <nav style={{ flex: 1, overflowY: 'auto', padding: '0 16px' }}>
                     {navItems.map((item) => {
-                        const isActive = pathname === item.href || (item.href !== `/${user.role}` && pathname?.startsWith(item.href));
                         const Icon = item.icon;
+                        const isExpanded = expandedMenu === item.label;
+                        
+                        let isActiveParent = false;
+                        if (!item.subItems) {
+                             isActiveParent = pathname === item.href || (item.href !== `/${user?.role}` && pathname?.startsWith(item.href || 'XYZ'));
+                        } else {
+                             isActiveParent = item.subItems.some(sub => pathname === sub.href || (sub.href !== `/${user?.role}` && pathname?.startsWith(sub.href || 'XYZ')));
+                        }
+
                         return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-                                onClick={() => setIsOpen(false)}
-                            >
-                                <Icon size={18} />
-                                <span>{item.label}</span>
-                            </Link>
+                            <div key={item.label} style={{ marginBottom: '4px' }}>
+                                {/* Parent Element */}
+                                {item.subItems ? (
+                                    <div 
+                                        className="sidebar-nav-item"
+                                        onClick={() => toggleMenu(item.label)}
+                                        style={{ 
+                                            justifyContent: 'space-between', 
+                                            margin: '0', 
+                                            padding: '12px 16px',
+                                            color: isExpanded ? 'var(--primary)' : 'var(--text-secondary)'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                            <Icon size={20} strokeWidth={2} />
+                                            <span>{item.label}</span>
+                                        </div>
+                                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                    </div>
+                                ) : (
+                                    <Link
+                                        href={item.href || '#'}
+                                        className="sidebar-nav-item"
+                                        style={{ margin: '0', padding: '12px 16px' }}
+                                        onClick={() => setIsOpen(false)}
+                                    >
+                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                            <Icon size={20} strokeWidth={2} />
+                                            <span>{item.label}</span>
+                                        </div>
+                                    </Link>
+                                )}
+
+                                {/* Sub Items */}
+                                {item.subItems && isExpanded && (
+                                    <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        {item.subItems.map((sub) => {
+                                            const isSubActive = pathname === sub.href;
+                                            return (
+                                                <Link
+                                                    key={sub.label}
+                                                    href={sub.href}
+                                                    onClick={() => setIsOpen(false)}
+                                                    style={{
+                                                        position: 'relative',
+                                                        display: 'block',
+                                                        padding: '10px 16px 10px 48px',
+                                                        fontSize: '14px',
+                                                        color: isSubActive ? 'var(--primary)' : 'var(--text-secondary)',
+                                                        background: isSubActive ? 'var(--primary-50)' : 'transparent',
+                                                        borderRadius: 'var(--radius-md)',
+                                                        textDecoration: 'none',
+                                                        fontWeight: 500,
+                                                        transition: 'all 0.2s',
+                                                    }}
+                                                >
+                                                    {isSubActive && (
+                                                        <div style={{
+                                                            position: 'absolute', left: '0', top: '10%', bottom: '10%',
+                                                            width: '4px', background: 'var(--primary)', borderRadius: '0 max(0px, 4px) max(0px, 4px) 0'
+                                                        }} />
+                                                    )}
+                                                    {sub.label}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         );
                     })}
                 </nav>
 
-                {/* User Profile */}
-                <div style={{
-                    padding: '16px 16px', borderTop: '1px solid var(--border-primary)',
-                    display: 'flex', flexDirection: 'column', gap: '8px'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div className="avatar" style={{ background: roleColors[user.role], width: '36px', height: '36px', fontSize: '14px' }}>
-                            {initials}
-                        </div>
-                        <div style={{ flex: 1, overflow: 'hidden' }}>
-                            <p style={{ fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {userName}
-                            </p>
-                            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
-                                {user.profile?.PRO_ID || user.profile?.employee_id || user.email}
-                            </p>
-                        </div>
-                    </div>
-                    <button
+                {/* Log Out button */}
+                <div style={{ padding: '24px 16px' }}>
+                     <button
                         onClick={logout}
                         style={{
-                            display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
-                            borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)',
-                            background: 'transparent', cursor: 'pointer', fontSize: '13px',
-                            color: 'var(--error)', fontWeight: 500, width: '100%', justifyContent: 'center',
+                            display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px',
+                            background: 'transparent', cursor: 'pointer', fontSize: '14px', border: 'none',
+                            color: 'var(--text-secondary)', fontWeight: 500, width: '100%',
                             transition: 'all 0.2s'
                         }}
-                        onMouseEnter={(e) => { (e.target as HTMLElement).style.background = 'var(--error-light)'; }}
-                        onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'transparent'; }}
                     >
-                        <LogOut size={14} />
+                        <LogOut size={20} />
                         Sign Out
                     </button>
                 </div>
