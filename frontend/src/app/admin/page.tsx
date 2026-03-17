@@ -3,10 +3,13 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import {
-    Users, GraduationCap, DollarSign, Bell, MoreVertical, LayoutDashboard
+    Users, GraduationCap, DollarSign, MoreHorizontal, TrendingUp, TrendingDown, BookOpen
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadialBarChart, RadialBar, Cell } from 'recharts';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    RadialBarChart, RadialBar, Cell
+} from 'recharts';
 
 interface DashboardData {
     stats: {
@@ -26,30 +29,161 @@ interface DashboardData {
 }
 
 const barChartData = [
-    { name: 'Jan', Teacher: 65000, Student: 48000 },
-    { name: 'Feb', Teacher: 38000, Student: 53000 },
-    { name: 'Mar', Teacher: 79000, Student: 58000 },
-    { name: 'Apr', Teacher: 118000, Student: 89000 },
-    { name: 'May', Teacher: 51000, Student: 62000 },
-    { name: 'Jun', Teacher: 81000, Student: 54000 },
-    { name: 'Jul', Teacher: 32000, Student: 42000 },
-    { name: 'Aug', Teacher: 78000, Student: 30000 },
-    { name: 'Sep', Teacher: 110000, Student: 61000 },
-    { name: 'Oct', Teacher: 53000, Student: 39000 },
-    { name: 'Nov', Teacher: 68000, Student: 48000 },
+    { name: 'Jan', Teacher: 65, Student: 48 },
+    { name: 'Feb', Teacher: 38, Student: 53 },
+    { name: 'Mar', Teacher: 79, Student: 58 },
+    { name: 'Apr', Teacher: 118, Student: 89 },
+    { name: 'May', Teacher: 51, Student: 62 },
+    { name: 'Jun', Teacher: 81, Student: 54 },
+    { name: 'Jul', Teacher: 32, Student: 42 },
+    { name: 'Aug', Teacher: 78, Student: 30 },
+    { name: 'Sep', Teacher: 110, Student: 61 },
+    { name: 'Oct', Teacher: 53, Student: 39 },
+    { name: 'Nov', Teacher: 68, Student: 48 },
 ];
 
 const radialData = [
     { name: 'Female', value: 7000, fill: '#F97316' },
-    { name: 'Male', value: 8000, fill: '#9333EA' },
+    { name: 'Male', value: 8000, fill: '#4F60FF' },
 ];
 
 const starStudents = [
-    { name: 'Evelyn Harper', id: 'PRE43178', marks: 1185, percent: '98%', year: 2024, avatar: 'e' },
-    { name: 'Diana Plenty', id: 'PRE43174', marks: 1165, percent: '91%', year: 2024, avatar: 'd' },
-    { name: 'John Millar', id: 'PRE43187', marks: 1175, percent: '92%', year: 2024, avatar: 'j' },
-    { name: 'Miles Esther', id: 'PRE43371', marks: 1180, percent: '93%', year: 2024, avatar: 'm' },
+    { name: 'Evelyn Harper', id: 'PRE43178', marks: 1185, percent: '98%', year: 2024 },
+    { name: 'Diana Plenty', id: 'PRE43174', marks: 1165, percent: '91%', year: 2024 },
+    { name: 'John Millar', id: 'PRE43187', marks: 1175, percent: '92%', year: 2024 },
+    { name: 'Miles Esther', id: 'PRE43371', marks: 1180, percent: '93%', year: 2024 },
 ];
+
+// Stat Card Component
+const StatCard = ({
+    icon: Icon,
+    label,
+    value,
+    subLabel,
+    change,
+    positive,
+    iconBg,
+    iconColor,
+    gradient,
+}: {
+    icon: any;
+    label: string;
+    value: string;
+    subLabel?: string;
+    change?: string;
+    positive?: boolean;
+    iconBg?: string;
+    iconColor?: string;
+    gradient?: string;
+}) => (
+    <div style={{
+        background: gradient || '#FFFFFF',
+        borderRadius: '18px',
+        padding: '24px',
+        boxShadow: gradient ? '0 8px 24px rgba(79,96,255,0.15)' : '0 2px 12px rgba(0,0,0,0.04)',
+        border: gradient ? 'none' : '1px solid #F0F0F5',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        position: 'relative',
+        overflow: 'hidden',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        cursor: 'default',
+    }}
+        onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+            (e.currentTarget as HTMLElement).style.boxShadow = gradient
+                ? '0 12px 28px rgba(79,96,255,0.22)'
+                : '0 6px 20px rgba(0,0,0,0.08)';
+        }}
+        onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+            (e.currentTarget as HTMLElement).style.boxShadow = gradient
+                ? '0 8px 24px rgba(79,96,255,0.15)'
+                : '0 2px 12px rgba(0,0,0,0.04)';
+        }}
+    >
+        {gradient && (
+            <>
+                <div style={{
+                    position: 'absolute', top: '-30px', right: '-30px', width: '100px', height: '100px',
+                    borderRadius: '50%', background: 'rgba(255,255,255,0.1)',
+                }} />
+                <div style={{
+                    position: 'absolute', bottom: '-20px', right: '60px', width: '60px', height: '60px',
+                    borderRadius: '50%', background: 'rgba(255,255,255,0.07)',
+                }} />
+            </>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{
+                fontSize: '13px', fontWeight: 600,
+                color: gradient ? 'rgba(255,255,255,0.8)' : '#8F92A1',
+            }}>
+                {label}
+            </span>
+            {change && (
+                <span style={{
+                    fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '50px',
+                    background: positive ? (gradient ? 'rgba(255,255,255,0.2)' : '#D1FAE5') : '#FEE2E2',
+                    color: positive ? (gradient ? 'white' : '#059669') : '#DC2626',
+                    display: 'flex', alignItems: 'center', gap: '2px',
+                }}>
+                    {positive ? '+' : ''}{change}
+                </span>
+            )}
+        </div>
+
+        <div>
+            <p style={{
+                fontSize: '30px', fontWeight: 800, lineHeight: 1,
+                color: gradient ? 'white' : '#1A1D3B',
+                fontFamily: 'Poppins, sans-serif',
+            }}>
+                {value}
+            </p>
+            {subLabel && (
+                <p style={{
+                    fontSize: '12px', marginTop: '6px',
+                    color: gradient ? 'rgba(255,255,255,0.65)' : '#A1A5B7',
+                    fontWeight: 500,
+                }}>
+                    {subLabel}
+                </p>
+            )}
+        </div>
+
+        <div style={{
+            width: '44px', height: '44px', borderRadius: '12px',
+            background: gradient ? 'rgba(255,255,255,0.2)' : (iconBg || '#EEF0FF'),
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: gradient ? 'white' : (iconColor || '#4F60FF'),
+        }}>
+            <Icon size={22} strokeWidth={2} />
+        </div>
+    </div>
+);
+
+// Custom Tooltip
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div style={{
+                background: '#1A1D3B', borderRadius: '10px', padding: '10px 14px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+            }}>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', marginBottom: '4px' }}>{label}</p>
+                {payload.map((p: any, i: number) => (
+                    <p key={i} style={{ color: p.fill, fontSize: '13px', fontWeight: 700 }}>
+                        {p.name}: {p.value}
+                    </p>
+                ))}
+            </div>
+        );
+    }
+    return null;
+};
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -75,33 +209,15 @@ export default function AdminDashboard() {
         return amount.toString();
     };
 
-    const StatCard = ({ icon: Icon, label, value, color, bgColor }: any) => (
-        <div style={{
-            background: 'var(--bg-primary)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            boxShadow: 'var(--shadow-sm)',
-        }}>
-            <div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '8px', fontWeight: 500 }}>{label}</p>
-                <h3 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{value}</h3>
-            </div>
-            <div style={{
-                width: '60px', height: '60px', borderRadius: '16px',
-                background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: color
-            }}>
-                <Icon size={32} />
-            </div>
-        </div>
-    );
-
     if (isLoading) {
         return (
             <DashboardLayout requiredRole="admin">
-                <div style={{ padding: '24px 0' }}>Loading...</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <div className="spinner" style={{ margin: '0 auto 16px' }} />
+                        <p style={{ color: '#A1A5B7', fontSize: '14px' }}>Loading dashboard...</p>
+                    </div>
+                </div>
             </DashboardLayout>
         );
     }
@@ -110,118 +226,272 @@ export default function AdminDashboard() {
 
     return (
         <DashboardLayout requiredRole="admin">
-            <div style={{ padding: '8px 0 24px' }}>
-                <h1 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '24px' }}>Admin Dashboard</h1>
-                
+            <div style={{ paddingBottom: '32px' }}>
+
+                {/* Page Title */}
+                <div style={{ marginBottom: '28px' }}>
+                    <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
+                        Admin Dashboard
+                    </h1>
+                    <p style={{ fontSize: '13px', color: '#A1A5B7', fontWeight: 500, marginTop: '4px' }}>
+                        {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                </div>
+
                 {/* 4 Top Stat Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-                    <StatCard 
-                        label="Students" value={stats?.students.total ? formatShort(stats.students.total) : '15.00K'} 
-                        icon={GraduationCap} color="#9333EA" bgColor="#F3E8FF" 
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '20px',
+                    marginBottom: '24px',
+                }}>
+                    <StatCard
+                        label="Total Students"
+                        value={stats?.students.total ? formatShort(stats.students.total) : '15.0K'}
+                        subLabel="Students vs last month"
+                        change="2.08%"
+                        positive={true}
+                        icon={GraduationCap}
+                        gradient="linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)"
                     />
-                    <StatCard 
-                        label="Teachers" value={stats?.teachers.total ? formatShort(stats.teachers.total) : '2.00K'} 
-                        icon={Users} color="#0EA5E9" bgColor="#E0F2FE" 
+                    <StatCard
+                        label="Total Teachers"
+                        value={stats?.teachers.total ? formatShort(stats.teachers.total) : '2.0K'}
+                        subLabel="Teachers vs last month"
+                        change="12.1%"
+                        positive={true}
+                        icon={Users}
+                        iconBg="#EEF0FF"
+                        iconColor="#4F60FF"
                     />
-                    <StatCard 
-                        label="Parents" value={stats?.parents?.total ? formatShort(stats.parents.total) : '5.6K'} 
-                        icon={Users} color="#F97316" bgColor="#FFEDD5" 
+                    <StatCard
+                        label="Total Parents"
+                        value={stats?.parents?.total ? formatShort(stats.parents.total) : '5.6K'}
+                        subLabel="Parents vs last month"
+                        change="2.08%"
+                        positive={false}
+                        icon={Users}
+                        iconBg="#FFF3E0"
+                        iconColor="#F97316"
                     />
-                    <StatCard 
-                        label="Earnings" value={stats?.revenue.total ? `$${formatShort(stats.revenue.total)}` : '$19.3K'} 
-                        icon={DollarSign} color="#10B981" bgColor="#D1FAE5" 
+                    <StatCard
+                        label="Total Earnings"
+                        value={stats?.revenue.total ? `$${formatShort(stats.revenue.total)}` : '$19.3K'}
+                        subLabel="Revenue vs last month"
+                        change="12.1%"
+                        positive={true}
+                        icon={DollarSign}
+                        iconBg="#D1FAE5"
+                        iconColor="#10B981"
                     />
                 </div>
 
-                {/* Charts Area */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                    {/* Bar Chart */}
-                    <div style={{ background: 'var(--bg-primary)', borderRadius: 'var(--radius-lg)', padding: '24px', boxShadow: 'var(--shadow-sm)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                {/* Charts Row */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr',
+                    gap: '20px',
+                    marginBottom: '24px',
+                }}>
+                    {/* Bar Chart - All Exam Results */}
+                    <div style={{
+                        background: '#FFFFFF', borderRadius: '18px', padding: '24px',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5',
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                             <div>
-                                <h3 style={{ fontSize: '18px', fontWeight: 700 }}>All Exam Result</h3>
-                                <p style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>Students & Teacher</p>
+                                <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
+                                    All Exam Results
+                                </h3>
+                                <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Students & Teacher performance</p>
                             </div>
-                            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                <span style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#9333EA' }} /> Teacher</span>
-                                <span style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F97316' }} /> Student</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                <span style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: '#5E6278', fontWeight: 500 }}>
+                                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#4F60FF', display: 'inline-block' }} />
+                                    Teacher
+                                </span>
+                                <span style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: '#5E6278', fontWeight: 500 }}>
+                                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#F97316', display: 'inline-block' }} />
+                                    Student
+                                </span>
+                                <button style={{
+                                    background: 'none', border: '1px solid #F0F0F5', cursor: 'pointer',
+                                    borderRadius: '8px', padding: '4px 10px', fontSize: '12px', color: '#5E6278', fontWeight: 500,
+                                }}>
+                                    This year ▾
+                                </button>
                             </div>
                         </div>
-                        <div style={{ height: '300px', width: '100%' }}>
+                        <div style={{ height: '280px', width: '100%' }}>
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-primary)" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-tertiary)' }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-tertiary)' }} tickFormatter={(val) => `${val/1000}k`} />
-                                    <Tooltip cursor={{fill: 'var(--bg-tertiary)'}} />
-                                    <Bar dataKey="Teacher" fill="#9333EA" radius={[4, 4, 4, 4]} barSize={8} />
-                                    <Bar dataKey="Student" fill="#F97316" radius={[4, 4, 4, 4]} barSize={8} />
+                                <BarChart data={barChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }} barGap={4}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F5" />
+                                    <XAxis
+                                        dataKey="name"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fontSize: 12, fill: '#A1A5B7', fontWeight: 500 }}
+                                        dy={8}
+                                    />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fontSize: 11, fill: '#A1A5B7' }}
+                                    />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(79,96,255,0.04)', radius: 8 }} />
+                                    <Bar dataKey="Teacher" fill="#4F60FF" radius={[6, 6, 0, 0]} barSize={10} />
+                                    <Bar dataKey="Student" fill="#F0F2FF" radius={[6, 6, 0, 0]} barSize={10} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
 
-                    {/* Radial Chart */}
-                    <div style={{ background: 'var(--bg-primary)', borderRadius: 'var(--radius-lg)', padding: '24px', boxShadow: 'var(--shadow-sm)', position: 'relative' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Students</h3>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}><MoreVertical size={16} color="var(--text-tertiary)" /></button>
+                    {/* Radial Chart - Students */}
+                    <div style={{
+                        background: '#FFFFFF', borderRadius: '18px', padding: '24px',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5',
+                        display: 'flex', flexDirection: 'column',
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
+                                    Students
+                                </h3>
+                                <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Gender distribution</p>
+                            </div>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                <MoreHorizontal size={18} color="#A1A5B7" />
+                            </button>
                         </div>
-                        <div style={{ height: '240px', width: '100%', position: 'relative' }}>
+
+                        <div style={{ height: '220px', width: '100%', position: 'relative', flex: 1 }}>
                             <ResponsiveContainer width="100%" height="100%">
-                                <RadialBarChart cx="50%" cy="50%" innerRadius="60%" outerRadius="100%" barSize={16} data={radialData}>
-                                    <RadialBar background clockWise dataKey="value" cornerRadius={10} />
+                                <RadialBarChart
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius="55%"
+                                    outerRadius="100%"
+                                    barSize={18}
+                                    data={radialData}
+                                    startAngle={90}
+                                    endAngle={-270}
+                                >
+                                    <RadialBar background={{ fill: '#F4F5F9' }} clockWise dataKey="value" cornerRadius={12} />
                                 </RadialBarChart>
                             </ResponsiveContainer>
-                            {/* Center Label for Radial */}
-                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Total</p>
-                                <p style={{ fontSize: '24px', fontWeight: 800 }}>15000</p>
+                            <div style={{
+                                position: 'absolute', top: '50%', left: '50%',
+                                transform: 'translate(-50%, -50%)', textAlign: 'center',
+                            }}>
+                                <p style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 600, marginBottom: '2px' }}>Total</p>
+                                <p style={{ fontSize: '26px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>15K</p>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '16px' }}>
-                            <span style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}><span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#9333EA' }} /> Male</span>
-                            <span style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}><span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#F97316' }} /> Female</span>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                            {[
+                                { label: 'Male', value: '8,000', color: '#4F60FF', pct: '53%' },
+                                { label: 'Female', value: '7,000', color: '#F97316', pct: '47%' },
+                            ].map((item) => (
+                                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#5E6278' }}>{item.label}</span>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B' }}>{item.value}</span>
+                                        <span style={{ fontSize: '11px', color: '#A1A5B7', marginLeft: '6px' }}>{item.pct}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
 
                 {/* Bottom Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr',
+                    gap: '20px',
+                }}>
                     {/* Star Students Table */}
-                    <div style={{ background: 'var(--bg-primary)', borderRadius: 'var(--radius-lg)', padding: '24px', boxShadow: 'var(--shadow-sm)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Star Students</h3>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}><MoreVertical size={16} color="var(--text-tertiary)" /></button>
+                    <div style={{
+                        background: '#FFFFFF', borderRadius: '18px', padding: '24px',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5',
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
+                                    Star Students
+                                </h3>
+                                <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Top performers this year</p>
+                            </div>
+                            <button style={{
+                                background: '#F4F5F9', border: 'none', cursor: 'pointer',
+                                borderRadius: '8px', padding: '6px 12px', fontSize: '12px', color: '#5E6278', fontWeight: 600,
+                            }}>
+                                View All
+                            </button>
                         </div>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '1px solid var(--border-primary)', color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '14px' }}></th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '1px solid var(--border-primary)', color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '14px' }}>Name</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '1px solid var(--border-primary)', color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '14px' }}>ID</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '1px solid var(--border-primary)', color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '14px' }}>Marks</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '1px solid var(--border-primary)', color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '14px' }}>Percent</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '1px solid var(--border-primary)', color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '14px' }}>Year</th>
+                                    <tr style={{ background: '#F8F9FD' }}>
+                                        {['', 'Name', 'Student ID', 'Marks', 'Percent', 'Year'].map((h, i) => (
+                                            <th key={i} style={{
+                                                padding: '12px 16px', textAlign: 'left',
+                                                color: '#A1A5B7', fontWeight: 600, fontSize: '12px',
+                                                textTransform: 'uppercase', letterSpacing: '0.05em',
+                                                borderBottom: '1px solid #F0F0F5',
+                                                ...(i === 0 ? { borderTopLeftRadius: '10px', borderBottomLeftRadius: '10px' } : {}),
+                                                ...(i === 5 ? { borderTopRightRadius: '10px', borderBottomRightRadius: '10px' } : {}),
+                                            }}>
+                                                {h}
+                                            </th>
+                                        ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {starStudents.map((s, i) => (
-                                        <tr key={i}>
-                                            <td style={{ padding: '16px', borderBottom: '1px solid var(--border-primary)', width: '40px' }}>
-                                                <input type="checkbox" style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', borderRadius: '4px', border: '1px solid var(--border-secondary)' }} defaultChecked={i===1} />
+                                        <tr key={i} style={{ transition: 'background 0.15s' }}
+                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F8F9FD'}
+                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                                        >
+                                            <td style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    style={{ accentColor: '#4F60FF', width: '16px', height: '16px' }}
+                                                    defaultChecked={i === 1}
+                                                />
                                             </td>
-                                            <td style={{ padding: '16px', borderBottom: '1px solid var(--border-primary)' }}>
+                                            <td style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <img src={`https://ui-avatars.com/api/?name=${s.name}&background=random&color=fff`} style={{ width: '32px', height: '32px', borderRadius: '50%' }} alt={s.name} />
-                                                    <span style={{ fontWeight: 600, fontSize: '14px' }}>{s.name}</span>
+                                                    <img
+                                                        src={`https://ui-avatars.com/api/?name=${s.name}&background=4F60FF&color=fff&size=32`}
+                                                        style={{ width: '34px', height: '34px', borderRadius: '50%', border: '2px solid #EEF0FF' }}
+                                                        alt={s.name}
+                                                    />
+                                                    <span style={{ fontWeight: 600, fontSize: '14px', color: '#1A1D3B' }}>{s.name}</span>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '16px', borderBottom: '1px solid var(--border-primary)', fontSize: '14px', color: 'var(--text-secondary)' }}>{s.id}</td>
-                                            <td style={{ padding: '16px', borderBottom: '1px solid var(--border-primary)', fontSize: '14px', color: 'var(--text-secondary)' }}>{s.marks}</td>
-                                            <td style={{ padding: '16px', borderBottom: '1px solid var(--border-primary)', fontSize: '14px', fontWeight: 600 }}>{s.percent}</td>
-                                            <td style={{ padding: '16px', borderBottom: '1px solid var(--border-primary)', fontSize: '14px', color: 'var(--text-secondary)' }}>{s.year}</td>
+                                            <td style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5', fontSize: '13px', color: '#8F92A1' }}>
+                                                {s.id}
+                                            </td>
+                                            <td style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5', fontSize: '14px', fontWeight: 700, color: '#1A1D3B' }}>
+                                                {s.marks}
+                                            </td>
+                                            <td style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5' }}>
+                                                <span style={{
+                                                    background: '#D1FAE5', color: '#059669',
+                                                    padding: '3px 10px', borderRadius: '50px',
+                                                    fontSize: '12px', fontWeight: 700,
+                                                }}>
+                                                    {s.percent}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5', fontSize: '13px', color: '#8F92A1' }}>
+                                                {s.year}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -229,55 +499,87 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    {/* All Exam Results Side Panel */}
-                    <div style={{ background: 'var(--bg-primary)', borderRadius: 'var(--radius-lg)', padding: '24px', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '18px', fontWeight: 700 }}>All Exam Results</h3>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}><MoreVertical size={16} color="var(--text-tertiary)" /></button>
+                    {/* Recent Activity */}
+                    <div style={{
+                        background: '#FFFFFF', borderRadius: '18px', padding: '24px',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5',
+                        display: 'flex', flexDirection: 'column',
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
+                                    Recent Activity
+                                </h3>
+                                <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Latest updates</p>
+                            </div>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                <MoreHorizontal size={18} color="#A1A5B7" />
+                            </button>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
-                            <div style={{ display: 'flex', gap: '16px' }}>
-                                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0ea5e9', flexShrink: 0 }}>
-                                    <Users size={24} />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <h4 style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '4px' }}>New Teacher</h4>
-                                        <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Just now</span>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', flex: 1 }}>
+                            {[
+                                {
+                                    icon: Users, bg: '#EEF0FF', color: '#4F60FF',
+                                    title: 'New Teacher', time: 'Just now',
+                                    desc: 'A new teacher has been added to the system.',
+                                },
+                                {
+                                    icon: DollarSign, bg: '#FFF3E0', color: '#F97316',
+                                    title: 'Fees Structure Updated', time: 'Today',
+                                    desc: 'Fees structure has been updated for 2024.',
+                                },
+                                {
+                                    icon: GraduationCap, bg: '#D1FAE5', color: '#10B981',
+                                    title: 'New Class Added', time: '24 Sep 2024',
+                                    desc: 'A new course has been added to schedule.',
+                                },
+                                {
+                                    icon: BookOpen, bg: '#FEE2E2', color: '#EF4444',
+                                    title: 'Exam Scheduled', time: '18 Sep 2024',
+                                    desc: 'Mid-term exams are scheduled next week.',
+                                },
+                            ].map((activity, i) => {
+                                const Icon = activity.icon;
+                                return (
+                                    <div key={i} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                                        <div style={{
+                                            width: '42px', height: '42px', borderRadius: '12px',
+                                            background: activity.bg, display: 'flex', alignItems: 'center',
+                                            justifyContent: 'center', color: activity.color, flexShrink: 0,
+                                        }}>
+                                            <Icon size={20} strokeWidth={2} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <h4 style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B', marginBottom: '3px' }}>
+                                                    {activity.title}
+                                                </h4>
+                                                <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500, whiteSpace: 'nowrap', marginLeft: '8px' }}>
+                                                    {activity.time}
+                                                </span>
+                                            </div>
+                                            <p style={{ fontSize: '12px', color: '#8F92A1', lineHeight: 1.5 }}>{activity.desc}</p>
+                                        </div>
                                     </div>
-                                    <p style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>It is a long established readable..</p>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '16px' }}>
-                                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#ffe4e6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f43f5e', flexShrink: 0 }}>
-                                    <DollarSign size={24} />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <h4 style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '4px' }}>Fees Structure</h4>
-                                        <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Today</span>
-                                    </div>
-                                    <p style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>It is a long established readable..</p>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '16px' }}>
-                                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', flexShrink: 0 }}>
-                                    <GraduationCap size={24} />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <h4 style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '4px' }}>New Course</h4>
-                                        <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>24 Sep 2023</span>
-                                    </div>
-                                    <p style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>It is a long established readable..</p>
-                                </div>
-                            </div>
+                                );
+                            })}
                         </div>
-                        <button style={{ 
-                            width: '100%', padding: '12px', background: 'var(--primary-50)', color: 'var(--primary)',
-                            border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '14px', cursor: 'pointer', marginTop: '24px', transition: 'all 0.2s' 
-                        }} onMouseEnter={(e)=>e.currentTarget.style.background='var(--primary-100)'} onMouseLeave={(e)=>e.currentTarget.style.background='var(--primary-50)'}>
-                            View All
+
+                        <button style={{
+                            width: '100%', padding: '11px', background: '#F4F5F9',
+                            color: '#4F60FF', border: 'none', borderRadius: '12px',
+                            fontWeight: 700, fontSize: '13px', cursor: 'pointer', marginTop: '20px',
+                            transition: 'all 0.2s',
+                        }}
+                            onMouseEnter={e => {
+                                (e.currentTarget as HTMLElement).style.background = '#EEF0FF';
+                            }}
+                            onMouseLeave={e => {
+                                (e.currentTarget as HTMLElement).style.background = '#F4F5F9';
+                            }}
+                        >
+                            View All Activity
                         </button>
                     </div>
                 </div>

@@ -90,19 +90,20 @@ export default function EnquiriesPage() {
 
     return (
         <DashboardLayout requiredRole="admin">
-            <div className="page-header">
+            <div style={{ paddingBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
                 <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Enquiry Management</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '2px' }}>
-                        {stats?.total || 0} total enquiries • {stats?.conversion_rate || 0}% conversion
+                    <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>Enquiry Management</h1>
+                    <p style={{ fontSize: '13px', color: '#A1A5B7', marginTop: '4px', fontWeight: 500 }}>
+                        {stats?.total || 0} total enquiries &bull; {stats?.conversion_rate || 0}% conversion
                     </p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+                <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(79,96,255,0.3)' }}>
                     <Plus size={16} /> New Enquiry
                 </button>
             </div>
 
-            <div className="page-body">
+            <div>
                 {/* Stats */}
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', overflowX: 'auto', paddingBottom: '4px' }}>
                     {Object.entries(statusConfig).map(([key, config]) => (
@@ -130,97 +131,84 @@ export default function EnquiriesPage() {
                 </div>
 
                 {/* Search */}
-                <div style={{ position: 'relative', marginBottom: '20px', maxWidth: '400px' }}>
-                    <Search size={16} style={{
-                        position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-                        color: 'var(--text-tertiary)',
-                    }} />
+                <div style={{ display: 'flex', alignItems: 'center', background: '#FFFFFF', borderRadius: '12px', padding: '10px 16px', maxWidth: '380px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5', gap: '8px' }}>
+                    <Search size={16} color="#A1A5B7" strokeWidth={2.5} />
                     <input
-                        className="input-field"
                         placeholder="Search enquiries..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        style={{ paddingLeft: '38px' }}
+                        style={{ border: 'none', background: 'transparent', outline: 'none', flex: 1, fontSize: '14px', color: '#1A1D3B' }}
                     />
                 </div>
 
                 {/* Enquiry Cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
                     {isLoading ? (
-                        [1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: '180px', borderRadius: '16px' }} />)
+                        [1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: '180px', borderRadius: '18px' }} />)
                     ) : enquiries.length === 0 ? (
-                        <div className="card empty-state" style={{ gridColumn: '1 / -1' }}>
-                            <Phone size={48} />
-                            <h3>No Enquiries Found</h3>
-                            <p>Start by creating a new enquiry or adjust your filters.</p>
+                        <div style={{ gridColumn: '1 / -1', background: '#FFFFFF', borderRadius: '18px', padding: '60px', textAlign: 'center', border: '1px solid #F0F0F5', color: '#A1A5B7' }}>
+                            <Phone size={48} style={{ marginBottom: '16px', opacity: 0.4 }} />
+                            <h3 style={{ fontSize: '16px', color: '#5E6278', marginBottom: '8px', fontWeight: 700 }}>No Enquiries Found</h3>
+                            <p style={{ fontSize: '13px' }}>Start by creating a new enquiry or adjust your filters.</p>
                         </div>
                     ) : (
                         enquiries.map((enq, idx) => {
                             const sc = statusConfig[enq.status] || statusConfig.new;
                             const pc = priorityConfig[enq.priority] || priorityConfig.medium;
                             return (
-                                <div
+                            <div
                                     key={enq.id}
-                                    className="card hover-lift animate-fade-in"
-                                    style={{ cursor: 'pointer', animationDelay: `${idx * 50}ms`, padding: '20px' }}
+                                    className="animate-fade-in"
+                                    style={{ cursor: 'pointer', animationDelay: `${idx * 50}ms`, padding: '20px', background: '#FFFFFF', borderRadius: '18px', border: '1px solid #F0F0F5', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', transition: 'transform 0.2s, box-shadow 0.2s' }}
                                     onClick={() => fetchEnquiryDetail(enq.id)}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)'; }}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                                         <div>
-                                            <span style={{
-                                                fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-tertiary)',
-                                                fontWeight: 600,
-                                            }}>
+                                            <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#A1A5B7', fontWeight: 600, letterSpacing: '0.05em' }}>
                                                 {enq.enquiry_number}
                                             </span>
-                                            <h3 style={{ fontSize: '16px', fontWeight: 700, marginTop: '4px' }}>{enq.student_name}</h3>
+                                            <h3 style={{ fontSize: '15px', fontWeight: 700, marginTop: '4px', color: '#1A1D3B' }}>{enq.student_name}</h3>
                                         </div>
-                                        <div style={{ display: 'flex', gap: '6px' }}>
-                                            <span style={{
-                                                width: '8px', height: '8px', borderRadius: '50%', background: pc.color,
-                                            }} />
-                                            <span style={{
-                                                padding: '3px 10px', borderRadius: 'var(--radius-full)',
-                                                background: sc.bg, color: sc.color, fontSize: '11px', fontWeight: 600,
-                                            }}>
+                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: pc.color, display: 'inline-block' }} />
+                                            <span style={{ padding: '3px 10px', borderRadius: '50px', background: sc.bg, color: sc.color, fontSize: '11px', fontWeight: 700 }}>
                                                 {sc.label}
                                             </span>
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: '#5E6278' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <Phone size={13} /> {enq.phone}
+                                            <Phone size={13} color="#A1A5B7" /> {enq.phone}
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <Target size={13} /> {enq.interested_course}
+                                            <Target size={13} color="#A1A5B7" /> {enq.interested_course}
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <Calendar size={13} /> {new Date(enq.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            <Calendar size={13} color="#A1A5B7" /> {new Date(enq.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                                         </div>
                                     </div>
 
                                     <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                                        <button className="btn btn-primary btn-sm" style={{ flex: 1, padding: '4px', fontSize: '12px' }} onClick={(e) => updateStatus(enq.id, 'contacted', e)}>
+                                        <button style={{ flex: 1, padding: '7px 4px', background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }} onClick={(e) => updateStatus(enq.id, 'contacted', e)}>
                                             Interested
                                         </button>
-                                        <button className="btn btn-secondary btn-sm" style={{ flex: 1, padding: '4px', fontSize: '12px' }} onClick={(e) => updateStatus(enq.id, 'new', e)}>
+                                        <button style={{ flex: 1, padding: '7px 4px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }} onClick={(e) => updateStatus(enq.id, 'new', e)}>
                                             Pending
                                         </button>
-                                        <button className="btn btn-error btn-sm" style={{ flex: 1, padding: '4px', fontSize: '12px' }} onClick={(e) => updateStatus(enq.id, 'not_interested', e)}>
+                                        <button style={{ flex: 1, padding: '7px 4px', background: '#FEE2E2', color: '#EF4444', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }} onClick={(e) => updateStatus(enq.id, 'not_interested', e)}>
                                             Not Interested
                                         </button>
                                     </div>
 
                                     {enq.assigned_teacher_name && (
-                                        <div style={{
-                                            marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--border-primary)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        }}>
-                                            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
-                                                Assigned: <strong style={{ color: 'var(--text-secondary)' }}>{enq.assigned_teacher_name}</strong>
+                                        <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #F0F0F5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <span style={{ fontSize: '12px', color: '#A1A5B7' }}>
+                                                Assigned: <strong style={{ color: '#5E6278' }}>{enq.assigned_teacher_name}</strong>
                                             </span>
-                                            <ChevronRight size={14} color="var(--text-tertiary)" />
+                                            <ChevronRight size={14} color="#A1A5B7" />
                                         </div>
                                     )}
                                 </div>
@@ -228,6 +216,7 @@ export default function EnquiriesPage() {
                         })
                     )}
                 </div>
+            </div>
             </div>
 
             {/* Enquiry Detail Drawer */}

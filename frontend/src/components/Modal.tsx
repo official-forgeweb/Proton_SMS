@@ -20,36 +20,62 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
                 left: 0,
                 width: '100vw',
                 height: '100vh',
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backgroundColor: 'rgba(26, 29, 59, 0.45)',
+                backdropFilter: 'blur(4px)',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                zIndex: 9999
-            }}>
+                zIndex: 9999,
+                animation: 'fadeIn 0.2s ease',
+            }}
+        >
             <div style={{
                 background: 'white',
-                borderRadius: '12px',
+                borderRadius: '20px',
                 width: '100%',
                 maxWidth: '600px',
                 maxHeight: '90vh',
                 overflowY: 'auto',
-                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                boxShadow: '0 24px 48px rgba(26, 29, 59, 0.18)',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                animation: 'slideInUp 0.3s ease',
             }}>
+                {/* Modal Header */}
                 <div style={{
-                    padding: '24px',
-                    borderBottom: '1px solid var(--border-primary)',
+                    padding: '22px 28px',
+                    borderBottom: '1px solid #F0F0F5',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
                 }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: 600 }}>{title}</h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
-                        <X size={24} />
+                    <h2 style={{
+                        fontSize: '18px', fontWeight: 700,
+                        color: '#1A1D3B', fontFamily: 'Poppins, sans-serif',
+                    }}>
+                        {title}
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            background: '#F4F5F9', border: 'none', cursor: 'pointer',
+                            color: '#A1A5B7', width: '32px', height: '32px',
+                            borderRadius: '8px', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.background = '#FEE2E2';
+                            (e.currentTarget as HTMLElement).style.color = '#EF4444';
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.background = '#F4F5F9';
+                            (e.currentTarget as HTMLElement).style.color = '#A1A5B7';
+                        }}
+                    >
+                        <X size={18} />
                     </button>
                 </div>
-                <div style={{ padding: '24px' }}>
+                <div style={{ padding: '24px 28px' }}>
                     {children}
                 </div>
             </div>

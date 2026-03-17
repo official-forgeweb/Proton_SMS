@@ -72,88 +72,98 @@ export default function FeesPage() {
 
     return (
         <DashboardLayout requiredRole="admin">
-            <div className="page-header">
+            <div style={{ paddingBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
                 <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Fee Management</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '2px' }}>
+                    <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>Fee Management</h1>
+                    <p style={{ fontSize: '13px', color: '#A1A5B7', marginTop: '4px', fontWeight: 500 }}>
                         Track collections, pending dues, and issue receipts.
                     </p>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-secondary"><Download size={16} /> Export</button>
-                    <button className="btn btn-secondary" onClick={() => setIsAssignOpen(true)}><Plus size={16} /> Assign Fee</button>
-                    <button className="btn btn-primary" onClick={() => setIsPayOpen(true)}><Plus size={16} /> Record Payment</button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button style={{ background: '#FFFFFF', color: '#5E6278', border: '1px solid #F0F0F5', borderRadius: '12px', padding: '11px 20px', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                        <Download size={16} /> Export
+                    </button>
+                    <button onClick={() => setIsAssignOpen(true)} style={{ background: '#FFFFFF', color: '#5E6278', border: '1px solid #F0F0F5', borderRadius: '12px', padding: '11px 20px', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                        <Plus size={16} /> Assign Fee
+                    </button>
+                    <button onClick={() => setIsPayOpen(true)} style={{ background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(79,96,255,0.3)' }}>
+                        <Plus size={16} /> Record Payment
+                    </button>
                 </div>
             </div>
 
-            <div className="page-body">
+            <div>
                 {stats && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                        <div className="card hover-lift" style={{ background: 'var(--gradient-success)', color: 'white', border: 'none' }}>
-                            <p style={{ fontSize: '13px', opacity: 0.9 }}>Total Collected</p>
+                        <div style={{ background: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)', color: 'white', borderRadius: '18px', padding: '24px', boxShadow: '0 4px 14px rgba(16,185,129,0.25)' }}>
+                            <p style={{ fontSize: '13px', opacity: 0.9, fontWeight: 500 }}>Total Collected</p>
                             <h2 style={{ fontSize: '28px', fontWeight: 800, marginTop: '8px' }}>{formatCurrency(stats.total_collected)}</h2>
                         </div>
-                        <div className="card hover-lift" style={{ background: 'var(--gradient-error)', color: 'white', border: 'none' }}>
-                            <p style={{ fontSize: '13px', opacity: 0.9 }}>Total Pending</p>
+                        <div style={{ background: 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)', color: 'white', borderRadius: '18px', padding: '24px', boxShadow: '0 4px 14px rgba(239,68,68,0.25)' }}>
+                            <p style={{ fontSize: '13px', opacity: 0.9, fontWeight: 500 }}>Total Pending</p>
                             <h2 style={{ fontSize: '28px', fontWeight: 800, marginTop: '8px' }}>{formatCurrency(stats.total_pending)}</h2>
                         </div>
-                        <div className="card hover-lift">
-                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Fully Paid Students</p>
-                            <h2 style={{ fontSize: '28px', fontWeight: 800, marginTop: '8px', color: 'var(--success)' }}>{stats.paid_students}</h2>
+                        <div style={{ background: '#FFFFFF', borderRadius: '18px', padding: '24px', border: '1px solid #F0F0F5', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                            <p style={{ fontSize: '13px', color: '#A1A5B7', fontWeight: 500 }}>Fully Paid Students</p>
+                            <h2 style={{ fontSize: '28px', fontWeight: 800, marginTop: '8px', color: '#10B981' }}>{stats.paid_students}</h2>
                         </div>
-                        <div className="card hover-lift">
-                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Pending Students</p>
-                            <h2 style={{ fontSize: '28px', fontWeight: 800, marginTop: '8px', color: 'var(--warning)' }}>{stats.pending_students}</h2>
+                        <div style={{ background: '#FFFFFF', borderRadius: '18px', padding: '24px', border: '1px solid #F0F0F5', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                            <p style={{ fontSize: '13px', color: '#A1A5B7', fontWeight: 500 }}>Pending Students</p>
+                            <h2 style={{ fontSize: '28px', fontWeight: 800, marginTop: '8px', color: '#F59E0B' }}>{stats.pending_students}</h2>
                         </div>
                     </div>
                 )}
 
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h3 style={{ fontSize: '16px', fontWeight: 600 }}>Fee Defaulters & Assignments</h3>
-                        <div style={{ position: 'relative', width: '300px' }}>
-                            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
-                            <input className="input-field" placeholder="Search student..." style={{ paddingLeft: '36px' }} />
+                <div style={{ background: '#FFFFFF', borderRadius: '18px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5', overflow: 'hidden' }}>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid #F0F0F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>Fee Defaulters &amp; Assignments</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', background: '#F4F5F9', borderRadius: '10px', padding: '8px 14px', width: '260px', gap: '8px', border: '1px solid #F0F0F5' }}>
+                            <Search size={14} color="#A1A5B7" />
+                            <input placeholder="Search student..." style={{ border: 'none', background: 'transparent', outline: 'none', flex: 1, fontSize: '13px', color: '#1A1D3B' }} />
                         </div>
                     </div>
 
                     {isLoading ? (
-                        <div style={{ padding: '40px', textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
+                        <div style={{ padding: '60px', textAlign: 'center' }}>
+                            <div className="spinner" style={{ margin: '0 auto 16px' }} />
+                            <p style={{ color: '#A1A5B7', fontSize: '14px' }}>Loading fee data...</p>
+                        </div>
                     ) : assignments.length === 0 ? (
-                        <div className="empty-state">
-                            <CreditCard size={48} />
-                            <h3>No Fee Data</h3>
+                        <div style={{ padding: '60px', textAlign: 'center', color: '#A1A5B7' }}>
+                            <CreditCard size={48} style={{ marginBottom: '16px', opacity: 0.4 }} />
+                            <h3 style={{ fontSize: '16px', color: '#5E6278', marginBottom: '8px', fontWeight: 700 }}>No Fee Data</h3>
                         </div>
                     ) : (
                         <div style={{ overflowX: 'auto' }}>
-                            <table className="data-table">
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
                                 <thead>
-                                    <tr>
-                                        <th>Student Details</th>
-                                        <th>Total Fee</th>
-                                        <th>Paid Amount</th>
-                                        <th>Pending Balance</th>
-                                        <th>Status</th>
-                                        <th style={{ textAlign: 'right' }}>Actions</th>
+                                    <tr style={{ background: '#F8F9FD' }}>
+                                        {['Student Details', 'Total Fee', 'Paid Amount', 'Pending Balance', 'Status', 'Actions'].map((h, i) => (
+                                            <th key={h} style={{ padding: '13px 16px', textAlign: i === 5 ? 'right' : 'left', color: '#A1A5B7', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                                        ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {assignments.map((a, idx) => (
-                                        <tr key={a.id} className="animate-fade-in" style={{ animationDelay: `${idx * 20}ms` }}>
-                                            <td>
-                                                <div style={{ fontWeight: 600, fontSize: '14px' }}>{a.student_name}</div>
-                                                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{a.pro_id}</div>
+                                        <tr key={a.id} className="animate-fade-in" style={{ borderBottom: '1px solid #F0F0F5', animationDelay: `${idx * 20}ms`, transition: 'background 0.15s' }}
+                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F8F9FD'}
+                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                                        >
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <div style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B' }}>{a.student_name}</div>
+                                                <div style={{ fontSize: '12px', color: '#A1A5B7', fontFamily: 'monospace', marginTop: '2px' }}>{a.pro_id}</div>
                                             </td>
-                                            <td style={{ fontWeight: 600 }}>{formatCurrency(a.final_fee)}</td>
-                                            <td style={{ color: 'var(--success)', fontWeight: 600 }}>{formatCurrency(a.total_paid)}</td>
-                                            <td style={{ color: 'var(--error)', fontWeight: 600 }}>{formatCurrency(a.total_pending)}</td>
-                                            <td>
-                                                <span className={`badge ${a.payment_status === 'paid' ? 'badge-success' : a.payment_status === 'partial' ? 'badge-warning' : 'badge-error'}`}>
-                                                    {a.payment_status.toUpperCase()}
+                                            <td style={{ padding: '14px 16px', fontWeight: 700, fontSize: '14px', color: '#1A1D3B' }}>{formatCurrency(a.final_fee)}</td>
+                                            <td style={{ padding: '14px 16px', color: '#10B981', fontWeight: 700 }}>{formatCurrency(a.total_paid)}</td>
+                                            <td style={{ padding: '14px 16px', color: '#EF4444', fontWeight: 700 }}>{formatCurrency(a.total_pending)}</td>
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <span style={{ padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: 700, background: a.payment_status === 'paid' ? '#D1FAE5' : a.payment_status === 'partial' ? '#FEF3C7' : '#FEE2E2', color: a.payment_status === 'paid' ? '#059669' : a.payment_status === 'partial' ? '#92400E' : '#DC2626' }}>
+                                                    {a.payment_status?.toUpperCase()}
                                                 </span>
                                             </td>
-                                            <td style={{ textAlign: 'right' }}>
-                                                <button className="btn btn-primary btn-sm" onClick={() => { setFormData({ ...formData, student_id: a.student_id, amount_paid: a.total_pending }); setIsPayOpen(true); }}>Pay Now</button>
+                                            <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                                                <button style={{ background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(79,96,255,0.25)' }} onClick={() => { setFormData({ ...formData, student_id: a.student_id, amount_paid: a.total_pending }); setIsPayOpen(true); }}>Pay Now</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -162,6 +172,7 @@ export default function FeesPage() {
                         </div>
                     )}
                 </div>
+            </div>
             </div>
             <Modal isOpen={isPayOpen} onClose={() => setIsPayOpen(false)} title="Record Fee Payment">
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
