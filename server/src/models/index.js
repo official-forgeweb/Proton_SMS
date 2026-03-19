@@ -65,6 +65,7 @@ const TeacherSchema = new mongoose.Schema({
     subjects: [String],
     employment_status: { type: String, default: 'active' },
     gender: String,
+    permissions: { type: [String], default: ['classes', 'students', 'enquiries', 'tests', 'homework', 'demos', 'attendance'] },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 // Class Schema

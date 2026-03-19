@@ -6,7 +6,7 @@ import {
     LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
     Calendar, CreditCard, BarChart3, Settings, LogOut, Phone,
     UserCheck, FileText, Bell, ChevronDown, ChevronRight, Menu, X, Target,
-    Home, PenTool, Award, HelpCircle, MessageSquare, Zap
+    Home, PenTool, Award, HelpCircle, MessageSquare, Zap, Shield
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -51,6 +51,12 @@ const adminNav = [
             { label: 'Demos', href: '/admin/demos', icon: Target },
             { label: 'Settings', href: '/admin/settings', icon: Settings },
         ]
+    },
+    {
+        section: 'ADMIN',
+        items: [
+            { label: 'Access Control', href: '/admin/permissions', icon: Shield },
+        ]
     }
 ];
 
@@ -59,18 +65,18 @@ const teacherNavSections = [
         section: 'MENU',
         items: [
             { label: 'Dashboard', href: '/teacher', icon: LayoutDashboard },
-            { label: 'My Classes', href: '/teacher/classes', icon: BookOpen },
-            { label: 'Students', href: '/teacher/students', icon: GraduationCap },
-            { label: 'Enquiries', href: '/teacher/enquiries', icon: Phone },
+            { label: 'My Classes', href: '/teacher/classes', icon: BookOpen, permissionKey: 'classes' },
+            { label: 'Students', href: '/teacher/students', icon: GraduationCap, permissionKey: 'students' },
+            { label: 'Enquiries', href: '/teacher/enquiries', icon: Phone, permissionKey: 'enquiries' },
         ]
     },
     {
         section: 'TOOLS',
         items: [
-            { label: 'Attendance', href: '/teacher/attendance', icon: UserCheck },
-            { label: 'Tests', href: '/teacher/tests', icon: ClipboardList },
-            { label: 'Homework', href: '/teacher/homework', icon: PenTool },
-            { label: 'Demo Classes', href: '/teacher/demos', icon: Target },
+            { label: 'Attendance', href: '/teacher/attendance', icon: UserCheck, permissionKey: 'attendance' },
+            { label: 'Tests', href: '/teacher/tests', icon: ClipboardList, permissionKey: 'tests' },
+            { label: 'Homework', href: '/teacher/homework', icon: PenTool, permissionKey: 'homework' },
+            { label: 'Demo Classes', href: '/teacher/demos', icon: Target, permissionKey: 'demos' },
         ]
     }
 ];
@@ -124,8 +130,16 @@ export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(false);
     const [expandedMenu, setExpandedMenu] = useState<string | null>('Dashboard');
 
+    const teacherPermissions: string[] = user?.role === 'teacher' ? (user.profile?.permissions || []) : [];
+
     const navSections = user?.role === 'admin' ? adminNav
-        : user?.role === 'teacher' ? teacherNavSections
+        : user?.role === 'teacher' ? teacherNavSections.map(section => ({
+            ...section,
+            items: section.items.filter((item: any) =>
+                // Always show Dashboard (no permissionKey) and items the teacher is permitted
+                !item.permissionKey || teacherPermissions.includes(item.permissionKey)
+            )
+        }))
             : user?.role === 'student' ? studentNavSections
                 : user?.role === 'parent' ? parentNavSections : adminNav;
 

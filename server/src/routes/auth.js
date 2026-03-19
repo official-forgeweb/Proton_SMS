@@ -44,7 +44,10 @@ router.post('/login', async (req, res) => {
 
         let profile = {};
         if (user.role === 'student') profile = await Student.findOne({ user_id: user._id }).lean() || {};
-        else if (user.role === 'teacher') profile = await Teacher.findOne({ user_id: user._id }).lean() || {};
+        else if (user.role === 'teacher') {
+            const t = await Teacher.findOne({ user_id: user._id }).lean();
+            profile = t ? { ...t, permissions: t.permissions || [] } : {};
+        }
         else if (user.role === 'parent') profile = await Parent.findOne({ user_id: user._id }).lean() || {};
         else if (user.role === 'admin') profile = { first_name: 'Admin', last_name: 'User', email: user.email };
 
@@ -81,7 +84,10 @@ router.get('/me', authenticateToken, async (req, res) => {
 
         let profile = {};
         if (user.role === 'student') profile = await Student.findOne({ user_id: user._id }).lean() || {};
-        else if (user.role === 'teacher') profile = await Teacher.findOne({ user_id: user._id }).lean() || {};
+        else if (user.role === 'teacher') {
+            const t = await Teacher.findOne({ user_id: user._id }).lean();
+            profile = t ? { ...t, permissions: t.permissions || [] } : {};
+        }
         else if (user.role === 'parent') profile = await Parent.findOne({ user_id: user._id }).lean() || {};
         else if (user.role === 'admin') profile = { first_name: 'Admin', last_name: 'User', email: user.email };
 

@@ -21,6 +21,7 @@ const testRoutes = require('./src/routes/tests');
 const homeworkRoutes = require('./src/routes/homework');
 const feeRoutes = require('./src/routes/fees');
 const dashboardRoutes = require('./src/routes/dashboard');
+const permissionsRoutes = require('./src/routes/permissions');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -61,6 +62,7 @@ app.use('/api/tests', testRoutes);
 app.use('/api/homework', homeworkRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/permissions', permissionsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
