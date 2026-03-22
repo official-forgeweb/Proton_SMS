@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import PermissionGuard from '@/components/PermissionGuard';
 import { Users, Search, GraduationCap } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -26,8 +27,9 @@ export default function TeacherStudentsPage() {
     };
 
     return (
-        <DashboardLayout requiredRole="teacher">
-            <div className="page-header">
+        <PermissionGuard permissionKey="students">
+            <DashboardLayout requiredRole="teacher">
+                <div className="page-header">
                 <div>
                     <h1 style={{ fontSize: '24px', fontWeight: 700 }}>My Students</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '2px' }}>
@@ -106,5 +108,6 @@ export default function TeacherStudentsPage() {
                 </div>
             </div>
         </DashboardLayout>
+        </PermissionGuard>
     );
 }

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import PermissionGuard from '@/components/PermissionGuard';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
 import { useAuthStore } from '@/stores/authStore';
@@ -39,8 +40,9 @@ export default function TeacherHomeworkPage() {
     };
 
     return (
-        <DashboardLayout requiredRole="teacher">
-            <div className="page-header">
+        <PermissionGuard permissionKey="homework">
+            <DashboardLayout requiredRole="teacher">
+                <div className="page-header">
                 <div>
                     <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Homework Assignments</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '2px' }}>
@@ -150,5 +152,6 @@ export default function TeacherHomeworkPage() {
                 </form>
             </Modal>
         </DashboardLayout>
+        </PermissionGuard>
     );
 }

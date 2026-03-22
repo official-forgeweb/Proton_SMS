@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import PermissionGuard from '@/components/PermissionGuard';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
@@ -92,8 +93,9 @@ export default function EnquiriesPage() {
     };
 
     return (
-        <DashboardLayout requiredRole="teacher">
-            <div className="page-header">
+        <PermissionGuard permissionKey="enquiries">
+            <DashboardLayout requiredRole="teacher">
+                <div className="page-header">
                 <div>
                     <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Enquiry Management</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '2px' }}>
@@ -399,6 +401,7 @@ export default function EnquiriesPage() {
                 />
             )}
         </DashboardLayout>
+        </PermissionGuard>
     );
 }
 
