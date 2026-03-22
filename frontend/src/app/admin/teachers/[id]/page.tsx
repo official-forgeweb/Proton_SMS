@@ -45,9 +45,9 @@ export default function TeacherProfilePage() {
                             <p style={{ display: 'flex', gap: '8px' }}><Mail size={16} /> <strong>Email:</strong> {teacher.email}</p>
                             <p style={{ display: 'flex', gap: '8px' }}><Award size={16} /> <strong>Qualification:</strong> {teacher.qualification}</p>
                             <p style={{ display: 'flex', gap: '8px' }}><BookOpen size={16} /> <strong>Specialization:</strong> {teacher.specialization}</p>
-                            <p><strong>Experience:</strong> {teacher.experience_years} Years</p>
-                            <p><strong>Role:</strong> {teacher.role_type.replace('_', ' ')}</p>
-                            <p><strong>Joined:</strong> {new Date(teacher.date_of_joining).toLocaleDateString()}</p>
+                             <p><strong>Experience:</strong> {teacher.experience_years || 0} Years</p>
+                             <p><strong>Role:</strong> {teacher.role_type ? teacher.role_type.replace('_', ' ') : 'Subject Teacher'}</p>
+                             <p><strong>Joined:</strong> {teacher.date_of_joining ? new Date(teacher.date_of_joining).toLocaleDateString() : 'N/A'}</p>
                         </div>
                     </div>
 

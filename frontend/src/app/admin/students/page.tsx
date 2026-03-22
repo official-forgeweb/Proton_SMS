@@ -15,6 +15,7 @@ export default function StudentsPage() {
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const [isAddOpen, setIsAddOpen] = useState(false);
+    const [classes, setClasses] = useState<any[]>([]);
 
     const emptyForm = { first_name: '', last_name: '', email: '', phone: '', date_of_birth: '', gender: 'male', school_name: '', class_id: '', admission_type: 'fresh' };
     const [formData, setFormData] = useState(emptyForm);
@@ -61,11 +62,21 @@ export default function StudentsPage() {
                 setIsLoading(false);
             }
         };
+        const fetchClasses = async () => {
+            try {
+                const res = await api.get('/classes');
+                setClasses(res.data.data || []);
+            } catch (error) {
+                console.error('Error fetching classes', error);
+            }
+        };
         fetchStudents();
+        fetchClasses();
     }, [search]);
 
     const displayStudents = students.map(s => ({
         id: s.id,
+        mongo_id: s.id || s._id,
         name: `${s.first_name || s.name || ''} ${s.last_name || ''}`.trim(),
         roll: s.roll || s.PRO_ID || '#00',
         address: s.address || 'Unknown',
@@ -247,7 +258,7 @@ export default function StudentsPage() {
                                                             (e.currentTarget as HTMLElement).style.background = '#EEF0FF';
                                                             (e.currentTarget as HTMLElement).style.color = '#4F60FF';
                                                         }}
-                                                        onClick={() => router.push(`/admin/students/${s.id}`)}
+                                                        onClick={() => router.push(`/admin/students/${s.mongo_id}`)}
                                                     >
                                                         <Edit2 size={14} />
                                                     </button>
@@ -342,6 +353,19 @@ export default function StudentsPage() {
                                 <option value="female">Female</option>
                             </select>
                         </div>
+                    </div>
+                    <div>
+                        <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Assign Class / Batch</label>
+                        <select 
+                            style={{ padding: '10px 14px', border: '1px solid #F0F0F5', borderRadius: '10px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none' }} 
+                            value={formData.class_id} 
+                            onChange={e => setFormData({ ...formData, class_id: e.target.value })}
+                        >
+                            <option value="">Select a Class...</option>
+                            {classes.map(c => (
+                                <option key={c.id} value={c.id}>{c.class_name} ({c.class_code})</option>
+                            ))}
+                        </select>
                     </div>
                     <div>
                         <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Previous School</label>

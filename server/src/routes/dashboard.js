@@ -128,6 +128,15 @@ router.get('/student', authenticateToken, authorize('student'), async (req, res)
 
         const recentTests = await TestResult.find({ student_id: student._id }).sort({ created_at: -1 }).limit(3).populate('test_id').lean();
 
+        // Categorize Tests
+        const classIds = enrollments.map(e => e.class_id._id);
+        const allTests = await Test.find({ class_id: { $in: classIds } }).sort({ test_date: -1 }).lean();
+        
+        const now = new Date();
+        const completedTests = allTests.filter(t => t.status === 'completed' || t.results_published || new Date(t.test_date) < now);
+        const upcomingTests = allTests.filter(t => t.status === 'scheduled' && new Date(t.test_date) > now);
+        const ongoingTests = allTests.filter(t => t.status === 'ongoing' || (new Date(t.test_date).toDateString() === now.toDateString() && t.status !== 'completed'));
+
         const pendingHomework = await HomeworkSubmission.find({ student_id: student._id, status: 'pending' }).populate('homework_id').lean();
 
         const feeAssignment = await StudentFeeAssignment.findOne({ student_id: student._id }).lean();
@@ -139,6 +148,11 @@ router.get('/student', authenticateToken, authorize('student'), async (req, res)
                 classes: classes.map(c => ({ ...c, id: c._id })),
                 attendance: { percentage: parseFloat(attendancePercentage), total: totalClasses, present: presentCount, absent: totalClasses - presentCount },
                 recent_tests: recentTests.map(tr => ({ ...tr, test_name: tr.test_id?.test_name, test_date: tr.test_id?.test_date })),
+                tests: {
+                    upcoming: upcomingTests,
+                    ongoing: ongoingTests,
+                    completed: completedTests
+                },
                 pending_homework: pendingHomework.map(s => ({ ...s, homework: s.homework_id })),
                 fee: feeAssignment ? { total: feeAssignment.final_fee, paid: feeAssignment.total_paid, pending: feeAssignment.total_pending, status: feeAssignment.payment_status } : null,
             },

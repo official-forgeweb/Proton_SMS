@@ -195,6 +195,34 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req,
     }
 });
 
+// POST /api/students/:id/enroll
+router.post('/:id/enroll', authenticateToken, authorize('admin', 'teacher'), async (req, res) => {
+    try {
+        const { class_id } = req.body;
+        if (!class_id) return res.status(400).json({ success: false, message: 'Class ID is required' });
+
+        const student = await Student.findById(req.params.id);
+        if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+
+        const existing = await StudentClassEnrollment.findOne({ student_id: student._id, class_id });
+        if (existing) return res.status(400).json({ success: false, message: 'Student already enrolled in this class' });
+
+        const enrollment = await StudentClassEnrollment.create({
+            student_id: student._id,
+            class_id,
+            enrollment_date: new Date().toISOString(),
+            enrollment_status: 'active'
+        });
+
+        await Class.findByIdAndUpdate(class_id, { $inc: { current_students_count: 1 } });
+
+        res.json({ success: true, message: 'Student enrolled successfully', data: enrollment });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
 router.get('/:id/attendance', authenticateToken, async (req, res) => {
     try {
         const isMongoId = mongoose.isValidObjectId(req.params.id);

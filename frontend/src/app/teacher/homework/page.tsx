@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import Modal from '@/components/Modal';
 import { useAuthStore } from '@/stores/authStore';
 import { PenTool, Plus, Clock, Users, FileText } from 'lucide-react';
+import Link from 'next/link';
 
 export default function TeacherHomeworkPage() {
     const { user } = useAuthStore();
@@ -92,14 +93,21 @@ export default function TeacherHomeworkPage() {
                                                     {hw.due_date}
                                                 </span>
                                             </td>
-                                            <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <div className="progress-bar" style={{ width: '80px' }}>
-                                                        <div className="progress-fill" style={{ width: `${(hw.submitted / (hw.total_students || 1)) * 100}%`, background: 'var(--success)' }} />
+                                             <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <div className="progress-bar" style={{ width: '80px' }}>
+                                                            <div className="progress-fill" style={{ width: `${(hw.submitted / (hw.total_students || 1)) * 100}%`, background: 'var(--success)' }} />
+                                                        </div>
+                                                        <span style={{ fontSize: '12px', fontWeight: 600 }}>{hw.submitted}/{hw.total_students}</span>
                                                     </div>
-                                                    <span style={{ fontSize: '12px', fontWeight: 600 }}>{hw.submitted}/{hw.total_students}</span>
+                                                    <Link href={`/teacher/homework/${hw.id}`}>
+                                                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--primary)', padding: '4px 8px' }}>
+                                                            <FileText size={14} /> View
+                                                        </button>
+                                                    </Link>
                                                 </div>
-                                            </td>
+                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
