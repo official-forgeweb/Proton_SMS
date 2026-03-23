@@ -15,7 +15,7 @@ const UserSchema = new mongoose.Schema({
 
 // Student Schema
 const StudentSchema = new mongoose.Schema({
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     PRO_ID: { type: String, unique: true },
     first_name: String,
     last_name: String,
@@ -27,12 +27,12 @@ const StudentSchema = new mongoose.Schema({
     enrollment_date: String,
     enrollment_number: String,
     admission_type: String,
-    academic_status: { type: String, default: 'active' },
+    academic_status: { type: String, default: 'active', index: true },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 // Parent Schema
 const ParentSchema = new mongoose.Schema({
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     first_name: String,
     last_name: String,
     email: String,
@@ -42,8 +42,8 @@ const ParentSchema = new mongoose.Schema({
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 const ParentStudentMappingSchema = new mongoose.Schema({
-    parent_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Parent' },
-    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
+    parent_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Parent', index: true },
+    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', index: true },
     relationship: String,
     is_primary: { type: Boolean, default: true },
     can_make_payments: { type: Boolean, default: true },
@@ -51,7 +51,7 @@ const ParentStudentMappingSchema = new mongoose.Schema({
 
 // Teacher Schema
 const TeacherSchema = new mongoose.Schema({
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     employee_id: String,
     first_name: String,
     last_name: String,
@@ -63,7 +63,7 @@ const TeacherSchema = new mongoose.Schema({
     date_of_joining: String,
     role_type: String,
     subjects: [String],
-    employment_status: { type: String, default: 'active' },
+    employment_status: { type: String, default: 'active', index: true },
     gender: String,
     permissions: { type: [String], default: ['classes', 'students', 'enquiries', 'tests', 'homework', 'demos', 'attendance'] },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
@@ -84,25 +84,27 @@ const ClassSchema = new mongoose.Schema({
     class_time_start: String,
     class_time_end: String,
     duration_minutes: Number,
-    primary_teacher_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher' },
-    assistant_teacher_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher' },
+    primary_teacher_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', index: true },
+    assistant_teacher_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', index: true },
     max_students: Number,
     current_students_count: { type: Number, default: 0 },
     room_number: String,
     is_online: { type: Boolean, default: false },
-    status: { type: String, default: 'ongoing' },
+    status: { type: String, default: 'ongoing', index: true },
     course_fee: Number,
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 const StudentClassEnrollmentSchema = new mongoose.Schema({
-    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
-    class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class' },
+    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', index: true },
+    class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', index: true },
     enrollment_date: String,
-    enrollment_status: { type: String, default: 'active' },
+    enrollment_status: { type: String, default: 'active', index: true },
     overall_attendance_percentage: { type: Number, default: 0 },
     average_marks: { type: Number, default: 0 },
     rank_in_class: Number,
 });
+StudentClassEnrollmentSchema.index({ class_id: 1, enrollment_status: 1 });
+StudentClassEnrollmentSchema.index({ student_id: 1, enrollment_status: 1 });
 
 // Enquiry Schema
 const EnquirySchema = new mongoose.Schema({
@@ -118,15 +120,15 @@ const EnquirySchema = new mongoose.Schema({
     school_name: String,
     interested_course: String,
     source: String,
-    status: { type: String, default: 'new' },
+    status: { type: String, default: 'new', index: true },
     priority: { type: String, default: 'medium' },
-    assigned_to: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    assigned_to: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     followup_count: { type: Number, default: 0 },
     converted_to_student: { type: Boolean, default: false },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 const EnquiryRemarkSchema = new mongoose.Schema({
-    enquiry_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Enquiry' },
+    enquiry_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Enquiry', index: true },
     remark: String,
     remark_type: String,
     created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -134,45 +136,47 @@ const EnquiryRemarkSchema = new mongoose.Schema({
 
 const DemoClassSchema = new mongoose.Schema({
     demo_number: String,
-    enquiry_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Enquiry' },
+    enquiry_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Enquiry', index: true },
     demo_date: String,
     demo_time: String,
     subject: String,
     topic: String,
     class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class' },
-    teacher_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher' },
-    status: { type: String, default: 'scheduled' },
+    teacher_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', index: true },
+    status: { type: String, default: 'scheduled', index: true },
     demo_count: { type: Number, default: 1 },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 // Tests & Attendance
 const AttendanceSchema = new mongoose.Schema({
-    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
-    class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class' },
+    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', index: true },
+    class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', index: true },
     attendance_date: String,
     status: { type: String, enum: ['present', 'absent', 'late'] },
     marked_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
+AttendanceSchema.index({ student_id: 1, attendance_date: 1 });
+AttendanceSchema.index({ class_id: 1, attendance_date: 1 });
 
 const TestSchema = new mongoose.Schema({
     test_code: { type: String, unique: true },
     test_name: String,
-    class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class' },
+    class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', index: true },
     subject: String,
     test_type: String,
     test_date: String,
     duration_minutes: Number,
     total_marks: Number,
     passing_marks: Number,
-    status: { type: String, default: 'scheduled' },
+    status: { type: String, default: 'scheduled', index: true },
     results_published: { type: Boolean, default: false },
     students_appeared: { type: Number, default: 0 },
     created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher' },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 const TestResultSchema = new mongoose.Schema({
-    test_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Test' },
-    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
+    test_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Test', index: true },
+    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', index: true },
     marks_obtained: Number,
     total_marks: Number,
     percentage: Number,
@@ -186,7 +190,7 @@ const HomeworkSchema = new mongoose.Schema({
     homework_code: String,
     title: String,
     description: String,
-    class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class' },
+    class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', index: true },
     assigned_date: String,
     due_date: String,
     total_marks: Number,
@@ -196,8 +200,8 @@ const HomeworkSchema = new mongoose.Schema({
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 const HomeworkSubmissionSchema = new mongoose.Schema({
-    homework_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Homework' },
-    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
+    homework_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Homework', index: true },
+    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', index: true },
     submission_date: String,
     status: { type: String, default: 'pending' },
     marks_obtained: Number,
@@ -208,7 +212,7 @@ const HomeworkSubmissionSchema = new mongoose.Schema({
 // Fees
 const FeeStructureSchema = new mongoose.Schema({
     structure_name: String,
-    class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class' },
+    class_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', index: true },
     academic_year: String,
     tuition_fee: Number,
     registration_fee: Number,
@@ -222,7 +226,7 @@ const FeeStructureSchema = new mongoose.Schema({
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 const StudentFeeAssignmentSchema = new mongoose.Schema({
-    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
+    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', index: true },
     fee_structure_id: { type: mongoose.Schema.Types.ObjectId, ref: 'FeeStructure' },
     academic_year: String,
     total_fee: Number,
@@ -231,18 +235,18 @@ const StudentFeeAssignmentSchema = new mongoose.Schema({
     final_fee: Number,
     total_paid: { type: Number, default: 0 },
     total_pending: Number,
-    payment_status: { type: String, default: 'pending' },
+    payment_status: { type: String, default: 'pending', index: true },
     assigned_date: String,
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 const FeePaymentSchema = new mongoose.Schema({
     payment_number: { type: String, unique: true },
-    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
+    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', index: true },
     amount_paid: Number,
     payment_date: String,
     payment_method: String,
     transaction_id: String,
-    payment_status: { type: String, default: 'completed' },
+    payment_status: { type: String, default: 'completed', index: true },
     installment_number: Number,
     receipt_number: String,
     receipt_generated_at: Date,

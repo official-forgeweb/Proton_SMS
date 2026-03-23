@@ -60,7 +60,7 @@ export default function ReportsPage() {
     };
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole="teacher">
             <div style={{ paddingBottom: '32px' }}>
                 {/* Page Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>

@@ -4,6 +4,22 @@ const { User } = require('../models');
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'proton_access_secret_key_2024_super_secure';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'proton_refresh_secret_key_2024_super_secure';
 
+// In-memory user cache to avoid DB lookup on every request
+const userCache = new Map();
+const USER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const getCachedUser = async (userId) => {
+    const cached = userCache.get(userId);
+    if (cached && Date.now() - cached.timestamp < USER_CACHE_TTL) {
+        return cached.user;
+    }
+    const user = await User.findById(userId).lean();
+    if (user) {
+        userCache.set(userId, { user, timestamp: Date.now() });
+    }
+    return user;
+};
+
 // Verify JWT Token
 const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -15,7 +31,7 @@ const authenticateToken = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, JWT_ACCESS_SECRET);
-        const user = await User.findById(decoded.userId).lean();
+        const user = await getCachedUser(decoded.userId);
 
         if (!user) {
             return res.status(401).json({ success: false, message: 'User not found' });

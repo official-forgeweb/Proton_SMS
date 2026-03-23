@@ -25,23 +25,50 @@ router.get('/', authenticateToken, async (req, res) => {
         }
 
         const homeworks = await Homework.find(query).sort({ assigned_date: -1 }).populate('class_id').lean();
-        const data = [];
 
-        for (const h of homeworks) {
-            const submissions = await HomeworkSubmission.find({ homework_id: h._id }).lean();
-            const totalStudents = await StudentClassEnrollment.countDocuments({ class_id: h.class_id?._id, enrollment_status: 'active' });
+        if (homeworks.length === 0) {
+            return res.json({ success: true, data: [] });
+        }
 
-            data.push({
+        const hwIds = homeworks.map(h => h._id);
+        const classIds = [...new Set(homeworks.map(h => h.class_id?._id?.toString()).filter(Boolean))];
+
+        // Batch: get submission stats and student counts in parallel
+        const [submissionStats, studentCountStats] = await Promise.all([
+            HomeworkSubmission.aggregate([
+                { $match: { homework_id: { $in: hwIds } } },
+                { $group: {
+                    _id: '$homework_id',
+                    submitted: { $sum: { $cond: [{ $ne: ['$status', 'pending'] }, 1, 0] } },
+                    pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+                    evaluated: { $sum: { $cond: [{ $eq: ['$status', 'evaluated'] }, 1, 0] } },
+                } }
+            ]),
+            StudentClassEnrollment.aggregate([
+                { $match: { class_id: { $in: classIds.map(id => new mongoose.Types.ObjectId(id)) }, enrollment_status: 'active' } },
+                { $group: { _id: '$class_id', count: { $sum: 1 } } }
+            ]),
+        ]);
+
+        const submissionMap = {};
+        submissionStats.forEach(s => { submissionMap[s._id.toString()] = s; });
+
+        const studentCountMap = {};
+        studentCountStats.forEach(s => { studentCountMap[s._id.toString()] = s.count; });
+
+        const data = homeworks.map(h => {
+            const stats = submissionMap[h._id.toString()] || { submitted: 0, pending: 0, evaluated: 0 };
+            return {
                 ...h,
                 id: h._id,
                 class_id: h.class_id?._id,
                 class_name: h.class_id?.class_name || '',
-                total_students: totalStudents,
-                submitted: submissions.filter(s => s.status !== 'pending').length,
-                pending: submissions.filter(s => s.status === 'pending').length,
-                evaluated: submissions.filter(s => s.status === 'evaluated').length,
-            });
-        }
+                total_students: studentCountMap[h.class_id?._id?.toString()] || 0,
+                submitted: stats.submitted,
+                pending: stats.pending,
+                evaluated: stats.evaluated,
+            };
+        });
 
         res.json({ success: true, data });
     } catch (error) {

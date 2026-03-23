@@ -27,19 +27,34 @@ router.get('/', authenticateToken, async (req, res) => {
         }
 
         const tests = await Test.find(query).sort({ test_date: -1 }).populate('class_id').lean();
-        const data = [];
 
-        for (const t of tests) {
-            const results = await TestResult.find({ test_id: t._id }).lean();
-            data.push({
+        // Batch: get result stats for ALL tests in one query
+        const testIds = tests.map(t => t._id);
+        const resultStats = testIds.length > 0
+            ? await TestResult.aggregate([
+                { $match: { test_id: { $in: testIds } } },
+                { $group: {
+                    _id: '$test_id',
+                    count: { $sum: 1 },
+                    avgMarks: { $avg: '$marks_obtained' },
+                } }
+            ])
+            : [];
+
+        const resultMap = {};
+        resultStats.forEach(r => { resultMap[r._id.toString()] = r; });
+
+        const data = tests.map(t => {
+            const stats = resultMap[t._id.toString()] || { count: 0, avgMarks: 0 };
+            return {
                 ...t,
                 id: t._id,
                 class_id: t.class_id?._id,
                 class_name: t.class_id?.class_name || '',
-                results_count: results.length,
-                average_marks: results.length > 0 ? (results.reduce((s, r) => s + r.marks_obtained, 0) / results.length).toFixed(1) : 0,
-            });
-        }
+                results_count: stats.count,
+                average_marks: stats.count > 0 ? stats.avgMarks.toFixed(1) : 0,
+            };
+        });
 
         res.json({ success: true, data });
     } catch (error) {

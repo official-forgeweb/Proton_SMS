@@ -54,22 +54,42 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req, re
 
         let students = await Student.find(query).skip(startIdx).limit(parseInt(limit)).lean();
 
-        for (let i = 0; i < students.length; i++) {
-            const s = students[i];
-            const feeAssignment = await StudentFeeAssignment.findOne({ student_id: s._id }).lean();
-            const enrollments = await StudentClassEnrollment.find({ student_id: s._id, enrollment_status: 'active' }).populate('class_id').lean();
+        if (students.length > 0) {
+            const studentIds = students.map(s => s._id);
 
-            students[i] = {
-                ...s,
-                id: s._id,
-                fee_status: feeAssignment?.payment_status || 'pending',
-                total_fee: feeAssignment?.final_fee || 0,
-                total_paid: feeAssignment?.total_paid || 0,
-                classes: enrollments.map(e => ({
-                    id: e.class_id?._id, name: e.class_id?.class_name, code: e.class_id?.class_code
-                })),
-                attendance_percentage: enrollments[0]?.overall_attendance_percentage || 0,
-            };
+            // Batch queries instead of N+1 loop
+            const [feeAssignments, enrollments] = await Promise.all([
+                StudentFeeAssignment.find({ student_id: { $in: studentIds } }).lean(),
+                StudentClassEnrollment.find({ student_id: { $in: studentIds }, enrollment_status: 'active' }).populate('class_id').lean(),
+            ]);
+
+            // Build lookup maps
+            const feeMap = {};
+            feeAssignments.forEach(f => { feeMap[f.student_id.toString()] = f; });
+
+            const enrollmentMap = {};
+            enrollments.forEach(e => {
+                const sid = e.student_id.toString();
+                if (!enrollmentMap[sid]) enrollmentMap[sid] = [];
+                enrollmentMap[sid].push(e);
+            });
+
+            students = students.map(s => {
+                const sid = s._id.toString();
+                const feeAssignment = feeMap[sid];
+                const studentEnrollments = enrollmentMap[sid] || [];
+                return {
+                    ...s,
+                    id: s._id,
+                    fee_status: feeAssignment?.payment_status || 'pending',
+                    total_fee: feeAssignment?.final_fee || 0,
+                    total_paid: feeAssignment?.total_paid || 0,
+                    classes: studentEnrollments.map(e => ({
+                        id: e.class_id?._id, name: e.class_id?.class_name, code: e.class_id?.class_code
+                    })),
+                    attendance_percentage: studentEnrollments[0]?.overall_attendance_percentage || 0,
+                };
+            });
         }
 
         if (fee_status) students = students.filter(s => s.fee_status === fee_status);
@@ -82,25 +102,32 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req, re
 
 router.get('/stats', authenticateToken, authorize('admin', 'teacher'), async (req, res) => {
     try {
-        const total = await Student.countDocuments();
-        const active = await Student.countDocuments({ academic_status: 'active' });
+        // Run independent queries in parallel
+        const [total, active, maleCount, femaleCount, feeAgg, revenueAgg] = await Promise.all([
+            Student.countDocuments(),
+            Student.countDocuments({ academic_status: 'active' }),
+            Student.countDocuments({ gender: 'male' }),
+            Student.countDocuments({ gender: 'female' }),
+            // Use aggregation instead of fetching all documents
+            StudentFeeAssignment.aggregate([
+                { $group: {
+                    _id: null,
+                    fully_paid: { $sum: { $cond: [{ $eq: ['$payment_status', 'paid'] }, 1, 0] } },
+                    partial: { $sum: { $cond: [{ $eq: ['$payment_status', 'partial'] }, 1, 0] } },
+                    pending: { $sum: { $cond: [{ $eq: ['$payment_status', 'pending'] }, 1, 0] } },
+                    overdue: { $sum: { $cond: [{ $eq: ['$payment_status', 'overdue'] }, 1, 0] } },
+                    totalPaid: { $sum: '$total_paid' },
+                    totalPending: { $sum: '$total_pending' },
+                } }
+            ]),
+            // This is a no-op placeholder to keep array alignment clean
+            Promise.resolve(null),
+        ]);
+
         const inactive = total - active;
+        const feeData = feeAgg[0] || { fully_paid: 0, partial: 0, pending: 0, overdue: 0, totalPaid: 0, totalPending: 0 };
 
-        const maleCount = await Student.countDocuments({ gender: 'male' });
-        const femaleCount = await Student.countDocuments({ gender: 'female' });
-
-        const fees = await StudentFeeAssignment.find().lean();
-        const feeStats = {
-            fully_paid: fees.filter(f => f.payment_status === 'paid').length,
-            partial: fees.filter(f => f.payment_status === 'partial').length,
-            pending: fees.filter(f => f.payment_status === 'pending').length,
-            overdue: fees.filter(f => f.payment_status === 'overdue').length,
-        };
-
-        const totalRevenue = fees.reduce((sum, f) => sum + (f.total_paid || 0), 0);
-        const totalPending = fees.reduce((sum, f) => sum + (f.total_pending || 0), 0);
-
-        res.json({ success: true, data: { total, active, inactive, gender: { male: maleCount, female: femaleCount }, fee: feeStats, revenue: { total: totalRevenue, pending: totalPending } } });
+        res.json({ success: true, data: { total, active, inactive, gender: { male: maleCount, female: femaleCount }, fee: { fully_paid: feeData.fully_paid, partial: feeData.partial, pending: feeData.pending, overdue: feeData.overdue }, revenue: { total: feeData.totalPaid, pending: feeData.totalPending } } });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
     }
@@ -114,13 +141,14 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
         if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
 
-        const enrollments = await StudentClassEnrollment.find({ student_id: student._id }).populate('class_id').lean();
-        const feeAssignment = await StudentFeeAssignment.findOne({ student_id: student._id }).lean();
-        const payments = await FeePayment.find({ student_id: student._id }).lean();
-
-        const parentMapping = await ParentStudentMapping.findOne({ student_id: student._id }).populate('parent_id').lean();
-
-        const recentTests = await TestResult.find({ student_id: student._id }).sort({ created_at: -1 }).limit(5).populate('test_id').lean();
+        // Run all independent queries in parallel
+        const [enrollments, feeAssignment, payments, parentMapping, recentTests] = await Promise.all([
+            StudentClassEnrollment.find({ student_id: student._id }).populate('class_id').lean(),
+            StudentFeeAssignment.findOne({ student_id: student._id }).lean(),
+            FeePayment.find({ student_id: student._id }).lean(),
+            ParentStudentMapping.findOne({ student_id: student._id }).populate('parent_id').lean(),
+            TestResult.find({ student_id: student._id }).sort({ created_at: -1 }).limit(5).populate('test_id').lean(),
+        ]);
 
         res.json({
             success: true,

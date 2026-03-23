@@ -7,17 +7,17 @@ const router = express.Router();
 const generateEnquiryNumber = () => `ENQ${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
 const generateDemoNumber = () => `DEMO${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
 
-// GET /api/enquiries/demos/all
+// GET /api/enquiries/demos/all — use populate instead of N+1 loop
 router.get('/demos/all', authenticateToken, authorize('admin', 'teacher'), async (req, res) => {
     try {
-        const demos = await DemoClass.find().sort({ demo_date: -1 }).lean();
-        // Populate enquiry details
-        for (let i = 0; i < demos.length; i++) {
-            const eq = await Enquiry.findById(demos[i].enquiry_id).lean();
-            demos[i].enquiry = eq;
-            demos[i].id = demos[i]._id;
-        }
-        res.json({ success: true, data: demos });
+        const demos = await DemoClass.find().sort({ demo_date: -1 }).populate('enquiry_id').lean();
+        const data = demos.map(d => ({
+            ...d,
+            id: d._id,
+            enquiry: d.enquiry_id,
+            enquiry_id: d.enquiry_id?._id || d.enquiry_id,
+        }));
+        res.json({ success: true, data });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
     }
@@ -46,7 +46,7 @@ router.put('/demos/:id', authenticateToken, authorize('admin', 'teacher'), async
     }
 });
 
-// GET /api/enquiries
+// GET /api/enquiries — batch teacher lookups
 router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req, res) => {
     try {
         const { search, status, source, priority, assigned_to, page = 1, limit = 50 } = req.query;
@@ -73,18 +73,25 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req, re
             .limit(parseInt(limit))
             .lean();
 
-        // Enrich with teacher
-        for (let i = 0; i < enquiries.length; i++) {
-            if (enquiries[i].assigned_to) {
-                const teacher = await Teacher.findOne({ user_id: enquiries[i].assigned_to }).lean();
-                enquiries[i].assigned_teacher_name = teacher ? `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() : null;
-            }
-            enquiries[i].id = enquiries[i]._id;
+        // Batch teacher lookup: collect all unique assigned_to IDs, then do ONE query
+        const assignedToIds = [...new Set(enquiries.filter(e => e.assigned_to).map(e => e.assigned_to.toString()))];
+        let teacherMap = {};
+        if (assignedToIds.length > 0) {
+            const teachers = await Teacher.find({ user_id: { $in: assignedToIds } }).lean();
+            teachers.forEach(t => {
+                teacherMap[t.user_id.toString()] = `${t.first_name || ''} ${t.last_name || ''}`.trim();
+            });
         }
+
+        const data = enquiries.map(e => ({
+            ...e,
+            id: e._id,
+            assigned_teacher_name: e.assigned_to ? (teacherMap[e.assigned_to.toString()] || null) : null,
+        }));
 
         res.json({
             success: true,
-            data: enquiries,
+            data,
             pagination: { total, page: parseInt(page), limit: parseInt(limit), pages: Math.ceil(total / limit) },
         });
     } catch (error) {
@@ -95,17 +102,20 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req, re
 // GET /api/enquiries/stats
 router.get('/stats', authenticateToken, authorize('admin', 'teacher'), async (req, res) => {
     try {
-        const total = await Enquiry.countDocuments();
+        // Run all in parallel
+        const [total, statusGroups, sourceGroups, enrolled] = await Promise.all([
+            Enquiry.countDocuments(),
+            Enquiry.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
+            Enquiry.aggregate([{ $group: { _id: "$source", count: { $sum: 1 } } }]),
+            Enquiry.countDocuments({ converted_to_student: true }),
+        ]);
 
-        const statusGroups = await Enquiry.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]);
         const statusCounts = {};
         statusGroups.forEach(g => { if (g._id) statusCounts[g._id] = g.count; });
 
-        const sourceGroups = await Enquiry.aggregate([{ $group: { _id: "$source", count: { $sum: 1 } } }]);
         const sourceCounts = {};
         sourceGroups.forEach(g => { if (g._id) sourceCounts[g._id] = g.count; });
 
-        const enrolled = await Enquiry.countDocuments({ converted_to_student: true });
         const conversionRate = total > 0 ? ((enrolled / total) * 100).toFixed(1) : 0;
 
         res.json({
@@ -123,9 +133,12 @@ router.get('/:id', authenticateToken, authorize('admin', 'teacher'), async (req,
         const enquiry = await Enquiry.findById(req.params.id).lean();
         if (!enquiry) return res.status(404).json({ success: false, message: 'Enquiry not found' });
 
-        const remarks = await EnquiryRemark.find({ enquiry_id: enquiry._id }).sort({ created_at: -1 }).lean();
-        const demos = await DemoClass.find({ enquiry_id: enquiry._id }).sort({ demo_date: -1 }).lean();
-        const teacher = await Teacher.findOne({ user_id: enquiry.assigned_to }).lean();
+        // Parallelize independent queries
+        const [remarks, demos, teacher] = await Promise.all([
+            EnquiryRemark.find({ enquiry_id: enquiry._id }).sort({ created_at: -1 }).lean(),
+            DemoClass.find({ enquiry_id: enquiry._id }).sort({ demo_date: -1 }).lean(),
+            Teacher.findOne({ user_id: enquiry.assigned_to }).lean(),
+        ]);
 
         res.json({
             success: true,
@@ -198,8 +211,10 @@ router.post('/:id/remarks', authenticateToken, authorize('admin', 'teacher'), as
         if (req.body.status) enquiry.status = req.body.status;
         await enquiry.save();
 
-        const teacher = await Teacher.findOne({ user_id: req.user.id }).lean();
-        const user = await User.findById(req.user.id).lean();
+        const [teacher, user] = await Promise.all([
+            Teacher.findOne({ user_id: req.user.id }).lean(),
+            User.findById(req.user.id).lean(),
+        ]);
 
         res.status(201).json({
             success: true,

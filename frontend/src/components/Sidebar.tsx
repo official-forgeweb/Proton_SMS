@@ -77,6 +77,7 @@ const teacherNavSections = [
             { label: 'Tests', href: '/teacher/tests', icon: ClipboardList, permissionKey: 'tests' },
             { label: 'Homework', href: '/teacher/homework', icon: PenTool, permissionKey: 'homework' },
             { label: 'Demo Classes', href: '/teacher/demos', icon: Target, permissionKey: 'demos' },
+            { label: 'Reports', href: '/teacher/reports', icon: BarChart3 },
         ]
     }
 ];
@@ -328,45 +329,7 @@ export default function Sidebar() {
                 </nav>
 
                 {/* Upgrade Card */}
-                <div style={{ padding: '16px', margin: '0 12px 12px' }}>
-                    <div style={{
-                        background: 'linear-gradient(135deg, #1A1D3B 0%, #2D3165 100%)',
-                        borderRadius: '16px',
-                        padding: '20px',
-                        color: 'white',
-                        position: 'relative',
-                        overflow: 'hidden',
-                    }}>
-                        <div style={{
-                            position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px',
-                            borderRadius: '50%', background: 'rgba(79, 96, 255, 0.25)',
-                        }} />
-                        <div style={{
-                            position: 'absolute', bottom: '-10px', left: '40px', width: '60px', height: '60px',
-                            borderRadius: '50%', background: 'rgba(255, 255, 255, 0.05)',
-                        }} />
-                        <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Zap size={16} fill="white" color="white" />
-                            <span style={{ fontSize: '13px', fontWeight: 700 }}>Upgrade Pro</span>
-                        </div>
-                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5, marginBottom: '14px' }}>
-                            Discover the benefits of an upgraded account
-                        </p>
-                        <button
-                            style={{
-                                width: '100%', padding: '9px', background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)',
-                                border: 'none', borderRadius: '10px', color: 'white',
-                                fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                boxShadow: '0 4px 12px rgba(79,96,255,0.4)',
-                                transition: 'opacity 0.2s',
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
-                            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                        >
-                            Upgrade $30
-                        </button>
-                    </div>
-                </div>
+                
 
                 {/* Sign Out */}
                 <div style={{ padding: '4px 28px 24px' }}>

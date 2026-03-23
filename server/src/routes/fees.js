@@ -82,18 +82,28 @@ router.get('/assignments', authenticateToken, authorize('admin'), async (req, re
 
 router.get('/stats', authenticateToken, authorize('admin'), async (req, res) => {
     try {
-        const payments = await FeePayment.find({ payment_status: 'completed' }).lean();
-        const totalCollected = payments.reduce((sum, p) => sum + p.amount_paid, 0);
+        // Use aggregation pipelines instead of fetching all documents
+        const [paymentAgg, feeAgg] = await Promise.all([
+            FeePayment.aggregate([
+                { $match: { payment_status: 'completed' } },
+                { $group: { _id: null, total: { $sum: '$amount_paid' } } }
+            ]),
+            StudentFeeAssignment.aggregate([
+                { $group: {
+                    _id: null,
+                    totalPending: { $sum: '$total_pending' },
+                    totalStudents: { $sum: 1 },
+                    paidStudents: { $sum: { $cond: [{ $eq: ['$payment_status', 'paid'] }, 1, 0] } },
+                    partialStudents: { $sum: { $cond: [{ $eq: ['$payment_status', 'partial'] }, 1, 0] } },
+                    overdueStudents: { $sum: { $cond: [{ $eq: ['$payment_status', 'overdue'] }, 1, 0] } },
+                } }
+            ]),
+        ]);
 
-        const assignments = await StudentFeeAssignment.find().lean();
-        const totalPending = assignments.reduce((sum, f) => sum + (f.total_pending || 0), 0);
+        const totalCollected = paymentAgg[0]?.total || 0;
+        const feeData = feeAgg[0] || { totalPending: 0, totalStudents: 0, paidStudents: 0, partialStudents: 0, overdueStudents: 0 };
 
-        const totalStudents = assignments.length;
-        const paidStudents = assignments.filter(f => f.payment_status === 'paid').length;
-        const partialStudents = assignments.filter(f => f.payment_status === 'partial').length;
-        const overdueStudents = assignments.filter(f => f.payment_status === 'overdue').length;
-
-        res.json({ success: true, data: { total_collected: totalCollected, total_pending: totalPending, total_students: totalStudents, paid_students: paidStudents, partial_students: partialStudents, overdue_students: overdueStudents, pending_students: totalStudents - paidStudents } });
+        res.json({ success: true, data: { total_collected: totalCollected, total_pending: feeData.totalPending, total_students: feeData.totalStudents, paid_students: feeData.paidStudents, partial_students: feeData.partialStudents, overdue_students: feeData.overdueStudents, pending_students: feeData.totalStudents - feeData.paidStudents } });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
     }
