@@ -98,7 +98,7 @@ export default function EnquiriesPage() {
                         {stats?.total || 0} total enquiries &bull; {stats?.conversion_rate || 0}% conversion
                     </p>
                 </div>
-                <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(79,96,255,0.3)' }}>
+                <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)' }}>
                     <Plus size={16} /> New Enquiry
                 </button>
             </div>
@@ -192,7 +192,7 @@ export default function EnquiriesPage() {
                                     </div>
 
                                     <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                                        <button style={{ flex: 1, padding: '7px 4px', background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }} onClick={(e) => updateStatus(enq.id, 'contacted', e)}>
+                                        <button style={{ flex: 1, padding: '7px 4px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }} onClick={(e) => updateStatus(enq.id, 'contacted', e)}>
                                             Interested
                                         </button>
                                         <button style={{ flex: 1, padding: '7px 4px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }} onClick={(e) => updateStatus(enq.id, 'new', e)}>

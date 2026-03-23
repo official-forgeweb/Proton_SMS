@@ -55,15 +55,15 @@ export default function SettingsPage() {
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: '10px',
                                             padding: '11px 14px', borderRadius: '10px',
-                                            background: isActive ? 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)' : 'transparent',
+                                            background: isActive ? 'linear-gradient(135deg, #E53935 0%, #C62828 100%)' : 'transparent',
                                             color: isActive ? 'white' : '#5E6278',
                                             fontWeight: isActive ? 700 : 500, fontSize: '14px',
                                             border: 'none', cursor: 'pointer', textAlign: 'left',
                                             transition: 'all 0.2s', width: '100%',
-                                            boxShadow: isActive ? '0 4px 12px rgba(79,96,255,0.25)' : 'none',
+                                            boxShadow: isActive ? '0 4px 12px rgba(229,57,53,0.25)' : 'none',
                                         }}
                                         onMouseEnter={e => {
-                                            if (!isActive) { (e.currentTarget as HTMLElement).style.background = '#F4F5F9'; (e.currentTarget as HTMLElement).style.color = '#4F60FF'; }
+                                            if (!isActive) { (e.currentTarget as HTMLElement).style.background = '#F4F5F9'; (e.currentTarget as HTMLElement).style.color = '#E53935'; }
                                         }}
                                         onMouseLeave={e => {
                                             if (!isActive) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#5E6278'; }
@@ -128,10 +128,10 @@ export default function SettingsPage() {
                         {activeNav === 'General Info' && (
                             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px' }}>
                                 <button style={{
-                                    padding: '11px 26px', background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)',
+                                    padding: '11px 26px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
                                     color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700,
                                     fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                                    gap: '8px', boxShadow: '0 4px 12px rgba(79,96,255,0.3)',
+                                    gap: '8px', boxShadow: '0 4px 12px rgba(229,57,53,0.3)',
                                 }}>
                                     <Save size={16} /> Save Changes
                                 </button>

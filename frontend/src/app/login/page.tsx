@@ -62,24 +62,24 @@ export default function LoginPage() {
             <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
                 <div style={{
                     position: 'absolute', width: '600px', height: '600px', borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)',
+                    background: 'radial-gradient(circle, rgba(229,57,53,0.15) 0%, transparent 70%)',
                     top: '-200px', right: '-100px',
                 }} />
                 <div style={{
-                    position: 'absolute', width: '400px', height: '400px', borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)',
-                    bottom: '-100px', left: '-50px',
+                    position: 'absolute', width: '500px', height: '500px', borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(198,40,40,0.1) 0%, transparent 70%)',
+                    bottom: '-100px', right: '-100px',
                 }} />
                 <div style={{
-                    position: 'absolute', width: '300px', height: '300px', borderRadius: '50%',
+                    position: 'absolute', width: '400px', height: '400px', borderRadius: '50%',
                     background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)',
-                    top: '40%', left: '30%',
+                    top: '20%', right: '20%',
                 }} />
                 {/* Grid pattern */}
                 <div style={{
                     position: 'absolute', inset: 0,
                     backgroundImage: `radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)`,
-                    backgroundSize: '40px 40px',
+                    backgroundSize: '32px 32px',
                 }} />
             </div>
 
@@ -91,51 +91,49 @@ export default function LoginPage() {
                 <div className="animate-fade-in">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '40px' }}>
                         <div style={{
-                            width: '60px', height: '60px', borderRadius: '16px',
-                            background: 'var(--gradient-primary)', display: 'flex',
+                            width: '48px', height: '48px', borderRadius: '14px',
+                            background: '#E53935', display: 'flex',
                             alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 0 30px rgba(59,130,246,0.3)',
+                            boxShadow: '0 8px 20px rgba(229,57,53,0.3)',
                         }}>
-                            <GraduationCap size={32} color="white" />
+                            <GraduationCap size={28} strokeWidth={2} color="white" />
                         </div>
                         <div>
-                            <h1 style={{ fontSize: '32px', fontWeight: 800, color: 'white', fontFamily: 'Poppins' }}>
+                            <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.5px', lineHeight: 1 }}>
                                 Proton LMS
                             </h1>
-                            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', fontWeight: 500 }}>
+                            <p style={{ color: '#8F92A1', fontSize: '14px', fontWeight: 500, marginTop: '4px' }}>
                                 Learning Management System
                             </p>
                         </div>
                     </div>
 
                     <h2 style={{
-                        fontSize: '44px', fontWeight: 800, color: 'white', lineHeight: 1.15,
-                        fontFamily: 'Poppins', maxWidth: '500px', marginBottom: '24px',
+                        fontSize: '48px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1,
+                        fontFamily: 'Poppins', maxWidth: '500px', marginBottom: '24px', letterSpacing: '-1px'
                     }}>
-                        Empowering
-                        <span style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                            {' '}Education{' '}
-                        </span>
-                        Through Technology
+                        Empowering<br />
+                        <span style={{ color: '#E53935' }}>Education</span> Through<br />
+                        Technology
                     </h2>
 
                     <p style={{
-                        color: 'rgba(255,255,255,0.6)', fontSize: '16px', lineHeight: 1.7,
-                        maxWidth: '440px', marginBottom: '40px',
+                        color: '#A1A5B7', fontSize: '16px', lineHeight: 1.6,
+                        maxWidth: '440px', marginBottom: '60px',
                     }}>
                         Complete student lifecycle management from enquiry to enrollment,
                         with real-time analytics and seamless academic operations.
                     </p>
 
-                    <div style={{ display: 'flex', gap: '32px' }}>
+                    <div style={{ display: 'flex', gap: '48px' }}>
                         {[
                             { label: 'Students', value: '450+' },
                             { label: 'Teachers', value: '35+' },
                             { label: 'Classes', value: '42+' },
                         ].map((stat) => (
                             <div key={stat.label}>
-                                <div style={{ fontSize: '28px', fontWeight: 800, color: 'white' }}>{stat.value}</div>
-                                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>{stat.label}</div>
+                                <div style={{ fontSize: '32px', fontWeight: 800, color: '#FFFFFF' }}>{stat.value}</div>
+                                <div style={{ fontSize: '13px', color: '#8F92A1', fontWeight: 600, marginTop: '4px' }}>{stat.label}</div>
                             </div>
                         ))}
                     </div>

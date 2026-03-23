@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
     LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
     Calendar, CreditCard, BarChart3, Settings, LogOut, Phone,
-    UserCheck, FileText, Bell, ChevronDown, ChevronRight, Menu, X, Target,
+    UserCheck, FileText, Bell, Menu, X, Target,
     Home, PenTool, Award, HelpCircle, MessageSquare, Zap, Shield
 } from 'lucide-react';
 import { useState } from 'react';
@@ -14,23 +14,8 @@ const adminNav = [
     {
         section: 'MENU',
         items: [
-            {
-                label: 'Dashboard',
-                icon: LayoutDashboard,
-                isParent: true,
-                subItems: [
-                    { label: 'Admin', href: '/admin' }
-                ]
-            },
-            {
-                label: 'Students',
-                icon: GraduationCap,
-                isParent: true,
-                subItems: [
-                    { label: 'All Students', href: '/admin/students' },
-                    { label: 'Student Details', href: '/admin/students/details' }
-                ]
-            },
+            { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+            { label: 'Students', href: '/admin/students', icon: GraduationCap },
             { label: 'Teachers', href: '/admin/teachers', icon: Users },
             { label: 'Classes', href: '/admin/classes', icon: BookOpen },
             { label: 'Enquiries', href: '/admin/enquiries', icon: Phone },
@@ -129,7 +114,6 @@ export default function Sidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuthStore();
     const [isOpen, setIsOpen] = useState(false);
-    const [expandedMenu, setExpandedMenu] = useState<string | null>('Dashboard');
 
     const teacherPermissions: string[] = user?.role === 'teacher' ? (user.profile?.permissions || []) : [];
 
@@ -144,15 +128,15 @@ export default function Sidebar() {
             : user?.role === 'student' ? studentNavSections
                 : user?.role === 'parent' ? parentNavSections : adminNav;
 
-    const toggleMenu = (label: string) => {
-        setExpandedMenu(expandedMenu === label ? null : label);
-    };
-
     const isItemActive = (item: any): boolean => {
-        if (!item.subItems) {
-            return pathname === item.href || (item.href && item.href !== `/${user?.role}` && pathname?.startsWith(item.href));
+        if (!pathname) return false;
+        // Exact match
+        if (pathname === item.href) return true;
+        // Start match to keep active when in sub-pages (e.g. /admin/students/1)
+        if (item.href && item.href !== `/${user?.role}` && pathname.startsWith(item.href)) {
+            return true;
         }
-        return item.subItems.some((sub: any) => pathname === sub.href || (sub.href !== `/${user?.role}` && pathname?.startsWith(sub.href)));
+        return false;
     };
 
     return (
@@ -177,8 +161,8 @@ export default function Sidebar() {
                 className={`sidebar ${isOpen ? 'open' : ''}`}
                 style={{
                     width: '260px',
-                    background: '#FFFFFF',
-                    borderRight: '1px solid #F0F0F5',
+                    background: '#10121B',
+                    borderRight: '1px solid rgba(255,255,255,0.05)',
                     display: 'flex',
                     flexDirection: 'column',
                     height: '100vh',
@@ -190,19 +174,25 @@ export default function Sidebar() {
                     overflowX: 'hidden',
                 }}
             >
+                {/* Subtle dark radial glow for depth */}
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, height: '300px',
+                    background: 'radial-gradient(ellipse at top left, rgba(229,57,53,0.08) 0%, transparent 70%)',
+                    pointerEvents: 'none', zIndex: 0
+                }} />
                 {/* Logo */}
-                <div style={{ padding: '28px 24px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ padding: '32px 24px 24px', display: 'flex', alignItems: 'center', gap: '12px', position: 'relative', zIndex: 1 }}>
                     <div style={{
-                        width: '36px', height: '36px', borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)',
+                        width: '38px', height: '38px', borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white', fontSize: '16px', fontWeight: 800, fontStyle: 'italic',
-                        boxShadow: '0 4px 10px rgba(79, 96, 255, 0.3)',
+                        color: 'white', fontSize: '18px', fontWeight: 800, fontStyle: 'italic',
                         flexShrink: 0,
+                        boxShadow: '0 4px 12px rgba(229,57,53,0.3)',
                     }}>
                         ia
                     </div>
-                    <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '20px', color: '#1A1D3B', letterSpacing: '-0.3px' }}>
+                    <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '22px', color: '#FFFFFF', letterSpacing: '-0.5px' }}>
                         ia Academy
                     </span>
                 </div>
@@ -212,115 +202,53 @@ export default function Sidebar() {
                     {navSections.map((section) => (
                         <div key={section.section} style={{ marginBottom: '8px' }}>
                             {/* Section Label */}
-                            <p style={{
-                                fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
-                                color: '#A1A5B7', padding: '12px 12px 8px', textTransform: 'uppercase'
-                            }}>
-                                {section.section}
-                            </p>
+                            <div style={{ padding: '16px 12px 8px', marginBottom: '2px' }}>
+                                <p style={{
+                                    fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em',
+                                    color: '#6B7280', textTransform: 'uppercase',
+                                }}>
+                                    {section.section}
+                                </p>
+                            </div>
 
                             {section.items.map((item: any) => {
                                 const Icon = item.icon;
                                 const isActive = isItemActive(item);
-                                const isExpanded = expandedMenu === item.label;
 
                                 return (
                                     <div key={item.label} style={{ marginBottom: '2px' }}>
-                                        {item.subItems ? (
-                                            <div
-                                                onClick={() => toggleMenu(item.label)}
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                    padding: '10px 12px', borderRadius: '10px', cursor: 'pointer',
-                                                    background: isActive ? 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)' : 'transparent',
-                                                    color: isActive ? 'white' : '#5E6278',
-                                                    transition: 'all 0.2s ease',
-                                                    fontWeight: isActive ? 600 : 500,
-                                                    fontSize: '14px',
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    if (!isActive) {
-                                                        e.currentTarget.style.background = '#F4F5F9';
-                                                        e.currentTarget.style.color = '#4F60FF';
-                                                    }
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    if (!isActive) {
-                                                        e.currentTarget.style.background = 'transparent';
-                                                        e.currentTarget.style.color = '#5E6278';
-                                                    }
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                                                    <span>{item.label}</span>
-                                                </div>
-                                                {isExpanded
-                                                    ? <ChevronDown size={14} />
-                                                    : <ChevronRight size={14} />
+                                        <Link
+                                            href={item.href || '#'}
+                                            onClick={() => setIsOpen(false)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '12px',
+                                                padding: '12px 14px', borderRadius: '12px', textDecoration: 'none',
+                                                background: isActive ? 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)' : 'transparent',
+                                                color: isActive ? '#FFFFFF' : '#9CA3AF',
+                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                fontWeight: isActive ? 600 : 500,
+                                                fontSize: '14px',
+                                                position: 'relative', zIndex: 1,
+                                                boxShadow: isActive ? '0 6px 16px rgba(229,57,53,0.25)' : 'none',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!isActive) {
+                                                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+                                                    (e.currentTarget as HTMLElement).style.color = '#FFFFFF';
+                                                    (e.currentTarget as HTMLElement).style.transform = 'inherit';
                                                 }
-                                            </div>
-                                        ) : (
-                                            <Link
-                                                href={item.href || '#'}
-                                                onClick={() => setIsOpen(false)}
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', gap: '10px',
-                                                    padding: '10px 12px', borderRadius: '10px', textDecoration: 'none',
-                                                    background: isActive ? 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)' : 'transparent',
-                                                    color: isActive ? 'white' : '#5E6278',
-                                                    transition: 'all 0.2s ease',
-                                                    fontWeight: isActive ? 600 : 500,
-                                                    fontSize: '14px',
-                                                    boxShadow: isActive ? '0 4px 12px rgba(79,96,255,0.25)' : 'none',
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    if (!isActive) {
-                                                        (e.currentTarget as HTMLElement).style.background = '#F4F5F9';
-                                                        (e.currentTarget as HTMLElement).style.color = '#4F60FF';
-                                                    }
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    if (!isActive) {
-                                                        (e.currentTarget as HTMLElement).style.background = 'transparent';
-                                                        (e.currentTarget as HTMLElement).style.color = '#5E6278';
-                                                    }
-                                                }}
-                                            >
-                                                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                                                <span>{item.label}</span>
-                                            </Link>
-                                        )}
-
-                                        {/* Sub Items */}
-                                        {item.subItems && isExpanded && (
-                                            <div style={{ marginTop: '2px', marginLeft: '16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                {item.subItems.map((sub: any) => {
-                                                    const isSubActive = pathname === sub.href;
-                                                    return (
-                                                        <Link
-                                                            key={sub.label}
-                                                            href={sub.href}
-                                                            onClick={() => setIsOpen(false)}
-                                                            style={{
-                                                                display: 'block',
-                                                                padding: '9px 12px 9px 28px',
-                                                                fontSize: '13px',
-                                                                fontWeight: isSubActive ? 600 : 500,
-                                                                color: isSubActive ? '#4F60FF' : '#8F92A1',
-                                                                background: isSubActive ? '#EEF0FF' : 'transparent',
-                                                                borderRadius: '8px',
-                                                                textDecoration: 'none',
-                                                                transition: 'all 0.2s',
-                                                                borderLeft: isSubActive ? '3px solid #4F60FF' : '3px solid transparent',
-                                                            }}
-                                                        >
-                                                            {sub.label}
-                                                        </Link>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!isActive) {
+                                                    (e.currentTarget as HTMLElement).style.background = 'transparent';
+                                                    (e.currentTarget as HTMLElement).style.color = '#9CA3AF';
+                                                    (e.currentTarget as HTMLElement).style.transform = 'none';
+                                                }
+                                            }}
+                                        >
+                                            <Icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ opacity: isActive ? 1 : 0.8 }} />
+                                            <span>{item.label}</span>
+                                        </Link>
                                     </div>
                                 );
                             })}
@@ -332,19 +260,28 @@ export default function Sidebar() {
                 
 
                 {/* Sign Out */}
-                <div style={{ padding: '4px 28px 24px' }}>
+                <div style={{ padding: '6px 24px 28px', position: 'relative', zIndex: 1 }}>
                     <button
                         onClick={logout}
                         style={{
-                            display: 'flex', alignItems: 'center', gap: '10px',
-                            background: 'transparent', cursor: 'pointer', fontSize: '14px',
-                            border: 'none', color: '#5E6278', fontWeight: 500, width: '100%',
-                            padding: '10px 0', transition: 'color 0.2s',
+                            display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center',
+                            background: 'rgba(255,255,255,0.05)', cursor: 'pointer', fontSize: '14px',
+                            border: '1px solid rgba(255,255,255,0.1)', color: '#9CA3AF', fontWeight: 600, width: '100%',
+                            padding: '12px 0', transition: 'all 0.2s',
+                            borderRadius: '12px',
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
-                        onMouseLeave={e => (e.currentTarget.style.color = '#5E6278')}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.background = 'rgba(229,57,53,0.15)';
+                            e.currentTarget.style.color = '#E53935';
+                            e.currentTarget.style.borderColor = 'rgba(229,57,53,0.3)';
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                            e.currentTarget.style.color = '#9CA3AF';
+                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                        }}
                     >
-                        <LogOut size={18} />
+                        <LogOut size={18} strokeWidth={2} />
                         Sign Out
                     </button>
                 </div>

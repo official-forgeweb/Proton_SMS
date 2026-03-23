@@ -60,7 +60,7 @@ export default function TestsPage() {
                             Manage assessments, marks, and student performance.
                         </p>
                     </div>
-                    <button onClick={() => setIsAddOpen(true)} style={{ background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(79,96,255,0.3)' }}>
+                    <button onClick={() => setIsAddOpen(true)} style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)' }}>
                         <Plus size={16} /> Create Test
                     </button>
                 </div>
@@ -83,7 +83,7 @@ export default function TestsPage() {
                             >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <div>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#4F60FF', background: '#EEF0FF', padding: '3px 10px', borderRadius: '50px', letterSpacing: '0.05em' }}>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#E53935', background: '#FFEBEE', padding: '3px 10px', borderRadius: '50px', letterSpacing: '0.05em' }}>
                                             {test.test_type?.toUpperCase()}
                                         </span>
                                         <h3 style={{ fontSize: '17px', fontWeight: 700, marginTop: '10px', color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>{test.test_name}</h3>
@@ -98,7 +98,7 @@ export default function TestsPage() {
 
                                 <div style={{ display: 'flex', gap: '10px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #F0F0F5' }}>
                                     {[
-                                        { icon: Calendar, label: 'Date', value: test.test_date, color: '#4F60FF', bg: '#EEF0FF' },
+                                        { icon: Calendar, label: 'Date', value: test.test_date, color: '#E53935', bg: '#FFEBEE' },
                                         { icon: FileText, label: 'Total Marks', value: test.total_marks, color: '#F97316', bg: '#FFF3E0' },
                                         { icon: CheckCircle, label: 'Avg Marks', value: test.average_marks || '—', color: '#10B981', bg: '#D1FAE5' }
                                     ].map((item, i) => {
@@ -118,8 +118,8 @@ export default function TestsPage() {
                                 <div style={{ marginTop: '16px' }}>
                                     <button
                                         onClick={() => router.push(`/admin/tests/${test.id}`)}
-                                        style={{ width: '100%', padding: '10px', background: '#F4F5F9', color: '#4F60FF', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s' }}
-                                        onMouseEnter={e => (e.currentTarget.style.background = '#EEF0FF')}
+                                        style={{ width: '100%', padding: '10px', background: '#F4F5F9', color: '#E53935', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s' }}
+                                        onMouseEnter={e => (e.currentTarget.style.background = '#FFEBEE')}
                                         onMouseLeave={e => (e.currentTarget.style.background = '#F4F5F9')}
                                     >
                                         View Results
@@ -182,7 +182,7 @@ export default function TestsPage() {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
                         <button type="button" onClick={() => setIsAddOpen(false)} style={{ padding: '10px 22px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
-                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(79,96,255,0.3)' }}>Save Test</button>
+                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(229,57,53,0.3)' }}>Save Test</button>
                     </div>
                 </form>
             </Modal>

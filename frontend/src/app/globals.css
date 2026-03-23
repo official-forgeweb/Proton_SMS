@@ -3,18 +3,18 @@
 @import "tailwindcss";
 
 :root {
-  /* Primary - Indigo Blue theme */
-  --primary: #4F60FF;
-  --primary-light: #EEF0FF;
-  --primary-50: #F5F6FF;
-  --primary-100: #EEF0FF;
-  --primary-500: #4F60FF;
-  --primary-600: #3D4EE8;
-  --primary-700: #2A3BD4;
+  /* Primary - Red theme */
+  --primary: #E53935;
+  --primary-light: #FFEBEE;
+  --primary-50: #FFF5F5;
+  --primary-100: #FFEBEE;
+  --primary-500: #E53935;
+  --primary-600: #D32F2F;
+  --primary-700: #C62828;
 
   /* Secondary */
-  --secondary: #7B5EA7;
-  --secondary-light: #F3EEFF;
+  --secondary: #C62828;
+  --secondary-light: #FFCDD2;
 
   /* Accent */
   --accent-orange: #F97316;
@@ -41,23 +41,23 @@
   --border-secondary: #E4E6EF;
 
   /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.08);
 
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%);
+  --gradient-primary: linear-gradient(135deg, #E53935 0%, #C62828 100%);
   --gradient-success: linear-gradient(135deg, #10B981 0%, #34D399 100%);
   --gradient-warning: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
   --gradient-error: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
   --gradient-dark: linear-gradient(135deg, #1A1D3B 0%, #2D3165 100%);
 
   /* Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
   --radius-full: 9999px;
 }
 
@@ -165,11 +165,11 @@ h6 {
 
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.4);
   }
 
   50% {
-    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+    box-shadow: 0 0 0 8px rgba(229, 57, 53, 0);
   }
 }
 
@@ -261,13 +261,14 @@ h6 {
 .btn-primary {
   background: var(--gradient-primary);
   color: white;
-  box-shadow: 0 4px 12px rgba(79, 96, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.25);
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(79, 96, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(229, 57, 53, 0.35);
 }
 
 .btn-secondary {
@@ -310,15 +311,16 @@ h6 {
 /* ===== CARD STYLES ===== */
 .card {
   background: var(--bg-primary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   border: 1px solid var(--border-primary);
-  padding: 24px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  padding: 32px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(229,57,53,0.1);
 }
 
 .card-gradient {
@@ -344,16 +346,18 @@ h6 {
   background: var(--bg-primary);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-primary);
-  padding: 20px 24px;
+  padding: 24px 28px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  transition: all 0.3s ease;
+  gap: 20px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
+  border-color: rgba(229,57,53,0.15);
 }
 
 .stat-card .stat-icon {
@@ -400,20 +404,22 @@ h6 {
 }
 
 .input-field {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
   font-size: 14px;
-  background: var(--bg-primary);
+  font-weight: 500;
+  background: #FAFAFC;
   color: var(--text-primary);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
   width: 100%;
 }
 
 .input-field:focus {
+  background: var(--bg-primary);
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 4px 16px rgba(229, 57, 53, 0.1);
 }
 
 .input-field::placeholder {
@@ -428,15 +434,15 @@ h6 {
 }
 
 .data-table th {
-  background: var(--bg-tertiary);
-  padding: 12px 16px;
+  background: transparent;
+  padding: 16px 20px;
   text-align: left;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--border-primary);
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .data-table th:first-child {
@@ -448,10 +454,12 @@ h6 {
 }
 
 .data-table td {
-  padding: 14px 16px;
+  padding: 18px 20px;
   font-size: 14px;
-  border-bottom: 1px solid var(--border-primary);
+  font-weight: 500;
+  border-bottom: 1px dashed var(--border-primary);
   color: var(--text-primary);
+  transition: background 0.2s ease;
 }
 
 .data-table tr:hover td {
@@ -516,8 +524,8 @@ h6 {
 /* ===== SIDEBAR ===== */
 .sidebar {
   width: 260px;
-  background: var(--bg-primary);
-  border-right: 1px solid var(--border-primary);
+  background: linear-gradient(180deg, #E53935 0%, #B71C1C 100%);
+  border-right: none;
   height: 100vh;
   position: fixed;
   left: 0;
@@ -525,7 +533,24 @@ h6 {
   display: flex;
   flex-direction: column;
   z-index: 50;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0 24px 24px 0;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.06);
+}
+
+/* Custom Scrollbar for Sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .sidebar-nav-item {
@@ -552,7 +577,7 @@ h6 {
   background: var(--gradient-primary);
   color: white;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(79,96,255,0.25);
+  box-shadow: 0 4px 12px rgba(229,57,53,0.25);
 }
 
 /* ===== LAYOUT ===== */

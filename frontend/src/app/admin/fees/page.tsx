@@ -87,7 +87,7 @@ export default function FeesPage() {
                     <button onClick={() => setIsAssignOpen(true)} style={{ background: '#FFFFFF', color: '#5E6278', border: '1px solid #F0F0F5', borderRadius: '12px', padding: '11px 20px', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                         <Plus size={16} /> Assign Fee
                     </button>
-                    <button onClick={() => setIsPayOpen(true)} style={{ background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(79,96,255,0.3)' }}>
+                    <button onClick={() => setIsPayOpen(true)} style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)' }}>
                         <Plus size={16} /> Record Payment
                     </button>
                 </div>
@@ -163,7 +163,7 @@ export default function FeesPage() {
                                                 </span>
                                             </td>
                                             <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                                                <button style={{ background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(79,96,255,0.25)' }} onClick={() => { setFormData({ ...formData, student_id: a.student_id, amount_paid: a.total_pending }); setIsPayOpen(true); }}>Pay Now</button>
+                                                <button style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(229,57,53,0.25)' }} onClick={() => { setFormData({ ...formData, student_id: a.student_id, amount_paid: a.total_pending }); setIsPayOpen(true); }}>Pay Now</button>
                                             </td>
                                         </tr>
                                     ))}

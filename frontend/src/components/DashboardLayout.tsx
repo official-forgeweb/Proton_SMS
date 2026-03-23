@@ -49,7 +49,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
         : user.email;
 
     const roleLabel = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-    const avatarImgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=4F60FF&color=fff`;
+    const avatarImgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=E53935&color=fff`;
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', width: '100%', background: '#F4F5F9' }}>
@@ -67,8 +67,10 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 {/* Top Header */}
                 <header style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '20px 32px', background: '#F4F5F9', position: 'sticky',
-                    top: 0, zIndex: 30,
+                    padding: '16px 32px', background: 'rgba(244, 245, 249, 0.8)',
+                    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                    position: 'sticky', top: 0, zIndex: 30,
+                    borderBottom: '1px solid rgba(228, 230, 239, 0.4)',
                 }}>
                     {/* Search Bar */}
                     <div style={{
@@ -98,8 +100,8 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                             transition: 'all 0.2s',
                         }}
                             onMouseEnter={e => {
-                                (e.currentTarget as HTMLElement).style.borderColor = '#4F60FF';
-                                (e.currentTarget as HTMLElement).style.background = '#F0F2FF';
+                                (e.currentTarget as HTMLElement).style.borderColor = '#E53935';
+                                (e.currentTarget as HTMLElement).style.background = '#FFF5F5';
                             }}
                             onMouseLeave={e => {
                                 (e.currentTarget as HTMLElement).style.borderColor = '#EEEEF5';
@@ -122,8 +124,8 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                             transition: 'all 0.2s',
                         }}
                             onMouseEnter={e => {
-                                (e.currentTarget as HTMLElement).style.borderColor = '#4F60FF';
-                                (e.currentTarget as HTMLElement).style.background = '#F0F2FF';
+                                (e.currentTarget as HTMLElement).style.borderColor = '#E53935';
+                                (e.currentTarget as HTMLElement).style.background = '#FFF5F5';
                             }}
                             onMouseLeave={e => {
                                 (e.currentTarget as HTMLElement).style.borderColor = '#EEEEF5';

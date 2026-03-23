@@ -44,7 +44,7 @@ const barChartData = [
 
 const radialData = [
     { name: 'Female', value: 7000, fill: '#F97316' },
-    { name: 'Male', value: 8000, fill: '#4F60FF' },
+    { name: 'Male', value: 8000, fill: '#E53935' },
 ];
 
 const starStudents = [
@@ -80,7 +80,7 @@ const StatCard = ({
         background: gradient || '#FFFFFF',
         borderRadius: '18px',
         padding: '24px',
-        boxShadow: gradient ? '0 8px 24px rgba(79,96,255,0.15)' : '0 2px 12px rgba(0,0,0,0.04)',
+        boxShadow: gradient ? '0 8px 24px rgba(229,57,53,0.15)' : '0 2px 12px rgba(0,0,0,0.04)',
         border: gradient ? 'none' : '1px solid #F0F0F5',
         display: 'flex',
         flexDirection: 'column',
@@ -93,13 +93,13 @@ const StatCard = ({
         onMouseEnter={e => {
             (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
             (e.currentTarget as HTMLElement).style.boxShadow = gradient
-                ? '0 12px 28px rgba(79,96,255,0.22)'
+                ? '0 12px 28px rgba(229,57,53,0.22)'
                 : '0 6px 20px rgba(0,0,0,0.08)';
         }}
         onMouseLeave={e => {
             (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
             (e.currentTarget as HTMLElement).style.boxShadow = gradient
-                ? '0 8px 24px rgba(79,96,255,0.15)'
+                ? '0 8px 24px rgba(229,57,53,0.15)'
                 : '0 2px 12px rgba(0,0,0,0.04)';
         }}
     >
@@ -156,9 +156,9 @@ const StatCard = ({
 
         <div style={{
             width: '44px', height: '44px', borderRadius: '12px',
-            background: gradient ? 'rgba(255,255,255,0.2)' : (iconBg || '#EEF0FF'),
+            background: gradient ? 'rgba(255,255,255,0.2)' : (iconBg || '#FFEBEE'),
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: gradient ? 'white' : (iconColor || '#4F60FF'),
+            color: gradient ? 'white' : (iconColor || '#E53935'),
         }}>
             <Icon size={22} strokeWidth={2} />
         </div>
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
                         change="2.08%"
                         positive={true}
                         icon={GraduationCap}
-                        gradient="linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)"
+                        gradient="linear-gradient(135deg, #E53935 0%, #C62828 100%)"
                     />
                     <StatCard
                         label="Total Teachers"
@@ -261,8 +261,8 @@ export default function AdminDashboard() {
                         change="12.1%"
                         positive={true}
                         icon={Users}
-                        iconBg="#EEF0FF"
-                        iconColor="#4F60FF"
+                        iconBg="#FFEBEE"
+                        iconColor="#E53935"
                     />
                     <StatCard
                         label="Total Parents"
@@ -307,7 +307,7 @@ export default function AdminDashboard() {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                                 <span style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: '#5E6278', fontWeight: 500 }}>
-                                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#4F60FF', display: 'inline-block' }} />
+                                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#E53935', display: 'inline-block' }} />
                                     Teacher
                                 </span>
                                 <span style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: '#5E6278', fontWeight: 500 }}>
@@ -338,9 +338,9 @@ export default function AdminDashboard() {
                                         tickLine={false}
                                         tick={{ fontSize: 11, fill: '#A1A5B7' }}
                                     />
-                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(79,96,255,0.04)', radius: 8 }} />
-                                    <Bar dataKey="Teacher" fill="#4F60FF" radius={[6, 6, 0, 0]} barSize={10} />
-                                    <Bar dataKey="Student" fill="#F0F2FF" radius={[6, 6, 0, 0]} barSize={10} />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(229,57,53,0.04)', radius: 8 }} />
+                                    <Bar dataKey="Teacher" fill="#E53935" radius={[6, 6, 0, 0]} barSize={10} />
+                                    <Bar dataKey="Student" fill="#FFF5F5" radius={[6, 6, 0, 0]} barSize={10} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -376,7 +376,7 @@ export default function AdminDashboard() {
                                     startAngle={90}
                                     endAngle={-270}
                                 >
-                                    <RadialBar background={{ fill: '#F4F5F9' }} clockWise dataKey="value" cornerRadius={12} />
+                                    <RadialBar background={{ fill: '#F4F5F9' }} dataKey="value" cornerRadius={12} />
                                 </RadialBarChart>
                             </ResponsiveContainer>
                             <div style={{
@@ -390,7 +390,7 @@ export default function AdminDashboard() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
                             {[
-                                { label: 'Male', value: '8,000', color: '#4F60FF', pct: '53%' },
+                                { label: 'Male', value: '8,000', color: '#E53935', pct: '53%' },
                                 { label: 'Female', value: '7,000', color: '#F97316', pct: '47%' },
                             ].map((item) => (
                                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -460,7 +460,7 @@ export default function AdminDashboard() {
                                             <td style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5' }}>
                                                 <input
                                                     type="checkbox"
-                                                    style={{ accentColor: '#4F60FF', width: '16px', height: '16px' }}
+                                                    style={{ accentColor: '#E53935', width: '16px', height: '16px' }}
                                                     defaultChecked={i === 1}
                                                 />
                                             </td>
@@ -468,7 +468,7 @@ export default function AdminDashboard() {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                     <img
                                                         src={`https://ui-avatars.com/api/?name=${s.name}&background=4F60FF&color=fff&size=32`}
-                                                        style={{ width: '34px', height: '34px', borderRadius: '50%', border: '2px solid #EEF0FF' }}
+                                                        style={{ width: '34px', height: '34px', borderRadius: '50%', border: '2px solid #FFEBEE' }}
                                                         alt={s.name}
                                                     />
                                                     <span style={{ fontWeight: 600, fontSize: '14px', color: '#1A1D3B' }}>{s.name}</span>
@@ -520,7 +520,7 @@ export default function AdminDashboard() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', flex: 1 }}>
                             {[
                                 {
-                                    icon: Users, bg: '#EEF0FF', color: '#4F60FF',
+                                    icon: Users, bg: '#FFEBEE', color: '#E53935',
                                     title: 'New Teacher', time: 'Just now',
                                     desc: 'A new teacher has been added to the system.',
                                 },
@@ -568,12 +568,12 @@ export default function AdminDashboard() {
 
                         <button style={{
                             width: '100%', padding: '11px', background: '#F4F5F9',
-                            color: '#4F60FF', border: 'none', borderRadius: '12px',
+                            color: '#E53935', border: 'none', borderRadius: '12px',
                             fontWeight: 700, fontSize: '13px', cursor: 'pointer', marginTop: '20px',
                             transition: 'all 0.2s',
                         }}
                             onMouseEnter={e => {
-                                (e.currentTarget as HTMLElement).style.background = '#EEF0FF';
+                                (e.currentTarget as HTMLElement).style.background = '#FFEBEE';
                             }}
                             onMouseLeave={e => {
                                 (e.currentTarget as HTMLElement).style.background = '#F4F5F9';

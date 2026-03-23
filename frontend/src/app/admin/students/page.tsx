@@ -96,17 +96,17 @@ export default function StudentsPage() {
                             Students List
                         </h1>
                         <p style={{ fontSize: '13px', color: '#A1A5B7', marginTop: '4px', fontWeight: 500 }}>
-                            Home &rsaquo; <span style={{ color: '#4F60FF', fontWeight: 600 }}>Students</span>
+                            Home &rsaquo; <span style={{ color: '#E53935', fontWeight: 600 }}>Students</span>
                         </p>
                     </div>
                     <button
                         onClick={() => { setFormData(emptyForm); setIsAddOpen(true); }}
                         style={{
-                            background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)',
+                            background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
                             color: 'white', border: 'none',
                             borderRadius: '12px', padding: '11px 22px', fontSize: '14px',
                             fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
-                            cursor: 'pointer', boxShadow: '0 4px 14px rgba(79,96,255,0.3)',
+                            cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)',
                             transition: 'all 0.2s',
                         }}
                         onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
@@ -181,9 +181,6 @@ export default function StudentsPage() {
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
                                 <thead>
                                     <tr style={{ background: '#F8F9FD' }}>
-                                        <th style={{ padding: '13px 20px', textAlign: 'left', color: '#A1A5B7', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', width: '50px' }}>
-                                            <input type="checkbox" style={{ accentColor: '#4F60FF', width: '15px', height: '15px' }} />
-                                        </th>
                                         {['Student Name', 'Roll', 'Address', 'Class', 'Date of Birth', 'Phone', 'Action'].map(h => (
                                             <th key={h} style={{
                                                 padding: '13px 16px', textAlign: 'left',
@@ -199,18 +196,16 @@ export default function StudentsPage() {
                                     {displayStudents.map((s, i) => (
                                         <tr
                                             key={s.id || i}
-                                            style={{ borderBottom: '1px solid #F0F0F5', transition: 'background 0.15s' }}
+                                            style={{ borderBottom: '1px solid #F0F0F5', transition: 'background 0.15s', cursor: 'pointer' }}
                                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F8F9FD'}
                                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                                            onClick={() => router.push(`/admin/students/${s.mongo_id}`)}
                                         >
-                                            <td style={{ padding: '14px 20px' }}>
-                                                <input type="checkbox" style={{ accentColor: '#4F60FF', width: '15px', height: '15px' }} defaultChecked={i === 1} />
-                                            </td>
                                             <td style={{ padding: '14px 16px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                     <img
                                                         src={`https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=4F60FF&color=fff&size=36`}
-                                                        style={{ width: '34px', height: '34px', borderRadius: '50%', border: '2px solid #EEF0FF', flexShrink: 0 }}
+                                                        style={{ width: '34px', height: '34px', borderRadius: '50%', border: '2px solid #FFEBEE', flexShrink: 0 }}
                                                         alt={s.name}
                                                     />
                                                     <span style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B' }}>{s.name}</span>
@@ -220,7 +215,7 @@ export default function StudentsPage() {
                                             <td style={{ padding: '14px 16px', fontSize: '13px', color: '#8F92A1' }}>{s.address}</td>
                                             <td style={{ padding: '14px 16px' }}>
                                                 <span style={{
-                                                    background: '#EEF0FF', color: '#4F60FF',
+                                                    background: '#FFEBEE', color: '#E53935',
                                                     padding: '3px 10px', borderRadius: '50px',
                                                     fontSize: '12px', fontWeight: 700,
                                                 }}>
@@ -240,25 +235,29 @@ export default function StudentsPage() {
                                                         }}
                                                         onMouseEnter={e => (e.currentTarget.style.background = '#FECACA')}
                                                         onMouseLeave={e => (e.currentTarget.style.background = '#FEE2E2')}
+                                                        onClick={(e) => e.stopPropagation()}
                                                     >
                                                         <Trash2 size={14} />
                                                     </button>
                                                     <button
                                                         style={{
-                                                            background: '#EEF0FF', border: 'none', cursor: 'pointer',
-                                                            color: '#4F60FF', width: '30px', height: '30px', borderRadius: '8px',
+                                                            background: '#FFEBEE', border: 'none', cursor: 'pointer',
+                                                            color: '#E53935', width: '30px', height: '30px', borderRadius: '8px',
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                             transition: 'all 0.2s',
                                                         }}
                                                         onMouseEnter={e => {
-                                                            (e.currentTarget as HTMLElement).style.background = '#4F60FF';
+                                                            (e.currentTarget as HTMLElement).style.background = '#E53935';
                                                             (e.currentTarget as HTMLElement).style.color = 'white';
                                                         }}
                                                         onMouseLeave={e => {
-                                                            (e.currentTarget as HTMLElement).style.background = '#EEF0FF';
-                                                            (e.currentTarget as HTMLElement).style.color = '#4F60FF';
+                                                            (e.currentTarget as HTMLElement).style.background = '#FFEBEE';
+                                                            (e.currentTarget as HTMLElement).style.color = '#E53935';
                                                         }}
-                                                        onClick={() => router.push(`/admin/students/${s.mongo_id}`)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            router.push(`/admin/students/${s.mongo_id}`);
+                                                        }}
                                                     >
                                                         <Edit2 size={14} />
                                                     </button>
@@ -272,50 +271,52 @@ export default function StudentsPage() {
                     )}
 
                     {/* Pagination */}
-                    <div style={{
-                        padding: '16px 24px', borderTop: '1px solid #F0F0F5',
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    }}>
-                        <p style={{ fontSize: '13px', color: '#A1A5B7', fontWeight: 500 }}>
-                            Showing <span style={{ color: '#1A1D3B', fontWeight: 700 }}>1-{displayStudents.length}</span> of <span style={{ color: '#1A1D3B', fontWeight: 700 }}>{displayStudents.length}</span> students
-                        </p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <button style={{
-                                background: '#F4F5F9', border: '1px solid #F0F0F5', cursor: 'pointer',
-                                color: '#5E6278', padding: '7px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center',
-                            }}>
-                                <ChevronLeft size={16} />
-                            </button>
-                            {[1, 2, 3, 4, 5].map(p => (
-                                <button
-                                    key={p}
-                                    style={{
-                                        background: p === 1 ? 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)' : '#F4F5F9',
-                                        color: p === 1 ? 'white' : '#5E6278',
-                                        border: '1px solid #F0F0F5', width: '34px', height: '34px',
-                                        borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '13px',
-                                        boxShadow: p === 1 ? '0 4px 10px rgba(79,96,255,0.25)' : 'none',
-                                    }}
-                                >
-                                    {p}
+                    {displayStudents.length > 15 && (
+                        <div style={{
+                            padding: '16px 24px', borderTop: '1px solid #F0F0F5',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        }}>
+                            <p style={{ fontSize: '13px', color: '#A1A5B7', fontWeight: 500 }}>
+                                Showing <span style={{ color: '#1A1D3B', fontWeight: 700 }}>1-15</span> of <span style={{ color: '#1A1D3B', fontWeight: 700 }}>{displayStudents.length}</span> students
+                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <button style={{
+                                    background: '#F4F5F9', border: '1px solid #F0F0F5', cursor: 'pointer',
+                                    color: '#5E6278', padding: '7px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center',
+                                }}>
+                                    <ChevronLeft size={16} />
                                 </button>
-                            ))}
-                            <span style={{ color: '#A1A5B7', padding: '0 4px' }}>...</span>
-                            <button style={{
-                                background: '#F4F5F9', border: '1px solid #F0F0F5', color: '#5E6278',
-                                width: '34px', height: '34px', borderRadius: '8px', fontWeight: 700,
-                                cursor: 'pointer', fontSize: '13px',
-                            }}>
-                                100
-                            </button>
-                            <button style={{
-                                background: '#F4F5F9', border: '1px solid #F0F0F5', cursor: 'pointer',
-                                color: '#5E6278', padding: '7px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center',
-                            }}>
-                                <ChevronRight size={16} />
-                            </button>
+                                {[1, 2, 3, 4, 5].map(p => (
+                                    <button
+                                        key={p}
+                                        style={{
+                                            background: p === 1 ? 'linear-gradient(135deg, #E53935 0%, #C62828 100%)' : '#F4F5F9',
+                                            color: p === 1 ? 'white' : '#5E6278',
+                                            border: '1px solid #F0F0F5', width: '34px', height: '34px',
+                                            borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '13px',
+                                            boxShadow: p === 1 ? '0 4px 10px rgba(229,57,53,0.25)' : 'none',
+                                        }}
+                                    >
+                                        {p}
+                                    </button>
+                                ))}
+                                <span style={{ color: '#A1A5B7', padding: '0 4px' }}>...</span>
+                                <button style={{
+                                    background: '#F4F5F9', border: '1px solid #F0F0F5', color: '#5E6278',
+                                    width: '34px', height: '34px', borderRadius: '8px', fontWeight: 700,
+                                    cursor: 'pointer', fontSize: '13px',
+                                }}>
+                                    100
+                                </button>
+                                <button style={{
+                                    background: '#F4F5F9', border: '1px solid #F0F0F5', cursor: 'pointer',
+                                    color: '#5E6278', padding: '7px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center',
+                                }}>
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
@@ -373,7 +374,7 @@ export default function StudentsPage() {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
                         <button type="button" onClick={() => setIsAddOpen(false)} style={{ padding: '10px 22px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
-                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(79,96,255,0.3)' }}>Save Student</button>
+                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(229,57,53,0.3)' }}>Save Student</button>
                     </div>
                 </form>
             </Modal>

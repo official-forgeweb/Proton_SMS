@@ -4,7 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
-import { Users, Search, Plus, Mail, Phone, BookOpen, Award, ChevronRight, Download, Edit } from 'lucide-react';
+import { Users, Search, Plus, Mail, Phone, BookOpen, Award, ChevronRight, ChevronLeft, Download, Edit } from 'lucide-react';
 
 export default function TeachersPage() {
     const router = useRouter();
@@ -98,7 +98,7 @@ export default function TeachersPage() {
                             cursor: 'pointer', transition: 'all 0.2s',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                         }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#4F60FF'; (e.currentTarget as HTMLElement).style.color = '#4F60FF'; }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#E53935'; (e.currentTarget as HTMLElement).style.color = '#E53935'; }}
                             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#F0F0F5'; (e.currentTarget as HTMLElement).style.color = '#5E6278'; }}
                         >
                             <Download size={16} /> Export
@@ -106,11 +106,11 @@ export default function TeachersPage() {
                         <button
                             onClick={() => { setFormData(emptyForm); setEditingId(null); setIsAddOpen(true); }}
                             style={{
-                                background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)',
+                                background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
                                 color: 'white', border: 'none',
                                 borderRadius: '12px', padding: '11px 22px', fontSize: '14px',
                                 fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
-                                cursor: 'pointer', boxShadow: '0 4px 14px rgba(79,96,255,0.3)',
+                                cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)',
                                 transition: 'opacity 0.2s',
                             }}
                             onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
@@ -178,8 +178,8 @@ export default function TeachersPage() {
                                 <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                                     <div style={{
                                         width: '54px', height: '54px', borderRadius: '14px', flexShrink: 0,
-                                        background: teacher.gender === 'female' ? '#FCE7F3' : '#EEF0FF',
-                                        color: teacher.gender === 'female' ? '#EC4899' : '#4F60FF',
+                                        background: teacher.gender === 'female' ? '#FCE7F3' : '#FFEBEE',
+                                        color: teacher.gender === 'female' ? '#EC4899' : '#E53935',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         fontSize: '20px', fontWeight: 800,
                                     }}>
@@ -201,7 +201,7 @@ export default function TeachersPage() {
                                         <p style={{ fontSize: '11px', color: '#A1A5B7', fontFamily: 'monospace', marginTop: '2px' }}>
                                             {teacher.employee_id}
                                         </p>
-                                        <p style={{ fontSize: '13px', color: '#4F60FF', fontWeight: 700, marginTop: '6px' }}>
+                                        <p style={{ fontSize: '13px', color: '#E53935', fontWeight: 700, marginTop: '6px' }}>
                                             {teacher.specialization}
                                         </p>
                                     </div>
@@ -243,7 +243,7 @@ export default function TeachersPage() {
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             gap: '6px', transition: 'all 0.2s',
                                         }}
-                                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#EEF0FF'; (e.currentTarget as HTMLElement).style.color = '#4F60FF'; }}
+                                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FFEBEE'; (e.currentTarget as HTMLElement).style.color = '#E53935'; }}
                                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F4F5F9'; (e.currentTarget as HTMLElement).style.color = '#5E6278'; }}
                                     >
                                         <Edit size={14} /> Edit
@@ -252,11 +252,11 @@ export default function TeachersPage() {
                                         onClick={() => router.push(`/admin/teachers/${teacher.id}`)}
                                         style={{
                                             flex: 1, padding: '9px',
-                                            background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)',
+                                            background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
                                             color: 'white', border: 'none', borderRadius: '10px', fontWeight: 600,
                                             fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center',
                                             justifyContent: 'center', gap: '6px', transition: 'opacity 0.2s',
-                                            boxShadow: '0 4px 10px rgba(79,96,255,0.25)',
+                                            boxShadow: '0 4px 10px rgba(229,57,53,0.25)',
                                         }}
                                         onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
                                         onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
@@ -268,6 +268,56 @@ export default function TeachersPage() {
                         ))
                     )}
                 </div>
+
+                {/* Pagination */}
+                {teachers.length > 15 && (
+                    <div style={{
+                        marginTop: '24px', padding: '16px 24px',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        background: '#FFFFFF', borderRadius: '18px', border: '1px solid #F0F0F5',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
+                    }}>
+                        <p style={{ fontSize: '13px', color: '#A1A5B7', fontWeight: 500 }}>
+                            Showing <span style={{ color: '#1A1D3B', fontWeight: 700 }}>1-15</span> of <span style={{ color: '#1A1D3B', fontWeight: 700 }}>{teachers.length}</span> teachers
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <button style={{
+                                background: '#F4F5F9', border: '1px solid #F0F0F5', cursor: 'pointer',
+                                color: '#5E6278', padding: '7px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center',
+                            }}>
+                                <ChevronLeft size={16} />
+                            </button>
+                            {[1, 2, 3, 4, 5].map(p => (
+                                <button
+                                    key={p}
+                                    style={{
+                                        background: p === 1 ? 'linear-gradient(135deg, #E53935 0%, #C62828 100%)' : '#F4F5F9',
+                                        color: p === 1 ? 'white' : '#5E6278',
+                                        border: '1px solid #F0F0F5', width: '34px', height: '34px',
+                                        borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '13px',
+                                        boxShadow: p === 1 ? '0 4px 10px rgba(229,57,53,0.25)' : 'none',
+                                    }}
+                                >
+                                    {p}
+                                </button>
+                            ))}
+                            <span style={{ color: '#A1A5B7', padding: '0 4px' }}>...</span>
+                            <button style={{
+                                background: '#F4F5F9', border: '1px solid #F0F0F5', color: '#5E6278',
+                                width: '34px', height: '34px', borderRadius: '8px', fontWeight: 700,
+                                cursor: 'pointer', fontSize: '13px',
+                            }}>
+                                100
+                            </button>
+                            <button style={{
+                                background: '#F4F5F9', border: '1px solid #F0F0F5', cursor: 'pointer',
+                                color: '#5E6278', padding: '7px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center',
+                            }}>
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title={editingId ? 'Edit Teacher' : 'Add New Teacher'}>
@@ -333,9 +383,9 @@ export default function TeachersPage() {
                         <button
                             type="submit"
                             style={{
-                                padding: '10px 22px', background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)',
+                                padding: '10px 22px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
                                 color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px',
-                                cursor: 'pointer', boxShadow: '0 4px 12px rgba(79,96,255,0.3)',
+                                cursor: 'pointer', boxShadow: '0 4px 12px rgba(229,57,53,0.3)',
                             }}
                         >
                             Save Teacher

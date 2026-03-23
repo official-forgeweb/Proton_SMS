@@ -12,13 +12,13 @@ export default function ReportsPage() {
     const [visualData, setVisualData] = useState<any>(null);
     const [loadingVisuals, setLoadingVisuals] = useState(true);
 
-    const COLORS = ['#4F60FF', '#10B981', '#F97316', '#7B5EA7', '#E84142'];
+    const COLORS = ['#E53935', '#10B981', '#F97316', '#C62828', '#E84142'];
 
     const reports = [
-        { id: 'enrollment', title: 'Enrollment Trends', icon: TrendingUp, desc: 'Month-over-month admission and dropout metrics', color: '#4F60FF', bg: '#EEF0FF' },
+        { id: 'enrollment', title: 'Enrollment Trends', icon: TrendingUp, desc: 'Month-over-month admission and dropout metrics', color: '#E53935', bg: '#FFEBEE' },
         { id: 'revenue', title: 'Revenue Analytics', icon: BarChart3, desc: 'Fee collection vs pending projections', color: '#10B981', bg: '#D1FAE5' },
         { id: 'batch-performance', title: 'Batch Performance', icon: Activity, desc: 'Comparative test scores across different batches', color: '#F97316', bg: '#FFF3E0' },
-        { id: 'demographics', title: 'Demographics', icon: PieChart, desc: 'Student distribution by area, age, and boards', color: '#7B5EA7', bg: '#F3EEFF' },
+        { id: 'demographics', title: 'Demographics', icon: PieChart, desc: 'Student distribution by area, age, and boards', color: '#C62828', bg: '#F3EEFF' },
     ];
 
     useEffect(() => {
@@ -76,11 +76,11 @@ export default function ReportsPage() {
                         onClick={() => generateReport('master', 'Master Report')}
                         disabled={downloading === 'master'}
                         style={{
-                            background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)',
+                            background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
                             color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px',
                             fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center',
                             gap: '8px', cursor: downloading === 'master' ? 'not-allowed' : 'pointer', 
-                            boxShadow: '0 4px 14px rgba(79,96,255,0.3)',
+                            boxShadow: '0 4px 14px rgba(229,57,53,0.3)',
                             opacity: downloading === 'master' ? 0.7 : 1,
                         }}
                     >
@@ -143,7 +143,7 @@ export default function ReportsPage() {
                                         <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                                         <YAxis tick={{ fontSize: 12 }} />
                                         <Tooltip />
-                                        <Bar dataKey="value" fill="#7B5EA7" radius={[4, 4, 0, 0]} name="Number of Students" />
+                                        <Bar dataKey="value" fill="#C62828" radius={[4, 4, 0, 0]} name="Number of Students" />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>

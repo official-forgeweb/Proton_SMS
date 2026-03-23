@@ -57,7 +57,7 @@ export default function HomeworkPage() {
                             Assign and track student homework progress.
                         </p>
                     </div>
-                    <button onClick={() => setIsAddOpen(true)} style={{ background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(79,96,255,0.3)' }}>
+                    <button onClick={() => setIsAddOpen(true)} style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)' }}>
                         <Plus size={16} /> Assign Homework
                     </button>
                 </div>
@@ -95,7 +95,7 @@ export default function HomeworkPage() {
                                                 <div style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '2px', fontWeight: 500 }}>{hw.subject}</div>
                                             </td>
                                             <td style={{ padding: '14px 16px' }}>
-                                                <span style={{ background: '#EEF0FF', color: '#4F60FF', padding: '3px 10px', borderRadius: '50px', fontSize: '12px', fontWeight: 700 }}>{hw.class_name}</span>
+                                                <span style={{ background: '#FFEBEE', color: '#E53935', padding: '3px 10px', borderRadius: '50px', fontSize: '12px', fontWeight: 700 }}>{hw.class_name}</span>
                                             </td>
                                             <td style={{ padding: '14px 16px' }}>
                                                 <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', color: '#5E6278', fontWeight: 500 }}>
@@ -110,15 +110,15 @@ export default function HomeworkPage() {
                                             <td style={{ padding: '14px 16px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                     <div style={{ flex: 1, height: '6px', background: '#F0F0F5', borderRadius: '50px', overflow: 'hidden', maxWidth: '80px' }}>
-                                                        <div style={{ height: '100%', width: `${(hw.submitted / (hw.total_students || 1)) * 100}%`, background: 'linear-gradient(90deg, #4F60FF, #7B5EA7)', borderRadius: '50px' }} />
+                                                        <div style={{ height: '100%', width: `${(hw.submitted / (hw.total_students || 1)) * 100}%`, background: 'linear-gradient(90deg, #E53935, #C62828)', borderRadius: '50px' }} />
                                                     </div>
                                                     <span style={{ fontSize: '12px', fontWeight: 700, color: '#1A1D3B', whiteSpace: 'nowrap' }}>{hw.submitted}/{hw.total_students}</span>
                                                 </div>
                                             </td>
                                             <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                                                <button style={{ background: '#EEF0FF', color: '#4F60FF', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-                                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#4F60FF'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
-                                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#EEF0FF'; (e.currentTarget as HTMLElement).style.color = '#4F60FF'; }}
+                                                <button style={{ background: '#FFEBEE', color: '#E53935', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#E53935'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
+                                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FFEBEE'; (e.currentTarget as HTMLElement).style.color = '#E53935'; }}
                                                 >
                                                     Review
                                                 </button>
@@ -171,7 +171,7 @@ export default function HomeworkPage() {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
                         <button type="button" onClick={() => setIsAddOpen(false)} style={{ padding: '10px 22px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
-                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(79,96,255,0.3)' }}>Assign Homework</button>
+                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(229,57,53,0.3)' }}>Assign Homework</button>
                     </div>
                 </form>
             </Modal>

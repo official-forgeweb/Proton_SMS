@@ -146,7 +146,7 @@ export default function StudentProfilePage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{student.first_name} {student.last_name}</h1>
                             <span style={{ 
-                                fontSize: '12px', fontWeight: 700, background: '#4F60FF', color: 'white', 
+                                fontSize: '12px', fontWeight: 700, background: '#E53935', color: 'white', 
                                 padding: '4px 12px', borderRadius: '50px'
                             }}>
                                 {student.PRO_ID}
@@ -160,14 +160,14 @@ export default function StudentProfilePage() {
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button 
                         className="btn btn-secondary" 
-                        onClick={() => router.push('/admin/students/details')}
+                        onClick={() => router.push('/admin/students')}
                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
                     >
-                        <ArrowLeft size={16} /> Lookup Portal
+                        <ArrowLeft size={16} /> All Students
                     </button>
                     <button 
                         className="btn btn-primary" 
-                        style={{ boxShadow: '0 8px 16px rgba(79,96,255,0.3)', background: '#4F60FF', border: 'none' }} 
+                        style={{ boxShadow: '0 8px 16px rgba(229,57,53,0.3)', background: '#E53935', border: 'none' }} 
                         onClick={() => setIsAssignOpen(true)}
                     >
                         <Plus size={16} /> New Enrollment
@@ -179,7 +179,7 @@ export default function StudentProfilePage() {
                 {/* Quick Stats Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
                     <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ padding: '10px', background: '#EEF0FF', borderRadius: '12px', color: '#4F60FF' }}><Activity size={20} /></div>
+                        <div style={{ padding: '10px', background: '#FFEBEE', borderRadius: '12px', color: '#E53935' }}><Activity size={20} /></div>
                         <div>
                             <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' }}>Attendance</p>
                             <h4 style={{ fontSize: '18px', fontWeight: 700 }}>{attendance?.summary?.percentage || 0}%</h4>
@@ -215,7 +215,7 @@ export default function StudentProfilePage() {
                         {/* Course Activity */}
                         <div className="card">
                             <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <GraduationCap size={18} color="#4F60FF" /> Current Enrollments & Results
+                                <GraduationCap size={18} color="#E53935" /> Current Enrollments & Results
                             </h3>
                             {student.classes?.length > 0 ? (
                                 <table className="data-table">
