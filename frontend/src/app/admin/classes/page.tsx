@@ -11,11 +11,13 @@ export default function ClassesPage() {
     const [classes, setClasses] = useState<any[]>([]);
     const [teachers, setTeachers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         class_name: '', grade_level: '', subject: '', max_students: 30,
         class_time_start: '09:00', class_time_end: '10:00',
-        primary_teacher_id: '', class_days: ['monday', 'wednesday', 'friday']
+        primary_teacher_id: '', class_days: ['monday', 'wednesday', 'friday'],
+        status: 'upcoming'
     });
 
     useEffect(() => { fetchClasses(); fetchTeachers(); }, []);
@@ -25,17 +27,39 @@ export default function ClassesPage() {
         catch (error) { console.error('Error fetching teachers:', error); }
     };
 
+    const handleEdit = (cls: any) => {
+        setEditingId(cls.id);
+        setFormData({
+            class_name: cls.class_name,
+            grade_level: cls.grade_level,
+            subject: cls.subject,
+            max_students: cls.max_students,
+            class_time_start: cls.class_time_start,
+            class_time_end: cls.class_time_end,
+            primary_teacher_id: cls.primary_teacher_id || '',
+            class_days: cls.class_days || ['monday', 'wednesday', 'friday'],
+            status: cls.status
+        });
+        setIsModalOpen(true);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             const submitData: any = { ...formData };
             if (!submitData.primary_teacher_id) delete submitData.primary_teacher_id;
             
-            await api.post('/classes', submitData);
-            setIsAddOpen(false);
+            if (editingId) {
+                await api.put(`/classes/${editingId}`, submitData);
+            } else {
+                await api.post('/classes', submitData);
+            }
+            
+            setIsModalOpen(false);
+            setEditingId(null);
             fetchClasses();
-            setFormData({ class_name: '', grade_level: '', subject: '', max_students: 30, class_time_start: '09:00', class_time_end: '10:00', primary_teacher_id: '', class_days: ['monday', 'wednesday', 'friday'] });
-        } catch (error) { console.error('Error adding class:', error); alert('Failed to add class'); }
+            setFormData({ class_name: '', grade_level: '', subject: '', max_students: 30, class_time_start: '09:00', class_time_end: '10:00', primary_teacher_id: '', class_days: ['monday', 'wednesday', 'friday'], status: 'upcoming' });
+        } catch (error) { console.error('Error saving class:', error); alert('Failed to save class'); }
     };
 
     const fetchClasses = async () => {
@@ -76,17 +100,21 @@ export default function ClassesPage() {
                         }}>
                             <Download size={16} /> Export
                         </button>
-                        <button
-                            onClick={() => setIsAddOpen(true)}
-                            style={{
-                                background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
-                                color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px',
-                                fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center',
-                                gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)',
-                            }}
-                        >
-                            <Plus size={16} /> Create Class
-                        </button>
+                            <button
+                                onClick={() => {
+                                    setEditingId(null);
+                                    setFormData({ class_name: '', grade_level: '', subject: '', max_students: 30, class_time_start: '09:00', class_time_end: '10:00', primary_teacher_id: '', class_days: ['monday', 'wednesday', 'friday'], status: 'upcoming' });
+                                    setIsModalOpen(true);
+                                }}
+                                style={{
+                                    background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
+                                    color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px',
+                                    fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center',
+                                    gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)',
+                                }}
+                            >
+                                <Plus size={16} /> Create Class
+                            </button>
                     </div>
                 </div>
 
@@ -174,7 +202,18 @@ export default function ClassesPage() {
                                                     {cls.status}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                                            <td style={{ padding: '14px 16px', textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                                <button
+                                                    onClick={() => handleEdit(cls)}
+                                                    style={{
+                                                        background: '#F4F5F9', color: '#5E6278', border: 'none',
+                                                        borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700,
+                                                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                                        transition: 'all 0.2s',
+                                                    }}
+                                                >
+                                                    Edit
+                                                </button>
                                                 <button
                                                     onClick={() => router.push(`/admin/classes/${cls.id}`)}
                                                     style={{
@@ -198,7 +237,7 @@ export default function ClassesPage() {
                 </div>
             </div>
 
-            <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Create New Class">
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? "Edit Class" : "Create New Class"}>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
@@ -230,16 +269,26 @@ export default function ClassesPage() {
                             <input type="time" required style={inputStyle} value={formData.class_time_end} onChange={e => setFormData({ ...formData, class_time_end: e.target.value })} />
                         </div>
                     </div>
-                    <div>
-                        <label style={labelStyle}>Primary Teacher</label>
-                        <select style={inputStyle} value={formData.primary_teacher_id} onChange={e => setFormData({ ...formData, primary_teacher_id: e.target.value })}>
-                            <option value="">Select Teacher...</option>
-                            {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
-                        </select>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                            <label style={labelStyle}>Primary Teacher</label>
+                            <select style={inputStyle} value={formData.primary_teacher_id} onChange={e => setFormData({ ...formData, primary_teacher_id: e.target.value })}>
+                                <option value="">Select Teacher...</option>
+                                {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Status</label>
+                            <select style={inputStyle} value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+                                <option value="upcoming">Upcoming</option>
+                                <option value="ongoing">Ongoing</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
-                        <button type="button" onClick={() => setIsAddOpen(false)} style={{ padding: '10px 22px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
-                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(229,57,53,0.3)' }}>Save Class</button>
+                        <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '10px 22px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(229,57,53,0.3)' }}>{editingId ? "Update Class" : "Save Class"}</button>
                     </div>
                 </form>
             </Modal>

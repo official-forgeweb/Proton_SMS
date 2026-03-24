@@ -4,8 +4,12 @@ import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import {
     GraduationCap, Calendar, ClipboardList, CreditCard,
-    ChevronDown, ChevronUp, Eye, Award, Bell
+    ChevronDown, ChevronUp, Eye, Award, Bell, Activity, ArrowRight, Wallet
 } from 'lucide-react';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    AreaChart, Area
+} from 'recharts';
 
 export default function ParentDashboard() {
     const [data, setData] = useState<any>(null);
@@ -25,7 +29,7 @@ export default function ParentDashboard() {
                 <div className="page-header"><div className="skeleton" style={{ width: '300px', height: '28px' }} /></div>
                 <div className="page-body">
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                        {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '100px', borderRadius: '16px' }} />)}
+                        {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '300px', borderRadius: '16px' }} />)}
                     </div>
                 </div>
             </DashboardLayout>
@@ -33,48 +37,55 @@ export default function ParentDashboard() {
     }
 
     const parent = data?.parent;
-    const children = data?.children || [];
+    const children = (data?.children || []).filter(Boolean);
     const child = children[selectedChild];
+
+    const performanceData = child?.charts?.performance || [];
+    const attendanceTrend = child?.charts?.attendance || [];
 
     return (
         <DashboardLayout requiredRole="parent">
-            <div className="page-header">
-                <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: 700 }}>
-                        Welcome, {parent?.first_name || 'Parent'}! 👋
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '2px' }}>
-                        Monitor your children&apos;s academic progress
-                    </p>
+            <div className="page-header" style={{ marginBottom: '32px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B' }}>
+                            Hello, {parent?.first_name || 'Parent'}! 👋
+                        </h1>
+                        <p style={{ color: '#5E6278', fontSize: '15px', marginTop: '4px', fontWeight: 500 }}>
+                            Track and manage your children&apos;s academic activities.
+                        </p>
+                    </div>
                 </div>
             </div>
 
             <div className="page-body">
                 {/* Children Selector */}
                 {children.length > 1 && (
-                    <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', overflowX: 'auto', padding: '4px' }}>
                         {children.map((c: any, idx: number) => (
                             <button
                                 key={c.id}
                                 onClick={() => setSelectedChild(idx)}
                                 style={{
-                                    padding: '12px 20px', borderRadius: 'var(--radius-lg)',
-                                    border: selectedChild === idx ? '2px solid var(--primary)' : '1px solid var(--border-primary)',
-                                    background: selectedChild === idx ? 'var(--primary-50)' : 'var(--bg-primary)',
-                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px',
-                                    transition: 'all 0.2s',
+                                    minWidth: '240px', padding: '16px', borderRadius: '20px',
+                                    border: selectedChild === idx ? '2px solid #4F60FF' : '1px solid #E6EAF0',
+                                    background: selectedChild === idx ? '#F8F9FF' : '#FFFFFF',
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    boxShadow: selectedChild === idx ? '0 8px 20px rgba(79, 96, 255, 0.15)' : 'none',
                                 }}
                             >
-                                <div className="avatar" style={{
-                                    background: selectedChild === idx ? 'var(--gradient-primary)' : 'var(--bg-tertiary)',
-                                    color: selectedChild === idx ? 'white' : 'var(--text-secondary)',
-                                    width: '36px', height: '36px', fontSize: '14px',
+                                <div style={{
+                                    width: '48px', height: '48px', borderRadius: '12px',
+                                    background: selectedChild === idx ? 'linear-gradient(135deg, #4F60FF 0%, #7B5EA7 100%)' : '#F4F5F9',
+                                    color: selectedChild === idx ? 'white' : '#5E6278',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700
                                 }}>
                                     {c.first_name?.[0]}{c.last_name?.[0]}
                                 </div>
                                 <div style={{ textAlign: 'left' }}>
-                                    <p style={{ fontWeight: 600, fontSize: '14px' }}>{c.first_name} {c.last_name}</p>
-                                    <p style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{c.PRO_ID}</p>
+                                    <p style={{ fontWeight: 700, fontSize: '15px', color: '#1A1D3B' }}>{c.first_name} {c.last_name}</p>
+                                    <p style={{ fontSize: '12px', color: '#8F92A1', marginTop: '2px' }}>{c.PRO_ID}</p>
                                 </div>
                             </button>
                         ))}
@@ -82,99 +93,117 @@ export default function ParentDashboard() {
                 )}
 
                 {child ? (
-                    <>
-                        {/* Child Profile Card */}
-                        <div className="card" style={{
-                            background: 'var(--gradient-primary)', color: 'white', marginBottom: '24px',
-                            display: 'flex', alignItems: 'center', gap: '20px', position: 'relative', overflow: 'hidden',
-                        }}>
-                            <div style={{
-                                position: 'absolute', top: '-30px', right: '-30px', width: '150px', height: '150px',
-                                borderRadius: '50%', background: 'rgba(255,255,255,0.1)',
-                            }} />
-                            <div className="avatar avatar-xl" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                                {child.first_name?.[0]}{child.last_name?.[0]}
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            {/* Stats */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+                                {[
+                                    { label: 'Attendance', value: `${child.attendance_percentage}%`, icon: Calendar, color: '#10B981', bg: '#D1FAE5', desc: 'Active presence' },
+                                    { label: 'Last Test', value: child.last_test ? `${child.last_test.marks_obtained}/${child.last_test.total_marks}` : '-', icon: Award, color: '#4F60FF', bg: '#DBEAFE', desc: child.last_test?.test_name || 'No tests yet' },
+                                    { label: 'Balance', value: `₹${(child.fee?.pending || 0).toLocaleString()}`, icon: CreditCard, color: child.fee?.pending > 0 ? '#EF4444' : '#10B981', bg: child.fee?.pending > 0 ? '#FEE2E2' : '#D1FAE5', desc: child.fee?.status || 'Active account' }
+                                ].map((s, i) => {
+                                    const Icon = s.icon;
+                                    return (
+                                        <div key={i} className="card hover-lift" style={{ padding: '24px', borderRadius: '24px', position: 'relative', overflow: 'hidden', background: '#FFFFFF' }}>
+                                            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, marginBottom: '20px' }}>
+                                                <Icon size={24} />
+                                            </div>
+                                            <div style={{ fontSize: '30px', fontWeight: 800, color: '#1A1D3B' }}>{s.value}</div>
+                                            <div style={{ fontSize: '15px', fontWeight: 600, color: '#5E6278', marginTop: '4px' }}>{s.label}</div>
+                                            <div style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '4px' }}>{s.desc}</div>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                            <div>
-                                <h2 style={{ fontSize: '22px', fontWeight: 700 }}>{child.first_name} {child.last_name}</h2>
-                                <p style={{ opacity: 0.8, fontSize: '14px', marginTop: '4px' }}>
-                                    {child.PRO_ID} • {child.class_name || 'No class'}
-                                </p>
-                                <p style={{ opacity: 0.6, fontSize: '13px', marginTop: '2px' }}>
-                                    {child.relationship === 'father' ? 'Son' : child.relationship === 'mother' ? 'Son/Daughter' : 'Ward'}
-                                </p>
+
+                            {/* Performance Chart */}
+                            <div className="card" style={{ padding: '24px', borderRadius: '24px', background: '#FFFFFF' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                    <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Academic Progress</h3>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#4F60FF' }}></span>
+                                        <span style={{ fontSize: '12px', color: '#5E6278', fontWeight: 600 }}>Avg Score</span>
+                                    </div>
+                                </div>
+                                <div style={{ height: '300px' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={performanceData}>
+                                            <defs>
+                                                <linearGradient id="scoreColorParent" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#4F60FF" stopOpacity={0.2} />
+                                                    <stop offset="95%" stopColor="#4F60FF" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6EAF0" />
+                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#A1A5B7' }} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#A1A5B7' }} />
+                                            <Tooltip />
+                                            <Area type="monotone" dataKey="value" stroke="#4F60FF" fillOpacity={1} fill="url(#scoreColorParent)" strokeWidth={3} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Stats */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-                            <div className="card hover-lift" style={{ textAlign: 'center' }}>
-                                <Calendar size={28} color={child.attendance_percentage >= 80 ? '#10B981' : '#F59E0B'} style={{ margin: '0 auto 10px' }} />
-                                <div style={{ fontSize: '32px', fontWeight: 800 }}>{child.attendance_percentage}%</div>
-                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Attendance</div>
-                                <span className={`badge ${child.attendance_percentage >= 80 ? 'badge-success' : 'badge-warning'}`} style={{ marginTop: '8px' }}>
-                                    {child.attendance_percentage >= 80 ? 'Good' : 'Needs Improvement'}
-                                </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            {/* Attendance tracker */}
+                            <div className="card" style={{ padding: '24px', borderRadius: '24px', background: '#FFFFFF' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                    <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Attendance Tracker</h3>
+                                    <Activity size={18} color="#10B981" />
+                                </div>
+                                <p style={{ fontSize: '13px', color: '#8F92A1', marginBottom: '20px' }}>Last 30 session activity</p>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
+                                    {attendanceTrend.length > 0 ? attendanceTrend.map((a: any, i: number) => (
+                                        <div key={i} title={a.date} style={{ 
+                                            height: '32px', borderRadius: '6px', 
+                                            background: a.status === 1 ? '#D1FAE5' : '#FFEBEE',
+                                            border: `1px solid ${a.status === 1 ? '#10B981' : '#E53935'}`,
+                                            opacity: 0.8
+                                        }} />
+                                    )) : (
+                                        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => <div key={i} style={{ height: '32px', borderRadius: '6px', background: '#F4F5F9' }} />)
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="card hover-lift" style={{ textAlign: 'center' }}>
-                                <Award size={28} color="#3B82F6" style={{ margin: '0 auto 10px' }} />
-                                <div style={{ fontSize: '32px', fontWeight: 800 }}>
-                                    {child.last_test ? `${child.last_test.marks_obtained}/${child.last_test.total_marks}` : '-'}
+                            {/* Fee card */}
+                            {child.fee && (
+                                <div className="card" style={{ padding: '24px', borderRadius: '24px', background: 'linear-gradient(135deg, #1A1D3B 0%, #2A2F5B 100%)', color: 'white', border: 'none' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                        <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Fee Summary</h3>
+                                        <Wallet size={20} color="#4F60FF" />
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                            <span style={{ fontSize: '14px', opacity: 0.7 }}>Total Amount</span>
+                                            <span style={{ fontSize: '18px', fontWeight: 700 }}>₹{child.fee.total?.toLocaleString()}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                            <span style={{ fontSize: '14px', opacity: 0.7 }}>Total Paid</span>
+                                            <span style={{ fontSize: '18px', fontWeight: 700, color: '#10B981' }}>₹{child.fee.paid?.toLocaleString()}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                            <span style={{ fontSize: '14px', opacity: 0.7 }}>Due Balance</span>
+                                            <span style={{ fontSize: '24px', fontWeight: 800, color: child.fee.pending > 0 ? '#EF4444' : '#10B981' }}>₹{child.fee.pending?.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                    {child.fee.pending > 0 && (
+                                        <button className="btn" style={{ width: '100%', marginTop: '20px', background: 'white', color: '#1A1D3B', fontWeight: 700, borderRadius: '14px', padding: '12px' }}>
+                                            Pay Securely
+                                        </button>
+                                    )}
                                 </div>
-                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Last Test Score</div>
-                                {child.last_test && (
-                                    <span className="badge badge-info" style={{ marginTop: '8px' }}>
-                                        {child.last_test.test_name} • Rank #{child.last_test.rank_in_class}
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="card hover-lift" style={{ textAlign: 'center' }}>
-                                <CreditCard size={28} color={child.fee?.status === 'paid' ? '#10B981' : '#EF4444'} style={{ margin: '0 auto 10px' }} />
-                                <div style={{ fontSize: '32px', fontWeight: 800 }}>
-                                    ₹{((child.fee?.pending || 0) / 1000).toFixed(0)}K
-                                </div>
-                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Fee Balance</div>
-                                <span className={`badge ${child.fee?.status === 'paid' ? 'badge-success' : 'badge-error'}`} style={{ marginTop: '8px' }}>
-                                    {child.fee?.status || 'pending'}
-                                </span>
-                            </div>
+                            )}
                         </div>
-
-                        {/* Fee Overview */}
-                        {child.fee && (
-                            <div className="card">
-                                <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <CreditCard size={18} color="var(--primary)" /> Fee Overview
-                                </h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', fontSize: '14px' }}>
-                                    <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: '#DBEAFE', textAlign: 'center' }}>
-                                        <p style={{ fontSize: '11px', color: '#1E40AF', fontWeight: 600, marginBottom: '4px' }}>Total Fee</p>
-                                        <p style={{ fontSize: '20px', fontWeight: 800, color: '#1E40AF' }}>₹{child.fee.total?.toLocaleString()}</p>
-                                    </div>
-                                    <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: '#D1FAE5', textAlign: 'center' }}>
-                                        <p style={{ fontSize: '11px', color: '#065F46', fontWeight: 600, marginBottom: '4px' }}>Paid</p>
-                                        <p style={{ fontSize: '20px', fontWeight: 800, color: '#065F46' }}>₹{child.fee.paid?.toLocaleString()}</p>
-                                    </div>
-                                    <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: child.fee.pending > 0 ? '#FEE2E2' : '#D1FAE5', textAlign: 'center' }}>
-                                        <p style={{ fontSize: '11px', color: child.fee.pending > 0 ? '#991B1B' : '#065F46', fontWeight: 600, marginBottom: '4px' }}>Pending</p>
-                                        <p style={{ fontSize: '20px', fontWeight: 800, color: child.fee.pending > 0 ? '#991B1B' : '#065F46' }}>₹{child.fee.pending?.toLocaleString()}</p>
-                                    </div>
-                                </div>
-                                {child.fee.pending > 0 && (
-                                    <button className="btn btn-primary" style={{ width: '100%', marginTop: '16px' }}>
-                                        💳 Pay Now - ₹{child.fee.pending?.toLocaleString()}
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </>
+                    </div>
                 ) : (
-                    <div className="card empty-state">
-                        <GraduationCap size={48} />
-                        <h3>No Children Linked</h3>
-                        <p>Contact the institution to link your children to your account.</p>
+                    <div className="card empty-state" style={{ padding: '80px', textAlign: 'center', borderRadius: '32px', background: '#FFFFFF' }}>
+                        <div style={{ width: '100px', height: '100px', background: '#F4F5F9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <GraduationCap size={48} color="#A1A5B7" />
+                        </div>
+                        <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#1A1D3B' }}>No Student Linked</h3>
+                        <p style={{ color: '#8F92A1', maxWidth: '300px', margin: '12px auto 0' }}>Please contact the administration to link your children to this account.</p>
                     </div>
                 )}
             </div>

@@ -187,7 +187,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function AdminDashboard() {
     const router = useRouter();
-    const [data, setData] = useState<DashboardData | null>(null);
+    const [data, setData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -205,6 +205,8 @@ export default function AdminDashboard() {
     }, []);
 
     const formatShort = (amount: number) => {
+        if (!amount) return '0';
+        if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`;
         if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`;
         return amount.toString();
     };
@@ -214,7 +216,8 @@ export default function AdminDashboard() {
             <DashboardLayout requiredRole="admin">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
                     <div style={{ textAlign: 'center' }}>
-                        <div className="spinner" style={{ margin: '0 auto 16px' }} />
+                        <div className="spinner" style={{ margin: '0 auto 16px', border: '3px solid #f3f3f3', borderTop: '3px solid #E53935', borderRadius: '50%', width: '30px', height: '30px', animation: 'spin 1s linear infinite' }} />
+                        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
                         <p style={{ color: '#A1A5B7', fontSize: '14px' }}>Loading dashboard...</p>
                     </div>
                 </div>
@@ -223,6 +226,10 @@ export default function AdminDashboard() {
     }
 
     const stats = data?.stats;
+    const barChartData = data?.charts?.performance || [];
+    const radialData = data?.charts?.gender || [];
+    const starStudents = data?.charts?.top_students || [];
+    const recentActivity = data?.recent_activity || [];
 
     return (
         <DashboardLayout requiredRole="admin">
@@ -247,18 +254,18 @@ export default function AdminDashboard() {
                 }}>
                     <StatCard
                         label="Total Students"
-                        value={stats?.students.total ? formatShort(stats.students.total) : '15.0K'}
-                        subLabel="Students vs last month"
-                        change="2.08%"
+                        value={formatShort(stats?.students.total)}
+                        subLabel="Students currently enrolled"
+                        change={`${((stats?.students.active / stats?.students.total) * 100 || 0).toFixed(1)}%`}
                         positive={true}
                         icon={GraduationCap}
                         gradient="linear-gradient(135deg, #E53935 0%, #C62828 100%)"
                     />
                     <StatCard
                         label="Total Teachers"
-                        value={stats?.teachers.total ? formatShort(stats.teachers.total) : '2.0K'}
-                        subLabel="Teachers vs last month"
-                        change="12.1%"
+                        value={formatShort(stats?.teachers.total)}
+                        subLabel="Active vs Total staff"
+                        change={`${((stats?.teachers.active / stats?.teachers.total) * 100 || 0).toFixed(0)}%`}
                         positive={true}
                         icon={Users}
                         iconBg="#FFEBEE"
@@ -266,19 +273,17 @@ export default function AdminDashboard() {
                     />
                     <StatCard
                         label="Total Parents"
-                        value={stats?.parents?.total ? formatShort(stats.parents.total) : '5.6K'}
-                        subLabel="Parents vs last month"
-                        change="2.08%"
-                        positive={false}
+                        value={formatShort(stats?.parents?.total)}
+                        subLabel="Parents in system"
                         icon={Users}
                         iconBg="#FFF3E0"
                         iconColor="#F97316"
                     />
                     <StatCard
                         label="Total Earnings"
-                        value={stats?.revenue.total ? `$${formatShort(stats.revenue.total)}` : '$19.3K'}
-                        subLabel="Revenue vs last month"
-                        change="12.1%"
+                        value={`₹${formatShort(stats?.revenue.total)}`}
+                        subLabel={`Pending: ₹${formatShort(stats?.revenue.pending)}`}
+                        change={`${((stats?.revenue.total / (stats?.revenue.total + stats?.revenue.pending || 1)) * 100).toFixed(1)}%`}
                         positive={true}
                         icon={DollarSign}
                         iconBg="#D1FAE5"
@@ -289,7 +294,7 @@ export default function AdminDashboard() {
                 {/* Charts Row */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '2fr 1fr',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                     gap: '20px',
                     marginBottom: '24px',
                 }}>
@@ -297,29 +302,24 @@ export default function AdminDashboard() {
                     <div style={{
                         background: '#FFFFFF', borderRadius: '18px', padding: '24px',
                         boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5',
+                        gridColumn: 'span 2'
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                             <div>
                                 <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
                                     All Exam Results
                                 </h3>
-                                <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Students & Teacher performance</p>
+                                <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Monthly average student scores</p>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                                 <span style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: '#5E6278', fontWeight: 500 }}>
                                     <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#E53935', display: 'inline-block' }} />
-                                    Teacher
+                                    Attendance Avg (%)
                                 </span>
                                 <span style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: '#5E6278', fontWeight: 500 }}>
                                     <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#F97316', display: 'inline-block' }} />
-                                    Student
+                                    Avg Score (%)
                                 </span>
-                                <button style={{
-                                    background: 'none', border: '1px solid #F0F0F5', cursor: 'pointer',
-                                    borderRadius: '8px', padding: '4px 10px', fontSize: '12px', color: '#5E6278', fontWeight: 500,
-                                }}>
-                                    This year ▾
-                                </button>
                             </div>
                         </div>
                         <div style={{ height: '280px', width: '100%' }}>
@@ -339,8 +339,8 @@ export default function AdminDashboard() {
                                         tick={{ fontSize: 11, fill: '#A1A5B7' }}
                                     />
                                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(229,57,53,0.04)', radius: 8 }} />
-                                    <Bar dataKey="Teacher" fill="#E53935" radius={[6, 6, 0, 0]} barSize={10} />
-                                    <Bar dataKey="Student" fill="#FFF5F5" radius={[6, 6, 0, 0]} barSize={10} />
+                                    <Bar dataKey="Attendance" name="Attendance Avg" fill="#E53935" radius={[6, 6, 0, 0]} barSize={10} />
+                                    <Bar dataKey="Student" name="Avg Score" fill="#F97316" radius={[6, 6, 0, 0]} barSize={10} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -359,7 +359,10 @@ export default function AdminDashboard() {
                                 </h3>
                                 <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Gender distribution</p>
                             </div>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                            <button 
+                                onClick={() => router.push('/admin/students')}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
                                 <MoreHorizontal size={18} color="#A1A5B7" />
                             </button>
                         </div>
@@ -384,23 +387,20 @@ export default function AdminDashboard() {
                                 transform: 'translate(-50%, -50%)', textAlign: 'center',
                             }}>
                                 <p style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 600, marginBottom: '2px' }}>Total</p>
-                                <p style={{ fontSize: '26px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>15K</p>
+                                <p style={{ fontSize: '26px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>{formatShort(stats?.students.total)}</p>
                             </div>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-                            {[
-                                { label: 'Male', value: '8,000', color: '#E53935', pct: '53%' },
-                                { label: 'Female', value: '7,000', color: '#F97316', pct: '47%' },
-                            ].map((item) => (
-                                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            {radialData.map((item: any) => (
+                                <div key={item.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color, flexShrink: 0 }} />
-                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#5E6278' }}>{item.label}</span>
+                                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.fill, flexShrink: 0 }} />
+                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#5E6278', textTransform: 'capitalize' }}>{item.name}</span>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
                                         <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B' }}>{item.value}</span>
-                                        <span style={{ fontSize: '11px', color: '#A1A5B7', marginLeft: '6px' }}>{item.pct}</span>
+                                        <span style={{ fontSize: '11px', color: '#A1A5B7', marginLeft: '6px' }}>{((item.value / stats?.students.total) * 100 || 0).toFixed(0)}%</span>
                                     </div>
                                 </div>
                             ))}
@@ -411,25 +411,29 @@ export default function AdminDashboard() {
                 {/* Bottom Row */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '2fr 1fr',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                     gap: '20px',
                 }}>
                     {/* Star Students Table */}
                     <div style={{
                         background: '#FFFFFF', borderRadius: '18px', padding: '24px',
                         boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5',
+                        gridColumn: 'span 2'
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <div>
                                 <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
                                     Star Students
                                 </h3>
-                                <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Top performers this year</p>
+                                <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Top performers based on recent tests</p>
                             </div>
-                            <button style={{
-                                background: '#F4F5F9', border: 'none', cursor: 'pointer',
-                                borderRadius: '8px', padding: '6px 12px', fontSize: '12px', color: '#5E6278', fontWeight: 600,
-                            }}>
+                            <button 
+                                onClick={() => router.push('/admin/students')}
+                                style={{
+                                    background: '#F4F5F9', border: 'none', cursor: 'pointer',
+                                    borderRadius: '8px', padding: '6px 12px', fontSize: '12px', color: '#5E6278', fontWeight: 600,
+                                }}
+                            >
                                 View All
                             </button>
                         </div>
@@ -437,14 +441,14 @@ export default function AdminDashboard() {
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: '#F8F9FD' }}>
-                                        {['', 'Name', 'Student ID', 'Marks', 'Percent', 'Year'].map((h, i) => (
+                                        {['Name', 'Student ID', 'Marks', 'Percent', 'Year'].map((h, i) => (
                                             <th key={i} style={{
                                                 padding: '12px 16px', textAlign: 'left',
                                                 color: '#A1A5B7', fontWeight: 600, fontSize: '12px',
                                                 textTransform: 'uppercase', letterSpacing: '0.05em',
                                                 borderBottom: '1px solid #F0F0F5',
                                                 ...(i === 0 ? { borderTopLeftRadius: '10px', borderBottomLeftRadius: '10px' } : {}),
-                                                ...(i === 5 ? { borderTopRightRadius: '10px', borderBottomRightRadius: '10px' } : {}),
+                                                ...(i === 4 ? { borderTopRightRadius: '10px', borderBottomRightRadius: '10px' } : {}),
                                             }}>
                                                 {h}
                                             </th>
@@ -452,18 +456,11 @@ export default function AdminDashboard() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {starStudents.map((s, i) => (
+                                    {starStudents.length > 0 ? starStudents.map((s: any, i: number) => (
                                         <tr key={i} style={{ transition: 'background 0.15s' }}
                                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F8F9FD'}
                                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
                                         >
-                                            <td style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    style={{ accentColor: '#E53935', width: '16px', height: '16px' }}
-                                                    defaultChecked={i === 1}
-                                                />
-                                            </td>
                                             <td style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                     <img
@@ -493,7 +490,13 @@ export default function AdminDashboard() {
                                                 {s.year}
                                             </td>
                                         </tr>
-                                    ))}
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#A1A5B7', fontSize: '14px' }}>
+                                                No test data available for rankings yet.
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -510,68 +513,64 @@ export default function AdminDashboard() {
                                 <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
                                     Recent Activity
                                 </h3>
-                                <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Latest updates</p>
+                                <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '3px' }}>Latest updates from system</p>
                             </div>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                            <button 
+                                onClick={() => router.push('/admin/activity')}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
                                 <MoreHorizontal size={18} color="#A1A5B7" />
                             </button>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', flex: 1 }}>
-                            {[
-                                {
-                                    icon: Users, bg: '#FFEBEE', color: '#E53935',
-                                    title: 'New Teacher', time: 'Just now',
-                                    desc: 'A new teacher has been added to the system.',
-                                },
-                                {
-                                    icon: DollarSign, bg: '#FFF3E0', color: '#F97316',
-                                    title: 'Fees Structure Updated', time: 'Today',
-                                    desc: 'Fees structure has been updated for 2024.',
-                                },
-                                {
-                                    icon: GraduationCap, bg: '#D1FAE5', color: '#10B981',
-                                    title: 'New Class Added', time: '24 Sep 2024',
-                                    desc: 'A new course has been added to schedule.',
-                                },
-                                {
-                                    icon: BookOpen, bg: '#FEE2E2', color: '#EF4444',
-                                    title: 'Exam Scheduled', time: '18 Sep 2024',
-                                    desc: 'Mid-term exams are scheduled next week.',
-                                },
-                            ].map((activity, i) => {
-                                const Icon = activity.icon;
+                            {recentActivity.length > 0 ? recentActivity.map((activity: any, i: number) => {
+                                const getActivityConfig = (type: string) => {
+                                    switch (type) {
+                                        case 'enrollment': return { icon: GraduationCap, bg: '#FFEBEE', color: '#E53935' };
+                                        case 'payment': return { icon: DollarSign, bg: '#D1FAE5', color: '#10B981' };
+                                        case 'enquiry': return { icon: Users, bg: '#FFF3E0', color: '#F97316' };
+                                        default: return { icon: BookOpen, bg: '#F4F5F9', color: '#5E6278' };
+                                    }
+                                };
+                                const config = getActivityConfig(activity.type);
+                                const Icon = config.icon;
+                                
                                 return (
                                     <div key={i} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
                                         <div style={{
                                             width: '42px', height: '42px', borderRadius: '12px',
-                                            background: activity.bg, display: 'flex', alignItems: 'center',
-                                            justifyContent: 'center', color: activity.color, flexShrink: 0,
+                                            background: config.bg, display: 'flex', alignItems: 'center',
+                                            justifyContent: 'center', color: config.color, flexShrink: 0,
                                         }}>
                                             <Icon size={20} strokeWidth={2} />
                                         </div>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                 <h4 style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B', marginBottom: '3px' }}>
-                                                    {activity.title}
+                                                    {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)}
                                                 </h4>
                                                 <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500, whiteSpace: 'nowrap', marginLeft: '8px' }}>
-                                                    {activity.time}
+                                                    {new Date(activity.time).toLocaleDateString()}
                                                 </span>
                                             </div>
-                                            <p style={{ fontSize: '12px', color: '#8F92A1', lineHeight: 1.5 }}>{activity.desc}</p>
+                                            <p style={{ fontSize: '12px', color: '#8F92A1', lineHeight: 1.5 }}>{activity.message}</p>
                                         </div>
                                     </div>
                                 );
-                            })}
+                            }) : (
+                                <p style={{ textAlign: 'center', color: '#A1A5B7', padding: '20px' }}>No recent activity.</p>
+                            )}
                         </div>
 
-                        <button style={{
-                            width: '100%', padding: '11px', background: '#F4F5F9',
-                            color: '#E53935', border: 'none', borderRadius: '12px',
-                            fontWeight: 700, fontSize: '13px', cursor: 'pointer', marginTop: '20px',
-                            transition: 'all 0.2s',
-                        }}
+                        <button 
+                            onClick={() => router.push('/admin/activity')}
+                            style={{
+                                width: '100%', padding: '11px', background: '#F4F5F9',
+                                color: '#E53935', border: 'none', borderRadius: '12px',
+                                fontWeight: 700, fontSize: '13px', cursor: 'pointer', marginTop: '20px',
+                                transition: 'all 0.2s',
+                            }}
                             onMouseEnter={e => {
                                 (e.currentTarget as HTMLElement).style.background = '#FFEBEE';
                             }}

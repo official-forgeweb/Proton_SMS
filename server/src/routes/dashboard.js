@@ -14,9 +14,14 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
             totalClasses, activeClasses,
             totalEnquiries, newEnquiries,
             totalDemos, completedDemos,
+            totalParents,
             contacted, demoScheduled, demoCompleted, enrolled,
             revenueAgg, pendingAgg,
             recentStudents, recentPayments, recentEnquiries,
+            genderAgg,
+            topStudents,
+            monthlyPerformance,
+            monthlyAttendanceAgg,
         ] = await Promise.all([
             Student.countDocuments(),
             Student.countDocuments({ academic_status: 'active' }),
@@ -28,6 +33,7 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
             Enquiry.countDocuments({ status: 'new' }),
             DemoClass.countDocuments(),
             DemoClass.countDocuments({ status: 'completed' }),
+            Parent.countDocuments(),
             Enquiry.countDocuments({ status: { $in: ['contacted', 'demo_scheduled', 'demo_completed', 'enrolled'] } }),
             Enquiry.countDocuments({ status: { $in: ['demo_scheduled', 'demo_completed', 'enrolled'] } }),
             Enquiry.countDocuments({ status: { $in: ['demo_completed', 'enrolled'] } }),
@@ -43,10 +49,45 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
             Student.find().sort({ created_at: -1 }).limit(5).lean(),
             FeePayment.find().sort({ created_at: -1 }).limit(5).populate('student_id').lean(),
             Enquiry.find().sort({ created_at: -1 }).limit(5).lean(),
+            // Project-specific additions for charts
+            Student.aggregate([
+                { $group: { _id: '$gender', count: { $sum: 1 } } }
+            ]),
+            TestResult.find()
+                .sort({ percentage: -1 })
+                .limit(5)
+                .populate('student_id', 'first_name last_name PRO_ID')
+                .lean(),
+            TestResult.aggregate([
+                {
+                    $group: {
+                        _id: { month: { $month: '$created_at' } },
+                        avgScore: { $avg: '$percentage' }
+                    }
+                },
+                { $sort: { '_id.month': 1 } }
+            ]),
+            Attendance.aggregate([
+                {
+                    $group: {
+                        _id: { month: { $month: '$attendance_date' } },
+                        presentCount: { $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] } },
+                        totalCount: { $sum: 1 }
+                    }
+                },
+                {
+                    $project: {
+                        month: '$_id.month',
+                        avgAttendance: { $multiply: [{ $divide: ['$presentCount', '$totalCount'] }, 100] }
+                    }
+                },
+                { $sort: { 'month': 1 } }
+            ])
         ]);
 
         const totalRevenue = revenueAgg[0]?.total || 0;
         const totalPending = pendingAgg[0]?.total || 0;
+        const monthlyAttendance = monthlyAttendanceAgg || [];
 
         const recentActivity = [
             ...recentStudents.map(s => ({ type: 'enrollment', message: `New enrollment: ${s.first_name} ${s.last_name} (${s.PRO_ID})`, time: s.created_at })),
@@ -54,12 +95,49 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
             ...recentEnquiries.map(e => ({ type: 'enquiry', message: `New enquiry: ${e.student_name} - ${e.interested_course}`, time: e.created_at })),
         ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 10);
 
+        // Format chart data
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const chartData = monthNames.map((name, index) => {
+            const perf = monthlyPerformance.find(p => p._id.month === index + 1);
+            const att = monthlyAttendance.find(a => a.month === index + 1);
+            return {
+                name,
+                Student: perf ? Math.round(perf.avgScore) : 0,
+                Attendance: att ? Math.round(att.avgAttendance) : 0
+            };
+        });
+
+        const radialData = genderAgg.map(g => ({
+            name: g._id || 'Unknown',
+            value: g.count,
+            fill: g._id === 'male' ? '#E53935' : '#F97316'
+        }));
+
         res.json({
             success: true,
             data: {
-                stats: { students: { total: totalStudents, active: activeStudents }, teachers: { total: totalTeachers, active: activeTeachers }, classes: { total: totalClasses, active: activeClasses }, enquiries: { total: totalEnquiries, new: newEnquiries }, demos: { total: totalDemos, completed: completedDemos }, revenue: { total: totalRevenue, pending: totalPending } },
+                stats: { 
+                    students: { total: totalStudents, active: activeStudents }, 
+                    teachers: { total: totalTeachers, active: activeTeachers }, 
+                    classes: { total: totalClasses, active: activeClasses }, 
+                    enquiries: { total: totalEnquiries, new: newEnquiries }, 
+                    demos: { total: totalDemos, completed: completedDemos }, 
+                    revenue: { total: totalRevenue, pending: totalPending },
+                    parents: { total: totalParents }
+                },
                 funnel: { enquiries: totalEnquiries, contacted, demo_scheduled: demoScheduled, demo_completed: demoCompleted, enrolled, conversion_rate: totalEnquiries > 0 ? ((enrolled / totalEnquiries) * 100).toFixed(1) : 0 },
                 recent_activity: recentActivity,
+                charts: {
+                    performance: chartData,
+                    gender: radialData,
+                    top_students: topStudents.map(s => ({
+                        name: s.student_id ? `${s.student_id.first_name} ${s.student_id.last_name}` : 'Unknown',
+                        id: s.student_id?.PRO_ID || 'N/A',
+                        marks: s.marks_obtained,
+                        percent: `${s.percentage}%`,
+                        year: new Date(s.created_at).getFullYear()
+                    }))
+                }
             },
         });
     } catch (error) {
@@ -114,6 +192,42 @@ router.get('/teacher', authenticateToken, authorize('teacher'), cacheMiddleware(
             student_count: studentCountMap[c._id.toString()] || 0,
         }));
 
+        // Add performance trend (average scores of tests in teacher's classes)
+        const performanceAgg = await TestResult.aggregate([
+            { $match: { test_id: { $in: await Test.find({ class_id: { $in: classIds } }).distinct('_id') } } },
+            {
+                $group: {
+                    _id: { month: { $month: '$created_at' } },
+                    avgScore: { $avg: '$percentage' }
+                }
+            },
+            { $sort: { '_id.month': 1 } }
+        ]);
+
+        // Add attendance trend (summary for last 30 days)
+        const attendanceTrendAgg = await Attendance.aggregate([
+            { $match: { class_id: { $in: classIds }, attendance_date: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] } } },
+            {
+                $group: {
+                    _id: '$attendance_date',
+                    presentCount: { $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] } },
+                    totalCount: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const performanceData = monthNames.map((name, index) => {
+            const perf = performanceAgg.find(p => p._id.month === index + 1);
+            return { name, value: perf ? Math.round(perf.avgScore) : 0 };
+        });
+
+        const attendanceData = attendanceTrendAgg.map(a => ({
+            date: a._id.split('-').slice(1).join('/'),
+            percentage: Math.round((a.presentCount / a.totalCount) * 100)
+        }));
+
         res.json({
             success: true,
             data: {
@@ -126,6 +240,10 @@ router.get('/teacher', authenticateToken, authorize('teacher'), cacheMiddleware(
                 stats: { total_classes: myClasses.length, total_students: totalStudents, pending_evaluations: pendingEvaluations, assigned_enquiries: assignedEnquiriesCount, pending_demos: pendingDemosCount },
                 enquiries: myEnquiries.map(e => ({ ...e, id: e._id })),
                 upcoming_demos: pendingDemos.map(d => ({ ...d, id: d._id })),
+                charts: {
+                    performance: performanceData,
+                    attendance: attendanceData
+                }
             },
         });
     } catch (error) {
@@ -163,6 +281,35 @@ router.get('/student', authenticateToken, authorize('student'), cacheMiddleware(
         const upcomingTests = allTests.filter(t => t.status === 'scheduled' && new Date(t.test_date) > now);
         const ongoingTests = allTests.filter(t => t.status === 'ongoing' || (new Date(t.test_date).toDateString() === now.toDateString() && t.status !== 'completed'));
 
+        // Performance trend (monthly average for this student)
+        const performanceAgg = await TestResult.aggregate([
+            { $match: { student_id: student._id } },
+            {
+                $group: {
+                    _id: { month: { $month: '$created_at' } },
+                    avgScore: { $avg: '$percentage' }
+                }
+            },
+            { $sort: { '_id.month': 1 } }
+        ]);
+
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const performanceData = monthNames.map((name, index) => {
+            const perf = performanceAgg.find(p => p._id.month === index + 1);
+            return { name, value: perf ? Math.round(perf.avgScore) : 0 };
+        });
+
+        // Attendance trend (last 30 days)
+        const last30DaysAttendance = await Attendance.find({ 
+            student_id: student._id, 
+            attendance_date: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] } 
+        }).sort({ attendance_date: 1 }).lean();
+
+        const attendanceTrend = last30DaysAttendance.map(a => ({
+            date: a.attendance_date.split('-').slice(1).join('/'),
+            status: a.status === 'present' || a.status === 'late' ? 1 : 0
+        }));
+
         res.json({
             success: true,
             data: {
@@ -177,6 +324,10 @@ router.get('/student', authenticateToken, authorize('student'), cacheMiddleware(
                 },
                 pending_homework: pendingHomework.map(s => ({ ...s, homework: s.homework_id })),
                 fee: feeAssignment ? { total: feeAssignment.final_fee, paid: feeAssignment.total_paid, pending: feeAssignment.total_pending, status: feeAssignment.payment_status } : null,
+                charts: {
+                    performance: performanceData,
+                    attendance: attendanceTrend
+                }
             },
         });
     } catch (error) {
@@ -231,7 +382,7 @@ router.get('/parent', authenticateToken, authorize('parent'), cacheMiddleware(15
             feeMap[f.student_id.toString()] = f;
         });
 
-        const children = mappings.map(m => {
+        const children = await Promise.all(mappings.map(async m => {
             const student = m.student_id;
             if (!student) return null;
             const sid = student._id.toString();
@@ -244,6 +395,30 @@ router.get('/parent', authenticateToken, authorize('parent'), cacheMiddleware(15
             const recentTest = testMap[sid];
             const feeAssignment = feeMap[sid];
 
+            // Add performance & attendance trends for this specific child
+            const [performanceAgg, last30DaysAttendance] = await Promise.all([
+                TestResult.aggregate([
+                    { $match: { student_id: student._id } },
+                    { $group: { _id: { month: { $month: '$created_at' } }, avgScore: { $avg: '$percentage' } } },
+                    { $sort: { '_id.month': 1 } }
+                ]),
+                Attendance.find({ 
+                    student_id: student._id, 
+                    attendance_date: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] } 
+                }).sort({ attendance_date: 1 }).lean()
+            ]);
+
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const performanceData = monthNames.map((name, index) => {
+                const perf = performanceAgg.find(p => p._id.month === index + 1);
+                return { name, value: perf ? Math.round(perf.avgScore) : 0 };
+            });
+
+            const attendanceTrend = last30DaysAttendance.map(a => ({
+                date: a.attendance_date.split('-').slice(1).join('/'),
+                status: a.status === 'present' || a.status === 'late' ? 1 : 0
+            }));
+
             return {
                 ...student,
                 id: student._id,
@@ -252,8 +427,12 @@ router.get('/parent', authenticateToken, authorize('parent'), cacheMiddleware(15
                 attendance_percentage: parseFloat(attendancePercent),
                 last_test: recentTest ? { ...recentTest, test_name: recentTest.test_id?.test_name } : null,
                 fee: feeAssignment ? { total: feeAssignment.final_fee, paid: feeAssignment.total_paid, pending: feeAssignment.total_pending, status: feeAssignment.payment_status } : null,
+                charts: {
+                    performance: performanceData,
+                    attendance: attendanceTrend
+                }
             };
-        }).filter(Boolean);
+        }));
 
         res.json({ success: true, data: { parent: { ...parent, id: parent._id }, children } });
     } catch (error) {
