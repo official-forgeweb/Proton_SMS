@@ -26,13 +26,21 @@ router.get('/', authenticateToken, async (req, res) => {
             }
         }
 
-        const classes = await Class.find(query).populate('primary_teacher_id').lean();
+        const classes = await Class.find(query)
+            .populate('primary_teacher_id')
+            .populate('schedule.teacher_id')
+            .lean();
 
         const data = classes.map(c => ({
             ...c,
             teacher_name: c.primary_teacher_id ? `${c.primary_teacher_id.first_name || ''} ${c.primary_teacher_id.last_name || ''}`.trim() : null,
             primary_teacher_id: c.primary_teacher_id?._id || c.primary_teacher_id,
-            id: c._id
+            id: c._id,
+            schedule: c.schedule?.map(s => ({
+                ...s,
+                teacher_name: s.teacher_id ? `${s.teacher_id.first_name || ''} ${s.teacher_id.last_name || ''}`.trim() : 'Unassigned',
+                teacher_id: s.teacher_id?._id || s.teacher_id
+            }))
         }));
 
         res.json({ success: true, data });
@@ -47,6 +55,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     try {
         const cls = await Class.findById(req.params.id)
             .populate('primary_teacher_id')
+            .populate('schedule.teacher_id')
             .lean();
 
         if (!cls) return res.status(404).json({ success: false, message: 'Class not found' });

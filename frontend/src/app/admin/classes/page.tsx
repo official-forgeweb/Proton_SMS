@@ -13,11 +13,9 @@ export default function ClassesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [formData, setFormData] = useState({
-        class_name: '', grade_level: '', subject: '', max_students: 30,
-        class_time_start: '09:00', class_time_end: '10:00',
-        primary_teacher_id: '', class_days: ['monday', 'wednesday', 'friday'],
-        status: 'upcoming'
+    const [formData, setFormData] = useState<any>({
+        class_name: '', grade_level: '', max_students: 30,
+        status: 'upcoming', schedule: []
     });
 
     useEffect(() => { fetchClasses(); fetchTeachers(); }, []);
@@ -32,34 +30,48 @@ export default function ClassesPage() {
         setFormData({
             class_name: cls.class_name,
             grade_level: cls.grade_level,
-            subject: cls.subject,
             max_students: cls.max_students,
-            class_time_start: cls.class_time_start,
-            class_time_end: cls.class_time_end,
-            primary_teacher_id: cls.primary_teacher_id || '',
-            class_days: cls.class_days || ['monday', 'wednesday', 'friday'],
-            status: cls.status
+            status: cls.status,
+            schedule: cls.schedule || []
         });
         setIsModalOpen(true);
+    };
+
+    const addSession = () => {
+        setFormData({
+            ...formData,
+            schedule: [...formData.schedule, {
+                subject: '', teacher_id: '', time_start: '09:00', time_end: '10:00', days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+            }]
+        });
+    };
+
+    const removeSession = (index: number) => {
+        const newSchedule = [...formData.schedule];
+        newSchedule.splice(index, 1);
+        setFormData({ ...formData, schedule: newSchedule });
+    };
+
+    const updateSession = (index: number, field: string, value: any) => {
+        const newSchedule = [...formData.schedule];
+        newSchedule[index] = { ...newSchedule[index], [field]: value };
+        setFormData({ ...formData, schedule: newSchedule });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             const submitData: any = { ...formData };
-            if (!submitData.primary_teacher_id) delete submitData.primary_teacher_id;
-            
             if (editingId) {
                 await api.put(`/classes/${editingId}`, submitData);
             } else {
                 await api.post('/classes', submitData);
             }
-            
             setIsModalOpen(false);
             setEditingId(null);
             fetchClasses();
-            setFormData({ class_name: '', grade_level: '', subject: '', max_students: 30, class_time_start: '09:00', class_time_end: '10:00', primary_teacher_id: '', class_days: ['monday', 'wednesday', 'friday'], status: 'upcoming' });
-        } catch (error) { console.error('Error saving class:', error); alert('Failed to save class'); }
+            setFormData({ class_name: '', grade_level: '', max_students: 30, status: 'upcoming', schedule: [] });
+        } catch (error) { console.error('Error saving batch:', error); alert('Failed to save batch'); }
     };
 
     const fetchClasses = async () => {
@@ -85,10 +97,10 @@ export default function ClassesPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
                     <div>
                         <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
-                            Class Management
+                            Batch Management
                         </h1>
                         <p style={{ fontSize: '13px', color: '#A1A5B7', marginTop: '4px', fontWeight: 500 }}>
-                            Manage batches, schedules, and class assignments.
+                            Manage batches, individual classes, and teacher assignments.
                         </p>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -103,7 +115,7 @@ export default function ClassesPage() {
                             <button
                                 onClick={() => {
                                     setEditingId(null);
-                                    setFormData({ class_name: '', grade_level: '', subject: '', max_students: 30, class_time_start: '09:00', class_time_end: '10:00', primary_teacher_id: '', class_days: ['monday', 'wednesday', 'friday'], status: 'upcoming' });
+                                    setFormData({ class_name: '', grade_level: '', max_students: 30, status: 'upcoming', schedule: [] });
                                     setIsModalOpen(true);
                                 }}
                                 style={{
@@ -139,7 +151,7 @@ export default function ClassesPage() {
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
                                 <thead>
                                     <tr style={{ background: '#F8F9FD' }}>
-                                        {['Class Code', 'Name / Subject', 'Teacher', 'Schedule', 'Students', 'Status', 'Actions'].map((h, i) => (
+                                        {['Batch Code', 'Batch Name', 'Subjects / Teachers', 'Time Slots', 'Capacity', 'Status', 'Actions'].map((h, i) => (
                                             <th key={h} style={{
                                                 padding: '13px 16px', textAlign: i === 6 ? 'right' : 'left',
                                                 color: '#A1A5B7', fontWeight: 600, fontSize: '11px',
@@ -162,29 +174,34 @@ export default function ClassesPage() {
                                             </td>
                                             <td style={{ padding: '14px 16px' }}>
                                                 <div style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B' }}>{cls.class_name}</div>
-                                                <div style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '2px' }}>{cls.grade_level} • {cls.subject}</div>
+                                                <div style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '2px' }}>{cls.grade_level}</div>
                                             </td>
                                             <td style={{ padding: '14px 16px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <div style={{
-                                                        width: '28px', height: '28px', borderRadius: '8px',
-                                                        background: '#FFEBEE', color: '#E53935',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        fontSize: '12px', fontWeight: 800,
-                                                    }}>
-                                                        {cls.teacher_name?.[0] || 'T'}
-                                                    </div>
-                                                    <span style={{ fontSize: '13px', fontWeight: 500, color: '#5E6278' }}>{cls.teacher_name || 'Unassigned'}</span>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                    {cls.schedule && cls.schedule.length > 0 ? cls.schedule.map((s: any, i: number) => (
+                                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <div style={{ width: '22px', height: '22px', borderRadius: '4px', background: '#FFEBEE', color: '#E53935', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 800 }}>
+                                                                {s.subject?.[0] || 'S'}
+                                                            </div>
+                                                            <span style={{ fontSize: '12px', fontWeight: 500, color: '#5E6278' }}>
+                                                                {s.subject} <span style={{ color: '#A1A5B7' }}>• {teachers.find(t => t.id === (s.teacher_id?._id || s.teacher_id))?.first_name || 'Unassigned'}</span>
+                                                            </span>
+                                                        </div>
+                                                    )) : <span style={{ fontSize: '12px', color: '#A1A5B7' }}>No classes scheduled</span>}
                                                 </div>
                                             </td>
                                             <td style={{ padding: '14px 16px' }}>
                                                 <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#5E6278', fontWeight: 500 }}>
-                                                        <Calendar size={12} color="#A1A5B7" /> {cls.class_days?.join(', ') || '-'}
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#A1A5B7' }}>
-                                                        <Clock size={12} /> {cls.class_time_start} – {cls.class_time_end}
-                                                    </div>
+                                                    {cls.schedule && cls.schedule.length > 0 ? (
+                                                        <>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#5E6278', fontWeight: 500 }}>
+                                                                <Clock size={12} color="#A1A5B7" /> {cls.schedule[0].time_start} – {cls.schedule[cls.schedule.length - 1].time_end}
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#A1A5B7' }}>
+                                                                <span style={{ fontSize: '11px' }}>{cls.schedule.length} sessions scheduled</span>
+                                                            </div>
+                                                        </>
+                                                    ) : '-'}
                                                 </div>
                                             </td>
                                             <td style={{ padding: '14px 16px' }}>
@@ -237,58 +254,80 @@ export default function ClassesPage() {
                 </div>
             </div>
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? "Edit Class" : "Create New Class"}>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? "Edit Batch" : "Create New Batch"}>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                         <div>
-                            <label style={labelStyle}>Class Name</label>
-                            <input required style={inputStyle} value={formData.class_name} onChange={e => setFormData({ ...formData, class_name: e.target.value })} />
+                            <label style={labelStyle}>Batch Name</label>
+                            <input required style={inputStyle} value={formData.class_name} onChange={e => setFormData({ ...formData, class_name: e.target.value })} placeholder="e.g. 10th Grade Morning Batch" />
                         </div>
                         <div>
-                            <label style={labelStyle}>Grade Level</label>
-                            <input required style={inputStyle} value={formData.grade_level} onChange={e => setFormData({ ...formData, grade_level: e.target.value })} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div>
-                            <label style={labelStyle}>Subject</label>
-                            <input required style={inputStyle} value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} />
+                            <label style={labelStyle}>Grade/Level</label>
+                            <input required style={inputStyle} value={formData.grade_level} onChange={e => setFormData({ ...formData, grade_level: e.target.value })} placeholder="e.g. Class 10" />
                         </div>
                         <div>
-                            <label style={labelStyle}>Max Students</label>
+                            <label style={labelStyle}>Max Students (Capacity)</label>
                             <input type="number" required style={inputStyle} value={formData.max_students} onChange={e => setFormData({ ...formData, max_students: Number(e.target.value) })} />
                         </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div>
-                            <label style={labelStyle}>Start Time</label>
-                            <input type="time" required style={inputStyle} value={formData.class_time_start} onChange={e => setFormData({ ...formData, class_time_start: e.target.value })} />
+
+                    <div style={{ borderTop: '1px solid #F0F0F5', paddingTop: '16px', marginTop: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1A1D3B' }}>Class Schedule (Sessions)</h4>
+                            <button type="button" onClick={addSession} style={{ padding: '6px 12px', background: '#FFEBEE', color: '#E53935', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Plus size={14} /> Add Session
+                            </button>
                         </div>
-                        <div>
-                            <label style={labelStyle}>End Time</label>
-                            <input type="time" required style={inputStyle} value={formData.class_time_end} onChange={e => setFormData({ ...formData, class_time_end: e.target.value })} />
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {formData.schedule && formData.schedule.map((session: any, i: number) => (
+                                <div key={i} style={{ padding: '16px', background: '#F8F9FD', borderRadius: '12px', border: '1px solid #F0F0F5', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}>
+                                    <button type="button" onClick={() => removeSession(i)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: '#A1A5B7', cursor: 'pointer', fontSize: '18px' }}>×</button>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '12px' }}>
+                                        <div>
+                                            <label style={{ ...labelStyle, fontSize: '11px' }}>Subject</label>
+                                            <input required style={inputStyle} value={session.subject} onChange={e => updateSession(i, 'subject', e.target.value)} placeholder="e.g. Mathematics" />
+                                        </div>
+                                        <div>
+                                            <label style={{ ...labelStyle, fontSize: '11px' }}>Teacher</label>
+                                            <select required style={inputStyle} value={session.teacher_id?._id || session.teacher_id} onChange={e => updateSession(i, 'teacher_id', e.target.value)}>
+                                                <option value="">Select Teacher...</option>
+                                                {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={{ ...labelStyle, fontSize: '11px' }}>Start Time</label>
+                                            <input type="time" required style={inputStyle} value={session.time_start} onChange={e => updateSession(i, 'time_start', e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <label style={{ ...labelStyle, fontSize: '11px' }}>End Time</label>
+                                            <input type="time" required style={inputStyle} value={session.time_end} onChange={e => updateSession(i, 'time_end', e.target.value)} />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {(!formData.schedule || formData.schedule.length === 0) && (
+                                <div style={{ textAlign: 'center', padding: '24px', background: '#F8F9FD', borderRadius: '12px', border: '1px dashed #D1D5DB', color: '#A1A5B7', fontSize: '13px' }}>
+                                    No sessions added. Click "Add Session" to include subjects and teachers in this batch.
+                                </div>
+                            )}
                         </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+
+                    <div style={{ borderTop: '1px solid #F0F0F5', paddingTop: '16px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                            <label style={labelStyle}>Primary Teacher</label>
-                            <select style={inputStyle} value={formData.primary_teacher_id} onChange={e => setFormData({ ...formData, primary_teacher_id: e.target.value })}>
-                                <option value="">Select Teacher...</option>
-                                {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label style={labelStyle}>Status</label>
-                            <select style={inputStyle} value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+                            <label style={labelStyle}>Batch Status</label>
+                            <select style={{ ...inputStyle, width: '150px' }} value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
                                 <option value="upcoming">Upcoming</option>
                                 <option value="ongoing">Ongoing</option>
                                 <option value="completed">Completed</option>
                             </select>
                         </div>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
-                        <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '10px 22px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
-                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(229,57,53,0.3)' }}>{editingId ? "Update Class" : "Save Class"}</button>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '10px 22px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+                            <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(229,57,53,0.3)' }}>{editingId ? "Update Batch" : "Create Batch"}</button>
+                        </div>
                     </div>
                 </form>
             </Modal>

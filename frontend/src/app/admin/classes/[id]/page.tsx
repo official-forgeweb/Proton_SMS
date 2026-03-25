@@ -38,13 +38,9 @@ export default function ClassProfilePage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: '24px' }}>
                     <div className="card">
                         <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <BookOpen size={18} color="var(--primary)" /> Class Details
+                            <BookOpen size={18} color="var(--primary)" /> Batch Details
                         </h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                            <div>
-                                <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Primary Teacher</p>
-                                <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{cls.teacher ? cls.teacher.name : 'Unassigned'}</p>
-                            </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                 <div>
                                     <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}><Users size={12} /> Students</p>
@@ -55,10 +51,21 @@ export default function ClassProfilePage() {
                                     <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{cls.room_number || 'TBD'}</p>
                                 </div>
                             </div>
-                            <div style={{ padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
-                                <p style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}><Calendar size={14} /> <strong>Days:</strong> {cls.class_days?.join(', ') || 'Not Configured'}</p>
-                                <p style={{ display: 'flex', gap: '8px' }}><Clock size={14} /> <strong>Time:</strong> {cls.class_time_start} - {cls.class_time_end}</p>
-                            </div>
+                            
+                            <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-primary)', paddingBottom: '8px', marginTop: '8px' }}>Schedule</h4>
+                            
+                            {cls.schedule && cls.schedule.length > 0 ? cls.schedule.map((session: any, i: number) => (
+                                <div key={i} style={{ padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '8px', borderLeft: '3px solid var(--primary)' }}>
+                                    <p style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>{session.subject}</p>
+                                    <p style={{ fontSize: '13px', display: 'flex', gap: '8px', marginBottom: '4px' }}><Users size={14} /> <strong>Teacher:</strong> {session.teacher_id?.first_name} {session.teacher_id?.last_name || 'Unassigned'}</p>
+                                    <p style={{ fontSize: '13px', display: 'flex', gap: '8px' }}><Clock size={14} /> <strong>Time:</strong> {session.time_start} - {session.time_end}</p>
+                                </div>
+                            )) : (
+                                <div style={{ padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                                    <p style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}><Calendar size={14} /> <strong>Days:</strong> {cls.class_days?.join(', ') || 'Not Configured'}</p>
+                                    <p style={{ display: 'flex', gap: '8px' }}><Clock size={14} /> <strong>Time:</strong> {cls.class_time_start} - {cls.class_time_end}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 

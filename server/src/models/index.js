@@ -68,30 +68,38 @@ const TeacherSchema = new mongoose.Schema({
     permissions: { type: [String], default: ['classes', 'students', 'enquiries', 'tests', 'homework', 'demos', 'attendance'] },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
-// Class Schema
+// Class Schema (effectively a Batch)
 const ClassSchema = new mongoose.Schema({
     class_code: { type: String, unique: true },
-    class_name: String,
+    class_name: String, // Batch Name
     grade_level: String,
-    subject: String,
-    section: String,
+    
+    // Multiple sessions in one batch
+    schedule: [{
+        subject: String,
+        teacher_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher' },
+        time_start: String,
+        time_end: String,
+        days: [String]
+    }],
+
+    // Common Batch Details
     academic_year: String,
     batch_type: String,
-    batch_timing: String,
     start_date: String,
     end_date: String,
-    class_days: [String],
-    class_time_start: String,
-    class_time_end: String,
-    duration_minutes: Number,
-    primary_teacher_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', index: true },
-    assistant_teacher_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', index: true },
     max_students: Number,
     current_students_count: { type: Number, default: 0 },
     room_number: String,
-    is_online: { type: Boolean, default: false },
     status: { type: String, default: 'ongoing', index: true },
     course_fee: Number,
+
+    // Keep legacy fields for backward compatibility/quick access
+    subject: String,
+    primary_teacher_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', index: true },
+    class_days: [String],
+    class_time_start: String,
+    class_time_end: String,
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 const StudentClassEnrollmentSchema = new mongoose.Schema({

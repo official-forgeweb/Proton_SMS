@@ -60,8 +60,13 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
                 .lean(),
             TestResult.aggregate([
                 {
+                    $match: {
+                        created_at: { $exists: true, $ne: null }
+                    }
+                },
+                {
                     $group: {
-                        _id: { month: { $month: '$created_at' } },
+                        _id: { month: { $month: { $toDate: '$created_at' } } },
                         avgScore: { $avg: '$percentage' }
                     }
                 },
@@ -69,8 +74,13 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
             ]),
             Attendance.aggregate([
                 {
+                    $match: {
+                        attendance_date: { $exists: true, $ne: '', $ne: null }
+                    }
+                },
+                {
                     $group: {
-                        _id: { month: { $month: '$attendance_date' } },
+                        _id: { month: { $month: { $toDate: '$attendance_date' } } },
                         presentCount: { $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] } },
                         totalCount: { $sum: 1 }
                     }
