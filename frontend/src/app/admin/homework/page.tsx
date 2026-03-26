@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { PenTool, Plus, Clock, Users } from 'lucide-react';
 
 export default function HomeworkPage() {
@@ -158,11 +160,11 @@ export default function HomeworkPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                         <div>
                             <label style={labelStyle}>Assigned Date</label>
-                            <input type="date" required style={inputStyle} value={formData.assigned_date} onChange={e => setFormData({ ...formData, assigned_date: e.target.value })} />
+                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.assigned_date ? new Date(formData.assigned_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, assigned_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select assigned date" />
                         </div>
                         <div>
                             <label style={labelStyle}>Due Date</label>
-                            <input type="date" required style={inputStyle} value={formData.due_date} onChange={e => setFormData({ ...formData, due_date: e.target.value })} />
+                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.due_date ? new Date(formData.due_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, due_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select due date" />
                         </div>
                         <div>
                             <label style={labelStyle}>Total Marks</label>

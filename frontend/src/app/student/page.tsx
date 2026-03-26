@@ -40,6 +40,11 @@ export default function StudentDashboard() {
     const performanceData = data?.charts?.performance || [];
     const attendanceTrend = data?.charts?.attendance || [];
 
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
     return (
         <DashboardLayout requiredRole="student">
             <div className="page-header" style={{ marginBottom: '32px' }}>
@@ -199,7 +204,7 @@ export default function StudentDashboard() {
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                             <div>
                                                 <p style={{ fontWeight: 700, fontSize: '15px', color: '#1A1D3B' }}>{test.test_name}</p>
-                                                <p style={{ fontSize: '12px', color: '#8F92A1', marginTop: '4px' }}>{test.test_date}</p>
+                                                <p style={{ fontSize: '12px', color: '#8F92A1', marginTop: '4px' }}>{formatDate(test.test_date)}</p>
                                             </div>
                                             <div style={{ textAlign: 'right' }}>
                                                 <p style={{ fontSize: '20px', fontWeight: 800, color: test.pass_fail === 'pass' ? '#10B981' : '#E53935' }}>
@@ -246,7 +251,7 @@ export default function StudentDashboard() {
                                     }}>
                                         <p style={{ fontWeight: 700, fontSize: '15px', color: '#1A1D3B' }}>{hw.homework?.title || 'Homework'}</p>
                                         <p style={{ fontSize: '12px', color: '#8F92A1', marginTop: '6px' }}>
-                                            Subject: <span style={{ color: '#5E6278', fontWeight: 600 }}>{hw.homework?.subject}</span> • Due: <span style={{ color: '#E53935', fontWeight: 600 }}>{hw.homework?.due_date}</span>
+                                            Subject: <span style={{ color: '#5E6278', fontWeight: 600 }}>{hw.homework?.subject}</span> • Due: <span style={{ color: '#E53935', fontWeight: 600 }}>{formatDate(hw.homework?.due_date)}</span>
                                         </p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
                                             <div style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, background: '#FEF3C7', color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '6px' }}>

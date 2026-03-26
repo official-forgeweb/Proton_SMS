@@ -181,20 +181,29 @@ export default function Sidebar() {
                     pointerEvents: 'none', zIndex: 0
                 }} />
                 {/* Logo */}
-                <div style={{ padding: '32px 24px 24px', display: 'flex', alignItems: 'center', gap: '12px', position: 'relative', zIndex: 1 }}>
-                    <div style={{
-                        width: '38px', height: '38px', borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white', fontSize: '18px', fontWeight: 800, fontStyle: 'italic',
-                        flexShrink: 0,
-                        boxShadow: '0 4px 12px rgba(229,57,53,0.3)',
-                    }}>
-                        ia
-                    </div>
-                    <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '22px', color: '#FFFFFF', letterSpacing: '-0.5px' }}>
-                        ia Academy
-                    </span>
+                <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+                    <Link href={`/${user?.role}`} style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
+                        <img 
+                            src="/image.png" 
+                            alt="Proton Logo" 
+                            style={{ 
+                                width: '42px', 
+                                height: '42px', 
+                                borderRadius: '50%',
+                                boxShadow: '0 4px 12px rgba(229,57,53,0.3)',
+                                backgroundColor: '#FF0000'
+                            }} 
+                        />
+                        <span style={{ 
+                            fontFamily: 'Poppins, sans-serif', 
+                            fontWeight: 800, 
+                            fontSize: '22px', 
+                            color: '#FFFFFF', 
+                            letterSpacing: '-0.5px' 
+                        }}>
+                            Proton Academy
+                        </span>
+                    </Link>
                 </div>
 
                 {/* Navigation Sections */}

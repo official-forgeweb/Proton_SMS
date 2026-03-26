@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import {
     Search, Calendar, Plus, Trash2, Edit2, ChevronLeft, ChevronRight, MoreHorizontal, GraduationCap
 } from 'lucide-react';
@@ -345,7 +347,7 @@ export default function StudentsPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
                             <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Date of Birth</label>
-                            <input type="date" required style={{ padding: '10px 14px', border: '1px solid #F0F0F5', borderRadius: '10px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none' }} value={formData.date_of_birth} onChange={e => setFormData({ ...formData, date_of_birth: e.target.value })} />
+                            <DatePicker required showMonthDropdown showYearDropdown scrollableYearDropdown yearDropdownItemNumber={100} dropdownMode="select" selected={formData.date_of_birth ? new Date(formData.date_of_birth) : null} onChange={(date: Date | null) => setFormData({ ...formData, date_of_birth: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select date of birth" />
                         </div>
                         <div>
                             <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Gender</label>

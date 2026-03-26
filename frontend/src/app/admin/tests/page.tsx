@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import Modal from '@/components/Modal';
 import { ClipboardList, Plus, Calendar, FileText, CheckCircle, Clock } from 'lucide-react';
 
@@ -163,7 +165,7 @@ export default function TestsPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
                             <label style={labelStyle}>Test Date</label>
-                            <input type="date" required style={inputStyle} value={formData.test_date} onChange={e => setFormData({ ...formData, test_date: e.target.value })} />
+                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.test_date ? new Date(formData.test_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, test_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select test date" />
                         </div>
                         <div>
                             <label style={labelStyle}>Duration (Minutes)</label>

@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import PermissionGuard from '@/components/PermissionGuard';
 import api from '@/lib/api';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { ClipboardList, Plus, Search, CheckCircle, FileText, BarChart, X } from 'lucide-react';
 
 export default function TeacherTestsPage() {
@@ -169,7 +171,7 @@ function AddTestModal({ onClose, onSuccess }: any) {
 
                     <div className="input-group">
                         <label>Assessment Date *</label>
-                        <input type="date" className="input-field" value={formData.test_date} onChange={e => setFormData(p => ({ ...p, test_date: e.target.value }))} />
+                        <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.test_date ? new Date(formData.test_date) : null} onChange={(date: Date | null) => setFormData((p: any) => ({ ...p, test_date: date ? date.toISOString().split('T')[0] : '' }))} dateFormat="MMMM d, yyyy" placeholderText="Select assessment date" />
                     </div>
 
                     <div className="input-group">

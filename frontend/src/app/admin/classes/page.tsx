@@ -5,6 +5,8 @@ import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
 import { BookOpen, Plus, Calendar, Clock, Users, Download, Eye } from 'lucide-react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 export default function ClassesPage() {
     const router = useRouter();
@@ -15,8 +17,23 @@ export default function ClassesPage() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [formData, setFormData] = useState<any>({
         class_name: '', grade_level: '', max_students: 30,
-        status: 'upcoming', schedule: []
+        status: 'upcoming', schedule: [], start_date: ''
     });
+
+    const formatTime = (time: string) => {
+        if (!time) return '';
+        const [h, m] = time.split(':');
+        let hours = parseInt(h, 10);
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        return `${hours}:${m} ${ampm}`;
+    };
+
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
 
     useEffect(() => { fetchClasses(); fetchTeachers(); }, []);
 
@@ -32,7 +49,8 @@ export default function ClassesPage() {
             grade_level: cls.grade_level,
             max_students: cls.max_students,
             status: cls.status,
-            schedule: cls.schedule || []
+            schedule: cls.schedule || [],
+            start_date: cls.start_date || ''
         });
         setIsModalOpen(true);
     };
@@ -70,7 +88,7 @@ export default function ClassesPage() {
             setIsModalOpen(false);
             setEditingId(null);
             fetchClasses();
-            setFormData({ class_name: '', grade_level: '', max_students: 30, status: 'upcoming', schedule: [] });
+            setFormData({ class_name: '', grade_level: '', max_students: 30, status: 'upcoming', schedule: [], start_date: '' });
         } catch (error) { console.error('Error saving batch:', error); alert('Failed to save batch'); }
     };
 
@@ -90,8 +108,50 @@ export default function ClassesPage() {
         display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em',
     };
 
+    const datePickerStyles = `
+        .react-datepicker-wrapper {
+            width: 100%;
+        }
+        .react-datepicker__input-container input {
+            padding: 10px 14px;
+            border: 1px solid #F0F0F5;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #F8F9FD;
+            color: #1A1D3B;
+            outline: none;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+        .react-datepicker__input-container input:focus {
+            border-color: #E53935;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
+        }
+        .react-datepicker {
+            font-family: 'Inter', sans-serif;
+            border-radius: 12px;
+            border: 1px solid #F0F0F5;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .react-datepicker__header {
+            background-color: #F8F9FD;
+            border-bottom: 1px solid #F0F0F5;
+        }
+        .react-datepicker__day--selected {
+            background-color: #E53935 !important;
+            border-radius: 8px;
+        }
+        .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
+            background-color: #E53935 !important;
+        }
+    `;
+
     return (
         <DashboardLayout requiredRole="admin">
+            <style>{datePickerStyles}</style>
             <div style={{ paddingBottom: '32px' }}>
                 {/* Page Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
@@ -115,7 +175,7 @@ export default function ClassesPage() {
                             <button
                                 onClick={() => {
                                     setEditingId(null);
-                                    setFormData({ class_name: '', grade_level: '', max_students: 30, status: 'upcoming', schedule: [] });
+                                    setFormData({ class_name: '', grade_level: '', max_students: 30, status: 'upcoming', schedule: [], start_date: '' });
                                     setIsModalOpen(true);
                                 }}
                                 style={{
@@ -195,7 +255,7 @@ export default function ClassesPage() {
                                                     {cls.schedule && cls.schedule.length > 0 ? (
                                                         <>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#5E6278', fontWeight: 500 }}>
-                                                                <Clock size={12} color="#A1A5B7" /> {cls.schedule[0].time_start} – {cls.schedule[cls.schedule.length - 1].time_end}
+                                                                <Clock size={12} color="#A1A5B7" /> {formatTime(cls.schedule[0].time_start)} – {formatTime(cls.schedule[cls.schedule.length - 1].time_end)}
                                                             </div>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#A1A5B7' }}>
                                                                 <span style={{ fontSize: '11px' }}>{cls.schedule.length} sessions scheduled</span>
@@ -211,13 +271,20 @@ export default function ClassesPage() {
                                                 </div>
                                             </td>
                                             <td style={{ padding: '14px 16px' }}>
-                                                <span style={{
-                                                    padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: 700,
-                                                    background: cls.status === 'ongoing' ? '#D1FAE5' : '#F4F5F9',
-                                                    color: cls.status === 'ongoing' ? '#059669' : '#8F92A1',
-                                                }}>
-                                                    {cls.status}
-                                                </span>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                                                    <span style={{
+                                                        padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: 700,
+                                                        background: cls.status === 'ongoing' ? '#D1FAE5' : cls.status === 'upcoming' ? '#FEF3C7' : '#F4F5F9',
+                                                        color: cls.status === 'ongoing' ? '#059669' : cls.status === 'upcoming' ? '#D97706' : '#8F92A1',
+                                                    }}>
+                                                        {cls.status}
+                                                    </span>
+                                                    {cls.status === 'upcoming' && cls.start_date && (
+                                                        <span style={{ fontSize: '11px', color: '#A1A5B7', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                                                            <Calendar size={10} /> Starts {formatDate(cls.start_date)}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td style={{ padding: '14px 16px', textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                                                 <button
@@ -298,11 +365,39 @@ export default function ClassesPage() {
                                         </div>
                                         <div>
                                             <label style={{ ...labelStyle, fontSize: '11px' }}>Start Time</label>
-                                            <input type="time" required style={inputStyle} value={session.time_start} onChange={e => updateSession(i, 'time_start', e.target.value)} />
+                                            <DatePicker
+                                                selected={session.time_start ? new Date(`2000-01-01T${session.time_start}:00`) : null}
+                                                onChange={(date) => {
+                                                    if (date) {
+                                                        const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                                                        updateSession(i, 'time_start', time);
+                                                    }
+                                                }}
+                                                showTimeSelect
+                                                showTimeSelectOnly
+                                                timeIntervals={15}
+                                                timeCaption="Start"
+                                                dateFormat="h:mm aa"
+                                                placeholderText="Start"
+                                            />
                                         </div>
                                         <div>
                                             <label style={{ ...labelStyle, fontSize: '11px' }}>End Time</label>
-                                            <input type="time" required style={inputStyle} value={session.time_end} onChange={e => updateSession(i, 'time_end', e.target.value)} />
+                                            <DatePicker
+                                                selected={session.time_end ? new Date(`2000-01-01T${session.time_end}:00`) : null}
+                                                onChange={(date) => {
+                                                    if (date) {
+                                                        const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                                                        updateSession(i, 'time_end', time);
+                                                    }
+                                                }}
+                                                showTimeSelect
+                                                showTimeSelectOnly
+                                                timeIntervals={15}
+                                                timeCaption="End"
+                                                dateFormat="h:mm aa"
+                                                placeholderText="End"
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -316,13 +411,35 @@ export default function ClassesPage() {
                     </div>
 
                     <div style={{ borderTop: '1px solid #F0F0F5', paddingTop: '16px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                            <label style={labelStyle}>Batch Status</label>
-                            <select style={{ ...inputStyle, width: '150px' }} value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
-                                <option value="upcoming">Upcoming</option>
-                                <option value="ongoing">Ongoing</option>
-                                <option value="completed">Completed</option>
-                            </select>
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                            <div>
+                                <label style={labelStyle}>Batch Status</label>
+                                <select style={{ ...inputStyle, width: '150px' }} value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+                                    <option value="upcoming">Upcoming</option>
+                                    <option value="ongoing">Ongoing</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+                            {formData.status === 'upcoming' && (
+                                <div>
+                                    <label style={labelStyle}>Starts From</label>
+                                    <DatePicker
+                                        showMonthDropdown
+                                        showYearDropdown
+                                        scrollableYearDropdown
+                                        dropdownMode="select"
+                                        selected={formData.start_date ? new Date(formData.start_date) : null}
+                                        onChange={(date) => {
+                                            if (date) {
+                                                const dateStr = date.toISOString().split('T')[0];
+                                                setFormData({ ...formData, start_date: dateStr });
+                                            }
+                                        }}
+                                        dateFormat="MMM d, yyyy"
+                                        placeholderText="Pick Start Date"
+                                    />
+                                </div>
+                            )}
                         </div>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '10px 22px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Cancel</button>

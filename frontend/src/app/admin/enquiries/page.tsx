@@ -8,6 +8,8 @@ import {
     MessageSquare, User, Target, CheckCircle, AlertTriangle,
     Filter, Eye, ArrowRight
 } from 'lucide-react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 export default function EnquiriesPage() {
     const router = useRouter();
@@ -463,8 +465,8 @@ function DemoModal({ enquiryId, onClose, onSuccess }: any) {
             <div className="modal">
                 <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px' }}>Schedule Demo Class</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div className="input-group"><label>Date *</label><input type="date" className="input-field" value={formData.demo_date} onChange={(e) => setFormData(p => ({ ...p, demo_date: e.target.value }))} /></div>
-                    <div className="input-group"><label>Time *</label><input type="time" className="input-field" value={formData.demo_time} onChange={(e) => setFormData(p => ({ ...p, demo_time: e.target.value }))} /></div>
+                    <div className="input-group"><label>Date *</label><DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.demo_date ? new Date(formData.demo_date) : null} onChange={(date: Date | null) => setFormData((p: any) => ({ ...p, demo_date: date ? date.toISOString().split('T')[0] : '' }))} dateFormat="MMMM d, yyyy" placeholderText="Select date" /></div>
+                    <div className="input-group"><label>Time *</label><DatePicker required selected={formData.demo_time ? new Date(`1970-01-01T${formData.demo_time}:00`) : null} onChange={(date: Date | null) => setFormData((p: any) => ({ ...p, demo_time: date ? date.toTimeString().slice(0, 5) : '' }))} showTimeSelect showTimeSelectOnly timeIntervals={15} timeCaption="Time" dateFormat="h:mm aa" placeholderText="Select time" /></div>
                     <div className="input-group"><label>Subject</label><input className="input-field" value={formData.subject} onChange={(e) => setFormData(p => ({ ...p, subject: e.target.value }))} placeholder="e.g., Mathematics" /></div>
                     <div className="input-group"><label>Topic</label><input className="input-field" value={formData.topic} onChange={(e) => setFormData(p => ({ ...p, topic: e.target.value }))} placeholder="e.g., Quadratic Equations" /></div>
                     <div className="input-group"><label>Class</label>

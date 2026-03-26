@@ -5,6 +5,8 @@ import api from '@/lib/api';
 import { useParams, useRouter } from 'next/navigation';
 import { Users, CheckCircle, XCircle, Clock, ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 export default function TeacherClassAttendancePage() {
     const params = useParams();
@@ -87,13 +89,16 @@ export default function TeacherClassAttendancePage() {
 
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <div style={{ background: 'var(--bg-secondary)', padding: '4px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)' }}>
-                        <input
-                            type="date"
+                        <DatePicker
+                            showMonthDropdown
+                            showYearDropdown
+                            scrollableYearDropdown
+                            dropdownMode="select"
+                            selected={attendanceDate ? new Date(attendanceDate) : null}
+                            onChange={(date: Date | null) => setAttendanceDate(date ? date.toISOString().split('T')[0] : '')}
+                            maxDate={new Date()}
+                            dateFormat="MMMM d, yyyy"
                             className="input-field"
-                            style={{ border: 'none', background: 'transparent' }}
-                            value={attendanceDate}
-                            onChange={(e) => setAttendanceDate(e.target.value)}
-                            max={new Date().toISOString().split('T')[0]}
                         />
                     </div>
                     <button

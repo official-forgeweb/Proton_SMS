@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import Modal from '@/components/Modal';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { CreditCard, Search, Plus, DollarSign, Download, Clock, CheckCircle } from 'lucide-react';
 
 export default function FeesPage() {
@@ -230,7 +232,7 @@ export default function FeesPage() {
                         </div>
                         <div>
                             <label className="label">Due Date *</label>
-                            <input type="date" required className="input-field" value={assignFormData.due_date} onChange={e => setAssignFormData({ ...assignFormData, due_date: e.target.value })} />
+                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={assignFormData.due_date ? new Date(assignFormData.due_date) : null} onChange={(date: Date | null) => setAssignFormData({ ...assignFormData, due_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select due date" />
                         </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>

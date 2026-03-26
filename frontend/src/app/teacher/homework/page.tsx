@@ -7,6 +7,8 @@ import Modal from '@/components/Modal';
 import { useAuthStore } from '@/stores/authStore';
 import { PenTool, Plus, Clock, Users, FileText } from 'lucide-react';
 import Link from 'next/link';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 export default function TeacherHomeworkPage() {
     const { user } = useAuthStore();
@@ -142,11 +144,11 @@ export default function TeacherHomeworkPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                         <div>
                             <label className="label">Assigned Date</label>
-                            <input type="date" required className="input-field" value={formData.assigned_date} onChange={e => setFormData({ ...formData, assigned_date: e.target.value })} />
+                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.assigned_date ? new Date(formData.assigned_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, assigned_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select assigned date" />
                         </div>
                         <div>
                             <label className="label">Due Date</label>
-                            <input type="date" required className="input-field" value={formData.due_date} onChange={e => setFormData({ ...formData, due_date: e.target.value })} />
+                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.due_date ? new Date(formData.due_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, due_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select due date" />
                         </div>
                         <div>
                             <label className="label">Total Marks</label>
