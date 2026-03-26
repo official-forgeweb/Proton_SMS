@@ -1,0 +1,531 @@
+// Prisma Schema for Proton SMS
+// Migrated from MongoDB/Mongoose schemas
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────
+// Enums
+// ──────────────────────────────────────────────
+
+enum UserRole {
+  admin
+  teacher
+  student
+  parent
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  late
+}
+
+// ──────────────────────────────────────────────
+// User
+// ──────────────────────────────────────────────
+
+model User {
+  id                    String    @id @default(uuid())
+  email                 String    @unique
+  password_hash         String
+  role                  UserRole
+  is_active             Boolean   @default(true)
+  is_verified           Boolean   @default(true)
+  last_login            DateTime?
+  failed_login_attempts Int       @default(0)
+  locked_until          DateTime?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  // Relations
+  student              Student?
+  teacher              Teacher?
+  parent               Parent?
+  enquiries_assigned   Enquiry[]        @relation("AssignedTo")
+  enquiry_remarks      EnquiryRemark[]
+  attendance_marked    Attendance[]
+  fee_payments_received FeePayment[]
+
+  @@map("users")
+}
+
+// ──────────────────────────────────────────────
+// Student
+// ──────────────────────────────────────────────
+
+model Student {
+  id                String   @id @default(uuid())
+  user_id           String   @unique
+  PRO_ID            String   @unique
+  first_name        String?
+  last_name         String?
+  date_of_birth     String?
+  gender            String?
+  email             String?
+  phone             String?
+  school_name       String?
+  enrollment_date   String?
+  enrollment_number String?
+  admission_type    String?
+  academic_status   String   @default("active")
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  user                    User                     @relation(fields: [user_id], references: [id])
+  parent_mappings         ParentStudentMapping[]
+  class_enrollments       StudentClassEnrollment[]
+  attendance_records      Attendance[]
+  test_results            TestResult[]
+  homework_submissions    HomeworkSubmission[]
+  fee_assignments         StudentFeeAssignment[]
+  fee_payments            FeePayment[]
+
+  @@index([academic_status])
+  @@map("students")
+}
+
+// ──────────────────────────────────────────────
+// Parent
+// ──────────────────────────────────────────────
+
+model Parent {
+  id           String   @id @default(uuid())
+  user_id      String   @unique
+  first_name   String?
+  last_name    String?
+  email        String?
+  phone        String?
+  relationship String?
+  occupation   String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relations
+  user             User                   @relation(fields: [user_id], references: [id])
+  student_mappings ParentStudentMapping[]
+
+  @@map("parents")
+}
+
+model ParentStudentMapping {
+  id               String  @id @default(uuid())
+  parent_id        String
+  student_id       String
+  relationship     String?
+  is_primary       Boolean @default(true)
+  can_make_payments Boolean @default(true)
+
+  // Relations
+  parent  Parent  @relation(fields: [parent_id], references: [id])
+  student Student @relation(fields: [student_id], references: [id])
+
+  @@index([parent_id])
+  @@index([student_id])
+  @@map("parent_student_mappings")
+}
+
+// ──────────────────────────────────────────────
+// Teacher
+// ──────────────────────────────────────────────
+
+model Teacher {
+  id                String   @id @default(uuid())
+  user_id           String   @unique
+  employee_id       String?
+  first_name        String?
+  last_name         String?
+  email             String?
+  phone             String?
+  qualification     String?
+  specialization    String?
+  experience_years  Int?
+  date_of_joining   String?
+  role_type         String?
+  subjects          String[] @default([])
+  employment_status String   @default("active")
+  gender            String?
+  permissions       String[] @default(["classes", "students", "enquiries", "tests", "homework", "demos", "attendance"])
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  user              User              @relation(fields: [user_id], references: [id])
+  primary_classes   Class[]           @relation("PrimaryTeacher")
+  class_schedules   ClassSchedule[]
+  demo_classes      DemoClass[]
+  tests_created     Test[]
+  homework_created  Homework[]
+
+  @@index([employment_status])
+  @@map("teachers")
+}
+
+// ──────────────────────────────────────────────
+// Class (Batch)
+// ──────────────────────────────────────────────
+
+model Class {
+  id                     String   @id @default(uuid())
+  class_code             String   @unique
+  class_name             String?
+  grade_level            String?
+  academic_year          String?
+  batch_type             String?
+  start_date             String?
+  end_date               String?
+  max_students           Int?
+  current_students_count Int      @default(0)
+  room_number            String?
+  status                 String   @default("ongoing")
+  course_fee             Float?
+
+  // Legacy fields for backward compatibility
+  subject                String?
+  primary_teacher_id     String?
+  class_days             String[] @default([])
+  class_time_start       String?
+  class_time_end         String?
+
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  // Relations
+  primary_teacher      Teacher?                @relation("PrimaryTeacher", fields: [primary_teacher_id], references: [id])
+  schedule             ClassSchedule[]
+  student_enrollments  StudentClassEnrollment[]
+  attendance_records   Attendance[]
+  tests                Test[]
+  homework             Homework[]
+  fee_structures       FeeStructure[]
+  demo_classes         DemoClass[]
+
+  @@index([status])
+  @@index([primary_teacher_id])
+  @@map("classes")
+}
+
+model ClassSchedule {
+  id         String  @id @default(uuid())
+  class_id   String
+  subject    String?
+  teacher_id String?
+  time_start String?
+  time_end   String?
+  days       String[] @default([])
+
+  // Relations
+  class_ref Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  teacher   Teacher? @relation(fields: [teacher_id], references: [id])
+
+  @@index([class_id])
+  @@map("class_schedules")
+}
+
+model StudentClassEnrollment {
+  id                           String   @id @default(uuid())
+  student_id                   String
+  class_id                     String
+  enrollment_date              String?
+  enrollment_status            String   @default("active")
+  overall_attendance_percentage Float    @default(0)
+  average_marks                Float    @default(0)
+  rank_in_class                Int?
+
+  // Relations
+  student Student @relation(fields: [student_id], references: [id])
+  class   Class   @relation(fields: [class_id], references: [id])
+
+  @@index([class_id, enrollment_status])
+  @@index([student_id, enrollment_status])
+  @@map("student_class_enrollments")
+}
+
+// ──────────────────────────────────────────────
+// Enquiry
+// ──────────────────────────────────────────────
+
+model Enquiry {
+  id                   String   @id @default(uuid())
+  enquiry_number       String   @unique
+  student_name         String?
+  email                String?
+  phone                String?
+  parent_name          String?
+  parent_phone         String?
+  parent_email         String?
+  relationship         String?
+  current_class        String?
+  school_name          String?
+  interested_course    String?
+  source               String?
+  status               String   @default("new")
+  priority             String   @default("medium")
+  assigned_to          String?
+  followup_count       Int      @default(0)
+  converted_to_student Boolean  @default(false)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  // Relations
+  assigned_user User?           @relation("AssignedTo", fields: [assigned_to], references: [id])
+  remarks       EnquiryRemark[]
+  demo_classes  DemoClass[]
+
+  @@index([status])
+  @@index([assigned_to])
+  @@map("enquiries")
+}
+
+model EnquiryRemark {
+  id          String   @id @default(uuid())
+  enquiry_id  String
+  remark      String?
+  remark_type String?
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  enquiry Enquiry @relation(fields: [enquiry_id], references: [id])
+  user    User?   @relation(fields: [created_by], references: [id])
+
+  @@index([enquiry_id])
+  @@map("enquiry_remarks")
+}
+
+model DemoClass {
+  id          String   @id @default(uuid())
+  demo_number String?
+  enquiry_id  String
+  demo_date   String?
+  demo_time   String?
+  subject     String?
+  topic       String?
+  class_id    String?
+  teacher_id  String?
+  status      String   @default("scheduled")
+  demo_count  Int      @default(1)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  enquiry Enquiry  @relation(fields: [enquiry_id], references: [id])
+  class   Class?   @relation(fields: [class_id], references: [id])
+  teacher Teacher? @relation(fields: [teacher_id], references: [id])
+
+  @@index([enquiry_id])
+  @@index([teacher_id])
+  @@index([status])
+  @@map("demo_classes")
+}
+
+// ──────────────────────────────────────────────
+// Tests & Attendance
+// ──────────────────────────────────────────────
+
+model Attendance {
+  id              String           @id @default(uuid())
+  student_id      String
+  class_id        String
+  attendance_date String
+  status          AttendanceStatus
+  marked_by       String?
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+
+  // Relations
+  student Student @relation(fields: [student_id], references: [id])
+  class   Class   @relation(fields: [class_id], references: [id])
+  user    User?   @relation(fields: [marked_by], references: [id])
+
+  @@index([student_id, attendance_date])
+  @@index([class_id, attendance_date])
+  @@map("attendance")
+}
+
+model Test {
+  id                String   @id @default(uuid())
+  test_code         String   @unique
+  test_name         String?
+  class_id          String
+  subject           String?
+  test_type         String?
+  test_date         String?
+  duration_minutes  Int?
+  total_marks       Float?
+  passing_marks     Float?
+  status            String   @default("scheduled")
+  results_published Boolean  @default(false)
+  students_appeared Int      @default(0)
+  created_by        String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  class     Class        @relation(fields: [class_id], references: [id])
+  creator   Teacher?     @relation(fields: [created_by], references: [id])
+  results   TestResult[]
+
+  @@index([class_id])
+  @@index([status])
+  @@map("tests")
+}
+
+model TestResult {
+  id              String   @id @default(uuid())
+  test_id         String
+  student_id      String
+  marks_obtained  Float?
+  total_marks     Float?
+  percentage      Float?
+  grade           String?
+  pass_fail       String?
+  rank_in_class   Int?
+  was_present     Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  test    Test    @relation(fields: [test_id], references: [id])
+  student Student @relation(fields: [student_id], references: [id])
+
+  @@index([test_id])
+  @@index([student_id])
+  @@map("test_results")
+}
+
+// ──────────────────────────────────────────────
+// Homework
+// ──────────────────────────────────────────────
+
+model Homework {
+  id            String   @id @default(uuid())
+  homework_code String?
+  title         String?
+  description   String?
+  class_id      String
+  assigned_date String?
+  due_date      String?
+  total_marks   Float?
+  attachments   String[] @default([])
+  status        String   @default("active")
+  created_by    String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  class       Class                @relation(fields: [class_id], references: [id])
+  creator     Teacher?             @relation(fields: [created_by], references: [id])
+  submissions HomeworkSubmission[]
+
+  @@index([class_id])
+  @@map("homework")
+}
+
+model HomeworkSubmission {
+  id              String   @id @default(uuid())
+  homework_id     String
+  student_id      String
+  submission_date String?
+  status          String   @default("pending")
+  marks_obtained  Float?
+  feedback        String?
+  attachments     String[] @default([])
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  homework Homework @relation(fields: [homework_id], references: [id])
+  student  Student  @relation(fields: [student_id], references: [id])
+
+  @@index([homework_id])
+  @@index([student_id])
+  @@map("homework_submissions")
+}
+
+// ──────────────────────────────────────────────
+// Fees
+// ──────────────────────────────────────────────
+
+model FeeStructure {
+  id                String   @id @default(uuid())
+  structure_name    String?
+  class_id          String?
+  academic_year     String?
+  tuition_fee       Float?
+  registration_fee  Float?
+  development_fee   Float?
+  examination_fee   Float?
+  library_fee       Float?
+  total_annual_fee  Float?
+  installment_plan  String?
+  installment_count Int?
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  class       Class?                 @relation(fields: [class_id], references: [id])
+  assignments StudentFeeAssignment[]
+
+  @@index([class_id])
+  @@map("fee_structures")
+}
+
+model StudentFeeAssignment {
+  id                  String   @id @default(uuid())
+  student_id          String
+  fee_structure_id    String?
+  academic_year       String?
+  total_fee           Float?
+  discount_percentage Float?
+  discount_amount     Float?
+  final_fee           Float?
+  total_paid          Float    @default(0)
+  total_pending       Float?
+  payment_status      String   @default("pending")
+  assigned_date       String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  // Relations
+  student       Student       @relation(fields: [student_id], references: [id])
+  fee_structure FeeStructure? @relation(fields: [fee_structure_id], references: [id])
+
+  @@index([student_id])
+  @@index([payment_status])
+  @@map("student_fee_assignments")
+}
+
+model FeePayment {
+  id                   String    @id @default(uuid())
+  payment_number       String    @unique
+  student_id           String
+  amount_paid          Float?
+  payment_date         String?
+  payment_method       String?
+  transaction_id       String?
+  payment_status       String    @default("completed")
+  installment_number   Int?
+  receipt_number       String?
+  receipt_generated_at DateTime?
+  received_by          String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relations
+  student  Student @relation(fields: [student_id], references: [id])
+  receiver User?   @relation(fields: [received_by], references: [id])
+
+  @@index([student_id])
+  @@index([payment_status])
+  @@map("fee_payments")
+}
