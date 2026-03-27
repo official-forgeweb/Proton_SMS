@@ -4,7 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
-import { BookOpen, Plus, Calendar, Clock, Users, Download, Eye } from 'lucide-react';
+import { BookOpen, Plus, Calendar, Clock, Users, Download, Eye, Layers, Edit } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -99,217 +99,258 @@ export default function ClassesPage() {
     };
 
     const inputStyle: React.CSSProperties = {
-        padding: '10px 14px', border: '1px solid #F0F0F5', borderRadius: '10px',
+        padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px',
         fontSize: '14px', background: '#F8F9FD', color: '#1A1D3B',
-        outline: 'none', width: '100%', fontFamily: 'Inter, sans-serif',
+        outline: 'none', width: '100%', fontFamily: 'Inter, sans-serif', transition: 'border 0.2s',
     };
     const labelStyle: React.CSSProperties = {
-        fontSize: '12px', fontWeight: 600, color: '#5E6278',
-        display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em',
+        fontSize: '13px', fontWeight: 700, color: '#1A1D3B',
+        display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em',
     };
 
-    const datePickerStyles = `
-        .react-datepicker-wrapper {
-            width: 100%;
+    const customStyles = `
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .react-datepicker__input-container input {
-            padding: 10px 14px;
-            border: 1px solid #F0F0F5;
-            border-radius: 10px;
-            font-size: 14px;
+        .animate-fade-in {
+            animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .table-row-hover {
+            transition: all 0.2s ease;
+        }
+        .table-row-hover:hover {
             background: #F8F9FD;
-            color: #1A1D3B;
-            outline: none;
-            width: 100%;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.2s;
+            transform: scale(1.005);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .table-row-hover:hover td:first-child {
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+        .table-row-hover:hover td:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+        .bg-mesh {
+            background-color: #f7f8fc;
+            background-image: radial-gradient(at 40% 20%, hsla(28,100%,74%,0.15) 0px, transparent 50%),
+                              radial-gradient(at 80% 0%, hsla(189,100%,56%,0.15) 0px, transparent 50%),
+                              radial-gradient(at 0% 50%, hsla(355,100%,93%,0.15) 0px, transparent 50%);
+        }
+        
+        .react-datepicker-wrapper { width: 100%; }
+        .react-datepicker__input-container input {
+            padding: 12px 16px; border: 1px solid #E2E8F0; border-radius: 12px;
+            font-size: 14px; background: #F8F9FD; color: #1A1D3B; outline: none; width: 100%;
+            font-family: 'Inter', sans-serif; transition: all 0.2s;
         }
         .react-datepicker__input-container input:focus {
             border-color: #E53935;
-            background: #FFFFFF;
-            box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
         }
         .react-datepicker {
-            font-family: 'Inter', sans-serif;
-            border-radius: 12px;
-            border: 1px solid #F0F0F5;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            overflow: hidden;
+            font-family: 'Inter', sans-serif; border-radius: 16px; border: 1px solid #E2E8F0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1); overflow: hidden;
         }
-        .react-datepicker__header {
-            background-color: #F8F9FD;
-            border-bottom: 1px solid #F0F0F5;
-        }
-        .react-datepicker__day--selected {
-            background-color: #E53935 !important;
-            border-radius: 8px;
-        }
-        .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
-            background-color: #E53935 !important;
+        .react-datepicker__header { background-color: #F8F9FD; border-bottom: 1px solid #E2E8F0; padding-top: 12px; }
+        .react-datepicker__day--selected, .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
+            background-color: #E53935 !important; font-weight: bold;
         }
     `;
 
     return (
         <DashboardLayout requiredRole="admin">
-            <style>{datePickerStyles}</style>
-            <div style={{ paddingBottom: '32px' }}>
+            <style dangerouslySetInnerHTML={{__html: customStyles}} />
+            
+            <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: '100%', borderRadius: '24px' }}>
+
                 {/* Page Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
+                <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '36px', animationDelay: '0ms' }}>
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
-                            Batch Management
-                        </h1>
-                        <p style={{ fontSize: '13px', color: '#A1A5B7', marginTop: '4px', fontWeight: 500 }}>
-                            Manage batches, individual classes, and teacher assignments.
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            <div style={{ background: '#E53935', width: '32px', height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                <Layers size={18} strokeWidth={2.5} />
+                            </div>
+                            <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em', margin: 0 }}>
+                                Batch Management
+                            </h1>
+                        </div>
+                        <p style={{ fontSize: '15px', color: '#5E6278', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            Home &rsaquo; <span style={{ color: '#E53935', fontWeight: 700 }}>Classes & Batches</span>
                         </p>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
                         <button style={{
-                            background: '#FFFFFF', color: '#5E6278', border: '1px solid #F0F0F5',
-                            borderRadius: '12px', padding: '11px 20px', fontSize: '14px', fontWeight: 600,
-                            display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)', transition: 'all 0.2s',
-                        }}>
-                            <Download size={16} /> Export
+                            background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0',
+                            borderRadius: '14px', padding: '12px 20px', fontSize: '14px',
+                            fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
+                            cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                        }}
+                            onMouseEnter={e => { (e.currentTarget.style.background = '#F8F9FD'); (e.currentTarget.style.borderColor = '#1A1D3B'); }}
+                            onMouseLeave={e => { (e.currentTarget.style.background = '#FFFFFF'); (e.currentTarget.style.borderColor = '#E2E8F0'); }}
+                        >
+                            <Download size={16} strokeWidth={2.5} /> Export
                         </button>
-                            <button
-                                onClick={() => {
-                                    setEditingId(null);
-                                    setFormData({ class_name: '', grade_level: '', max_students: 30, status: 'upcoming', schedule: [], start_date: '' });
-                                    setIsModalOpen(true);
-                                }}
-                                style={{
-                                    background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
-                                    color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px',
-                                    fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center',
-                                    gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)',
-                                }}
-                            >
-                                <Plus size={16} /> Create Class
-                            </button>
+                        <button
+                            onClick={() => {
+                                setEditingId(null);
+                                setFormData({ class_name: '', grade_level: '', max_students: 30, status: 'upcoming', schedule: [], start_date: '' });
+                                setIsModalOpen(true);
+                            }}
+                            style={{
+                                background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
+                                color: 'white', border: 'none',
+                                borderRadius: '14px', padding: '12px 24px', fontSize: '15px',
+                                fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
+                                cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(229,57,53,0.4)',
+                                transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={e => {
+                                (e.currentTarget.style.transform = 'translateY(-2px)');
+                                (e.currentTarget.style.boxShadow = '0 12px 28px -6px rgba(229,57,53,0.5)');
+                            }}
+                            onMouseLeave={e => {
+                                (e.currentTarget.style.transform = 'translateY(0)');
+                                (e.currentTarget.style.boxShadow = '0 8px 24px -6px rgba(229,57,53,0.4)');
+                            }}
+                        >
+                            <Plus size={20} strokeWidth={2.5} /> Create Class
+                        </button>
                     </div>
                 </div>
 
                 {/* Main Card */}
-                <div style={{
-                    background: '#FFFFFF', borderRadius: '18px',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5', overflow: 'hidden',
+                <div className="animate-fade-in glass-panel" style={{
+                    borderRadius: '24px', padding: '16px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.04)', border: '1px solid rgba(255,255,255,0.8)',
+                    animationDelay: '100ms'
                 }}>
                     {isLoading ? (
-                        <div style={{ padding: '60px', textAlign: 'center' }}>
-                            <div className="spinner" style={{ margin: '0 auto 16px' }} />
-                            <p style={{ color: '#A1A5B7', fontSize: '14px' }}>Loading classes...</p>
+                        <div style={{ padding: '80px', textAlign: 'center' }}>
+                            <div style={{ position: 'relative', width: '60px', height: '60px', margin: '0 auto 20px' }}>
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, border: '4px solid #f3f3f3', borderRadius: '50%' }} />
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, border: '4px solid #E53935', borderRadius: '50%', borderTopColor: 'transparent', animation: 'spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite' }} />
+                            </div>
+                            <p style={{ color: '#1A1D3B', fontSize: '15px', fontWeight: 600 }}>Loading classes...</p>
                         </div>
                     ) : classes.length === 0 ? (
-                        <div style={{ padding: '60px', textAlign: 'center', color: '#A1A5B7' }}>
-                            <BookOpen size={48} style={{ marginBottom: '16px', opacity: 0.4 }} />
-                            <h3 style={{ fontSize: '16px', color: '#5E6278', marginBottom: '8px', fontWeight: 700 }}>No Classes Found</h3>
-                            <p style={{ fontSize: '13px' }}>Create a new class to get started.</p>
+                        <div style={{ padding: '80px', textAlign: 'center', background: '#F8F9FD', borderRadius: '16px' }}>
+                            <BookOpen size={56} style={{ marginBottom: '20px', color: '#A1A5B7', opacity: 0.5 }} />
+                            <h3 style={{ fontSize: '18px', color: '#1A1D3B', marginBottom: '8px', fontWeight: 700 }}>No Classes Found</h3>
+                            <p style={{ fontSize: '14px', color: '#8F92A1', fontWeight: 500 }}>Create a new class to get started.</p>
                         </div>
                     ) : (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+                        <div style={{ overflowX: 'auto', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', padding: '8px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '850px' }}>
                                 <thead>
-                                    <tr style={{ background: '#F8F9FD' }}>
-                                        {['Batch Code', 'Batch Name', 'Subjects / Teachers', 'Time Slots', 'Capacity', 'Status', 'Actions'].map((h, i) => (
+                                    <tr>
+                                        {['Batch Info', 'Subjects / Teachers', 'Time Slots', 'Capacity', 'Status', 'Actions'].map((h, i) => (
                                             <th key={h} style={{
-                                                padding: '13px 16px', textAlign: i === 6 ? 'right' : 'left',
-                                                color: '#A1A5B7', fontWeight: 600, fontSize: '11px',
-                                                textTransform: 'uppercase', letterSpacing: '0.06em',
-                                            }}>{h}</th>
+                                                padding: '16px 20px', textAlign: i === 5 ? 'right' : 'left',
+                                                color: '#A1A5B7', fontWeight: 700, fontSize: '12px',
+                                                textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap',
+                                            }}>
+                                                {h}
+                                            </th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {classes.map((cls, idx) => (
-                                        <tr key={cls.id}
-                                            style={{ borderBottom: '1px solid #F0F0F5', transition: 'background 0.15s' }}
-                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F8F9FD'}
-                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
-                                        >
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <span style={{ fontWeight: 700, color: '#E53935', fontFamily: 'monospace', fontSize: '13px', background: '#FFEBEE', padding: '3px 8px', borderRadius: '6px' }}>
-                                                    {cls.class_code}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <div style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B' }}>{cls.class_name}</div>
-                                                <div style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '2px' }}>{cls.grade_level}</div>
-                                            </td>
-                                            <td style={{ padding: '14px 16px' }}>
+                                        <tr key={cls.id} className="table-row-hover" style={{ cursor: 'pointer' }} onClick={() => router.push(`/admin/classes/${cls.id}`)}>
+                                            <td style={{ padding: '16px 20px' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                    {cls.schedule && cls.schedule.length > 0 ? cls.schedule.map((s: any, i: number) => (
-                                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <div style={{ width: '22px', height: '22px', borderRadius: '4px', background: '#FFEBEE', color: '#E53935', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 800 }}>
-                                                                {s.subject?.[0] || 'S'}
-                                                            </div>
-                                                            <span style={{ fontSize: '12px', fontWeight: 500, color: '#5E6278' }}>
-                                                                {s.subject} <span style={{ color: '#A1A5B7' }}>• {teachers.find(t => t.id === (s.teacher_id?._id || s.teacher_id))?.first_name || 'Unassigned'}</span>
-                                                            </span>
-                                                        </div>
-                                                    )) : <span style={{ fontSize: '12px', color: '#A1A5B7' }}>No classes scheduled</span>}
+                                                    <div style={{ fontWeight: 800, fontSize: '16px', color: '#1A1D3B' }}>{cls.class_name}</div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ fontWeight: 700, color: '#E53935', fontFamily: 'monospace', fontSize: '12px', background: '#FFF0F1', padding: '4px 8px', borderRadius: '6px' }}>
+                                                            {cls.class_code}
+                                                        </span>
+                                                        <span style={{ fontSize: '13px', color: '#8F92A1', fontWeight: 600 }}>{cls.grade_level}</span>
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            <td style={{ padding: '16px 20px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {cls.schedule && cls.schedule.length > 0 ? cls.schedule.map((s: any, i: number) => (
+                                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#FFF0F1', color: '#E53935', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 800, flexShrink: 0 }}>
+                                                                {s.subject?.[0] || 'S'}
+                                                            </div>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                                <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1D3B', lineHeight: 1 }}>{s.subject}</span>
+                                                                <span style={{ fontSize: '12px', color: '#A1A5B7', fontWeight: 500 }}>{teachers.find(t => t.id === (s.teacher_id?._id || s.teacher_id))?.first_name || 'Unassigned'}</span>
+                                                            </div>
+                                                        </div>
+                                                    )) : <span style={{ fontSize: '13px', color: '#A1A5B7', fontWeight: 500, fontStyle: 'italic' }}>No schedule</span>}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '16px 20px' }}>
+                                                <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                                     {cls.schedule && cls.schedule.length > 0 ? (
                                                         <>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#5E6278', fontWeight: 500 }}>
-                                                                <Clock size={12} color="#A1A5B7" /> {formatTime(cls.schedule[0].time_start)} – {formatTime(cls.schedule[cls.schedule.length - 1].time_end)}
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1A1D3B', fontWeight: 600 }}>
+                                                                <Clock size={14} color="#A1A5B7" strokeWidth={2.5} /> {formatTime(cls.schedule[0].time_start)} – {formatTime(cls.schedule[cls.schedule.length - 1].time_end)}
                                                             </div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#A1A5B7' }}>
-                                                                <span style={{ fontSize: '11px' }}>{cls.schedule.length} sessions scheduled</span>
-                                                            </div>
+                                                            <div style={{ color: '#8F92A1', fontWeight: 500 }}>{cls.schedule.length} sessions/wk</div>
                                                         </>
                                                     ) : '-'}
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    <Users size={14} color="#E53935" />
-                                                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B' }}>{cls.current_students_count} / {cls.max_students}</span>
+                                            <td style={{ padding: '16px 20px' }}>
+                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#F8F9FD', padding: '6px 12px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                                                    <Users size={16} color="#E53935" strokeWidth={2.5} />
+                                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B' }}>{cls.current_students_count} <span style={{ color: '#A1A5B7', fontWeight: 600 }}>/ {cls.max_students}</span></span>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                                            <td style={{ padding: '16px 20px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
                                                     <span style={{
-                                                        padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: 700,
-                                                        background: cls.status === 'ongoing' ? '#D1FAE5' : cls.status === 'upcoming' ? '#FEF3C7' : '#F4F5F9',
+                                                        padding: '6px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em',
+                                                        background: cls.status === 'ongoing' ? '#ECFDF5' : cls.status === 'upcoming' ? '#FEF3C7' : '#F8F9FD',
                                                         color: cls.status === 'ongoing' ? '#059669' : cls.status === 'upcoming' ? '#D97706' : '#8F92A1',
+                                                        boxShadow: cls.status === 'ongoing' ? '0 2px 6px rgba(16,185,129,0.1)' : 'none'
                                                     }}>
                                                         {cls.status}
                                                     </span>
                                                     {cls.status === 'upcoming' && cls.start_date && (
-                                                        <span style={{ fontSize: '11px', color: '#A1A5B7', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                                                            <Calendar size={10} /> Starts {formatDate(cls.start_date)}
+                                                        <span style={{ fontSize: '12px', color: '#8F92A1', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                                                            <Calendar size={12} strokeWidth={2.5} /> {formatDate(cls.start_date)}
                                                         </span>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '14px 16px', textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                            <td style={{ padding: '16px 20px', textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                                                 <button
-                                                    onClick={() => handleEdit(cls)}
+                                                    onClick={(e) => { e.stopPropagation(); handleEdit(cls); }}
                                                     style={{
-                                                        background: '#F4F5F9', color: '#5E6278', border: 'none',
-                                                        borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700,
-                                                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                                        transition: 'all 0.2s',
+                                                        background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0',
+                                                        borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700,
+                                                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                        transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                                                     }}
+                                                    onMouseEnter={e => { (e.currentTarget.style.background = '#F8F9FD'); (e.currentTarget.style.borderColor = '#1A1D3B'); }}
+                                                    onMouseLeave={e => { (e.currentTarget.style.background = '#FFFFFF'); (e.currentTarget.style.borderColor = '#E2E8F0'); }}
                                                 >
-                                                    Edit
+                                                    <Edit size={14} strokeWidth={2.5} /> Edit
                                                 </button>
                                                 <button
-                                                    onClick={() => router.push(`/admin/classes/${cls.id}`)}
+                                                    onClick={(e) => { e.stopPropagation(); router.push(`/admin/classes/${cls.id}`); }}
                                                     style={{
-                                                        background: '#FFEBEE', color: '#E53935', border: 'none',
-                                                        borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700,
-                                                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                                        transition: 'all 0.2s',
+                                                        background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', color: 'white', border: 'none',
+                                                        borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700,
+                                                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                        transition: 'all 0.2s', boxShadow: '0 4px 10px rgba(26,29,59,0.2)'
                                                     }}
-                                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#E53935'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
-                                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FFEBEE'; (e.currentTarget as HTMLElement).style.color = '#E53935'; }}
+                                                    onMouseEnter={e => { (e.currentTarget.style.transform = 'translateY(-2px)'); }}
+                                                    onMouseLeave={e => { (e.currentTarget.style.transform = 'translateY(0)'); }}
                                                 >
-                                                    <Eye size={13} /> View
+                                                    <Eye size={14} strokeWidth={2.5} /> View
                                                 </button>
                                             </td>
                                         </tr>
@@ -321,50 +362,55 @@ export default function ClassesPage() {
                 </div>
             </div>
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? "Edit Batch" : "Create New Batch"}>
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? "Edit Batch Details" : "Create New Batch"}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                         <div>
                             <label style={labelStyle}>Batch Name</label>
-                            <input required style={inputStyle} value={formData.class_name} onChange={e => setFormData({ ...formData, class_name: e.target.value })} placeholder="e.g. 10th Grade Morning Batch" />
+                            <input required style={inputStyle} value={formData.class_name} onChange={e => setFormData({ ...formData, class_name: e.target.value })} placeholder="e.g. Proton 1" onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                         <div>
                             <label style={labelStyle}>Grade/Level</label>
-                            <input required style={inputStyle} value={formData.grade_level} onChange={e => setFormData({ ...formData, grade_level: e.target.value })} placeholder="e.g. Class 10" />
+                            <input required style={inputStyle} value={formData.grade_level} onChange={e => setFormData({ ...formData, grade_level: e.target.value })} placeholder="e.g. Class 11" onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                         <div>
-                            <label style={labelStyle}>Max Students (Capacity)</label>
-                            <input type="number" required style={inputStyle} value={formData.max_students} onChange={e => setFormData({ ...formData, max_students: Number(e.target.value) })} />
+                            <label style={labelStyle}>Max Students <span style={{textTransform:'none', color:'#8F92A1'}}>(Capacity)</span></label>
+                            <input type="number" required style={inputStyle} value={formData.max_students} onChange={e => setFormData({ ...formData, max_students: Number(e.target.value) })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                     </div>
 
-                    <div style={{ borderTop: '1px solid #F0F0F5', paddingTop: '16px', marginTop: '8px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1A1D3B' }}>Class Schedule (Sessions)</h4>
-                            <button type="button" onClick={addSession} style={{ padding: '6px 12px', background: '#FFEBEE', color: '#E53935', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <Plus size={14} /> Add Session
+                    <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '20px', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                                <div style={{width:'32px', height:'32px', background:'#FFF0F1', borderRadius:'10px', color:'#E53935', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                                    <Clock size={16} strokeWidth={2.5} />
+                                </div>
+                                <h4 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily:'Poppins, sans-serif' }}>Class Schedule (Sessions)</h4>
+                            </div>
+                            <button type="button" onClick={addSession} style={{ padding: '8px 16px', background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow:'0 2px 4px rgba(0,0,0,0.02)', transition:'all 0.2s' }} onMouseEnter={e=>(e.currentTarget.style.background='#F8F9FD')} onMouseLeave={e=>(e.currentTarget.style.background='#FFFFFF')}>
+                                <Plus size={16} strokeWidth={2.5} /> Add Session
                             </button>
                         </div>
                         
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {formData.schedule && formData.schedule.map((session: any, i: number) => (
-                                <div key={i} style={{ padding: '16px', background: '#F8F9FD', borderRadius: '12px', border: '1px solid #F0F0F5', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}>
-                                    <button type="button" onClick={() => removeSession(i)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: '#A1A5B7', cursor: 'pointer', fontSize: '18px' }}>×</button>
+                                <div key={i} style={{ padding: '24px', background: '#F8F9FD', borderRadius: '16px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
+                                    <button type="button" onClick={() => removeSession(i)} style={{ position: 'absolute', top: '16px', right: '16px', background: '#FEE2E2', color: '#EF4444', width:'28px', height:'28px', borderRadius:'8px', border: 'none', cursor: 'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }} onMouseEnter={e=>(e.currentTarget.style.background='#FECACA')} onMouseLeave={e=>(e.currentTarget.style.background='#FEE2E2')}>×</button>
                                     
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '12px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '16px' }}>
                                         <div>
-                                            <label style={{ ...labelStyle, fontSize: '11px' }}>Subject</label>
-                                            <input required style={inputStyle} value={session.subject} onChange={e => updateSession(i, 'subject', e.target.value)} placeholder="e.g. Mathematics" />
+                                            <label style={{ ...labelStyle, fontSize: '12px' }}>Subject</label>
+                                            <input required style={inputStyle} value={session.subject} onChange={e => updateSession(i, 'subject', e.target.value)} placeholder="e.g. Mathematics" onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                                         </div>
                                         <div>
-                                            <label style={{ ...labelStyle, fontSize: '11px' }}>Teacher</label>
-                                            <select required style={inputStyle} value={session.teacher_id?._id || session.teacher_id} onChange={e => updateSession(i, 'teacher_id', e.target.value)}>
+                                            <label style={{ ...labelStyle, fontSize: '12px' }}>Teacher</label>
+                                            <select required style={inputStyle} value={session.teacher_id?._id || session.teacher_id} onChange={e => updateSession(i, 'teacher_id', e.target.value)} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'}>
                                                 <option value="">Select Teacher...</option>
                                                 {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
                                             </select>
                                         </div>
                                         <div>
-                                            <label style={{ ...labelStyle, fontSize: '11px' }}>Start Time</label>
+                                            <label style={{ ...labelStyle, fontSize: '12px' }}>Start Time</label>
                                             <DatePicker
                                                 selected={session.time_start ? new Date(`2000-01-01T${session.time_start}:00`) : null}
                                                 onChange={(date) => {
@@ -373,16 +419,11 @@ export default function ClassesPage() {
                                                         updateSession(i, 'time_start', time);
                                                     }
                                                 }}
-                                                showTimeSelect
-                                                showTimeSelectOnly
-                                                timeIntervals={15}
-                                                timeCaption="Start"
-                                                dateFormat="h:mm aa"
-                                                placeholderText="Start"
+                                                showTimeSelect showTimeSelectOnly timeIntervals={15} timeCaption="Start" dateFormat="h:mm aa" placeholderText="Start Time"
                                             />
                                         </div>
                                         <div>
-                                            <label style={{ ...labelStyle, fontSize: '11px' }}>End Time</label>
+                                            <label style={{ ...labelStyle, fontSize: '12px' }}>End Time</label>
                                             <DatePicker
                                                 selected={session.time_end ? new Date(`2000-01-01T${session.time_end}:00`) : null}
                                                 onChange={(date) => {
@@ -391,30 +432,25 @@ export default function ClassesPage() {
                                                         updateSession(i, 'time_end', time);
                                                     }
                                                 }}
-                                                showTimeSelect
-                                                showTimeSelectOnly
-                                                timeIntervals={15}
-                                                timeCaption="End"
-                                                dateFormat="h:mm aa"
-                                                placeholderText="End"
+                                                showTimeSelect showTimeSelectOnly timeIntervals={15} timeCaption="End" dateFormat="h:mm aa" placeholderText="End Time"
                                             />
                                         </div>
                                     </div>
                                 </div>
                             ))}
                             {(!formData.schedule || formData.schedule.length === 0) && (
-                                <div style={{ textAlign: 'center', padding: '24px', background: '#F8F9FD', borderRadius: '12px', border: '1px dashed #D1D5DB', color: '#A1A5B7', fontSize: '13px' }}>
-                                    No sessions added. Click "Add Session" to include subjects and teachers in this batch.
+                                <div style={{ textAlign: 'center', padding: '32px', background: '#F8F9FD', borderRadius: '16px', border: '2px dashed #E2E8F0', color: '#A1A5B7', fontSize: '14px', fontWeight: 600 }}>
+                                    No sessions configured yet.<br/><span style={{fontSize:'13px', fontWeight:500}}>Click "Add Session" to assign subjects and teachers.</span>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    <div style={{ borderTop: '1px solid #F0F0F5', paddingTop: '16px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', gap: '16px' }}>
+                    <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '24px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '24px' }}>
                             <div>
                                 <label style={labelStyle}>Batch Status</label>
-                                <select style={{ ...inputStyle, width: '150px' }} value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+                                <select style={{ ...inputStyle, width: '180px' }} value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'}>
                                     <option value="upcoming">Upcoming</option>
                                     <option value="ongoing">Ongoing</option>
                                     <option value="completed">Completed</option>
@@ -424,10 +460,7 @@ export default function ClassesPage() {
                                 <div>
                                     <label style={labelStyle}>Starts From</label>
                                     <DatePicker
-                                        showMonthDropdown
-                                        showYearDropdown
-                                        scrollableYearDropdown
-                                        dropdownMode="select"
+                                        showMonthDropdown scrollableYearDropdown dropdownMode="select"
                                         selected={formData.start_date ? new Date(formData.start_date) : null}
                                         onChange={(date) => {
                                             if (date) {
@@ -435,15 +468,14 @@ export default function ClassesPage() {
                                                 setFormData({ ...formData, start_date: dateStr });
                                             }
                                         }}
-                                        dateFormat="MMM d, yyyy"
-                                        placeholderText="Pick Start Date"
+                                        dateFormat="MMMM d, yyyy" placeholderText="Pick Start Date"
                                     />
                                 </div>
                             )}
                         </div>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '10px 22px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
-                            <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(229,57,53,0.3)' }}>{editingId ? "Update Batch" : "Create Batch"}</button>
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                            <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '12px 28px', background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0', borderRadius: '12px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }} onMouseEnter={e => (e.currentTarget.style.background = '#F8F9FD')} onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}>Cancel</button>
+                            <button type="submit" style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 20px -6px rgba(229,57,53,0.4)', transition: 'all 0.2s' }} onMouseEnter={e => { (e.currentTarget.style.transform = 'translateY(-2px)'); (e.currentTarget.style.boxShadow = '0 12px 24px -6px rgba(229,57,53,0.5)') }} onMouseLeave={e => { (e.currentTarget.style.transform = 'translateY(0)'); (e.currentTarget.style.boxShadow = '0 8px 20px -6px rgba(229,57,53,0.4)') }}>{editingId ? "Update Batch" : "Create Batch"}</button>
                         </div>
                     </div>
                 </form>

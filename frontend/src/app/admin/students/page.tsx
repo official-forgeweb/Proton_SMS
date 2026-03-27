@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import {
-    Search, Calendar, Plus, Trash2, Edit2, ChevronLeft, ChevronRight, MoreHorizontal, GraduationCap
+    Search, Calendar, Plus, Trash2, Edit2, ChevronLeft, ChevronRight, MoreHorizontal, GraduationCap, Users
 } from 'lucide-react';
 import Modal from '@/components/Modal';
 
@@ -74,6 +74,7 @@ export default function StudentsPage() {
         };
         fetchStudents();
         fetchClasses();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
 
     const displayStudents = students.map(s => ({
@@ -89,105 +90,162 @@ export default function StudentsPage() {
 
     return (
         <DashboardLayout requiredRole="admin">
-            <div style={{ paddingBottom: '32px' }}>
+            <style dangerouslySetInnerHTML={{__html: `
+                @keyframes fadeInUp {
+                    from { opacity: 0; transform: translateY(30px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in {
+                    animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    opacity: 0;
+                }
+                .glass-panel {
+                    background: rgba(255, 255, 255, 0.85);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                }
+                .table-row-hover {
+                    transition: all 0.2s ease;
+                }
+                .table-row-hover:hover {
+                    background: #F8F9FD;
+                    transform: scale(1.005);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+                }
+                .table-row-hover:hover td:first-child {
+                    border-top-left-radius: 12px;
+                    border-bottom-left-radius: 12px;
+                }
+                .table-row-hover:hover td:last-child {
+                    border-top-right-radius: 12px;
+                    border-bottom-right-radius: 12px;
+                }
+                .bg-mesh {
+                    background-color: #f7f8fc;
+                    background-image: radial-gradient(at 40% 20%, hsla(28,100%,74%,0.15) 0px, transparent 50%),
+                                      radial-gradient(at 80% 0%, hsla(189,100%,56%,0.15) 0px, transparent 50%),
+                                      radial-gradient(at 0% 50%, hsla(355,100%,93%,0.15) 0px, transparent 50%);
+                }
+            `}} />
+
+            <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: '100%', borderRadius: '24px' }}>
 
                 {/* Page Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
+                <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '36px', animationDelay: '0ms' }}>
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
-                            Students List
-                        </h1>
-                        <p style={{ fontSize: '13px', color: '#A1A5B7', marginTop: '4px', fontWeight: 500 }}>
-                            Home &rsaquo; <span style={{ color: '#E53935', fontWeight: 600 }}>Students</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            <div style={{ background: '#E53935', width: '32px', height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                <Users size={18} strokeWidth={2.5} />
+                            </div>
+                            <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em', margin: 0 }}>
+                                Students List
+                            </h1>
+                        </div>
+                        <p style={{ fontSize: '15px', color: '#5E6278', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            Home &rsaquo; <span style={{ color: '#E53935', fontWeight: 700 }}>Students</span>
                         </p>
                     </div>
                     <button
                         onClick={() => { setFormData(emptyForm); setIsAddOpen(true); }}
                         style={{
-                            background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
+                            background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
                             color: 'white', border: 'none',
-                            borderRadius: '12px', padding: '11px 22px', fontSize: '14px',
+                            borderRadius: '14px', padding: '12px 24px', fontSize: '15px',
                             fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
-                            cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)',
+                            cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(229,57,53,0.4)',
                             transition: 'all 0.2s',
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
-                        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                        onMouseEnter={e => {
+                            (e.currentTarget.style.transform = 'translateY(-2px)');
+                            (e.currentTarget.style.boxShadow = '0 12px 28px -6px rgba(229,57,53,0.5)');
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget.style.transform = 'translateY(0)');
+                            (e.currentTarget.style.boxShadow = '0 8px 24px -6px rgba(229,57,53,0.4)');
+                        }}
                     >
-                        <Plus size={18} /> Add Student
+                        <Plus size={20} strokeWidth={2.5} /> Add Student
                     </button>
                 </div>
 
                 {/* Main Card */}
-                <div style={{
-                    background: '#FFFFFF', borderRadius: '18px',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5',
-                    overflow: 'hidden',
+                <div className="animate-fade-in glass-panel" style={{
+                    borderRadius: '24px', padding: '32px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.04)', border: '1px solid rgba(255,255,255,0.8)',
+                    animationDelay: '100ms'
                 }}>
                     {/* Card Header */}
                     <div style={{
-                        padding: '20px 24px', borderBottom: '1px solid #F0F0F5',
+                        paddingBottom: '24px', marginBottom: '24px', borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     }}>
                         <div>
-                            <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
+                            <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
                                 Students Information
                             </h2>
-                            <p style={{ fontSize: '12px', color: '#A1A5B7', marginTop: '2px' }}>
+                            <p style={{ fontSize: '13px', color: '#8F92A1', marginTop: '4px', fontWeight: 500 }}>
                                 {displayStudents.length} total students
                             </p>
                         </div>
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                             {/* Search */}
                             <div style={{
-                                display: 'flex', alignItems: 'center', background: '#F4F5F9',
-                                borderRadius: '12px', padding: '9px 16px', width: '280px',
-                                border: '1px solid #F0F0F5', gap: '8px',
+                                display: 'flex', alignItems: 'center', background: '#FFFFFF',
+                                borderRadius: '14px', padding: '10px 18px', width: '320px',
+                                border: '1px solid #E2E8F0', gap: '10px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+                                transition: 'all 0.2s'
                             }}>
-                                <Search size={15} color="#A1A5B7" strokeWidth={2.5} />
+                                <Search size={18} color="#A1A5B7" strokeWidth={2.5} />
                                 <input
                                     placeholder="Search by name or roll..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     style={{
                                         border: 'none', background: 'transparent', outline: 'none',
-                                        flex: 1, fontSize: '13px', color: '#1A1D3B',
+                                        flex: 1, fontSize: '14px', color: '#1A1D3B', fontWeight: 500
                                     }}
                                 />
                             </div>
                             {/* Filter */}
                             <div style={{
-                                display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 16px',
-                                borderRadius: '12px', border: '1px solid #F0F0F5', fontSize: '13px',
-                                color: '#5E6278', background: '#FFFFFF', cursor: 'pointer', fontWeight: 500,
-                            }}>
-                                <Calendar size={15} color="#A1A5B7" /> Last 30 days
+                                display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px',
+                                borderRadius: '14px', border: '1px solid #E2E8F0', fontSize: '14px',
+                                color: '#1A1D3B', background: '#FFFFFF', cursor: 'pointer', fontWeight: 600,
+                                transition: 'all 0.2s', boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+                            }}
+                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F8F9FD'}
+                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#FFFFFF'}
+                            >
+                                <Calendar size={18} color="#E53935" /> Last 30 days
                             </div>
                         </div>
                     </div>
 
                     {/* Table */}
                     {isLoading ? (
-                        <div style={{ padding: '60px', textAlign: 'center' }}>
-                            <div className="spinner" style={{ margin: '0 auto 16px' }} />
-                            <p style={{ color: '#A1A5B7', fontSize: '14px' }}>Loading students...</p>
+                        <div style={{ padding: '80px', textAlign: 'center' }}>
+                            <div style={{ position: 'relative', width: '60px', height: '60px', margin: '0 auto 20px' }}>
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, border: '4px solid #f3f3f3', borderRadius: '50%' }} />
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, border: '4px solid #E53935', borderRadius: '50%', borderTopColor: 'transparent', animation: 'spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite' }} />
+                            </div>
+                            <p style={{ color: '#1A1D3B', fontSize: '15px', fontWeight: 600 }}>Loading students...</p>
                         </div>
                     ) : displayStudents.length === 0 ? (
-                        <div style={{ padding: '60px', textAlign: 'center', color: '#A1A5B7' }}>
-                            <GraduationCap size={48} style={{ marginBottom: '16px', opacity: 0.4 }} />
-                            <h3 style={{ fontSize: '16px', color: '#5E6278', marginBottom: '8px' }}>No Students Found</h3>
-                            <p style={{ fontSize: '13px' }}>Try adjusting your search or add a new student.</p>
+                        <div style={{ padding: '80px', textAlign: 'center', background: '#F8F9FD', borderRadius: '16px' }}>
+                            <GraduationCap size={56} style={{ marginBottom: '20px', color: '#A1A5B7', opacity: 0.5 }} />
+                            <h3 style={{ fontSize: '18px', color: '#1A1D3B', marginBottom: '8px', fontWeight: 700 }}>No Students Found</h3>
+                            <p style={{ fontSize: '14px', color: '#8F92A1', fontWeight: 500 }}>Try adjusting your search or add a new student.</p>
                         </div>
                     ) : (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+                        <div style={{ overflowX: 'auto', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', padding: '8px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '800px' }}>
                                 <thead>
-                                    <tr style={{ background: '#F8F9FD' }}>
+                                    <tr>
                                         {['Student Name', 'Roll', 'Address', 'Class', 'Date of Birth', 'Phone', 'Action'].map(h => (
                                             <th key={h} style={{
-                                                padding: '13px 16px', textAlign: 'left',
-                                                color: '#A1A5B7', fontWeight: 600, fontSize: '11px',
-                                                textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap',
+                                                padding: '16px 20px', textAlign: 'left',
+                                                color: '#A1A5B7', fontWeight: 700, fontSize: '12px',
+                                                textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap',
                                             }}>
                                                 {h}
                                             </th>
@@ -198,62 +256,62 @@ export default function StudentsPage() {
                                     {displayStudents.map((s, i) => (
                                         <tr
                                             key={s.id || i}
-                                            style={{ borderBottom: '1px solid #F0F0F5', transition: 'background 0.15s', cursor: 'pointer' }}
-                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F8F9FD'}
-                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                                            className="table-row-hover"
+                                            style={{ cursor: 'pointer' }}
                                             onClick={() => router.push(`/admin/students/${s.mongo_id}`)}
                                         >
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <td style={{ padding: '16px 20px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                                                     <img
-                                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=4F60FF&color=fff&size=36`}
-                                                        style={{ width: '34px', height: '34px', borderRadius: '50%', border: '2px solid #FFEBEE', flexShrink: 0 }}
+                                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=random&color=fff&size=40&bold=true`}
+                                                        style={{ width: '42px', height: '42px', borderRadius: '12px', border: '2px solid #F4F5F9', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', flexShrink: 0 }}
                                                         alt={s.name}
                                                     />
-                                                    <span style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B' }}>{s.name}</span>
+                                                    <span style={{ fontWeight: 700, fontSize: '15px', color: '#1A1D3B' }}>{s.name}</span>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '14px 16px', fontSize: '13px', color: '#8F92A1', fontWeight: 500 }}>{s.roll}</td>
-                                            <td style={{ padding: '14px 16px', fontSize: '13px', color: '#8F92A1' }}>{s.address}</td>
-                                            <td style={{ padding: '14px 16px' }}>
+                                            <td style={{ padding: '16px 20px', fontSize: '14px', color: '#5E6278', fontWeight: 600, fontFamily: 'monospace', letterSpacing: '1px' }}>{s.roll}</td>
+                                            <td style={{ padding: '16px 20px', fontSize: '14px', color: '#8F92A1', fontWeight: 500 }}>{s.address}</td>
+                                            <td style={{ padding: '16px 20px' }}>
                                                 <span style={{
-                                                    background: '#FFEBEE', color: '#E53935',
-                                                    padding: '3px 10px', borderRadius: '50px',
-                                                    fontSize: '12px', fontWeight: 700,
+                                                    background: '#FFF0F1', color: '#E53935',
+                                                    padding: '6px 14px', borderRadius: '10px',
+                                                    fontSize: '13px', fontWeight: 800,
+                                                    display: 'inline-block', boxShadow: '0 2px 6px rgba(229, 57, 53, 0.1)'
                                                 }}>
                                                     Class {s.className}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '14px 16px', fontSize: '13px', color: '#8F92A1' }}>{s.dob}</td>
-                                            <td style={{ padding: '14px 16px', fontSize: '13px', color: '#8F92A1' }}>{s.phone}</td>
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <td style={{ padding: '16px 20px', fontSize: '14px', color: '#8F92A1', fontWeight: 500 }}>{s.dob}</td>
+                                            <td style={{ padding: '16px 20px', fontSize: '14px', color: '#1A1D3B', fontWeight: 600 }}>{s.phone}</td>
+                                            <td style={{ padding: '16px 20px' }}>
+                                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                                     <button
                                                         style={{
                                                             background: '#FEE2E2', border: 'none', cursor: 'pointer',
-                                                            color: '#EF4444', width: '30px', height: '30px', borderRadius: '8px',
+                                                            color: '#EF4444', width: '36px', height: '36px', borderRadius: '10px',
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                            transition: 'all 0.2s',
+                                                            transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)'
                                                         }}
                                                         onMouseEnter={e => (e.currentTarget.style.background = '#FECACA')}
                                                         onMouseLeave={e => (e.currentTarget.style.background = '#FEE2E2')}
-                                                        onClick={(e) => e.stopPropagation()}
+                                                        onClick={(e) => { e.stopPropagation(); /* delete logic */ }}
                                                     >
-                                                        <Trash2 size={14} />
+                                                        <Trash2 size={16} strokeWidth={2.5} />
                                                     </button>
                                                     <button
                                                         style={{
-                                                            background: '#FFEBEE', border: 'none', cursor: 'pointer',
-                                                            color: '#E53935', width: '30px', height: '30px', borderRadius: '8px',
+                                                            background: '#FFF0F1', border: 'none', cursor: 'pointer',
+                                                            color: '#E53935', width: '36px', height: '36px', borderRadius: '10px',
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                            transition: 'all 0.2s',
+                                                            transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(229, 57, 53, 0.1)'
                                                         }}
                                                         onMouseEnter={e => {
                                                             (e.currentTarget as HTMLElement).style.background = '#E53935';
                                                             (e.currentTarget as HTMLElement).style.color = 'white';
                                                         }}
                                                         onMouseLeave={e => {
-                                                            (e.currentTarget as HTMLElement).style.background = '#FFEBEE';
+                                                            (e.currentTarget as HTMLElement).style.background = '#FFF0F1';
                                                             (e.currentTarget as HTMLElement).style.color = '#E53935';
                                                         }}
                                                         onClick={(e) => {
@@ -261,7 +319,7 @@ export default function StudentsPage() {
                                                             router.push(`/admin/students/${s.mongo_id}`);
                                                         }}
                                                     >
-                                                        <Edit2 size={14} />
+                                                        <Edit2 size={16} strokeWidth={2.5} />
                                                     </button>
                                                 </div>
                                             </td>
@@ -273,48 +331,57 @@ export default function StudentsPage() {
                     )}
 
                     {/* Pagination */}
-                    {displayStudents.length > 15 && (
+                    {displayStudents.length >= 15 && (
                         <div style={{
-                            padding: '16px 24px', borderTop: '1px solid #F0F0F5',
+                            paddingTop: '24px', marginTop: '24px', borderTop: '1px solid rgba(226, 232, 240, 0.8)',
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         }}>
-                            <p style={{ fontSize: '13px', color: '#A1A5B7', fontWeight: 500 }}>
-                                Showing <span style={{ color: '#1A1D3B', fontWeight: 700 }}>1-15</span> of <span style={{ color: '#1A1D3B', fontWeight: 700 }}>{displayStudents.length}</span> students
+                            <p style={{ fontSize: '14px', color: '#A1A5B7', fontWeight: 500 }}>
+                                Showing <span style={{ color: '#1A1D3B', fontWeight: 800 }}>1-15</span> of <span style={{ color: '#1A1D3B', fontWeight: 800 }}>{displayStudents.length}</span> students
                             </p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <button style={{
-                                    background: '#F4F5F9', border: '1px solid #F0F0F5', cursor: 'pointer',
-                                    color: '#5E6278', padding: '7px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center',
-                                }}>
-                                    <ChevronLeft size={16} />
+                                    background: '#FFFFFF', border: '1px solid #E2E8F0', cursor: 'pointer',
+                                    color: '#1A1D3B', padding: '8px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center',
+                                    transition: 'all 0.2s', fontWeight: 600, boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                }} onMouseEnter={e => (e.currentTarget.style.background = '#F8F9FD')} onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}>
+                                    <ChevronLeft size={18} /> Prev
                                 </button>
-                                {[1, 2, 3, 4, 5].map(p => (
+                                {[1, 2, 3].map(p => (
                                     <button
                                         key={p}
                                         style={{
-                                            background: p === 1 ? 'linear-gradient(135deg, #E53935 0%, #C62828 100%)' : '#F4F5F9',
-                                            color: p === 1 ? 'white' : '#5E6278',
-                                            border: '1px solid #F0F0F5', width: '34px', height: '34px',
-                                            borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '13px',
-                                            boxShadow: p === 1 ? '0 4px 10px rgba(229,57,53,0.25)' : 'none',
+                                            background: p === 1 ? 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)' : '#FFFFFF',
+                                            color: p === 1 ? 'white' : '#1A1D3B',
+                                            border: p === 1 ? 'none' : '1px solid #E2E8F0', width: '38px', height: '38px',
+                                            borderRadius: '10px', fontWeight: 800, cursor: 'pointer', fontSize: '14px',
+                                            boxShadow: p === 1 ? '0 4px 12px rgba(229,57,53,0.3)' : '0 2px 4px rgba(0,0,0,0.02)',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={e => {
+                                            if (p !== 1) (e.currentTarget.style.background = '#F8F9FD');
+                                        }}
+                                        onMouseLeave={e => {
+                                            if (p !== 1) (e.currentTarget.style.background = '#FFFFFF');
                                         }}
                                     >
                                         {p}
                                     </button>
                                 ))}
-                                <span style={{ color: '#A1A5B7', padding: '0 4px' }}>...</span>
+                                <span style={{ color: '#A1A5B7', padding: '0 4px', fontWeight: 600 }}>...</span>
                                 <button style={{
-                                    background: '#F4F5F9', border: '1px solid #F0F0F5', color: '#5E6278',
-                                    width: '34px', height: '34px', borderRadius: '8px', fontWeight: 700,
-                                    cursor: 'pointer', fontSize: '13px',
-                                }}>
-                                    100
+                                    background: '#FFFFFF', border: '1px solid #E2E8F0', color: '#1A1D3B',
+                                    width: '38px', height: '38px', borderRadius: '10px', fontWeight: 800,
+                                    cursor: 'pointer', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'all 0.2s'
+                                }} onMouseEnter={e => (e.currentTarget.style.background = '#F8F9FD')} onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}>
+                                    12
                                 </button>
                                 <button style={{
-                                    background: '#F4F5F9', border: '1px solid #F0F0F5', cursor: 'pointer',
-                                    color: '#5E6278', padding: '7px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center',
-                                }}>
-                                    <ChevronRight size={16} />
+                                    background: '#FFFFFF', border: '1px solid #E2E8F0', cursor: 'pointer',
+                                    color: '#1A1D3B', padding: '8px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center',
+                                    transition: 'all 0.2s', fontWeight: 600, boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                }} onMouseEnter={e => (e.currentTarget.style.background = '#F8F9FD')} onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}>
+                                    Next <ChevronRight size={18} />
                                 </button>
                             </div>
                         </div>
@@ -323,46 +390,47 @@ export default function StudentsPage() {
             </div>
 
             <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Add New Student">
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                         <div>
-                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>First Name</label>
-                            <input required style={{ padding: '10px 14px', border: '1px solid #F0F0F5', borderRadius: '10px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none' }} value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} />
+                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>First Name</label>
+                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                         <div>
-                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Last Name</label>
-                            <input required style={{ padding: '10px 14px', border: '1px solid #F0F0F5', borderRadius: '10px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none' }} value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div>
-                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Email</label>
-                            <input type="email" style={{ padding: '10px 14px', border: '1px solid #F0F0F5', borderRadius: '10px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none' }} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Phone</label>
-                            <input required style={{ padding: '10px 14px', border: '1px solid #F0F0F5', borderRadius: '10px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none' }} value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last Name</label>
+                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                         <div>
-                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Date of Birth</label>
-                            <DatePicker required showMonthDropdown showYearDropdown scrollableYearDropdown yearDropdownItemNumber={100} dropdownMode="select" selected={formData.date_of_birth ? new Date(formData.date_of_birth) : null} onChange={(date: Date | null) => setFormData({ ...formData, date_of_birth: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select date of birth" />
+                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
+                            <input type="email" style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                         <div>
-                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Gender</label>
-                            <select style={{ padding: '10px 14px', border: '1px solid #F0F0F5', borderRadius: '10px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none' }} value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
+                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone</label>
+                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
+                        </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div>
+                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date of Birth</label>
+                            <DatePicker required showMonthDropdown showYearDropdown scrollableYearDropdown yearDropdownItemNumber={100} dropdownMode="select" selected={formData.date_of_birth ? new Date(formData.date_of_birth) : null} onChange={(date: Date | null) => setFormData({ ...formData, date_of_birth: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select date of birth" className="w-full" customInput={<input style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />} />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gender</label>
+                            <select style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'}>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
                             </select>
                         </div>
                     </div>
                     <div>
-                        <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Assign Class / Batch</label>
+                        <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assign Class / Batch</label>
                         <select 
-                            style={{ padding: '10px 14px', border: '1px solid #F0F0F5', borderRadius: '10px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none' }} 
+                            style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} 
                             value={formData.class_id} 
                             onChange={e => setFormData({ ...formData, class_id: e.target.value })}
+                            onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'}
                         >
                             <option value="">Select a Class...</option>
                             {classes.map(c => (
@@ -371,12 +439,12 @@ export default function StudentsPage() {
                         </select>
                     </div>
                     <div>
-                        <label style={{ fontSize: '12px', fontWeight: 600, color: '#5E6278', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Previous School</label>
-                        <input style={{ padding: '10px 14px', border: '1px solid #F0F0F5', borderRadius: '10px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none' }} value={formData.school_name} onChange={e => setFormData({ ...formData, school_name: e.target.value })} />
+                        <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Previous School</label>
+                        <input style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.school_name} onChange={e => setFormData({ ...formData, school_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
-                        <button type="button" onClick={() => setIsAddOpen(false)} style={{ padding: '10px 22px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
-                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(229,57,53,0.3)' }}>Save Student</button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '12px' }}>
+                        <button type="button" onClick={() => setIsAddOpen(false)} style={{ padding: '12px 28px', background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0', borderRadius: '12px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }} onMouseEnter={e => (e.currentTarget.style.background = '#F8F9FD')} onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}>Cancel</button>
+                        <button type="submit" style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 20px -6px rgba(229,57,53,0.4)', transition: 'all 0.2s' }} onMouseEnter={e => { (e.currentTarget.style.transform = 'translateY(-2px)'); (e.currentTarget.style.boxShadow = '0 12px 24px -6px rgba(229,57,53,0.5)') }} onMouseLeave={e => { (e.currentTarget.style.transform = 'translateY(0)'); (e.currentTarget.style.boxShadow = '0 8px 20px -6px rgba(229,57,53,0.4)') }}>Save Student</button>
                     </div>
                 </form>
             </Modal>
