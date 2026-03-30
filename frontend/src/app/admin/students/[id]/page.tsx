@@ -228,12 +228,12 @@ export default function StudentProfilePage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {student.classes.map((cls: any) => (
-                                            <tr key={cls._id}>
-                                                <td style={{ fontWeight: 600 }}>{cls.class_name} ({cls.subject})</td>
-                                                <td style={{ fontFamily: 'monospace', fontSize: '13px' }}>{cls.class_code}</td>
-                                                <td style={{ fontSize: '13px' }}>{cls.class_time_start} - {cls.class_time_end}</td>
-                                                <td><span className="badge badge-success">Active</span></td>
+                                        {student.classes.map((cls: any, idx: number) => (
+                                            <tr key={cls.id || cls._id || `class-${idx}`}>
+                                                <td style={{ fontWeight: 800, color: '#1A1D3B' }}>{cls.class_name} ({cls.subject})</td>
+                                                <td style={{ fontFamily: 'monospace', fontSize: '13px', color: '#10B981', fontWeight: 600 }}>{cls.class_code}</td>
+                                                <td style={{ fontSize: '13px', color: '#5E6278', fontWeight: 500 }}>{cls.class_time_start} - {cls.class_time_end}</td>
+                                                <td><span style={{ padding: '4px 12px', borderRadius: '50px', background: '#ECFDF5', color: '#059669', fontSize: '11px', fontWeight: 800 }}>ACTIVE</span></td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -262,14 +262,18 @@ export default function StudentProfilePage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {testStats.results.slice(0, 5).map((tr: any) => (
-                                            <tr key={tr._id}>
-                                                <td style={{ fontWeight: 600 }}>{tr.test?.test_name}</td>
-                                                <td>{tr.test?.subject}</td>
-                                                <td style={{ fontWeight: 700 }}>{tr.marks_obtained}/{tr.total_marks} ({tr.percentage}%)</td>
-                                                <td>#{tr.rank || 'N/A'}</td>
+                                        {testStats.results.slice(0, 5).map((tr: any, idx: number) => (
+                                            <tr key={tr.id || tr._id || `result-${idx}`}>
+                                                <td style={{ fontWeight: 800, color: '#1A1D3B' }}>{tr.test?.test_name}</td>
+                                                <td style={{ color: '#5E6278', fontWeight: 500 }}>{tr.test?.subject}</td>
+                                                <td style={{ fontWeight: 800, color: '#E53935' }}>{tr.marks_obtained}/{tr.total_marks} ({tr.percentage}%)</td>
+                                                <td style={{ fontWeight: 700, color: '#1A1D3B' }}>#{tr.rank_in_class || tr.rank || 'N/A'}</td>
                                                 <td>
-                                                    <span className={`badge ${tr.pass_fail === 'pass' ? 'badge-success' : 'badge-error'}`}>
+                                                    <span style={{ 
+                                                        padding: '4px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: 800,
+                                                        background: tr.pass_fail === 'pass' ? '#ECFDF5' : '#FEF2F2',
+                                                        color: tr.pass_fail === 'pass' ? '#059669' : '#DC2626'
+                                                    }}>
                                                         {tr.pass_fail?.toUpperCase()}
                                                     </span>
                                                 </td>
@@ -354,8 +358,8 @@ export default function StudentProfilePage() {
                         </p>
                         <select required className="input-field" value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
                             <option value="">Select a batch...</option>
-                            {classes.filter(c => !student.classes?.some((ec: any) => ec._id === (c.id || c._id))).map((c: any) => (
-                                <option key={c.id} value={c.id}>
+                            {classes.filter(c => !student.classes?.some((ec: any) => (ec.id || ec._id) === (c.id || c._id))).map((c: any, idx: number) => (
+                                <option key={c.id || c._id || `opt-${idx}`} value={c.id}>
                                     {c.class_name} | {c.subject} | {c.class_time_start}
                                 </option>
                             ))}

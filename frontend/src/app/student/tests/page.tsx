@@ -94,7 +94,7 @@ export default function StudentTestsPage() {
                                 {tests.ongoing.length > 0 ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                         {tests.ongoing.map((test: any, i: number) => (
-                                            <div key={test._id || i} style={{
+                                            <div key={test.id || test._id || i} style={{
                                                 padding: '20px', borderRadius: '16px', border: '1px solid var(--success)',
                                                 background: '#F0FDF4', position: 'relative', overflow: 'hidden'
                                             }}>
@@ -110,7 +110,7 @@ export default function StudentTestsPage() {
                                                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Award size={14} /> {test.total_marks} Marks</span>
                                                         </div>
                                                     </div>
-                                                    <Link href={`/student/tests/${test._id}`}>
+                                                    <Link href={`/student/tests/${test.id || test._id}`}>
                                                         <button className="btn btn-primary" style={{ boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}>
                                                             <PlayCircle size={18} /> Attempt Now
                                                         </button>
@@ -137,7 +137,7 @@ export default function StudentTestsPage() {
                                 {tests.upcoming.length > 0 ? (
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
                                         {tests.upcoming.map((test: any, i: number) => (
-                                            <div key={test._id || i} style={{
+                                            <div key={test.id || test._id || i} style={{
                                                 padding: '20px', borderRadius: '12px', border: '1px solid var(--border-primary)',
                                                 background: 'var(--bg-secondary)', borderLeft: '4px solid var(--primary)'
                                             }}>
@@ -168,9 +168,9 @@ export default function StudentTestsPage() {
                                 {tests.completed.length > 0 ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         {tests.completed.map((test: any) => {
-                                            const result = data?.recent_tests?.find((tr: any) => tr.test_id === test._id);
+                                            const result = data?.recent_tests?.find((tr: any) => (tr.test_id === test.id) || (tr.test_id === test._id));
                                             return (
-                                                <div key={test._id} style={{
+                                                <div key={test.id || test._id} style={{
                                                     padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-primary)',
                                                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                                     background: result ? 'white' : 'var(--bg-secondary)',

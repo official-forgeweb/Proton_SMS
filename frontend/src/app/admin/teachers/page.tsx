@@ -4,7 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
-import { Users, Search, Plus, Mail, Phone, BookOpen, Award, ChevronRight, ChevronLeft, Download, Edit } from 'lucide-react';
+import { Users, Search, Plus, Mail, Phone, BookOpen, Award, ChevronRight, ChevronLeft, Download, Edit, Trash2 } from 'lucide-react';
 
 export default function TeachersPage() {
     const router = useRouter();
@@ -18,6 +18,17 @@ export default function TeachersPage() {
         first_name: '', last_name: '', email: '', phone: '', qualification: '', specialization: '', experience_years: '', role_type: 'subject_teacher', gender: 'male', date_of_joining: new Date().toISOString().split('T')[0], password: ''
     };
     const [formData, setFormData] = useState(emptyForm);
+
+    const handleDelete = async (id: string, name: string) => {
+        if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
+        try {
+            await api.delete(`/teachers/${id}`);
+            fetchTeachers();
+        } catch (error) {
+            console.error('Error deleting teacher:', error);
+            alert('Failed to delete teacher');
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -277,6 +288,19 @@ export default function TeachersPage() {
                                         <Edit size={14} strokeWidth={2.5} /> Edit
                                     </button>
                                     <button
+                                        onClick={() => handleDelete(teacher.id, `${teacher.first_name} ${teacher.last_name}`)}
+                                        style={{
+                                            padding: '10px', background: '#FEE2E2', color: '#EF4444',
+                                            border: '1px solid #FECACA', borderRadius: '10px', fontWeight: 700, fontSize: '13px',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                        }}
+                                        onMouseEnter={e => { (e.currentTarget.style.background = '#FECACA'); }}
+                                        onMouseLeave={e => { (e.currentTarget.style.background = '#FEE2E2'); }}
+                                    >
+                                        <Trash2 size={14} strokeWidth={2.5} />
+                                    </button>
+                                    <button
                                         onClick={() => router.push(`/admin/teachers/${teacher.id}`)}
                                         style={{
                                             flex: 1.5, padding: '10px',
@@ -367,46 +391,46 @@ export default function TeachersPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                         <div>
                             <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>First Name</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
+                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.first_name || ''} onChange={e => setFormData({ ...formData, first_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                         <div>
                             <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last Name</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
+                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.last_name || ''} onChange={e => setFormData({ ...formData, last_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                         <div>
                             <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</label>
-                            <input type="email" required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
+                            <input type="email" required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                         <div>
                             <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Login Password {editingId ? <span style={{color: '#8F92A1', fontSize: '10px', textTransform: 'none'}}>(Leave blank to keep current)</span> : '*'}</label>
-                            <input type="text" style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} required={!editingId} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder={editingId ? 'Enter new password' : 'Create password'} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
+                            <input type="text" style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} required={!editingId} value={formData.password || ''} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder={editingId ? 'Enter new password' : 'Create password'} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                         <div>
                             <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone Number</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
+                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                         <div>
                             <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Qualification</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.qualification} onChange={e => setFormData({ ...formData, qualification: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
+                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.qualification || ''} onChange={e => setFormData({ ...formData, qualification: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                         <div>
                             <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Specialization</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.specialization} onChange={e => setFormData({ ...formData, specialization: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} placeholder="e.g. Mathematics, Physics" />
+                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.specialization || ''} onChange={e => setFormData({ ...formData, specialization: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} placeholder="e.g. Mathematics, Physics" />
                         </div>
                         <div>
                             <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Experience (Years)</label>
-                            <input type="number" required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.experience_years} onChange={e => setFormData({ ...formData, experience_years: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
+                            <input type="number" required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.experience_years || ''} onChange={e => setFormData({ ...formData, experience_years: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
                         </div>
                     </div>
                     <div>
                         <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gender</label>
-                        <select style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'}>
+                        <select style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.gender || ''} onChange={e => setFormData({ ...formData, gender: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'}>
                             <option value="male">Male</option>
                             <option value="female">Female</option>
                         </select>

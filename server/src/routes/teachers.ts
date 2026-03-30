@@ -174,4 +174,43 @@ router.get('/:id/classes', authenticateToken, async (req: Request, res: Response
   }
 });
 
+// DELETE /api/teachers/:id
+router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = paramId(req);
+    const teacher = await prisma.teacher.findUnique({ where: { id } });
+    if (!teacher) {
+      res.status(404).json({ success: false, message: 'Teacher not found' });
+      return;
+    }
+
+    // Clear primary teacher associations
+    await prisma.class.updateMany({
+      where: { primary_teacher_id: id },
+      data: { primary_teacher_id: null },
+    });
+
+    await prisma.classSchedule.updateMany({
+      where: { teacher_id: id },
+      data: { teacher_id: null },
+    });
+    
+    await prisma.demoClass.updateMany({
+        where: { teacher_id: id },
+        data: { teacher_id: null }
+    });
+
+    await prisma.teacher.delete({ where: { id } });
+    
+    if (teacher.user_id) {
+        await prisma.user.delete({ where: { id: teacher.user_id } });
+    }
+
+    res.json({ success: true, message: 'Teacher deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 export default router;

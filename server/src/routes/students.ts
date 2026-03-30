@@ -592,4 +592,50 @@ router.get('/:id/performance', authenticateToken, async (req: Request, res: Resp
   }
 });
 
+// DELETE /api/students/:id
+router.post('/delete-many', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) {
+      res.status(400).json({ success: false, message: 'IDs array required' });
+      return;
+    }
+    await prisma.student.deleteMany({ where: { id: { in: ids } } });
+    res.json({ success: true, message: 'Students deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = paramId(req);
+    const student = await prisma.student.findUnique({ where: { id } });
+    if (!student) {
+      res.status(404).json({ success: false, message: 'Student not found' });
+      return;
+    }
+
+    // Delete related records
+    await prisma.studentClassEnrollment.deleteMany({ where: { student_id: id } });
+    await prisma.attendance.deleteMany({ where: { student_id: id } });
+    await prisma.testResult.deleteMany({ where: { student_id: id } });
+    await prisma.homeworkSubmission.deleteMany({ where: { student_id: id } });
+    await prisma.parentStudentMapping.deleteMany({ where: { student_id: id } });
+    await prisma.studentFeeAssignment.deleteMany({ where: { student_id: id } });
+    await prisma.feePayment.deleteMany({ where: { student_id: id } });
+
+    await prisma.student.delete({ where: { id } });
+    
+    if (student.user_id) {
+        await prisma.user.delete({ where: { id: student.user_id } });
+    }
+
+    res.json({ success: true, message: 'Student and associated data deleted' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 export default router;

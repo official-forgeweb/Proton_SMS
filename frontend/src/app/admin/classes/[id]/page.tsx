@@ -87,11 +87,11 @@ export default function ClassProfilePage() {
                                 </thead>
                                 <tbody>
                                     {cls.students.map((student: any) => (
-                                        <tr key={student._id}>
+                                        <tr key={student.id}>
                                             <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{student.PRO_ID}</td>
                                             <td style={{ fontWeight: 600 }}>{student.first_name} {student.last_name}</td>
                                             <td>{student.phone}</td>
-                                            <td><button className="btn btn-secondary btn-sm" onClick={() => router.push(`/admin/students/${student._id}`)}>View</button></td>
+                                            <td><button className="btn btn-secondary btn-sm" onClick={() => router.push(`/admin/students/${student.id}`)}>View</button></td>
                                         </tr>
                                     ))}
                                 </tbody>

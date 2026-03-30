@@ -224,9 +224,16 @@ export default function TeacherProfilePage() {
                                     Assigned Classes
                                 </h3>
                             </div>
-                            <span style={{ background: '#F4F5F9', color: '#5E6278', padding: '6px 14px', borderRadius: '50px', fontSize: '12px', fontWeight: 800 }}>
-                                {teacher.classes?.length || 0} Total
-                            </span>
+                            <button 
+                                onClick={() => router.push('/admin/classes')}
+                                style={{ 
+                                    background: '#E53935', color: '#FFFFFF', padding: '6px 14px', borderRadius: '50px', 
+                                    fontSize: '11px', fontWeight: 800, border: 'none', cursor: 'pointer',
+                                    boxShadow: '0 4px 12px rgba(229,57,53,0.2)'
+                                }}
+                            >
+                                Manage Allotment
+                            </button>
                         </div>
 
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -240,10 +247,10 @@ export default function TeacherProfilePage() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                             <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#F8F9FD', border: '1px solid #F0F0F5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                                 <span style={{ fontSize: '10px', color: '#8F92A1', fontWeight: 800, textTransform: 'uppercase' }}>Class</span>
-                                                <span style={{ fontSize: '14px', color: '#1A1D3B', fontWeight: 800 }}>{cls.class_name.replace('Class ', '')}</span>
+                                                <span style={{ fontSize: '14px', color: '#1A1D3B', fontWeight: 800 }}>{cls.class_name?.replace('Class ', '')}</span>
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1A1D3B', margin: 0 }}>{cls.subject}</h4>
+                                                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1A1D3B', margin: 0 }}>{cls.subject || 'N/A'}</h4>
                                                 <span style={{ fontSize: '13px', color: '#8F92A1', fontWeight: 500 }}>Grade Level: {cls.grade_level}</span>
                                             </div>
                                         </div>

@@ -130,7 +130,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
 // POST /api/tests
 router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
-    let createdBy = req.user!.id;
+    let createdBy: string | null = null;
     if (req.user!.role === 'teacher') {
       const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
       if (teacher) createdBy = teacher.id;

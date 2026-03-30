@@ -22,6 +22,18 @@ export default function StudentsPage() {
     const emptyForm = { first_name: '', last_name: '', email: '', phone: '', date_of_birth: '', gender: 'male', school_name: '', class_id: '', admission_type: 'fresh' };
     const [formData, setFormData] = useState(emptyForm);
 
+    const handleDelete = async (id: string, name: string) => {
+        if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
+        try {
+            await api.delete(`/students/${id}`);
+            const res = await api.get('/students', { params: { search } });
+            setStudents(res.data.data && res.data.data.length > 0 ? res.data.data : dummyStudents);
+        } catch (error: any) {
+            console.error('Error deleting student:', error);
+            alert(error.response?.data?.message || 'Failed to delete student');
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -83,7 +95,7 @@ export default function StudentsPage() {
         name: `${s.first_name || s.name || ''} ${s.last_name || ''}`.trim(),
         roll: s.roll || s.PRO_ID || '#00',
         address: s.address || 'Unknown',
-        className: s.className || s.classes?.[0]?.name || '01',
+        className: s.classes?.[0]?.name || s.classes?.[0]?.class_name || s.className || 'None',
         dob: s.dob || s.date_of_birth || '01/01/2001',
         phone: s.phone || '+123 0000000',
     }));
@@ -279,7 +291,7 @@ export default function StudentsPage() {
                                                     fontSize: '13px', fontWeight: 800,
                                                     display: 'inline-block', boxShadow: '0 2px 6px rgba(229, 57, 53, 0.1)'
                                                 }}>
-                                                    Class {s.className}
+                                                    {s.className || 'N/A'}
                                                 </span>
                                             </td>
                                             <td style={{ padding: '16px 20px', fontSize: '14px', color: '#8F92A1', fontWeight: 500 }}>{s.dob}</td>
@@ -295,7 +307,10 @@ export default function StudentsPage() {
                                                         }}
                                                         onMouseEnter={e => (e.currentTarget.style.background = '#FECACA')}
                                                         onMouseLeave={e => (e.currentTarget.style.background = '#FEE2E2')}
-                                                        onClick={(e) => { e.stopPropagation(); /* delete logic */ }}
+                                                        onClick={(e) => { 
+                                                            e.stopPropagation(); 
+                                                            handleDelete(s.mongo_id, s.name); 
+                                                        }}
                                                     >
                                                         <Trash2 size={16} strokeWidth={2.5} />
                                                     </button>
