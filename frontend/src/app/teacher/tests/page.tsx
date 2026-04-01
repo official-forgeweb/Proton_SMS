@@ -1,4 +1,5 @@
 'use client';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import PermissionGuard from '@/components/PermissionGuard';
@@ -8,9 +9,9 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { ClipboardList, Plus, Search, CheckCircle, FileText, BarChart, X } from 'lucide-react';
 
 export default function TeacherTestsPage() {
+    const router = useRouter();
     const [tests, setTests] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [showAddModal, setShowAddModal] = useState(false);
     const [stats, setStats] = useState({ total: 0, completed: 0, scheduled: 0 });
 
     useEffect(() => {
@@ -47,7 +48,7 @@ export default function TeacherTestsPage() {
                         {stats.total} total assessments • {stats.scheduled} upcoming
                     </p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+                <button className="btn btn-primary" onClick={() => router.push('/teacher/tests/create')}>
                     <Plus size={16} /> New Assessment
                 </button>
             </div>
@@ -60,7 +61,7 @@ export default function TeacherTestsPage() {
                         <ClipboardList size={48} />
                         <h3>No Assessments Found</h3>
                         <p>You haven't created any tests or quizzes yet. Click "New Assessment" to get started.</p>
-                        <button className="btn btn-primary mt-4" onClick={() => setShowAddModal(true)}>
+                        <button className="btn btn-primary mt-4" onClick={() => router.push('/teacher/tests/create')}>
                             Create First Assessment
                         </button>
                     </div>
@@ -109,106 +110,7 @@ export default function TeacherTestsPage() {
                 )}
             </div>
 
-            {showAddModal && (
-                <AddTestModal
-                    onClose={() => setShowAddModal(false)}
-                    onSuccess={() => { setShowAddModal(false); fetchTests(); }}
-                />
-            )}
         </DashboardLayout>
         </PermissionGuard>
-    );
-}
-
-function AddTestModal({ onClose, onSuccess }: any) {
-    const [formData, setFormData] = useState({
-        test_name: '', test_date: '', class_id: '', test_type: 'monthly_test',
-        total_marks: 100, passing_marks: 33, syllabus: ''
-    });
-    const [classes, setClasses] = useState<any[]>([]);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    useEffect(() => {
-        api.get('/classes').then(res => setClasses(res.data.data)).catch(console.error);
-    }, []);
-
-    const handleSubmit = async () => {
-        if (!formData.test_name || !formData.class_id || !formData.test_date) return;
-        setIsSubmitting(true);
-        try {
-            await api.post('/tests', formData);
-            onSuccess();
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    return (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="modal model-lg">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: 700 }}>Schedule New Assessment</h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div className="input-group" style={{ gridColumn: '1 / -1' }}>
-                        <label>Assessment Name *</label>
-                        <input className="input-field" value={formData.test_name} onChange={e => setFormData(p => ({ ...p, test_name: e.target.value }))} placeholder="e.g., Mathematics Mid-Term" />
-                    </div>
-
-                    <div className="input-group">
-                        <label>Target Class *</label>
-                        <select className="input-field" value={formData.class_id} onChange={e => setFormData(p => ({ ...p, class_id: e.target.value }))}>
-                            <option value="">Select a class...</option>
-                            {classes.map((c: any) => (
-                                <option key={c.id} value={c.id}>{c.class_name} • {c.batch_type?.toUpperCase()} BATCH</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="input-group">
-                        <label>Assessment Date *</label>
-                        <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.test_date ? new Date(formData.test_date) : null} onChange={(date: Date | null) => setFormData((p: any) => ({ ...p, test_date: date ? date.toISOString().split('T')[0] : '' }))} dateFormat="MMMM d, yyyy" placeholderText="Select assessment date" />
-                    </div>
-
-                    <div className="input-group">
-                        <label>Test Type *</label>
-                        <select className="input-field" value={formData.test_type} onChange={e => setFormData(p => ({ ...p, test_type: e.target.value }))}>
-                            <option value="weekly_test">Weekly Test</option>
-                            <option value="monthly_test">Monthly Test</option>
-                            <option value="term_exam">Term Exam</option>
-                            <option value="mock_test">Mock Test</option>
-                            <option value="surprise_test">Surprise Test</option>
-                        </select>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                        <div className="input-group" style={{ flex: 1 }}>
-                            <label>Total Marks *</label>
-                            <input type="number" className="input-field" value={formData.total_marks} onChange={e => setFormData(p => ({ ...p, total_marks: Number(e.target.value) }))} />
-                        </div>
-                        <div className="input-group" style={{ flex: 1 }}>
-                            <label>Passing Marks *</label>
-                            <input type="number" className="input-field" value={formData.passing_marks} onChange={e => setFormData(p => ({ ...p, passing_marks: Number(e.target.value) }))} />
-                        </div>
-                    </div>
-
-                    <div className="input-group" style={{ gridColumn: '1 / -1' }}>
-                        <label>Syllabus / Topics Covered</label>
-                        <input className="input-field" value={formData.syllabus} onChange={e => setFormData(p => ({ ...p, syllabus: e.target.value }))} placeholder="e.g., Algebra, Probability" />
-                    </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-                    <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-                    <button className="btn btn-primary" onClick={handleSubmit} disabled={isSubmitting || !formData.test_name || !formData.class_id || !formData.test_date}>
-                        {isSubmitting ? 'Scheduling...' : 'Schedule Assessment'}
-                    </button>
-                </div>
-            </div>
-        </div>
     );
 }

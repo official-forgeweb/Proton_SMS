@@ -3,22 +3,17 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import PermissionGuard from '@/components/PermissionGuard';
 import api from '@/lib/api';
-import Modal from '@/components/Modal';
 import { useAuthStore } from '@/stores/authStore';
 import { PenTool, Plus, Clock, Users, FileText } from 'lucide-react';
 import Link from 'next/link';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { useRouter } from 'next/navigation';
 
 export default function TeacherHomeworkPage() {
+    const router = useRouter();
     const { user } = useAuthStore();
     const [homework, setHomework] = useState<any[]>([]);
     const [classes, setClasses] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isAddOpen, setIsAddOpen] = useState(false);
-    const [formData, setFormData] = useState({
-        title: '', description: '', class_id: '', subject: '', assigned_date: new Date().toISOString().split('T')[0], due_date: '', total_marks: 10
-    });
 
     useEffect(() => {
         fetchHomework();
@@ -29,18 +24,7 @@ export default function TeacherHomeworkPage() {
         api.get('/homework').then(res => setHomework(res.data.data)).catch(console.error).finally(() => setIsLoading(false));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            await api.post('/homework', formData);
-            setIsAddOpen(false);
-            fetchHomework();
-            setFormData({ title: '', description: '', class_id: '', subject: '', assigned_date: new Date().toISOString().split('T')[0], due_date: '', total_marks: 10 });
-        } catch (error) {
-            console.error('Error adding homework:', error);
-            alert('Failed to add homework');
-        }
-    };
+
 
     return (
         <PermissionGuard permissionKey="homework">
@@ -52,7 +36,7 @@ export default function TeacherHomeworkPage() {
                         Assign and track student homework progress.
                     </p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setIsAddOpen(true)}><Plus size={16} /> Assign Homework</button>
+                <button className="btn btn-primary" onClick={() => router.push('/teacher/homework/assign')}><Plus size={16} /> Assign Homework</button>
             </div>
 
             <div className="page-body">
@@ -118,49 +102,7 @@ export default function TeacherHomeworkPage() {
                     )}
                 </div>
             </div>
-            <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Assign New Homework">
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div>
-                            <label className="label">Title</label>
-                            <input required className="input-field" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-                        </div>
-                        <div>
-                            <label className="label">Subject</label>
-                            <input required className="input-field" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="label">Class</label>
-                        <select required className="input-field" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value })}>
-                            <option value="">Select Class...</option>
-                            {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="label">Description</label>
-                        <textarea required className="input-field" rows={3} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                        <div>
-                            <label className="label">Assigned Date</label>
-                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.assigned_date ? new Date(formData.assigned_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, assigned_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select assigned date" />
-                        </div>
-                        <div>
-                            <label className="label">Due Date</label>
-                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.due_date ? new Date(formData.due_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, due_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select due date" />
-                        </div>
-                        <div>
-                            <label className="label">Total Marks</label>
-                            <input type="number" required className="input-field" value={formData.total_marks} onChange={e => setFormData({ ...formData, total_marks: Number(e.target.value) })} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-                        <button type="button" className="btn btn-secondary" onClick={() => setIsAddOpen(false)}>Cancel</button>
-                        <button type="submit" className="btn btn-primary">Assign Homework</button>
-                    </div>
-                </form>
-            </Modal>
+
         </DashboardLayout>
         </PermissionGuard>
     );

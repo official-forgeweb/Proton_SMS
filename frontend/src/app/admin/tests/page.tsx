@@ -3,46 +3,23 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import Modal from '@/components/Modal';
 import { ClipboardList, Plus, Calendar, FileText, CheckCircle, Clock, BookOpen, Target, Timer, Trophy, ChevronRight, LayoutGrid, Search, Filter } from 'lucide-react';
 
 export default function TestsPage() {
     const router = useRouter();
     const [tests, setTests] = useState<any[]>([]);
-    const [classes, setClasses] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isAddOpen, setIsAddOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    
-    const [formData, setFormData] = useState({
-        test_name: '', class_id: '', subject: '', test_type: 'weekly_test',
-        test_date: new Date().toISOString().split('T')[0],
-        duration_minutes: 60, total_marks: 100, passing_marks: 33
-    });
 
     useEffect(() => {
         fetchTests();
-        api.get('/classes').then(res => setClasses(res.data.data)).catch(console.error);
     }, []);
 
     const fetchTests = () => {
         api.get('/tests').then(res => setTests(res.data.data)).catch(console.error).finally(() => setIsLoading(false));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            await api.post('/tests', formData);
-            setIsAddOpen(false);
-            fetchTests();
-            setFormData({ test_name: '', class_id: '', subject: '', test_type: 'weekly_test', test_date: new Date().toISOString().split('T')[0], duration_minutes: 60, total_marks: 100, passing_marks: 33 });
-        } catch (error) {
-            console.error('Error adding test:', error);
-            alert('Failed to add test. Check console for details.');
-        }
-    };
+
 
     const filteredTests = tests.filter(t => 
         t.test_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -125,7 +102,7 @@ export default function TestsPage() {
                                 onBlur={e => e.target.style.borderColor = '#E2E8F0'}
                             />
                         </div>
-                        <button onClick={() => setIsAddOpen(true)} style={{ background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '12px 24px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(26,29,59,0.4)', transition: 'all 0.2s' }}>
+                        <button onClick={() => router.push('/admin/tests/create')} style={{ background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '12px 24px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(26,29,59,0.4)', transition: 'all 0.2s' }}>
                             <Plus size={20} strokeWidth={2.5} /> Create Test
                         </button>
                     </div>
@@ -224,76 +201,7 @@ export default function TestsPage() {
                 </div>
             </div>
 
-            {/* Create Test Modal */}
-            <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Initialize Assessment / Create Test">
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    
-                    <div className="glass-panel" style={{ padding: '24px', borderRadius: '20px', background: '#F8F9FD', border: '1px solid #E2E8F0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                            <div style={{ width: '32px', height: '32px', background: '#E53935', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF' }}>
-                                <ClipboardList size={16} strokeWidth={2.5} />
-                            </div>
-                            <h4 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>Basic Configuration</h4>
-                        </div>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div>
-                                <label className="modal-label">Test Title / Name *</label>
-                                <input required className="modal-input" placeholder="e.g. Mathematics Midterm" value={formData.test_name} onChange={e => setFormData({ ...formData, test_name: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="modal-label">Assessment Category *</label>
-                                <select className="modal-input" value={formData.test_type} onChange={e => setFormData({ ...formData, test_type: e.target.value })}>
-                                    <option value="weekly_test">Weekly Assessment</option>
-                                    <option value="mock_test">Mock Examination</option>
-                                    <option value="final_exam">Final Semester Exam</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label className="modal-label">Target Batch / Class *</label>
-                            <select required className="modal-input" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value })}>
-                                <option value="">Select Target Audience...</option>
-                                {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="modal-label">Academics Subject *</label>
-                            <input required className="modal-input" placeholder="e.g. Physics" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} />
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label className="modal-label">Examination Date *</label>
-                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.test_date ? new Date(formData.test_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, test_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Set schedule" />
-                        </div>
-                        <div>
-                            <label className="modal-label">Time Duration (Min) *</label>
-                            <input type="number" required className="modal-input" value={formData.duration_minutes} onChange={e => setFormData({ ...formData, duration_minutes: Number(e.target.value) })} />
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label className="modal-label">Maximum Score (Total Marks) *</label>
-                            <input type="number" required className="modal-input" value={formData.total_marks} onChange={e => setFormData({ ...formData, total_marks: Number(e.target.value) })} />
-                        </div>
-                        <div>
-                            <label className="modal-label">Qualifying Score (Pass Marks) *</label>
-                            <input type="number" required className="modal-input" value={formData.passing_marks} onChange={e => setFormData({ ...formData, passing_marks: Number(e.target.value) })} />
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '12px' }}>
-                        <button type="button" onClick={() => setIsAddOpen(false)} style={{ padding: '12px 28px', background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0', borderRadius: '12px', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>Cancel</button>
-                        <button type="submit" style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 800, fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 16px rgba(229,57,53,0.3)' }}>Initialize Test</button>
-                    </div>
-                </form>
-            </Modal>
         </DashboardLayout>
     );
 }

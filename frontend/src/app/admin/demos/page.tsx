@@ -3,14 +3,12 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Target, Calendar, Clock, ChevronRight, MessageSquare, Phone } from 'lucide-react';
 import api from '@/lib/api';
-import Modal from '@/components/Modal';
+import { useRouter } from 'next/navigation';
 
 export default function DemoClassesPage() {
+    const router = useRouter();
     const [demos, setDemos] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedDemoRef, setSelectedDemoRef] = useState<any>(null);
-    const [remark, setRemark] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         fetchDemos();
@@ -27,23 +25,7 @@ export default function DemoClassesPage() {
         }
     };
 
-    const handleAddRemark = async () => {
-        if (!remark.trim() || !selectedDemoRef) return;
-        setIsSubmitting(true);
-        try {
-            await api.post(`/enquiries/${selectedDemoRef.enquiry_id}/remarks`, {
-                remark: `(Demo Class Remark) ${remark}`,
-                remark_type: 'meeting',
-            });
-            setRemark('');
-            setSelectedDemoRef(null);
-            fetchDemos(); // To potentially update status or last modified
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+
 
     return (
         <DashboardLayout requiredRole="admin">
@@ -104,7 +86,7 @@ export default function DemoClassesPage() {
                                     <button
                                         className="btn btn-secondary btn-sm"
                                         style={{ flex: 1, justifyContent: 'center' }}
-                                        onClick={() => setSelectedDemoRef(demo)}
+                                        onClick={() => router.push(`/admin/demos/${demo.id}/remark?enquiry=${demo.enquiry_id}`)}
                                     >
                                         <MessageSquare size={14} /> Add Remark
                                     </button>
@@ -115,27 +97,7 @@ export default function DemoClassesPage() {
                 )}
             </div>
 
-            <Modal isOpen={!!selectedDemoRef} onClose={() => setSelectedDemoRef(null)} title={`Add Remark to Demo`}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div className="input-group">
-                        <label className="label">Remark / Feedback</label>
-                        <textarea
-                            className="input-field"
-                            rows={4}
-                            value={remark}
-                            onChange={(e) => setRemark(e.target.value)}
-                            placeholder="Enter notes about how the demo class went..."
-                            style={{ resize: 'vertical' }}
-                        />
-                    </div>
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                        <button className="btn btn-secondary" onClick={() => setSelectedDemoRef(null)}>Cancel</button>
-                        <button className="btn btn-primary" onClick={handleAddRemark} disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving...' : 'Save Remark'}
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+
         </DashboardLayout>
     );
 }

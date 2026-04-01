@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import Modal from '@/components/Modal';
 import { Users, Search, Plus, Mail, Phone, BookOpen, Award, ChevronRight, ChevronLeft, Download, Edit, Trash2 } from 'lucide-react';
 
 export default function TeachersPage() {
@@ -11,13 +10,6 @@ export default function TeachersPage() {
     const [teachers, setTeachers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [isAddOpen, setIsAddOpen] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
-
-    const emptyForm = {
-        first_name: '', last_name: '', email: '', phone: '', qualification: '', specialization: '', experience_years: '', role_type: 'subject_teacher', gender: 'male', date_of_joining: new Date().toISOString().split('T')[0], password: ''
-    };
-    const [formData, setFormData] = useState(emptyForm);
 
     const handleDelete = async (id: string, name: string) => {
         if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
@@ -30,35 +22,7 @@ export default function TeachersPage() {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const submitData: any = { ...formData };
-            if (!submitData.password) delete submitData.password;
-            if (!submitData.experience_years) delete submitData.experience_years;
-            
-            if (editingId) {
-                await api.put(`/teachers/${editingId}`, submitData);
-            } else {
-                await api.post('/teachers', submitData);
-            }
-            setIsAddOpen(false);
-            setEditingId(null);
-            fetchTeachers();
-            setFormData(emptyForm);
-        } catch (error) {
-            console.error('Error saving teacher:', error);
-            alert('Failed to save teacher');
-        }
-    };
 
-    const handleEdit = (teacher: any) => {
-        setFormData({
-            first_name: teacher.first_name, last_name: teacher.last_name, email: teacher.email, phone: teacher.phone, qualification: teacher.qualification, specialization: teacher.specialization, experience_years: teacher.experience_years, role_type: teacher.role_type || 'subject_teacher', gender: teacher.gender || 'male', date_of_joining: teacher.date_of_joining ? new Date(teacher.date_of_joining).toISOString().split('T')[0] : new Date().toISOString().split('T')[0], password: ''
-        });
-        setEditingId(teacher.id);
-        setIsAddOpen(true);
-    };
 
     useEffect(() => {
         fetchTeachers();
@@ -137,7 +101,7 @@ export default function TeachersPage() {
                             <Download size={16} strokeWidth={2.5} /> Export
                         </button>
                         <button
-                            onClick={() => { setFormData(emptyForm); setEditingId(null); setIsAddOpen(true); }}
+                            onClick={() => router.push('/admin/teachers/add')}
                             style={{
                                 background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
                                 color: 'white', border: 'none',
@@ -275,7 +239,7 @@ export default function TeachersPage() {
 
                                 <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(226, 232, 240, 0.8)', display: 'flex', gap: '10px' }}>
                                     <button
-                                        onClick={() => handleEdit(teacher)}
+                                        onClick={() => router.push(`/admin/teachers/${teacher.id}/edit`)}
                                         style={{
                                             flex: 1, padding: '10px', background: '#FFFFFF', color: '#1A1D3B',
                                             border: '1px solid #E2E8F0', borderRadius: '10px', fontWeight: 700, fontSize: '13px',
@@ -386,84 +350,7 @@ export default function TeachersPage() {
                 )}
             </div>
 
-            <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title={editingId ? 'Edit Teacher Details' : 'Onboard New Teacher'}>
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>First Name</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.first_name || ''} onChange={e => setFormData({ ...formData, first_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last Name</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.last_name || ''} onChange={e => setFormData({ ...formData, last_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</label>
-                            <input type="email" required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Login Password {editingId ? <span style={{color: '#8F92A1', fontSize: '10px', textTransform: 'none'}}>(Leave blank to keep current)</span> : '*'}</label>
-                            <input type="text" style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} required={!editingId} value={formData.password || ''} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder={editingId ? 'Enter new password' : 'Create password'} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone Number</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Qualification</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.qualification || ''} onChange={e => setFormData({ ...formData, qualification: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Specialization</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.specialization || ''} onChange={e => setFormData({ ...formData, specialization: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} placeholder="e.g. Mathematics, Physics" />
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Experience (Years)</label>
-                            <input type="number" required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.experience_years || ''} onChange={e => setFormData({ ...formData, experience_years: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                    </div>
-                    <div>
-                        <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gender</label>
-                        <select style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.gender || ''} onChange={e => setFormData({ ...formData, gender: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'}>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                        </select>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '12px' }}>
-                        <button
-                            type="button"
-                            onClick={() => setIsAddOpen(false)}
-                            style={{
-                                padding: '12px 28px', background: '#FFFFFF', color: '#1A1D3B',
-                                border: '1px solid #E2E8F0', borderRadius: '12px', fontWeight: 700, fontSize: '15px',
-                                cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#F8F9FD')}
-                            onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            style={{
-                                padding: '12px 28px', background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
-                                color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '15px',
-                                cursor: 'pointer', boxShadow: '0 8px 20px -6px rgba(229,57,53,0.4)', transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={e => { (e.currentTarget.style.transform = 'translateY(-2px)'); (e.currentTarget.style.boxShadow = '0 12px 24px -6px rgba(229,57,53,0.5)') }}
-                            onMouseLeave={e => { (e.currentTarget.style.transform = 'translateY(0)'); (e.currentTarget.style.boxShadow = '0 8px 20px -6px rgba(229,57,53,0.4)') }}
-                        >
-                            {editingId ? 'Save Updates' : 'Onboard Teacher'}
-                        </button>
-                    </div>
-                </form>
-            </Modal>
+
         </DashboardLayout>
     );
 }

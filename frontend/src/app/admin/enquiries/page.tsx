@@ -18,10 +18,6 @@ export default function EnquiriesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [selectedEnquiry, setSelectedEnquiry] = useState<any>(null);
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [showRemarkModal, setShowRemarkModal] = useState(false);
-    const [showDemoModal, setShowDemoModal] = useState(false);
     const [teachers, setTeachers] = useState<any[]>([]);
 
     useEffect(() => {
@@ -53,14 +49,7 @@ export default function EnquiriesPage() {
         }
     };
 
-    const fetchEnquiryDetail = async (id: string) => {
-        try {
-            const res = await api.get(`/enquiries/${id}`);
-            setSelectedEnquiry(res.data.data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
+
 
     const updateStatus = async (id: string, status: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -100,7 +89,7 @@ export default function EnquiriesPage() {
                         {stats?.total || 0} total enquiries &bull; {stats?.conversion_rate || 0}% conversion
                     </p>
                 </div>
-                <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)' }}>
+                <button onClick={() => router.push('/admin/enquiries/add')} style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)' }}>
                     <Plus size={16} /> New Enquiry
                 </button>
             </div>
@@ -162,7 +151,7 @@ export default function EnquiriesPage() {
                                     key={enq.id}
                                     className="animate-fade-in"
                                     style={{ cursor: 'pointer', animationDelay: `${idx * 50}ms`, padding: '20px', background: '#FFFFFF', borderRadius: '18px', border: '1px solid #F0F0F5', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', transition: 'transform 0.2s, box-shadow 0.2s' }}
-                                    onClick={() => fetchEnquiryDetail(enq.id)}
+                                    onClick={() => router.push(`/admin/enquiries/${enq.id}`)}
                                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)'; }}
                                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)'; }}
                                 >
@@ -221,178 +210,7 @@ export default function EnquiriesPage() {
             </div>
             </div>
 
-            {/* Enquiry Detail Drawer */}
-            {selectedEnquiry && (
-                <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setSelectedEnquiry(null)}>
-                    <div style={{
-                        position: 'fixed', right: 0, top: 0, bottom: 0, width: '520px',
-                        background: 'var(--bg-primary)', boxShadow: 'var(--shadow-xl)',
-                        overflowY: 'auto', animation: 'slideInRight 0.3s ease',
-                        padding: '28px',
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <div>
-                                <span style={{ fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-tertiary)' }}>
-                                    {selectedEnquiry.enquiry_number}
-                                </span>
-                                <h2 style={{ fontSize: '20px', fontWeight: 700, marginTop: '4px' }}>{selectedEnquiry.student_name}</h2>
-                            </div>
-                            <button onClick={() => setSelectedEnquiry(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                                <X size={20} />
-                            </button>
-                        </div>
 
-                        {/* Status Badge */}
-                        <div style={{ marginBottom: '20px' }}>
-                            <span style={{
-                                padding: '6px 14px', borderRadius: 'var(--radius-full)',
-                                background: statusConfig[selectedEnquiry.status]?.bg || '#F3F4F6',
-                                color: statusConfig[selectedEnquiry.status]?.color || '#6B7280',
-                                fontSize: '13px', fontWeight: 600,
-                            }}>
-                                {statusConfig[selectedEnquiry.status]?.label || selectedEnquiry.status}
-                            </span>
-                        </div>
-
-                        {/* Info */}
-                        <div style={{
-                            background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)',
-                            padding: '16px', marginBottom: '20px',
-                        }}>
-                            <h4 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '12px', color: 'var(--text-secondary)' }}>
-                                Student Information
-                            </h4>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px', marginBottom: '16px' }}>
-                                <span style={{ color: 'var(--text-tertiary)' }}>Phone:</span>
-                                <span>{selectedEnquiry.phone}</span>
-                                <span style={{ color: 'var(--text-tertiary)' }}>Course:</span>
-                                <span>{selectedEnquiry.interested_course}</span>
-                                <span style={{ color: 'var(--text-tertiary)' }}>Source:</span>
-                                <span>{selectedEnquiry.source?.replace('_', ' ')}</span>
-                                <span style={{ color: 'var(--text-tertiary)' }}>Parent:</span>
-                                <span>{selectedEnquiry.parent_name}</span>
-                            </div>
-
-                            <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: '12px', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-tertiary)' }}>Assign To Teacher / Staff</label>
-                                <select
-                                    className="input-field"
-                                    style={{ padding: '6px 12px', fontSize: '13px' }}
-                                    value={selectedEnquiry.assigned_to || ''}
-                                    onChange={async (e) => {
-                                        const newAssignee = e.target.value;
-                                        try {
-                                            await api.put(`/enquiries/${selectedEnquiry.id}`, { assigned_to: newAssignee || null });
-                                            fetchEnquiryDetail(selectedEnquiry.id);
-                                            fetchEnquiries(); // re-fetch the list behind the modal too
-                                        } catch (err) {
-                                            console.error("Failed to reassign user", err);
-                                        }
-                                    }}
-                                >
-                                    <option value="">-- Unassigned --</option>
-                                    {teachers.map(t => (
-                                        <option key={t.id} value={t.user_id}>{t.first_name} {t.last_name} ({t.EMP_ID})</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
-                            <button className="btn btn-primary btn-sm" onClick={() => setShowRemarkModal(true)}>
-                                <MessageSquare size={14} /> Add Remark
-                            </button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => setShowDemoModal(true)}>
-                                <Target size={14} /> Schedule Demo
-                            </button>
-                            {selectedEnquiry.status === 'demo_completed' && (
-                                <button className="btn btn-success btn-sm">
-                                    <CheckCircle size={14} /> Enroll Student
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Timeline */}
-                        <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px' }}>Activity Timeline</h4>
-                        {selectedEnquiry.remarks?.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                                {selectedEnquiry.remarks.map((remark: any, idx: number) => (
-                                    <div key={remark.id} style={{
-                                        display: 'flex', gap: '12px', padding: '12px 0',
-                                        borderBottom: idx < selectedEnquiry.remarks.length - 1 ? '1px solid var(--border-primary)' : 'none',
-                                    }}>
-                                        <div style={{
-                                            width: '28px', height: '28px', borderRadius: '50%', background: 'var(--info-light)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px',
-                                        }}>
-                                            <MessageSquare size={12} color="var(--info)" />
-                                        </div>
-                                        <div>
-                                            <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.5 }}>{remark.remark}</p>
-                                            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                                                {new Date(remark.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                                {remark.remark_type && ` • ${remark.remark_type.replace('_', ' ')}`}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px' }}>
-                                No activity yet
-                            </p>
-                        )}
-
-                        {/* Demo Classes */}
-                        {selectedEnquiry.demos?.length > 0 && (
-                            <>
-                                <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '24px 0 12px' }}>Demo Classes</h4>
-                                {selectedEnquiry.demos.map((demo: any) => (
-                                    <div key={demo.id} style={{
-                                        padding: '12px 16px', borderRadius: 'var(--radius-md)',
-                                        border: '1px solid var(--border-primary)', marginBottom: '8px',
-                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                    }}>
-                                        <div>
-                                            <p style={{ fontSize: '13px', fontWeight: 600 }}>Demo #{demo.demo_count}</p>
-                                            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
-                                                {demo.demo_date} at {demo.demo_time}
-                                            </p>
-                                        </div>
-                                        <span className={`badge ${demo.status === 'completed' ? 'badge-success' : demo.status === 'scheduled' ? 'badge-info' : 'badge-warning'}`}>
-                                            {demo.status}
-                                        </span>
-                                    </div>
-                                ))}
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Add Remark Modal */}
-            {showRemarkModal && selectedEnquiry && (
-                <RemarkModal
-                    enquiryId={selectedEnquiry.id}
-                    onClose={() => setShowRemarkModal(false)}
-                    onSuccess={() => { setShowRemarkModal(false); fetchEnquiryDetail(selectedEnquiry.id); }}
-                />
-            )}
-
-            {/* Schedule Demo Modal */}
-            {showDemoModal && selectedEnquiry && (
-                <DemoModal
-                    enquiryId={selectedEnquiry.id}
-                    onClose={() => setShowDemoModal(false)}
-                    onSuccess={() => { setShowDemoModal(false); fetchEnquiryDetail(selectedEnquiry.id); fetchEnquiries(); }}
-                />
-            )}
-
-            {/* Add Enquiry Modal */}
-            {showAddModal && (
-                <AddEnquiryModal onClose={() => setShowAddModal(false)} onSuccess={() => { setShowAddModal(false); fetchEnquiries(); fetchStats(); }} />
-            )}
         </DashboardLayout>
     );
 }

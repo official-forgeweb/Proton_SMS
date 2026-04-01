@@ -3,12 +3,9 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import {
     Search, Calendar, Plus, Trash2, Edit2, ChevronLeft, ChevronRight, MoreHorizontal, GraduationCap, Users
 } from 'lucide-react';
-import Modal from '@/components/Modal';
 
 export default function StudentsPage() {
     const router = useRouter();
@@ -16,11 +13,6 @@ export default function StudentsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
-    const [isAddOpen, setIsAddOpen] = useState(false);
-    const [classes, setClasses] = useState<any[]>([]);
-
-    const emptyForm = { first_name: '', last_name: '', email: '', phone: '', date_of_birth: '', gender: 'male', school_name: '', class_id: '', admission_type: 'fresh' };
-    const [formData, setFormData] = useState(emptyForm);
 
     const handleDelete = async (id: string, name: string) => {
         if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
@@ -34,22 +26,7 @@ export default function StudentsPage() {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const submitData: any = { ...formData };
-            if (!submitData.class_id) delete submitData.class_id;
-            await api.post('/students', submitData);
-            setIsAddOpen(false);
-            setFormData(emptyForm);
-            // Re-fetch
-            const res = await api.get('/students', { params: { search } });
-            setStudents(res.data.data && res.data.data.length > 0 ? res.data.data : dummyStudents);
-        } catch (error: any) {
-            console.error('Error saving student:', error);
-            alert(error.response?.data?.message || 'Failed to save student');
-        }
-    };
+
 
     const dummyStudents = [
         { id: 1, first_name: 'Eleanor', last_name: 'Pena', roll: '#01', address: 'TA-107 Newyork', className: '01', dob: '02/05/2001', phone: '+123 6988567' },
@@ -76,16 +53,7 @@ export default function StudentsPage() {
                 setIsLoading(false);
             }
         };
-        const fetchClasses = async () => {
-            try {
-                const res = await api.get('/classes');
-                setClasses(res.data.data || []);
-            } catch (error) {
-                console.error('Error fetching classes', error);
-            }
-        };
         fetchStudents();
-        fetchClasses();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
 
@@ -158,7 +126,7 @@ export default function StudentsPage() {
                         </p>
                     </div>
                     <button
-                        onClick={() => { setFormData(emptyForm); setIsAddOpen(true); }}
+                        onClick={() => router.push('/admin/students/add')}
                         style={{
                             background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
                             color: 'white', border: 'none',
@@ -404,65 +372,7 @@ export default function StudentsPage() {
                 </div>
             </div>
 
-            <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Add New Student">
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>First Name</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last Name</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
-                            <input type="email" style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone</label>
-                            <input required style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date of Birth</label>
-                            <DatePicker required showMonthDropdown showYearDropdown scrollableYearDropdown yearDropdownItemNumber={100} dropdownMode="select" selected={formData.date_of_birth ? new Date(formData.date_of_birth) : null} onChange={(date: Date | null) => setFormData({ ...formData, date_of_birth: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select date of birth" className="w-full" customInput={<input style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />} />
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gender</label>
-                            <select style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'}>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assign Class / Batch</label>
-                        <select 
-                            style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} 
-                            value={formData.class_id} 
-                            onChange={e => setFormData({ ...formData, class_id: e.target.value })}
-                            onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'}
-                        >
-                            <option value="">Select a Class...</option>
-                            {classes.map(c => (
-                                <option key={c.id} value={c.id}>{c.class_name} ({c.class_code})</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Previous School</label>
-                        <input style={{ padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', background: '#F8F9FD', width: '100%', outline: 'none', transition: 'border 0.2s' }} value={formData.school_name} onChange={e => setFormData({ ...formData, school_name: e.target.value })} onFocus={e => e.currentTarget.style.borderColor = '#E53935'} onBlur={e => e.currentTarget.style.borderColor = '#E2E8F0'} />
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '12px' }}>
-                        <button type="button" onClick={() => setIsAddOpen(false)} style={{ padding: '12px 28px', background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0', borderRadius: '12px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }} onMouseEnter={e => (e.currentTarget.style.background = '#F8F9FD')} onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}>Cancel</button>
-                        <button type="submit" style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 20px -6px rgba(229,57,53,0.4)', transition: 'all 0.2s' }} onMouseEnter={e => { (e.currentTarget.style.transform = 'translateY(-2px)'); (e.currentTarget.style.boxShadow = '0 12px 24px -6px rgba(229,57,53,0.5)') }} onMouseLeave={e => { (e.currentTarget.style.transform = 'translateY(0)'); (e.currentTarget.style.boxShadow = '0 8px 20px -6px rgba(229,57,53,0.4)') }}>Save Student</button>
-                    </div>
-                </form>
-            </Modal>
+
         </DashboardLayout>
     );
 }

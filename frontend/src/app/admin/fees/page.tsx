@@ -2,53 +2,18 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
-import Modal from '@/components/Modal';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { useRouter } from 'next/navigation';
 import { CreditCard, Search, Plus, DollarSign, Download, Clock, CheckCircle, Wallet, AlertCircle, TrendingUp, Filter, IndianRupee, User, Calendar, ReceiptText } from 'lucide-react';
 
 export default function FeesPage() {
+    const router = useRouter();
     const [assignments, setAssignments] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isPayOpen, setIsPayOpen] = useState(false);
-    const [isAssignOpen, setIsAssignOpen] = useState(false);
     const [students, setStudents] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const [formData, setFormData] = useState({
-        student_id: '', amount_paid: 0, payment_method: 'cash', remarks: ''
-    });
 
-    const [assignFormData, setAssignFormData] = useState({
-        student_id: '', final_fee: 0, due_date: ''
-    });
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            await api.post('/fees/pay', formData);
-            setIsPayOpen(false);
-            fetchFees();
-            setFormData({ student_id: '', amount_paid: 0, payment_method: 'cash', remarks: '' });
-        } catch (error) {
-            console.error('Error recording payment:', error);
-            alert('Failed to record payment');
-        }
-    };
-
-    const handleAssignSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            await api.post('/fees/assignments', assignFormData);
-            setIsAssignOpen(false);
-            fetchFees();
-            setAssignFormData({ student_id: '', final_fee: 0, due_date: '' });
-        } catch (error: any) {
-            console.error('Error assigning fee:', error);
-            alert(error.response?.data?.message || 'Failed to assign fee');
-        }
-    };
 
     useEffect(() => {
         fetchFees();
@@ -160,7 +125,7 @@ export default function FeesPage() {
                         >
                             <Download size={16} strokeWidth={2.5} /> Export Report
                         </button>
-                        <button onClick={() => setIsAssignOpen(true)} style={{
+                        <button onClick={() => router.push('/admin/fees/assign')} style={{
                              background: '#FFFFFF', color: '#3B82F6', border: '1px solid #DBEAFE',
                              borderRadius: '14px', padding: '12px 20px', fontSize: '14px',
                              fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
@@ -172,7 +137,7 @@ export default function FeesPage() {
                             <Plus size={18} strokeWidth={2.5} /> Assign Fee
                         </button>
                         <button
-                            onClick={() => setIsPayOpen(true)}
+                            onClick={() => router.push('/admin/fees/pay')}
                             style={{
                                 background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)',
                                 color: 'white', border: 'none',
@@ -339,7 +304,7 @@ export default function FeesPage() {
                                             <td style={{ padding: '16px 20px', textAlign: 'right' }}>
                                                 {a.total_pending > 0 ? (
                                                     <button 
-                                                        onClick={() => { setFormData({ ...formData, student_id: a.student_id, amount_paid: a.total_pending }); setIsPayOpen(true); }}
+                                                        onClick={() => router.push('/admin/fees/pay')}
                                                         style={{ 
                                                             background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', 
                                                             color: 'white', border: 'none', borderRadius: '10px', 
@@ -367,117 +332,7 @@ export default function FeesPage() {
                 </div>
             </div>
 
-            {/* Record Payment Modal */}
-            <Modal isOpen={isPayOpen} onClose={() => setIsPayOpen(false)} title="Collect Revenue / Process Payment">
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    
-                    <div className="glass-panel" style={{ padding: '24px', borderRadius: '20px', background: '#F8F9FD', border: '1px solid #E2E8F0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                            <div style={{ width: '32px', height: '32px', background: '#1A1D3B', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF' }}>
-                                <User size={16} strokeWidth={2.5} />
-                            </div>
-                            <h4 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>Payee Details</h4>
-                        </div>
-                        
-                        <div style={{ marginBottom: '16px' }}>
-                            <label className="modal-label">Select Student Account *</label>
-                            <select required className="modal-input" value={formData.student_id} onChange={e => {
-                                const assignment = assignments.find(a => a.student_id === e.target.value);
-                                setFormData({ ...formData, student_id: e.target.value, amount_paid: assignment ? assignment.total_pending : 0 });
-                            }}>
-                                <option value="">Select Account...</option>
-                                {assignments.filter(a => a.total_pending > 0).map(a => (
-                                    <option key={a.id} value={a.student_id}>{a.student_name} ({a.pro_id}) — Dues: ₹{a.total_pending.toLocaleString()}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label className="modal-label">Amount Received (₹) *</label>
-                            <div style={{ position: 'relative' }}>
-                                <IndianRupee size={16} color="#A1A5B7" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-                                <input type="number" required className="modal-input" style={{ paddingLeft: '40px' }} value={formData.amount_paid || ''} onChange={e => setFormData({ ...formData, amount_paid: Number(e.target.value) })} />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="modal-label">Payment Method *</label>
-                            <select required className="modal-input" value={formData.payment_method} onChange={e => setFormData({ ...formData, payment_method: e.target.value })}>
-                                <option value="cash">💵 Physical Cash</option>
-                                <option value="online">📱 Online / UPI / QR</option>
-                                <option value="bank_transfer">🏦 Direct NEFT/IMPS</option>
-                                <option value="cheque">📄 Check / Draft</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="modal-label">Transaction Remarks</label>
-                        <textarea 
-                            className="modal-input" 
-                            style={{ minHeight: '80px', resize: 'none' }} 
-                            placeholder="Add receipt number or specific payment notes here..."
-                            value={formData.remarks} 
-                            onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
-                        />
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '12px' }}>
-                        <button type="button" onClick={() => setIsPayOpen(false)} style={{ padding: '12px 28px', background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0', borderRadius: '12px', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>Cancel</button>
-                        <button type="submit" style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 800, fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 16px rgba(16,185,129,0.3)' }}>Finalize Receipt</button>
-                    </div>
-                </form>
-            </Modal>
-
-            {/* Assign Fee Modal */}
-            <Modal isOpen={isAssignOpen} onClose={() => setIsAssignOpen(false)} title="Initialize Student Account / Assign Fee">
-                <form onSubmit={handleAssignSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    
-                    <div style={{ marginBottom: '4px' }}>
-                        <label className="modal-label">Choose Student Profile *</label>
-                        <select required className="modal-input" value={assignFormData.student_id} onChange={e => setAssignFormData({ ...assignFormData, student_id: e.target.value })}>
-                            <option value="">Search student directory...</option>
-                            {students.filter(s => !assignments.find(a => a.student_id === s.id)).map(s => (
-                                <option key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.PRO_ID})</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label className="modal-label">Annual/Full Package Fee (₹) *</label>
-                            <div style={{ position: 'relative' }}>
-                                <IndianRupee size={16} color="#A1A5B7" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-                                <input type="number" required min="1" className="modal-input" style={{ paddingLeft: '40px' }} value={assignFormData.final_fee || ''} onChange={e => setAssignFormData({ ...assignFormData, final_fee: Number(e.target.value) })} />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="modal-label">Primary Due Date *</label>
-                            <div style={{ position: 'relative' }}>
-                                <DatePicker 
-                                    showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" 
-                                    required selected={assignFormData.due_date ? new Date(assignFormData.due_date) : null} 
-                                    onChange={(date: Date | null) => setAssignFormData({ ...assignFormData, due_date: date ? date.toISOString().split('T')[0] : '' })} 
-                                    dateFormat="MMMM d, yyyy" placeholderText="Set target date" 
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{ background: '#FFFBEB', border: '1px solid #FEF3C7', padding: '16px', borderRadius: '16px', display: 'flex', gap: '12px' }}>
-                        <AlertCircle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
-                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 500, margin: 0 }}>
-                            Assigning a fee will create a permanent ledger for this student. Ensure the total balance matches the scholarship or discounted rates if applicable.
-                        </p>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '12px' }}>
-                        <button type="button" onClick={() => setIsAssignOpen(false)} style={{ padding: '12px 28px', background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0', borderRadius: '12px', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>Cancel</button>
-                        <button type="submit" style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 800, fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 16px rgba(59,130,246,0.3)' }}>Create Account</button>
-                    </div>
-                </form>
-            </Modal>
         </DashboardLayout>
     );
 }

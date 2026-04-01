@@ -2,24 +2,17 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
-import { 
+import {
     User, Phone, Mail, GraduationCap, DollarSign, Activity, 
     FileText, Plus, CheckCircle, ArrowLeft, ClipboardList, Edit2, MapPin 
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import Modal from '@/components/Modal';
-import toast from 'react-hot-toast';
 
 export default function StudentProfilePage() {
     const params = useParams();
     const router = useRouter();
     const [student, setStudent] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
-    
-    const [isAssignOpen, setIsAssignOpen] = useState(false);
-    const [classes, setClasses] = useState<any[]>([]);
-    const [selectedClass, setSelectedClass] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [attendance, setAttendance] = useState<any>(null);
     const [testStats, setTestStats] = useState<any>(null);
@@ -29,7 +22,6 @@ export default function StudentProfilePage() {
     useEffect(() => {
         if (params.id) {
             fetchStudentDetails();
-            fetchClasses();
             fetchExtraReports();
         }
     }, [params.id]);
@@ -63,32 +55,7 @@ export default function StudentProfilePage() {
         }
     };
 
-    const fetchClasses = async () => {
-        try {
-            const res = await api.get('/classes');
-            setClasses(res.data.data || []);
-        } catch (error) {
-            console.error('Error fetching classes', error);
-        }
-    };
 
-    const handleAssignClass = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedClass) return toast.error('Please select a class');
-        
-        setIsSubmitting(true);
-        try {
-            await api.post(`/students/${params.id}/enroll`, { class_id: selectedClass });
-            toast.success('Student enrolled successfully');
-            setIsAssignOpen(false);
-            setSelectedClass('');
-            fetchStudentDetails(); // Refresh to show new enrollment
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Enrollment failed');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
 
     if (isLoading) {
         return (
@@ -168,7 +135,7 @@ export default function StudentProfilePage() {
                     <button 
                         className="btn btn-primary" 
                         style={{ boxShadow: '0 8px 16px rgba(229,57,53,0.3)', background: '#E53935', border: 'none' }} 
-                        onClick={() => setIsAssignOpen(true)}
+                        onClick={() => router.push(`/admin/students/${params.id}/enroll`)}
                     >
                         <Plus size={16} /> New Enrollment
                     </button>
@@ -349,30 +316,7 @@ export default function StudentProfilePage() {
                 </div>
             </div>
 
-            {/* Same Enroll Modal */}
-            <Modal isOpen={isAssignOpen} onClose={() => setIsAssignOpen(false)} title="Enroll in Class">
-                <form onSubmit={handleAssignClass} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div>
-                        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                            Enroll <strong>{student.first_name}</strong> in a new batch or class.
-                        </p>
-                        <select required className="input-field" value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
-                            <option value="">Select a batch...</option>
-                            {classes.filter(c => !student.classes?.some((ec: any) => (ec.id || ec._id) === (c.id || c._id))).map((c: any, idx: number) => (
-                                <option key={c.id || c._id || `opt-${idx}`} value={c.id}>
-                                    {c.class_name} | {c.subject} | {c.class_time_start}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                        <button type="button" className="btn btn-secondary" onClick={() => setIsAssignOpen(false)}>Cancel</button>
-                        <button type="submit" className="btn btn-primary" disabled={isSubmitting || !selectedClass}>
-                            {isSubmitting ? 'Processing...' : 'Assign Class'}
-                        </button>
-                    </div>
-                </form>
-            </Modal>
+
         </DashboardLayout>
     );
 }
