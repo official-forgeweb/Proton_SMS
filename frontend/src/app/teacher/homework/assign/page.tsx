@@ -51,9 +51,9 @@ export default function AssignTeacherHomeworkPage() {
                 <div className="form-section">
                     <div className="form-section-title">Assignment Information</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
                             <div>
-                                <label className="form-label">Title *</label>
+                                <label className="form-label">Assignment Title *</label>
                                 <input 
                                     required 
                                     className="form-input" 
@@ -74,8 +74,8 @@ export default function AssignTeacherHomeworkPage() {
                             </div>
                         </div>
 
-                        <div>
-                            <label className="form-label">Class *</label>
+                        <div style={{ marginBottom: '8px' }}>
+                            <label className="form-label">Target Class *</label>
                             <select 
                                 required 
                                 className="form-input" 
@@ -83,7 +83,7 @@ export default function AssignTeacherHomeworkPage() {
                                 onChange={e => setFormData({ ...formData, class_id: e.target.value })}
                             >
                                 <option value="">Select Class...</option>
-                                {classes.map(c => <option key={c.id} value={c.id}>{c.class_name} • {c.batch_type?.toUpperCase()}</option>)}
+                                {classes.map(c => <option key={c.id} value={c.id}>{c.class_name} • {c.batch_type?.toUpperCase()} BATCH</option>)}
                             </select>
                         </div>
 
@@ -100,7 +100,7 @@ export default function AssignTeacherHomeworkPage() {
                             />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.6fr', gap: '24px' }}>
                             <div>
                                 <label className="form-label">Assigned Date *</label>
                                 <DatePicker 
@@ -129,7 +129,7 @@ export default function AssignTeacherHomeworkPage() {
                                 />
                             </div>
                             <div>
-                                <label className="form-label">Total Marks *</label>
+                                <label className="form-label">Max Marks *</label>
                                 <input 
                                     type="number" 
                                     required 

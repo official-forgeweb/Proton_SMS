@@ -5,7 +5,7 @@ import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { Plus, IndianRupee, AlertCircle } from 'lucide-react';
+import { Plus, IndianRupee, AlertCircle, Users } from 'lucide-react';
 
 export default function AssignFeePage() {
     const router = useRouter();
@@ -58,11 +58,14 @@ export default function AssignFeePage() {
             ) : (
                 <form onSubmit={handleSubmit}>
                     <div className="form-section">
-                        <div className="form-section-title">Student Selection</div>
+                        <div className="form-section-title">
+                            <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                            Student Selection
+                        </div>
                         <div>
-                            <label className="form-label">Choose Student Profile *</label>
+                            <label className="form-label">Search & Select Student Profile *</label>
                             <select required className="form-input" value={formData.student_id} onChange={e => setFormData({ ...formData, student_id: e.target.value })}>
-                                <option value="">Search student directory...</option>
+                                <option value="">Type to search student directory...</option>
                                 {students.filter(s => !assignments.find(a => a.student_id === s.id)).map(s => (
                                     <option key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.PRO_ID})</option>
                                 ))}
@@ -71,13 +74,16 @@ export default function AssignFeePage() {
                     </div>
 
                     <div className="form-section">
-                        <div className="form-section-title">Fee Details</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div className="form-section-title">
+                            <IndianRupee size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                            Financial Configuration
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
                             <div>
-                                <label className="form-label">Annual / Full Package Fee (₹) *</label>
+                                <label className="form-label">Total Course Fee (Annual) *</label>
                                 <div style={{ position: 'relative' }}>
                                     <IndianRupee size={16} color="#A1A5B7" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-                                    <input type="number" required min={1} className="form-input" style={{ paddingLeft: '40px' }} value={formData.final_fee || ''} onChange={e => setFormData({ ...formData, final_fee: Number(e.target.value) })} />
+                                    <input type="number" required min={1} className="form-input" style={{ paddingLeft: '40px' }} value={formData.final_fee || ''} onChange={e => setFormData({ ...formData, final_fee: Number(e.target.value) })} placeholder="e.g. 45000" />
                                 </div>
                             </div>
                             <div>
@@ -86,17 +92,26 @@ export default function AssignFeePage() {
                                     showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select"
                                     required selected={formData.due_date ? new Date(formData.due_date) : null}
                                     onChange={(date: Date | null) => setFormData({ ...formData, due_date: date ? date.toISOString().split('T')[0] : '' })}
-                                    dateFormat="MMMM d, yyyy" placeholderText="Set target date"
+                                    dateFormat="MMMM d, yyyy" placeholderText="Select target date"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ background: '#FFFBEB', border: '1px solid #FEF3C7', padding: '16px', borderRadius: '16px', display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                        <AlertCircle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
-                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 500, margin: 0 }}>
-                            Assigning a fee will create a permanent ledger for this student. Ensure the total balance matches the scholarship or discounted rates if applicable.
-                        </p>
+                    <div style={{ 
+                        background: 'rgba(255, 187, 0, 0.05)', 
+                        border: '1px dashed #FEF3C7', 
+                        padding: '20px', 
+                        borderRadius: '20px', 
+                        display: 'flex', 
+                        gap: '16px', 
+                        marginBottom: '32px' 
+                    }}>
+                        <AlertCircle size={24} color="#D97706" strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                        <div style={{ fontSize: '13px', color: '#92400E', fontWeight: 500, lineHeight: 1.6 }}>
+                            <strong style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Important Ledger Information</strong>
+                            Assigning a fee will initialize a permanent financial ledger. Verify scholarship rates and applicable discounts before finalizing.
+                        </div>
                     </div>
 
                     <div className="form-actions">

@@ -45,43 +45,46 @@ export default function AssignHomeworkPage() {
         >
             <form onSubmit={handleSubmit}>
                 <div className="form-section">
-                    <div className="form-section-title">Assignment Details</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">
+                        <PenTool size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        Assignment Metadata
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
                         <div>
-                            <label className="form-label">Title *</label>
+                            <label className="form-label">Homework Title *</label>
                             <input required className="form-input" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. Chapter 5 Exercises" />
                         </div>
                         <div>
-                            <label className="form-label">Subject *</label>
+                            <label className="form-label">Associated Subject *</label>
                             <input required className="form-input" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} placeholder="e.g. Mathematics" />
                         </div>
                     </div>
-                    <div style={{ marginTop: '20px' }}>
-                        <label className="form-label">Class *</label>
+                    <div style={{ marginTop: '24px' }}>
+                        <label className="form-label">Target Batch / Class *</label>
                         <select required className="form-input" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value })}>
-                            <option value="">Select Class...</option>
+                            <option value="">Choose a class...</option>
                             {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
                         </select>
                     </div>
-                    <div style={{ marginTop: '20px' }}>
-                        <label className="form-label">Description *</label>
-                        <textarea required className="form-input" rows={4} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Describe the homework assignment..." style={{ resize: 'vertical' }} />
+                    <div style={{ marginTop: '24px' }}>
+                        <label className="form-label">Detailed Instructions *</label>
+                        <textarea required className="form-input" rows={5} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Describe the homework assignment requirements..." style={{ resize: 'vertical' }} />
                     </div>
                 </div>
 
                 <div className="form-section">
-                    <div className="form-section-title">Schedule & Marks</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">Timeline & Assessment</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.6fr', gap: '24px' }}>
                         <div>
-                            <label className="form-label">Assigned Date</label>
-                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.assigned_date ? new Date(formData.assigned_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, assigned_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select assigned date" />
+                            <label className="form-label">Release Date</label>
+                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.assigned_date ? new Date(formData.assigned_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, assigned_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Publication Date" />
                         </div>
                         <div>
-                            <label className="form-label">Due Date *</label>
-                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.due_date ? new Date(formData.due_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, due_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Select due date" />
+                            <label className="form-label">Submission Deadline *</label>
+                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.due_date ? new Date(formData.due_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, due_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Target Date" />
                         </div>
                         <div>
-                            <label className="form-label">Total Marks</label>
+                            <label className="form-label">Max Marks</label>
                             <input type="number" required className="form-input" value={formData.total_marks} onChange={e => setFormData({ ...formData, total_marks: Number(e.target.value) })} />
                         </div>
                     </div>

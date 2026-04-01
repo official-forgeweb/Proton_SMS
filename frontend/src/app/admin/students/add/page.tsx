@@ -49,8 +49,11 @@ export default function AddStudentPage() {
         >
             <form onSubmit={handleSubmit}>
                 <div className="form-section">
-                    <div className="form-section-title">Personal Information</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">
+                        <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        Personal Information
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
                             <label className="form-label">First Name *</label>
                             <input required className="form-input" value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} placeholder="Enter first name" />
@@ -60,12 +63,12 @@ export default function AddStudentPage() {
                             <input required className="form-input" value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} placeholder="Enter last name" />
                         </div>
                         <div>
-                            <label className="form-label">Email</label>
-                            <input type="email" className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="student@example.com" />
+                            <label className="form-label">Primary Mobile Number *</label>
+                            <input required className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
                         </div>
                         <div>
-                            <label className="form-label">Phone *</label>
-                            <input required className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
+                            <label className="form-label">Email Address</label>
+                            <input type="email" className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="student@example.com" />
                         </div>
                         <div>
                             <label className="form-label">Date of Birth</label>
@@ -83,16 +86,20 @@ export default function AddStudentPage() {
                             <select className="form-input" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
+                                <option value="other">Other</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
                 <div className="form-section">
-                    <div className="form-section-title">Academic Details</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">
+                        <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        Academic Details
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
                         <div>
-                            <label className="form-label">Assign Class / Batch</label>
+                            <label className="form-label">Assign Initial Class / Batch</label>
                             <select className="form-input" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value })}>
                                 <option value="">Select a Class...</option>
                                 {classes.map(c => (
@@ -101,7 +108,7 @@ export default function AddStudentPage() {
                             </select>
                         </div>
                         <div>
-                            <label className="form-label">Previous School</label>
+                            <label className="form-label">Previous School Name</label>
                             <input className="form-input" value={formData.school_name} onChange={e => setFormData({ ...formData, school_name: e.target.value })} placeholder="Ex. Delhi Public School" />
                         </div>
                     </div>

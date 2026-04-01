@@ -67,96 +67,131 @@ export default function AddClassPage() {
         >
             <form onSubmit={handleSubmit}>
                 <div className="form-section">
-                    <div className="form-section-title">Batch Information</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">
+                        <Layers size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        Batch Basic Configuration
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr', gap: '24px' }}>
                         <div>
-                            <label className="form-label">Batch Name *</label>
-                            <input required className="form-input" value={formData.class_name} onChange={e => setFormData({ ...formData, class_name: e.target.value })} placeholder="e.g. Proton 1" />
+                            <label className="form-label">Internal Batch Name *</label>
+                            <input required className="form-input" value={formData.class_name} onChange={e => setFormData({ ...formData, class_name: e.target.value })} placeholder="e.g. Proton Alpha 1" />
                         </div>
                         <div>
-                            <label className="form-label">Grade / Level *</label>
-                            <input required className="form-input" value={formData.grade_level} onChange={e => setFormData({ ...formData, grade_level: e.target.value })} placeholder="e.g. Class 11" />
+                            <label className="form-label">Grade / Target Level *</label>
+                            <input required className="form-input" value={formData.grade_level} onChange={e => setFormData({ ...formData, grade_level: e.target.value })} placeholder="e.g. Class 12 / JEE" />
                         </div>
                         <div>
-                            <label className="form-label">Max Students</label>
+                            <label className="form-label">Capacity (Students)</label>
                             <input type="number" required className="form-input" value={formData.max_students} onChange={e => setFormData({ ...formData, max_students: Number(e.target.value) })} />
                         </div>
                     </div>
                 </div>
 
                 <div className="form-section">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                         <div className="form-section-title" style={{ marginBottom: 0 }}>
-                            <Clock size={16} strokeWidth={2.5} /> Class Schedule (Sessions)
+                            <Clock size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                            Class Schedule & Curriculum
                         </div>
-                        <button type="button" onClick={addSession} className="btn-cancel" style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Plus size={16} strokeWidth={2.5} /> Add Session
+                        <button 
+                            type="button" 
+                            onClick={addSession} 
+                            style={{
+                                padding: '8px 16px', borderRadius: '10px', background: '#1A1D3B', border: 'none',
+                                color: 'white', fontSize: '13px', fontWeight: 800, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(26,29,59,0.2)'
+                            }}
+                        >
+                            <Plus size={16} strokeWidth={3} /> Add Session
                         </button>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         {formData.schedule && formData.schedule.map((session: any, i: number) => (
-                            <div key={i} style={{ padding: '24px', background: '#F8F9FD', borderRadius: '16px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
-                                <button type="button" onClick={() => removeSession(i)} style={{ position: 'absolute', top: '16px', right: '16px', background: '#FEE2E2', color: '#EF4444', width: '28px', height: '28px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', fontSize: '16px', fontWeight: 700 }}>×</button>
+                            <div key={i} style={{ 
+                                padding: '28px', 
+                                background: 'white', 
+                                borderRadius: '24px', 
+                                border: '1px solid #F1F2F7', 
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                gap: '20px', 
+                                position: 'relative' 
+                            }}>
+                                <button 
+                                    type="button" 
+                                    onClick={() => removeSession(i)} 
+                                    style={{ 
+                                        position: 'absolute', top: '24px', right: '24px', 
+                                        background: '#FEE2E2', color: '#EF4444', 
+                                        width: '32px', height: '32px', borderRadius: '10px', 
+                                        border: 'none', cursor: 'pointer', 
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                        transition: 'all 0.2s', fontSize: '18px', fontWeight: 800 
+                                    }}
+                                >×</button>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '16px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr 0.8fr', gap: '20px' }}>
                                     <div>
-                                        <label className="form-label" style={{ fontSize: '12px' }}>Subject</label>
-                                        <input required className="form-input" value={session.subject} onChange={e => updateSession(i, 'subject', e.target.value)} placeholder="e.g. Mathematics" />
+                                        <label className="form-label" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>Subject</label>
+                                        <input required className="form-input" value={session.subject} onChange={e => updateSession(i, 'subject', e.target.value)} placeholder="e.g. Physics" />
                                     </div>
                                     <div>
-                                        <label className="form-label" style={{ fontSize: '12px' }}>Teacher</label>
+                                        <label className="form-label" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>Assigned Faculty</label>
                                         <select required className="form-input" value={session.teacher_id?._id || session.teacher_id} onChange={e => updateSession(i, 'teacher_id', e.target.value)}>
-                                            <option value="">Select Teacher...</option>
+                                            <option value="">Choose Teacher...</option>
                                             {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="form-label" style={{ fontSize: '12px' }}>Start Time</label>
+                                        <label className="form-label" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>Start Time</label>
                                         <DatePicker
                                             selected={session.time_start ? new Date(`2000-01-01T${session.time_start}:00`) : null}
                                             onChange={(date: Date | null) => { if (date) { updateSession(i, 'time_start', date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0')); } }}
-                                            showTimeSelect showTimeSelectOnly timeIntervals={15} timeCaption="Start" dateFormat="h:mm aa" placeholderText="Start Time"
+                                            showTimeSelect showTimeSelectOnly timeIntervals={15} timeCaption="Start" dateFormat="h:mm aa" placeholderText="Time"
                                         />
                                     </div>
                                     <div>
-                                        <label className="form-label" style={{ fontSize: '12px' }}>End Time</label>
+                                        <label className="form-label" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>End Time</label>
                                         <DatePicker
                                             selected={session.time_end ? new Date(`2000-01-01T${session.time_end}:00`) : null}
                                             onChange={(date: Date | null) => { if (date) { updateSession(i, 'time_end', date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0')); } }}
-                                            showTimeSelect showTimeSelectOnly timeIntervals={15} timeCaption="End" dateFormat="h:mm aa" placeholderText="End Time"
+                                            showTimeSelect showTimeSelectOnly timeIntervals={15} timeCaption="End" dateFormat="h:mm aa" placeholderText="Time"
                                         />
                                     </div>
                                 </div>
                             </div>
                         ))}
                         {(!formData.schedule || formData.schedule.length === 0) && (
-                            <div style={{ textAlign: 'center', padding: '32px', background: '#F8F9FD', borderRadius: '16px', border: '2px dashed #E2E8F0', color: '#A1A5B7', fontSize: '14px', fontWeight: 600 }}>
-                                No sessions configured yet.<br /><span style={{ fontSize: '13px', fontWeight: 500 }}>Click "Add Session" to assign subjects and teachers.</span>
+                            <div style={{ textAlign: 'center', padding: '48px', background: 'rgba(26,29,59,0.02)', borderRadius: '24px', border: '2px dashed #E2E8F0', color: '#A1A5B7', fontSize: '14px', fontWeight: 600 }}>
+                                <Layers size={32} style={{ marginBottom: '12px', opacity: 0.3 }} />
+                                <div style={{ color: '#1A1D3B', opacity: 0.6 }}>No sessions configured.</div>
+                                <div style={{ fontSize: '12px', fontWeight: 500, color: '#A1A5B7', marginTop: '4px' }}>Add sessions to define subjects and assigned teachers.</div>
                             </div>
                         )}
                     </div>
                 </div>
 
                 <div className="form-section">
-                    <div className="form-section-title">Batch Settings</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">Batch Lifecycle</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
-                            <label className="form-label">Batch Status</label>
+                            <label className="form-label">Current Operational Status</label>
                             <select className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
-                                <option value="upcoming">Upcoming</option>
-                                <option value="ongoing">Ongoing</option>
-                                <option value="completed">Completed</option>
+                                <option value="upcoming">🗓️ Upcoming / Registration Open</option>
+                                <option value="ongoing">🟢 Ongoing / In-Session</option>
+                                <option value="completed">⚪ Completed</option>
                             </select>
                         </div>
                         {formData.status === 'upcoming' && (
                             <div>
-                                <label className="form-label">Starts From</label>
+                                <label className="form-label">Anticipated Start Date</label>
                                 <DatePicker
                                     showMonthDropdown scrollableYearDropdown dropdownMode="select"
                                     selected={formData.start_date ? new Date(formData.start_date) : null}
                                     onChange={(date: Date | null) => { if (date) setFormData({ ...formData, start_date: date.toISOString().split('T')[0] }); }}
-                                    dateFormat="MMMM d, yyyy" placeholderText="Pick Start Date"
+                                    dateFormat="MMMM d, yyyy" placeholderText="Pick a date"
                                 />
                             </div>
                         )}

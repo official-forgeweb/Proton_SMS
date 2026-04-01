@@ -52,8 +52,11 @@ export default function TeacherEnquiryRemarkPage() {
         >
             <form onSubmit={handleSubmit}>
                 <div className="form-section">
-                    <div className="form-section-title">Interaction Details</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
+                    <div className="form-section-title">
+                        <MessageSquare size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        Interaction Details
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
                         <div>
                             <label className="form-label">Type of Interaction</label>
                             <select 
@@ -61,12 +64,12 @@ export default function TeacherEnquiryRemarkPage() {
                                 value={remarkType} 
                                 onChange={(e) => setRemarkType(e.target.value)}
                             >
-                                <option value="call">Phone Call</option>
-                                <option value="meeting">Meeting</option>
-                                <option value="whatsapp">WhatsApp</option>
-                                <option value="email">Email</option>
-                                <option value="follow_up">Follow Up</option>
-                                <option value="other">Other</option>
+                                <option value="call">📞 Phone Call</option>
+                                <option value="meeting">🤝 In-Person Meeting</option>
+                                <option value="whatsapp">💬 WhatsApp Message</option>
+                                <option value="email">📧 Email Sent</option>
+                                <option value="follow_up">🔄 Follow Up</option>
+                                <option value="other">📝 Other</option>
                             </select>
                         </div>
                         <div>
@@ -78,7 +81,7 @@ export default function TeacherEnquiryRemarkPage() {
                                 value={remark} 
                                 onChange={(e) => setRemark(e.target.value)} 
                                 placeholder="Enter specific details about the conversation, student concerns, or next steps..." 
-                                style={{ resize: 'vertical' }} 
+                                style={{ resize: 'vertical', minHeight: '180px' }} 
                             />
                         </div>
                     </div>

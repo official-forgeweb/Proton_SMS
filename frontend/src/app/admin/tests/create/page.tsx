@@ -46,28 +46,31 @@ export default function CreateTestPage() {
         >
             <form onSubmit={handleSubmit}>
                 <div className="form-section">
-                    <div className="form-section-title">Basic Configuration</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">
+                        <ClipboardList size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        Examination Metadata
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
                         <div>
-                            <label className="form-label">Test Title / Name *</label>
+                            <label className="form-label">Assessment Title *</label>
                             <input required className="form-input" placeholder="e.g. Mathematics Midterm" value={formData.test_name} onChange={e => setFormData({ ...formData, test_name: e.target.value })} />
                         </div>
                         <div>
-                            <label className="form-label">Assessment Category *</label>
+                            <label className="form-label">Examination Category *</label>
                             <select className="form-input" value={formData.test_type} onChange={e => setFormData({ ...formData, test_type: e.target.value })}>
-                                <option value="weekly_test">Weekly Assessment</option>
-                                <option value="monthly_test">Monthly Test</option>
-                                <option value="mock_test">Mock Examination</option>
-                                <option value="term_exam">Term Exam</option>
-                                <option value="final_exam">Final Semester Exam</option>
+                                <option value="weekly_test">📅 Weekly Assessment</option>
+                                <option value="monthly_test">📊 Monthly Test</option>
+                                <option value="mock_test">🧪 Mock Examination</option>
+                                <option value="term_exam">🏛️ Term Exam</option>
+                                <option value="final_exam">🎓 Final Semester Exam</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
                 <div className="form-section">
-                    <div className="form-section-title">Target & Subject</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">Target Audience & Subject</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
                             <label className="form-label">Target Batch / Class *</label>
                             <select required className="form-input" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value })}>
@@ -77,28 +80,28 @@ export default function CreateTestPage() {
                         </div>
                         <div>
                             <label className="form-label">Academic Subject *</label>
-                            <input required className="form-input" placeholder="e.g. Physics" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} />
+                            <input required className="form-input" placeholder="e.g. Theoretical Physics" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} />
                         </div>
                     </div>
                 </div>
 
-                <div className="form-section">
-                    <div className="form-section-title">Schedule & Scoring</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div className="form-section" style={{ border: 'none', background: 'rgba(26,29,59,0.02)', padding: '28px', borderRadius: '24px' }}>
+                    <div className="form-section-title">Schedule & Scoring Parameters</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '20px' }}>
                         <div>
-                            <label className="form-label">Examination Date *</label>
-                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.test_date ? new Date(formData.test_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, test_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Set schedule" />
+                            <label className="form-label">Exam Date *</label>
+                            <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.test_date ? new Date(formData.test_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, test_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Set Date" />
                         </div>
                         <div>
-                            <label className="form-label">Time Duration (Min) *</label>
+                            <label className="form-label">Duration (Min) *</label>
                             <input type="number" required className="form-input" value={formData.duration_minutes} onChange={e => setFormData({ ...formData, duration_minutes: Number(e.target.value) })} />
                         </div>
                         <div>
-                            <label className="form-label">Maximum Score (Total Marks) *</label>
+                            <label className="form-label">Max Score *</label>
                             <input type="number" required className="form-input" value={formData.total_marks} onChange={e => setFormData({ ...formData, total_marks: Number(e.target.value) })} />
                         </div>
                         <div>
-                            <label className="form-label">Qualifying Score (Pass Marks) *</label>
+                            <label className="form-label">Pass Marks *</label>
                             <input type="number" required className="form-input" value={formData.passing_marks} onChange={e => setFormData({ ...formData, passing_marks: Number(e.target.value) })} />
                         </div>
                     </div>

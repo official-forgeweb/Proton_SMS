@@ -51,44 +51,50 @@ export default function RecordPaymentPage() {
             ) : (
                 <form onSubmit={handleSubmit}>
                     <div className="form-section">
-                        <div className="form-section-title">Payee Details</div>
+                        <div className="form-section-title">
+                            <CreditCard size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                            Payee Identification
+                        </div>
                         <div>
-                            <label className="form-label">Select Student Account *</label>
+                            <label className="form-label">Search Student Financial Account *</label>
                             <select required className="form-input" value={formData.student_id} onChange={e => {
                                 const assignment = assignments.find(a => a.student_id === e.target.value);
                                 setFormData({ ...formData, student_id: e.target.value, amount_paid: assignment ? assignment.total_pending : 0 });
                             }}>
                                 <option value="">Select Account...</option>
                                 {assignments.filter(a => a.total_pending > 0).map(a => (
-                                    <option key={a.id} value={a.student_id}>{a.student_name} ({a.pro_id}) — Dues: ₹{a.total_pending.toLocaleString()}</option>
+                                    <option key={a.id} value={a.student_id}>{a.student_name} ({a.pro_id.toUpperCase()}) — Dues: ₹{a.total_pending.toLocaleString()}</option>
                                 ))}
                             </select>
                         </div>
                     </div>
 
                     <div className="form-section">
-                        <div className="form-section-title">Payment Details</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div className="form-section-title">
+                            <IndianRupee size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                            Transaction Details
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
                             <div>
                                 <label className="form-label">Amount Received (₹) *</label>
                                 <div style={{ position: 'relative' }}>
                                     <IndianRupee size={16} color="#A1A5B7" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-                                    <input type="number" required className="form-input" style={{ paddingLeft: '40px' }} value={formData.amount_paid || ''} onChange={e => setFormData({ ...formData, amount_paid: Number(e.target.value) })} />
+                                    <input type="number" required className="form-input" style={{ paddingLeft: '40px' }} value={formData.amount_paid || ''} onChange={e => setFormData({ ...formData, amount_paid: Number(e.target.value) })} placeholder="Enter received amount" />
                                 </div>
                             </div>
                             <div>
                                 <label className="form-label">Payment Method *</label>
                                 <select required className="form-input" value={formData.payment_method} onChange={e => setFormData({ ...formData, payment_method: e.target.value })}>
-                                    <option value="cash">Cash</option>
-                                    <option value="online">Online / UPI / QR</option>
-                                    <option value="bank_transfer">NEFT / IMPS</option>
-                                    <option value="cheque">Cheque / Draft</option>
+                                    <option value="cash">🏦 Cash Payment</option>
+                                    <option value="online">📱 Online / UPI / QR</option>
+                                    <option value="bank_transfer">🏛️ Bank Transfer (NEFT/IMPS)</option>
+                                    <option value="cheque">📝 Cheque / Draft</option>
                                 </select>
                             </div>
                         </div>
-                        <div style={{ marginTop: '20px' }}>
-                            <label className="form-label">Transaction Remarks</label>
-                            <textarea className="form-input" style={{ minHeight: '80px', resize: 'none' }} placeholder="Add receipt number or specific payment notes here..." value={formData.remarks} onChange={e => setFormData({ ...formData, remarks: e.target.value })} />
+                        <div style={{ marginTop: '24px' }}>
+                            <label className="form-label">Financial Remarks / Notes</label>
+                            <textarea className="form-input" style={{ minHeight: '100px', resize: 'vertical' }} placeholder="Add receipt ID, bank reference, or specific notes regarding this transaction..." value={formData.remarks} onChange={e => setFormData({ ...formData, remarks: e.target.value })} />
                         </div>
                     </div>
 

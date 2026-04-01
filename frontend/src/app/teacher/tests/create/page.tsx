@@ -48,7 +48,7 @@ export default function CreateTeacherTestPage() {
                 <div className="form-section">
                     <div className="form-section-title">Test Details</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-                        <div>
+                        <div style={{ marginBottom: '8px' }}>
                             <label className="form-label">Assessment Name *</label>
                             <input 
                                 required
@@ -59,7 +59,7 @@ export default function CreateTeacherTestPage() {
                             />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
                             <div>
                                 <label className="form-label">Target Class *</label>
                                 <select 
@@ -86,12 +86,12 @@ export default function CreateTeacherTestPage() {
                                     selected={formData.test_date ? new Date(formData.test_date) : null} 
                                     onChange={(date: Date | null) => setFormData((p: any) => ({ ...p, test_date: date ? date.toISOString().split('T')[0] : '' }))} 
                                     dateFormat="MMMM d, yyyy" 
-                                    placeholderText="Select assessment date" 
+                                    placeholderText="Select date" 
                                 />
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '24px' }}>
                             <div>
                                 <label className="form-label">Test Type *</label>
                                 <select 
@@ -108,8 +108,8 @@ export default function CreateTeacherTestPage() {
                                 </select>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '16px' }}>
-                                <div style={{ flex: 1 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div>
                                     <label className="form-label">Total Marks *</label>
                                     <input 
                                         type="number" 
@@ -119,7 +119,7 @@ export default function CreateTeacherTestPage() {
                                         onChange={e => setFormData(p => ({ ...p, total_marks: Number(e.target.value) }))} 
                                     />
                                 </div>
-                                <div style={{ flex: 1 }}>
+                                <div>
                                     <label className="form-label">Passing Marks *</label>
                                     <input 
                                         type="number" 
@@ -136,11 +136,11 @@ export default function CreateTeacherTestPage() {
                             <label className="form-label">Syllabus / Topics Covered</label>
                             <textarea 
                                 className="form-input" 
-                                rows={3}
+                                rows={4}
                                 value={formData.syllabus} 
                                 onChange={e => setFormData(p => ({ ...p, syllabus: e.target.value }))} 
-                                placeholder="e.g., Algebra, Probability, Statistics..." 
-                                style={{ resize: 'vertical' }}
+                                placeholder="List chapters or topics covered in this assessment..." 
+                                style={{ resize: 'vertical', minHeight: '120px' }}
                             />
                         </div>
                     </div>

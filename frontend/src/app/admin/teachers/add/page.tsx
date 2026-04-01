@@ -42,8 +42,11 @@ export default function AddTeacherPage() {
         >
             <form onSubmit={handleSubmit}>
                 <div className="form-section">
-                    <div className="form-section-title">Personal Information</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">
+                        <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        Personal Information
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
                             <label className="form-label">First Name *</label>
                             <input required className="form-input" value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} placeholder="Enter first name" />
@@ -57,11 +60,11 @@ export default function AddTeacherPage() {
                             <input type="email" required className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="teacher@example.com" />
                         </div>
                         <div>
-                            <label className="form-label">Login Password *</label>
-                            <input type="text" required className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Create password" />
+                            <label className="form-label">Initial Password *</label>
+                            <input type="text" required className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Create login password" />
                         </div>
                         <div>
-                            <label className="form-label">Phone Number *</label>
+                            <label className="form-label">Mobile Number *</label>
                             <input required className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
                         </div>
                         <div>
@@ -69,25 +72,29 @@ export default function AddTeacherPage() {
                             <select className="form-input" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
+                                <option value="other">Other</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
                 <div className="form-section">
-                    <div className="form-section-title">Professional Details</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">
+                         <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        Professional Qualifications
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.6fr', gap: '24px' }}>
                         <div>
-                            <label className="form-label">Qualification *</label>
+                            <label className="form-label">Highest Degree *</label>
                             <input required className="form-input" value={formData.qualification} onChange={e => setFormData({ ...formData, qualification: e.target.value })} placeholder="e.g. B.Ed, M.Sc" />
                         </div>
                         <div>
-                            <label className="form-label">Specialization *</label>
-                            <input required className="form-input" value={formData.specialization} onChange={e => setFormData({ ...formData, specialization: e.target.value })} placeholder="e.g. Mathematics, Physics" />
+                            <label className="form-label">Subject Specialization *</label>
+                            <input required className="form-input" value={formData.specialization} onChange={e => setFormData({ ...formData, specialization: e.target.value })} placeholder="Mathematics, Physics etc." />
                         </div>
                         <div>
-                            <label className="form-label">Experience (Years)</label>
-                            <input type="number" className="form-input" value={formData.experience_years} onChange={e => setFormData({ ...formData, experience_years: e.target.value })} placeholder="0" />
+                            <label className="form-label">Experience</label>
+                            <input type="number" className="form-input" value={formData.experience_years} onChange={e => setFormData({ ...formData, experience_years: e.target.value })} placeholder="Years" />
                         </div>
                     </div>
                 </div>

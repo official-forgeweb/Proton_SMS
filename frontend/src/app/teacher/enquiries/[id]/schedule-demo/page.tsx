@@ -65,8 +65,11 @@ export default function TeacherEnquiryDemoPage() {
         >
             <form onSubmit={handleSubmit}>
                 <div className="form-section">
-                    <div className="form-section-title">Session Details</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">
+                        <Calendar size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        Session Details
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
                             <label className="form-label">Demo Date *</label>
                             <DatePicker 
@@ -121,28 +124,39 @@ export default function TeacherEnquiryDemoPage() {
                 </div>
 
                 <div className="form-section">
-                    <div className="form-section-title">Assignment</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="form-section-title">
+                        <User size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        Personnel Assignment
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
                         <div>
-                            <label className="form-label">Batch / Class</label>
+                            <label className="form-label">Assign Teacher</label>
+                            <select 
+                                className="form-input" 
+                                value={formData.teacher_id} 
+                                onChange={(e) => setFormData(p => ({ ...p, teacher_id: e.target.value }))}
+                            >
+                                <option value="">Select individual...</option>
+                                {teachers.map((t: any) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.first_name} {t.last_name} ({t.EMP_ID})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="form-label">Batch / Target Class</label>
                             <select 
                                 className="form-input" 
                                 value={formData.class_id} 
                                 onChange={(e) => setFormData(p => ({ ...p, class_id: e.target.value }))}
                             >
                                 <option value="">Select class...</option>
-                                {classes.map((c: any) => <option key={c.id} value={c.id}>{c.class_name} • {c.batch_type?.toUpperCase()}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="form-label">Assigned Teacher</label>
-                            <select 
-                                className="form-input" 
-                                value={formData.teacher_id} 
-                                onChange={(e) => setFormData(p => ({ ...p, teacher_id: e.target.value }))}
-                            >
-                                <option value="">Select teacher...</option>
-                                {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.first_name} {t.last_name} ({t.EMP_ID})</option>)}
+                                {classes.map((c: any) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.class_name} • {c.batch_type?.toUpperCase()}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
