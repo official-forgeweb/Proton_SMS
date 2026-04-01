@@ -1,0 +1,10 @@
+﻿.next/types/validator.ts(141,39): error TS2307: Cannot find module '../../src/app/admin/students/details/page.js' or its corresponding type declarations.
+src/app/admin/classes/page.tsx(416,60): error TS7006: Parameter 'date' implicitly has an 'any' type.
+src/app/admin/classes/page.tsx(429,60): error TS7006: Parameter 'date' implicitly has an 'any' type.
+src/app/admin/classes/page.tsx(465,52): error TS7006: Parameter 'date' implicitly has an 'any' type.
+src/app/admin/reports/page.tsx(185,114): error TS2322: Type '{ key: string; fill: string; cornerRadius: number; }' is not assignable to type 'IntrinsicAttributes & Props'.
+  Property 'cornerRadius' does not exist on type 'IntrinsicAttributes & Props'.
+src/app/admin/reports/page.tsx(267,114): error TS2322: Type '{ key: string; fill: string; cornerRadius: number; }' is not assignable to type 'IntrinsicAttributes & Props'.
+  Property 'cornerRadius' does not exist on type 'IntrinsicAttributes & Props'.
+src/app/admin/teachers/[id]/page.tsx(121,204): error TS7006: Parameter 'l' implicitly has an 'any' type.
+src/app/admin/tests/page.tsx(201,49): error TS1117: An object literal cannot have multiple properties with the same name.

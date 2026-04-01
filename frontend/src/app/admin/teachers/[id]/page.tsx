@@ -118,7 +118,7 @@ export default function TeacherProfilePage() {
                                 </span>
                             </div>
                             <p style={{ fontSize: '15px', color: '#5E6278', fontWeight: 600, fontFamily: 'monospace', margin: 0, letterSpacing: '0.05em' }}>
-                                EMP_ID: {teacher.employee_id} <span style={{ color: '#CBD5E1', margin: '0 8px' }}>|</span> Role: {teacher.role_type ? teacher.role_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Subject Teacher'}
+                                EMP_ID: {teacher.employee_id} <span style={{ color: '#CBD5E1', margin: '0 8px' }}>|</span> Role: {teacher.role_type ? teacher.role_type.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Subject Teacher'}
                             </p>
                         </div>
                     </div>

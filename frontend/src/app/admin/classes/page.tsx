@@ -413,7 +413,7 @@ export default function ClassesPage() {
                                             <label style={{ ...labelStyle, fontSize: '12px' }}>Start Time</label>
                                             <DatePicker
                                                 selected={session.time_start ? new Date(`2000-01-01T${session.time_start}:00`) : null}
-                                                onChange={(date) => {
+                                                onChange={(date: Date | null) => {
                                                     if (date) {
                                                         const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
                                                         updateSession(i, 'time_start', time);
@@ -426,7 +426,7 @@ export default function ClassesPage() {
                                             <label style={{ ...labelStyle, fontSize: '12px' }}>End Time</label>
                                             <DatePicker
                                                 selected={session.time_end ? new Date(`2000-01-01T${session.time_end}:00`) : null}
-                                                onChange={(date) => {
+                                                onChange={(date: Date | null) => {
                                                     if (date) {
                                                         const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
                                                         updateSession(i, 'time_end', time);
@@ -462,7 +462,7 @@ export default function ClassesPage() {
                                     <DatePicker
                                         showMonthDropdown scrollableYearDropdown dropdownMode="select"
                                         selected={formData.start_date ? new Date(formData.start_date) : null}
-                                        onChange={(date) => {
+                                        onChange={(date: Date | null) => {
                                             if (date) {
                                                 const dateStr = date.toISOString().split('T')[0];
                                                 setFormData({ ...formData, start_date: dateStr });

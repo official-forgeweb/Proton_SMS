@@ -195,7 +195,7 @@ export default function TestsPage() {
                                         <button
                                             onClick={() => router.push(`/admin/tests/${test.id}`)}
                                             style={{ 
-                                                width: '100%', padding: '14px', borderRadius: '16px', border: 'none', 
+                                                width: '100%', padding: '14px', borderRadius: '16px', 
                                                 background: isCompleted ? 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)' : '#FFFFFF', 
                                                 color: isCompleted ? 'white' : '#1A1D3B', 
                                                 border: isCompleted ? 'none' : '1px solid #E2E8F0',

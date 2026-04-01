@@ -180,9 +180,10 @@ export default function ReportsPage() {
                                             innerRadius={65}
                                             paddingAngle={5}
                                             stroke="none"
+                                            cornerRadius={4}
                                         >
                                             {visualData.demographics.map((entry: any, index: number) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} cornerRadius={4} />
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
                                         <Tooltip 
@@ -262,9 +263,10 @@ export default function ReportsPage() {
                                             innerRadius={65}
                                             paddingAngle={5}
                                             stroke="none"
+                                            cornerRadius={4}
                                         >
                                             {visualData.enquiries.map((entry: any, index: number) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} cornerRadius={4} />
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
                                         <Tooltip 
