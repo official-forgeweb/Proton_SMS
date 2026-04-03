@@ -45,8 +45,12 @@ export default function TeacherDemosPage() {
 
             <div className="page-body">
                 {isLoading ? (
-                    <div className="spinner" style={{ margin: '40px auto' }} />
-                ) : data?.upcoming_demos?.length > 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) :  data?.upcoming_demos?.length > 0 ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
                         {data.upcoming_demos.map((demo: any, idx: number) => (
                             <div key={demo.id} className="card animate-fade-in" style={{ animationDelay: `${idx * 40}ms`, padding: '24px' }}>

@@ -27,8 +27,12 @@ export default function ParentFeesPage() {
 
             <div className="page-body">
                 {isLoading ? (
-                    <div className="spinner" style={{ margin: '40px auto' }} />
-                ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) :  (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
                         {/* Due Payments */}
                         {data?.children?.map((child: any) => (

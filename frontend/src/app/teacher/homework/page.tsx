@@ -42,8 +42,12 @@ export default function TeacherHomeworkPage() {
             <div className="page-body">
                 <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                     {isLoading ? (
-                        <div style={{ padding: '40px', textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
-                    ) : homework.length === 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) :  homework.length === 0 ? (
                         <div className="empty-state">
                             <PenTool size={48} />
                             <h3>No Homework Found</h3>

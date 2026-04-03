@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { Eye, EyeOff, GraduationCap, Mail, Lock, Hash, ArrowRight, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, GraduationCap, Mail, Lock, Hash, ArrowRight } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -34,287 +34,178 @@ export default function LoginPage() {
         }
     };
 
-    const quickLogin = async (email: string, pass: string) => {
-        setIsLoading(true);
-        try {
-            await login(email, pass);
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            toast.success(`Logged in as ${user.role}`);
-            setTimeout(() => router.push(`/${user.role}`), 500);
-        } catch (error: any) {
-            toast.error(error.message);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     return (
         <div style={{
             minHeight: '100vh',
             display: 'flex',
-            background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 40%, #1E3A5F 100%)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#0B0F19',
+            backgroundImage: `
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,0.2) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,0.2) 0, transparent 50%)
+            `,
             position: 'relative',
             overflow: 'hidden',
+            fontFamily: "'Inter', sans-serif"
         }}>
-            <Toaster position="top-center" />
+            <Toaster position="top-center"
+                toastOptions={{
+                    style: { background: '#1E293B', color: '#fff', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }
+                }}
+            />
 
-            {/* Animated background elements */}
+            {/* Premium Background Elements */}
             <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
                 <div style={{
+                    position: 'absolute', width: '800px', height: '800px', borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(229,57,53,0.08) 0%, transparent 60%)',
+                    top: '-300px', right: '-200px', filter: 'blur(40px)', animation: 'pulse 10s infinite alternate'
+                }} />
+                <div style={{
                     position: 'absolute', width: '600px', height: '600px', borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(229,57,53,0.15) 0%, transparent 70%)',
-                    top: '-200px', right: '-100px',
-                }} />
-                <div style={{
-                    position: 'absolute', width: '500px', height: '500px', borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(198,40,40,0.1) 0%, transparent 70%)',
-                    bottom: '-100px', right: '-100px',
-                }} />
-                <div style={{
-                    position: 'absolute', width: '400px', height: '400px', borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)',
-                    top: '20%', right: '20%',
-                }} />
-                {/* Grid pattern */}
-                <div style={{
-                    position: 'absolute', inset: 0,
-                    backgroundImage: `radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)`,
-                    backgroundSize: '32px 32px',
+                    background: 'radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 60%)',
+                    bottom: '-200px', left: '-100px', filter: 'blur(40px)', animation: 'pulse 8s infinite alternate-reverse'
                 }} />
             </div>
 
-            {/* Left side - Branding */}
-            <div style={{
-                flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
-                padding: '60px', position: 'relative', zIndex: 1,
-            }} className="hidden md:flex">
-                <div className="animate-fade-in">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '40px' }}>
-                        <div style={{
-                            width: '48px', height: '48px', borderRadius: '14px',
-                            background: '#E53935', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 8px 20px rgba(229,57,53,0.3)',
-                        }}>
-                            <GraduationCap size={28} strokeWidth={2} color="white" />
-                        </div>
-                        <div>
-                            <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.5px', lineHeight: 1 }}>
-                                Proton LMS
-                            </h1>
-                            <p style={{ color: '#8F92A1', fontSize: '14px', fontWeight: 500, marginTop: '4px' }}>
-                                Learning Management System
-                            </p>
-                        </div>
+            <style dangerouslySetInnerHTML={{__html: `
+                @keyframes pulse { 0% { opacity: 0.5; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } }
+                @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+                .glass-card {
+                    background: rgba(15, 23, 42, 0.6);
+                    backdrop-filter: blur(20px);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                }
+                .login-input {
+                    width: 100%;
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    color: white;
+                    padding: 14px 16px 14px 44px;
+                    border-radius: 12px;
+                    font-size: 15px;
+                    transition: all 0.3s ease;
+                }
+                .login-input:focus {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-color: #E53935;
+                    outline: none;
+                    box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1);
+                }
+                .login-input::placeholder { color: #64748B; }
+                
+                .method-btn {
+                    flex: 1; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 600;
+                    color: #94A3B8; background: transparent; border: 1px solid transparent; cursor: pointer;
+                    transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+                }
+                .method-btn.active {
+                    background: rgba(229, 57, 53, 0.1); color: #E53935; border-color: rgba(229, 57, 53, 0.2);
+                }
+                .method-btn:hover:not(.active) { color: white; background: rgba(255,255,255,0.05); }
+
+                .login-button {
+                    background: linear-gradient(135deg, #E53935 0%, #B71C1C 100%);
+                    color: white; border: none; padding: 16px; border-radius: 12px;
+                    font-size: 15px; font-weight: 700; width: 100%; cursor: pointer;
+                    display: flex; align-items: center; justify-content: center; gap: 10px;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    box-shadow: 0 8px 25px -4px rgba(229, 57, 53, 0.4);
+                }
+                .login-button:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -4px rgba(229, 57, 53, 0.5); }
+                .login-button:active { transform: translateY(0); }
+                .login-button:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+            `}} />
+
+            <div className="glass-card animate-fade-in" style={{
+                width: '100%', maxWidth: '440px', borderRadius: '24px', padding: '48px 40px',
+                position: 'relative', zIndex: 10, margin: '20px'
+            }}>
+                <div style={{ textAlign: 'center', marginBottom: '40px', animation: 'float 6s ease-in-out infinite' }}>
+                    <div style={{
+                        width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px',
+                        boxShadow: '0 12px 24px -6px rgba(229,57,53,0.5)', border: '1px solid rgba(255,255,255,0.2)'
+                    }}>
+                        <GraduationCap size={32} color="white" strokeWidth={2.5} />
                     </div>
-
-                    <h2 style={{
-                        fontSize: '48px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1,
-                        fontFamily: 'Poppins', maxWidth: '500px', marginBottom: '24px', letterSpacing: '-1px'
-                    }}>
-                        Empowering<br />
-                        <span style={{ color: '#E53935' }}>Education</span> Through<br />
-                        Technology
-                    </h2>
-
-                    <p style={{
-                        color: '#A1A5B7', fontSize: '16px', lineHeight: 1.6,
-                        maxWidth: '440px', marginBottom: '60px',
-                    }}>
-                        Complete student lifecycle management from enquiry to enrollment,
-                        with real-time analytics and seamless academic operations.
+                    <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'white', marginBottom: '8px', letterSpacing: '-0.5px' }}>
+                        Proton LMS
+                    </h1>
+                    <p style={{ color: '#94A3B8', fontSize: '15px' }}>
+                        Sign in to access your workspace
                     </p>
-
-                    <div style={{ display: 'flex', gap: '48px' }}>
-                        {[
-                            { label: 'Students', value: '450+' },
-                            { label: 'Teachers', value: '35+' },
-                            { label: 'Classes', value: '42+' },
-                        ].map((stat) => (
-                            <div key={stat.label}>
-                                <div style={{ fontSize: '32px', fontWeight: 800, color: '#FFFFFF' }}>{stat.value}</div>
-                                <div style={{ fontSize: '13px', color: '#8F92A1', fontWeight: 600, marginTop: '4px' }}>{stat.label}</div>
-                            </div>
-                        ))}
-                    </div>
                 </div>
-            </div>
 
-            {/* Right side - Login Form */}
-            <div style={{
-                width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column',
-                justifyContent: 'center', padding: '40px', position: 'relative', zIndex: 1,
-            }} className="animate-slide-in-right md:w-auto w-full md:max-w-[480px]">
-                <div style={{
-                    background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)',
-                    borderRadius: '24px', padding: '40px', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                }}>
-                    {/* Mobile logo */}
-                    <div className="md:hidden" style={{ textAlign: 'center', marginBottom: '24px' }}>
-                        <div style={{
-                            width: '48px', height: '48px', borderRadius: '12px', background: 'var(--gradient-primary)',
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
-                        }}>
-                            <GraduationCap size={24} color="white" />
+                <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '14px', marginBottom: '32px' }}>
+                    <button className={"method-btn " + (loginMethod === 'email' ? 'active' : '')} onClick={() => setLoginMethod('email')}>
+                        <Mail size={16} /> Email
+                    </button>
+                    <button className={"method-btn " + (loginMethod === 'proId' ? 'active' : '')} onClick={() => setLoginMethod('proId')}>
+                        <Hash size={16} /> User ID
+                    </button>
+                </div>
+
+                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {loginMethod === 'email' ? (
+                        <div style={{ position: 'relative' }}>
+                            <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748B' }} />
+                            <input
+                                type="email" className="login-input" placeholder="alice@example.com"
+                                value={email} onChange={(e) => setEmail(e.target.value)} required
+                            />
                         </div>
-                        <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)' }}>Proton LMS</h2>
-                    </div>
-
-                    <div style={{ marginBottom: '28px' }}>
-                        <h3 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                            Welcome Back
-                        </h3>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                            Sign in to continue to your dashboard
-                        </p>
-                    </div>
-
-                    {/* Login Method Tabs */}
-                    <div className="tabs" style={{ marginBottom: '24px', width: '100%' }}>
-                        <button
-                            className={`tab ${loginMethod === 'email' ? 'active' : ''}`}
-                            onClick={() => setLoginMethod('email')}
-                            style={{ flex: 1 }}
-                        >
-                            <Mail size={14} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
-                            Email Login
-                        </button>
-                        <button
-                            className={`tab ${loginMethod === 'proId' ? 'active' : ''}`}
-                            onClick={() => setLoginMethod('proId')}
-                            style={{ flex: 1 }}
-                        >
-                            <Hash size={14} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
-                            Student / Teacher ID
-                        </button>
-                    </div>
-
-                    <form onSubmit={handleLogin}>
-                        {loginMethod === 'email' ? (
-                            <div className="input-group" style={{ marginBottom: '16px' }}>
-                                <label>Email Address</label>
-                                <div style={{ position: 'relative' }}>
-                                    <Mail size={16} style={{
-                                        position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-                                        color: 'var(--text-tertiary)'
-                                    }} />
-                                    <input
-                                        type="email"
-                                        className="input-field"
-                                        placeholder="Enter your email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        style={{ paddingLeft: '38px' }}
-                                        required
-                                    />
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="input-group" style={{ marginBottom: '16px' }}>
-                                <label>Your ID</label>
-                                <div style={{ position: 'relative' }}>
-                                    <Hash size={16} style={{
-                                        position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-                                        color: 'var(--text-tertiary)'
-                                    }} />
-                                    <input
-                                        type="text"
-                                        className="input-field"
-                                        placeholder="e.g., PRO... or EMP..."
-                                        value={proId}
-                                        onChange={(e) => setProId(e.target.value)}
-                                        style={{ paddingLeft: '38px' }}
-                                        required
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="input-group" style={{ marginBottom: '24px' }}>
-                            <label>Password</label>
-                            <div style={{ position: 'relative' }}>
-                                <Lock size={16} style={{
-                                    position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-                                    color: 'var(--text-tertiary)'
-                                }} />
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    className="input-field"
-                                    placeholder="Enter your password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    style={{ paddingLeft: '38px', paddingRight: '42px' }}
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    style={{
-                                        position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
-                                        background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)',
-                                        padding: '4px',
-                                    }}
-                                >
-                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
-                            </div>
+                    ) : (
+                        <div style={{ position: 'relative' }}>
+                            <Hash size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748B' }} />
+                            <input
+                                type="text" className="login-input" placeholder="e.g., PRO123 or EMP456"
+                                value={proId} onChange={(e) => setProId(e.target.value)} required
+                            />
                         </div>
+                    )}
 
+                    <div style={{ position: 'relative' }}>
+                        <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748B' }} />
+                        <input
+                            type={showPassword ? 'text' : 'password'} className="login-input" placeholder="Enter your password"
+                            value={password} onChange={(e) => setPassword(e.target.value)} required
+                        />
                         <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={isLoading}
+                            type="button" onClick={() => setShowPassword(!showPassword)}
                             style={{
-                                width: '100%', padding: '14px', fontSize: '15px', fontWeight: 600,
-                                borderRadius: '12px', position: 'relative', overflow: 'hidden',
+                                position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
+                                background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', padding: '4px',
                             }}
                         >
-                            {isLoading ? (
-                                <div className="spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }} />
-                            ) : (
-                                <>
-                                    Sign In
-                                    <ArrowRight size={18} />
-                                </>
-                            )}
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
-                    </form>
-
-                    {/* Quick Login - Demo Credentials */}
-                    <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid var(--border-primary)' }}>
-                        <p style={{
-                            fontSize: '12px', color: 'var(--text-tertiary)', textAlign: 'center',
-                            marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                        }}>
-                            <Sparkles size={12} /> Demo Quick Access <Sparkles size={12} />
-                        </p>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                            {[
-                                { role: 'Admin', email: 'admin@protoncoaching.com', pass: 'Admin@123', color: '#3B82F6', bg: '#DBEAFE' },
-                                { role: 'Teacher', email: 'amit@protoncoaching.com', pass: 'Teacher@123', color: '#8B5CF6', bg: '#EDE9FE' },
-                                { role: 'Student', email: 'rahul.sharma@email.com', pass: 'Student@123', color: '#10B981', bg: '#D1FAE5' },
-                                { role: 'Parent', email: 'parent.sharma@email.com', pass: 'Parent@123', color: '#F97316', bg: '#FFEDD5' },
-                            ].map((demo) => (
-                                <button
-                                    key={demo.role}
-                                    onClick={() => quickLogin(demo.email, demo.pass)}
-                                    disabled={isLoading}
-                                    style={{
-                                        padding: '10px', borderRadius: '10px', border: 'none',
-                                        background: demo.bg, color: demo.color, fontWeight: 600,
-                                        fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                    }}
-                                    onMouseEnter={(e) => { (e.target as HTMLElement).style.transform = 'scale(1.03)'; }}
-                                    onMouseLeave={(e) => { (e.target as HTMLElement).style.transform = 'scale(1)'; }}
-                                >
-                                    {demo.role}
-                                </button>
-                            ))}
-                        </div>
                     </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-8px' }}>
+                        <a href="#" style={{ color: '#94A3B8', fontSize: '13px', textDecoration: 'none', transition: 'color 0.2s' }}
+                           onMouseEnter={e => e.currentTarget.style.color = 'white'}
+                           onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}>
+                            Forgot password?
+                        </a>
+                    </div>
+
+                    <button type="submit" className="login-button" disabled={isLoading} style={{ marginTop: '8px' }}>
+                        {isLoading ? (
+                            <div style={{ width: '22px', height: '22px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                        ) : (
+                            <>Sign In <ArrowRight size={18} strokeWidth={2.5} /></>
+                        )}
+                    </button>
+                </form>
+
+                <div style={{ textAlign: 'center', marginTop: '32px' }}>
+                    <p style={{ color: '#64748B', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <Lock size={12} /> Secure 256-bit encryption
+                    </p>
                 </div>
             </div>
         </div>

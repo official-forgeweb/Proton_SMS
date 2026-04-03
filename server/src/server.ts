@@ -7,7 +7,13 @@ const PORT = env.PORT;
 
 const startServer = async (): Promise<void> => {
   await connectDB();
-  await seedData();
+
+  // Seed in a try-catch so server starts even if seeding fails (e.g. DB is temporarily down)
+  try {
+    await seedData();
+  } catch (err) {
+    console.error('⚠️  Seed data failed (server will still start):', err instanceof Error ? err.message : err);
+  }
 
   app.listen(PORT, () => {
     console.log(`\n🚀 Proton LMS Server running on port ${PORT}`);

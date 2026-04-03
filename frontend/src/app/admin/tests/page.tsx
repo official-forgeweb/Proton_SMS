@@ -37,8 +37,6 @@ export default function TestsPage() {
         }
         .glass-card {
             background: rgba(255, 255, 255, 0.88);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.7);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
             border-radius: 24px;
@@ -111,8 +109,12 @@ export default function TestsPage() {
                 {/* Tests Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '24px' }}>
                     {isLoading ? (
-                        [1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: '240px', borderRadius: '24px' }} />)
-                    ) : filteredTests.length === 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) :  filteredTests.length === 0 ? (
                         <div style={{ gridColumn: '1 / -1', background: 'white', border: '2px dashed #E2E8F0', borderRadius: '24px', padding: '100px', textAlign: 'center' }}>
                             <div style={{ width: '80px', height: '80px', background: '#F8F9FD', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                                 <ClipboardList size={40} color="#CBD5E1" />

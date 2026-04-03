@@ -30,14 +30,26 @@ export default function TeacherClassDetailPage() {
                     </button>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <h1 style={{ fontSize: '24px', fontWeight: 700 }}>
-                            {isLoading ? 'Loading...' : classData?.class_name}
+                            {isLoading ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) : classData?.class_name}
                         </h1>
                         {!isLoading && classData && (
                             <span className="badge badge-primary">{classData.batch_type?.toUpperCase() || 'REGULAR'} BATCH</span>
                         )}
                     </div>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-                        {isLoading ? 'Fetching class details...' : `${classData?.subject} • Grade ${classData?.grade_level}`}
+                        {isLoading ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) : `${classData?.subject} • Grade ${classData?.grade_level}`}
                     </p>
                 </div>
                 {!isLoading && classData && (
@@ -51,8 +63,12 @@ export default function TeacherClassDetailPage() {
 
             <div className="page-body">
                 {isLoading ? (
-                    <div className="spinner" style={{ margin: '40px auto' }} />
-                ) : !classData ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) :  !classData ? (
                     <div className="card empty-state">
                         <BookOpen size={48} />
                         <h3>Class Not Found</h3>

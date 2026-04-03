@@ -81,9 +81,8 @@ export default function StudentsPage() {
                 }
                 .glass-panel {
                     background: rgba(255, 255, 255, 0.85);
-                    backdrop-filter: blur(20px);
-                    -webkit-backdrop-filter: blur(20px);
-                }
+                    
+                    }
                 .table-row-hover {
                     transition: all 0.2s ease;
                 }
@@ -203,14 +202,12 @@ export default function StudentsPage() {
 
                     {/* Table */}
                     {isLoading ? (
-                        <div style={{ padding: '80px', textAlign: 'center' }}>
-                            <div style={{ position: 'relative', width: '60px', height: '60px', margin: '0 auto 20px' }}>
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, border: '4px solid #f3f3f3', borderRadius: '50%' }} />
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, border: '4px solid #E53935', borderRadius: '50%', borderTopColor: 'transparent', animation: 'spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite' }} />
-                            </div>
-                            <p style={{ color: '#1A1D3B', fontSize: '15px', fontWeight: 600 }}>Loading students...</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
                         </div>
-                    ) : displayStudents.length === 0 ? (
+                    ) :  displayStudents.length === 0 ? (
                         <div style={{ padding: '80px', textAlign: 'center', background: '#F8F9FD', borderRadius: '16px' }}>
                             <GraduationCap size={56} style={{ marginBottom: '20px', color: '#A1A5B7', opacity: 0.5 }} />
                             <h3 style={{ fontSize: '18px', color: '#1A1D3B', marginBottom: '8px', fontWeight: 700 }}>No Students Found</h3>

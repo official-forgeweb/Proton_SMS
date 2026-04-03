@@ -61,11 +61,12 @@ export default function ScheduleDemoPage() {
             icon={<Target size={20} strokeWidth={2.5} />}
         >
             {isLoading ? (
-                <div style={{ padding: '60px', textAlign: 'center' }}>
-                    <div className="spinner" style={{ margin: '0 auto 16px' }} />
-                    <p style={{ color: '#A1A5B7', fontSize: '14px' }}>Loading enquiry data...</p>
-                </div>
-            ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) :  (
                 <form onSubmit={handleSubmit}>
                     <div className="form-section">
                         <div className="form-section-title">Schedule Information</div>

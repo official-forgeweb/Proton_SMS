@@ -85,8 +85,6 @@ export default function FormPageLayout({
             width: 100%;
             max-width: ${maxWidth};
             background: rgba(255, 255, 255, 0.94);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
             border-radius: 40px;
             border: 1px solid rgba(255, 255, 255, 0.6);
             box-shadow: 

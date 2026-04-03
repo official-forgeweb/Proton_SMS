@@ -67,9 +67,8 @@ export default function TeacherProfilePage() {
                 }
                 .glass-panel {
                     background: rgba(255, 255, 255, 0.85);
-                    backdrop-filter: blur(20px);
-                    -webkit-backdrop-filter: blur(20px);
-                }
+                    
+                    }
                 .bg-mesh {
                     background-color: #f7f8fc;
                     background-image: radial-gradient(at 40% 20%, hsla(28,100%,74%,0.15) 0px, transparent 50%),

@@ -135,8 +135,12 @@ export default function EnquiriesPage() {
                 {/* Enquiry Cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
                     {isLoading ? (
-                        [1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: '180px', borderRadius: '18px' }} />)
-                    ) : enquiries.length === 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) :  enquiries.length === 0 ? (
                         <div style={{ gridColumn: '1 / -1', background: '#FFFFFF', borderRadius: '18px', padding: '60px', textAlign: 'center', border: '1px solid #F0F0F5', color: '#A1A5B7' }}>
                             <Phone size={48} style={{ marginBottom: '16px', opacity: 0.4 }} />
                             <h3 style={{ fontSize: '16px', color: '#5E6278', marginBottom: '8px', fontWeight: 700 }}>No Enquiries Found</h3>

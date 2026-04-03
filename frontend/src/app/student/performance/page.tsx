@@ -42,10 +42,12 @@ export default function StudentPerformancePage() {
 
             <div className="page-body">
                 {isLoading ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
-                        <div className="spinner" />
-                    </div>
-                ) : !performanceData || (performanceData.trend?.length === 0 && performanceData.subjectAnalytics?.length === 0) ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) :  !performanceData || (performanceData.trend?.length === 0 && performanceData.subjectAnalytics?.length === 0) ? (
                     <div className="card empty-state" style={{ padding: '60px' }}>
                         <div style={{ background: 'var(--bg-secondary)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
                             <Activity size={40} color="var(--text-tertiary)" />

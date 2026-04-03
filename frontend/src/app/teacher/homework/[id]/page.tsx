@@ -89,7 +89,13 @@ export default function EvaluateHomeworkPage() {
                     </button>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <h1 style={{ fontSize: '24px', fontWeight: 700 }}>
-                            {isLoading ? 'Loading...' : hwData?.title}
+                            {isLoading ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) : hwData?.title}
                         </h1>
                         {!isLoading && (
                             <span className="badge badge-info">{hwData?.subject}</span>
@@ -103,8 +109,12 @@ export default function EvaluateHomeworkPage() {
 
             <div className="page-body">
                 {isLoading ? (
-                    <div className="spinner" style={{ margin: '40px auto' }} />
-                ) : submissions.length === 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) :  submissions.length === 0 ? (
                     <div className="card empty-state">
                         <Users size={48} />
                         <h3>No Student Enrollments Found</h3>

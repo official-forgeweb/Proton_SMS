@@ -37,11 +37,12 @@ export default function HomeworkPage() {
 
                 <div style={{ background: '#FFFFFF', borderRadius: '18px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #F0F0F5', overflow: 'hidden' }}>
                     {isLoading ? (
-                        <div style={{ padding: '60px', textAlign: 'center' }}>
-                            <div className="spinner" style={{ margin: '0 auto 16px' }} />
-                            <p style={{ color: '#A1A5B7', fontSize: '14px' }}>Loading homework...</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
                         </div>
-                    ) : homework.length === 0 ? (
+                    ) :  homework.length === 0 ? (
                         <div style={{ padding: '60px', textAlign: 'center', color: '#A1A5B7' }}>
                             <PenTool size={48} style={{ marginBottom: '16px', opacity: 0.4 }} />
                             <h3 style={{ fontSize: '16px', color: '#5E6278', marginBottom: '8px', fontWeight: 700 }}>No Homework Found</h3>

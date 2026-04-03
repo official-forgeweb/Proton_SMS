@@ -115,7 +115,13 @@ export default function EvaluateTestPage() {
                     </button>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <h1 style={{ fontSize: '24px', fontWeight: 700 }}>
-                            {isLoading ? 'Loading...' : testData?.test_name}
+                            {isLoading ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) : testData?.test_name}
                         </h1>
                         {!isLoading && testData && (
                             <span className={`badge ${testData.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>
@@ -157,8 +163,12 @@ export default function EvaluateTestPage() {
 
             <div className="page-body">
                 {isLoading ? (
-                    <div className="spinner" style={{ margin: '40px auto' }} />
-                ) : students.length === 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
+                    ) :  students.length === 0 ? (
                     <div className="card empty-state">
                         <Users size={48} />
                         <h3>No Enrolled Students</h3>

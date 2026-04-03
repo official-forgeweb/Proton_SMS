@@ -95,7 +95,7 @@ const StatCard = ({
                     background: positive ? (gradient ? 'rgba(255,255,255,0.25)' : '#ECFDF5') : '#FEF2F2',
                     color: positive ? (gradient ? '#FFFFFF' : '#059669') : '#DC2626',
                     display: 'flex', alignItems: 'center', gap: '4px',
-                    backdropFilter: 'blur(8px)',
+                    
                     boxShadow: gradient ? 'none' : '0 2px 6px rgba(0,0,0,0.02)',
                 }}>
                     {positive ? <TrendingUp size={14} strokeWidth={3} /> : <TrendingDown size={14} strokeWidth={3} />}
@@ -142,7 +142,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         return (
             <div style={{
                 background: 'rgba(26, 29, 59, 0.95)',
-                backdropFilter: 'blur(10px)',
+                
                 borderRadius: '14px',
                 padding: '14px 18px',
                 boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
@@ -232,9 +232,8 @@ export default function AdminDashboard() {
                 }
                 .glass-panel {
                     background: rgba(255, 255, 255, 0.85);
-                    backdrop-filter: blur(20px);
-                    -webkit-backdrop-filter: blur(20px);
-                }
+                    
+                    }
                 .card-hover:hover {
                     transform: translateY(-6px) scale(1.01);
                 }

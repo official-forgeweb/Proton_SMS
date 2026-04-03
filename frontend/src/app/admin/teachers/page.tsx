@@ -53,9 +53,8 @@ export default function TeachersPage() {
                 }
                 .glass-panel {
                     background: rgba(255, 255, 255, 0.85);
-                    backdrop-filter: blur(20px);
-                    -webkit-backdrop-filter: blur(20px);
-                }
+                    
+                    }
                 .card-hover {
                     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                 }
