@@ -191,7 +191,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
     const avatarImgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=E53935&color=fff`;
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', width: '100%', background: '#F4F5F9' }}>
+        <div className="bg-mesh" style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
             <Sidebar />
             <main style={{
                 marginLeft: '260px',
@@ -233,7 +233,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 {/* Top Header */}
                 <header style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '16px 32px', background: '#F4F5F9',
+                    padding: '16px 32px', background: 'rgba(247, 248, 252, 0.65)', backdropFilter: 'blur(12px)',
                     position: 'sticky', top: 0, zIndex: 30,
                     borderBottom: '1px solid rgba(228, 230, 239, 0.4)',
                 }}>

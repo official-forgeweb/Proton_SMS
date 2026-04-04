@@ -22,14 +22,9 @@ export default function HomePage() {
   }, [isLoading, isAuthenticated, user, serverError]);
 
   return (
-    <div style={{
+    <div className="bg-mesh" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        minHeight: '100vh', background: '#0B0F19', flexDirection: 'column',
-        backgroundImage: `
-            radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-            radial-gradient(at 50% 0%, hsla(225,39%,30%,0.2) 0, transparent 50%), 
-            radial-gradient(at 100% 0%, hsla(339,49%,30%,0.2) 0, transparent 50%)
-        `,
+        minHeight: '100vh', flexDirection: 'column',
         position: 'relative', overflow: 'hidden'
     }}>
         <style dangerouslySetInnerHTML={{__html: `
@@ -66,10 +61,10 @@ export default function HomePage() {
                 animation: shimmerSplash 2s linear infinite;
             }
             .glass-panel-splash {
-                background: rgba(15, 23, 42, 0.6);
-                backdrop-filter: blur(20px);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(24px);
+                border: 1px solid rgba(255, 255, 255, 0.8);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0,0,0,0.02);
                 padding: 40px;
                 border-radius: 24px;
             }
@@ -81,7 +76,7 @@ export default function HomePage() {
         }}>
             <div style={{
                 position: 'absolute', width: '800px', height: '800px', borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(229,57,53,0.08) 0%, transparent 60%)',
+                background: 'radial-gradient(circle, rgba(229,57,53,0.06) 0%, transparent 60%)',
                 top: '-300px', right: '-200px', filter: 'blur(40px)'
             }} />
         </div>
@@ -101,14 +96,15 @@ export default function HomePage() {
             
             <h2 className="loading-splash-text" style={{ 
                 fontSize: '26px', fontWeight: 800, margin: '0 0 32px 0',
-                fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em'
+                fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em',
+                background: 'none', color: '#0F172A', WebkitTextFillColor: '#0F172A'
             }}>
                 Proton LMS
             </h2>
             
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <p style={{ color: '#94A3B8', fontSize: '13px', fontWeight: 600, margin: 0, letterSpacing: '0.05em' }}>
+                    <p style={{ color: '#64748B', fontSize: '13px', fontWeight: 600, margin: 0, letterSpacing: '0.05em' }}>
                         INITIALIZING SYSTEM...
                     </p>
                     <span style={{ color: '#E53935', fontSize: '13px', fontWeight: 700, fontFamily: 'monospace' }}>•••</span>
@@ -116,7 +112,7 @@ export default function HomePage() {
                 
                 {/* Custom advanced progress bar */}
                 <div style={{ 
-                    width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', 
+                    width: '100%', height: '6px', background: 'rgba(0,0,0,0.05)', 
                     borderRadius: '100px', overflow: 'hidden', position: 'relative'
                 }}>
                     <div style={{
