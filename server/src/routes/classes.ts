@@ -24,7 +24,10 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
     if (req.user!.role === 'teacher') {
       const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
       if (teacher) {
-        where.primary_teacher_id = teacher.id;
+        where.OR = [
+          { primary_teacher_id: teacher.id },
+          { schedule: { some: { teacher_id: teacher.id } } }
+        ];
       }
     }
 

@@ -222,7 +222,7 @@ export default function EvaluateTestPage() {
                                                 <td style={{ textAlign: 'center' }}>
                                                     <input
                                                         type="checkbox"
-                                                        checked={res?.present}
+                                                        checked={res?.present || false}
                                                         onChange={() => togglePresence(student.id)}
                                                         style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary)' }}
                                                     />
@@ -238,7 +238,7 @@ export default function EvaluateTestPage() {
                                                                 background: res?.present ? 'var(--bg-primary)' : 'var(--bg-tertiary)'
                                                             }}
                                                             placeholder="0"
-                                                            value={res?.marks}
+                                                            value={res?.marks ?? ''}
                                                             onChange={(e) => handleMarksChange(student.id, e.target.value)}
                                                             disabled={!res?.present}
                                                             min="0"

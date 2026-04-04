@@ -149,11 +149,33 @@ router.get('/teacher', authenticateToken, authorize('teacher'), cacheMiddleware(
       return;
     }
 
-    const myClasses = await prisma.class.findMany({ where: { primary_teacher_id: teacher.id } });
+    const myClasses = await prisma.class.findMany({ 
+        where: { 
+            OR: [
+                { primary_teacher_id: teacher.id },
+                { schedule: { some: { teacher_id: teacher.id } } }
+            ]
+        },
+        include: { schedule: true }
+    });
     const today = new Date().toISOString().split('T')[0];
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()];
 
-    const todaysClasses = myClasses.filter(c => c.class_days?.includes(dayOfWeek));
+    const todaysClasses = myClasses.filter(c => {
+      // Check legacy class_days OR schedule days assignment
+      const hasLegacyDay = c.class_days?.includes(dayOfWeek);
+      const hasScheduleDay = c.schedule?.some((s: any) => s.teacher_id === teacher.id && s.days?.includes(dayOfWeek));
+      return hasLegacyDay || hasScheduleDay;
+    }).map(c => {
+      // For today's classes, display the start time specifically from the schedule if possible
+      const mySchedule = c.schedule?.find((s: any) => s.teacher_id === teacher.id && s.days?.includes(dayOfWeek));
+      return {
+        ...c,
+        class_time_start: mySchedule?.time_start || c.class_time_start,
+        class_time_end: mySchedule?.time_end || c.class_time_end
+      };
+    });
+    
     const classIds = myClasses.map(c => c.id);
 
     const [todaysAttendance, studentCountsAgg, pendingEvaluations, myEnquiries, pendingDemos, assignedEnquiriesCount, pendingDemosCount] = await Promise.all([

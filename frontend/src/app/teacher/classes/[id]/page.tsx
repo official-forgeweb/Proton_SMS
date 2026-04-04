@@ -92,7 +92,11 @@ export default function TeacherClassDetailPage() {
                                 </div>
                                 <div>
                                     <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 600 }}>TIMING</p>
-                                    <h3 style={{ fontSize: '16px', fontWeight: 700 }}>{classData.class_time_start} - {classData.class_time_end}</h3>
+                                    <h3 style={{ fontSize: '16px', fontWeight: 700 }}>
+                                        {classData.schedule?.length > 0
+                                            ? classData.schedule.map((s: any) => `${s.time_start}-${s.time_end}`).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i).join(', ')
+                                            : `${classData.class_time_start} - ${classData.class_time_end}`}
+                                    </h3>
                                 </div>
                             </div>
                             <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '20px' }}>
@@ -102,7 +106,9 @@ export default function TeacherClassDetailPage() {
                                 <div>
                                     <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 600 }}>DAYS</p>
                                     <h3 style={{ fontSize: '14px', fontWeight: 700, textTransform: 'capitalize' }}>
-                                        {classData.class_days?.join(', ') || 'Not set'}
+                                        {classData.schedule?.length > 0
+                                            ? Array.from(new Set(classData.schedule.flatMap((s: any) => s.days || []))).join(', ') || 'Not set'
+                                            : classData.class_days?.join(', ') || 'Not set'}
                                     </h3>
                                 </div>
                             </div>

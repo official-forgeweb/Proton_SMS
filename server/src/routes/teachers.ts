@@ -33,7 +33,14 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Re
 
     const enriched = await Promise.all(
       teachers.map(async (t) => {
-        const classCount = await prisma.class.count({ where: { primary_teacher_id: t.id } });
+        const classCount = await prisma.class.count({ 
+            where: { 
+                OR: [
+                    { primary_teacher_id: t.id },
+                    { schedule: { some: { teacher_id: t.id } } }
+                ]
+            } 
+        });
         return { ...t, id: t.id, class_count: classCount };
       })
     );
@@ -58,7 +65,14 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
     }
 
     const [classes, demos] = await Promise.all([
-      prisma.class.findMany({ where: { primary_teacher_id: teacher.id } }),
+      prisma.class.findMany({ 
+        where: { 
+            OR: [
+                { primary_teacher_id: teacher.id },
+                { schedule: { some: { teacher_id: teacher.id } } }
+            ]
+        }
+      }),
       prisma.demoClass.findMany({ where: { teacher_id: teacher.id } }),
     ]);
 
@@ -156,7 +170,12 @@ router.get('/:id/classes', authenticateToken, async (req: Request, res: Response
     }
 
     const classes = await prisma.class.findMany({
-      where: { primary_teacher_id: teacher.id },
+      where: { 
+          OR: [
+              { primary_teacher_id: teacher.id },
+              { schedule: { some: { teacher_id: teacher.id } } }
+          ]
+      },
     });
 
     const enriched = await Promise.all(
