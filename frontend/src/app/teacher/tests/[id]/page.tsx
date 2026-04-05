@@ -57,14 +57,21 @@ export default function EvaluateTestPage() {
     };
 
     const handleMarksChange = (studentId: string, value: string) => {
-        // Validation to ensure marks don't exceed total_marks
+        if (value === '') {
+            setResults(prev => ({ ...prev, [studentId]: { ...prev[studentId], marks: '' } }));
+            return;
+        }
+
         let numValue = Number(value);
-        if (numValue > testData?.total_marks) numValue = testData.total_marks;
-        if (numValue < 0) numValue = 0;
+        if (isNaN(numValue)) return;
+        
+        let finalValue = value;
+        if (numValue > (testData?.total_marks || 100)) finalValue = String(testData?.total_marks || 100);
+        if (numValue < 0) finalValue = '0';
 
         setResults(prev => ({
             ...prev,
-            [studentId]: { ...prev[studentId], marks: value === '' ? '' : numValue.toString() }
+            [studentId]: { ...prev[studentId], marks: finalValue }
         }));
     };
 
