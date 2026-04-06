@@ -82,6 +82,7 @@ model Student {
   user                    User                     @relation(fields: [user_id], references: [id])
   parent_mappings         ParentStudentMapping[]
   class_enrollments       StudentClassEnrollment[]
+  subject_enrollments     StudentSubjectEnrollment[]
   attendance_records      Attendance[]
   test_results            TestResult[]
   homework_submissions    HomeworkSubmission[]
@@ -201,6 +202,7 @@ model Class {
   primary_teacher      Teacher?                @relation("PrimaryTeacher", fields: [primary_teacher_id], references: [id])
   schedule             ClassSchedule[]
   student_enrollments  StudentClassEnrollment[]
+  subject_enrollments  StudentSubjectEnrollment[]
   attendance_records   Attendance[]
   tests                Test[]
   homework             Homework[]
@@ -246,6 +248,26 @@ model StudentClassEnrollment {
   @@index([class_id, enrollment_status])
   @@index([student_id, enrollment_status])
   @@map("student_class_enrollments")
+}
+
+model StudentSubjectEnrollment {
+  id              String   @id @default(uuid())
+  student_id      String
+  class_id        String
+  subject         String
+  enrollment_date String?
+  status          String   @default("active")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  student Student @relation(fields: [student_id], references: [id])
+  class   Class   @relation(fields: [class_id], references: [id])
+
+  @@unique([student_id, class_id, subject])
+  @@index([class_id, subject])
+  @@index([student_id])
+  @@map("student_subject_enrollments")
 }
 
 // ──────────────────────────────────────────────

@@ -31,7 +31,10 @@ export default function TestProfilePage() {
                         {test.class_name} • {test.subject} • {new Date(test.test_date).toLocaleDateString()}
                     </p>
                 </div>
-                <button className="btn btn-secondary" onClick={() => router.push('/admin/tests')}>Back</button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button className="btn btn-primary" onClick={() => router.push(`/admin/tests/${test.id}/evaluate`)}>Evaluate Scores</button>
+                    <button className="btn btn-secondary" onClick={() => router.push('/admin/tests')}>Back</button>
+                </div>
             </div>
 
             <div className="page-body">

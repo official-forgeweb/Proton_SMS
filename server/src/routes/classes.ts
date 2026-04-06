@@ -81,13 +81,29 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
       include: { student: true },
     });
 
+    // Get subject enrollment counts
+    const subjectEnrollments = await prisma.studentSubjectEnrollment.findMany({
+      where: { class_id: cls.id, status: 'active' },
+    });
+
+    const subjectCounts: Record<string, number> = {};
+    subjectEnrollments.forEach((se: any) => {
+      subjectCounts[se.subject] = (subjectCounts[se.subject] || 0) + 1;
+    });
+
     const students = enrollments
       .filter(e => e.student)
-      .map(e => ({
-        ...e.student,
-        id: e.student.id,
-        enrollment: { ...e, student_id: e.student_id, student: undefined },
-      }));
+      .map(e => {
+        const studentSubjects = subjectEnrollments
+          .filter(se => se.student_id === e.student.id)
+          .map(se => se.subject);
+        return {
+          ...e.student,
+          id: e.student.id,
+          enrolled_subjects: studentSubjects,
+          enrollment: { ...e, student_id: e.student_id, student: undefined },
+        };
+      });
 
     const teacher = cls.primary_teacher;
     res.json({
@@ -99,6 +115,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
         primary_teacher_id: teacher?.id,
         primary_teacher: undefined,
         students,
+        subject_counts: subjectCounts,
       },
     });
   } catch (error) {

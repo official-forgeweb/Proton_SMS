@@ -16,7 +16,7 @@ const paramId = (req: Request): string => String(req.params.id);
 // GET /api/students
 router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { search, status, class_id, fee_status, page = '1', limit = '50' } = req.query as Record<string, string>;
+    const { search, status, class_id, subject, fee_status, page = '1', limit = '50' } = req.query as Record<string, string>;
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
 
@@ -58,13 +58,21 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Re
     }
     if (status) where.academic_status = status;
 
-    if (class_id) {
+    // Filter by subject within a batch
+    if (class_id && subject) {
+      const subjectEnrollments = await prisma.studentSubjectEnrollment.findMany({
+        where: { class_id, subject, status: 'active' },
+        select: { student_id: true },
+      });
+      const studentIds = subjectEnrollments.map(e => e.student_id);
+      where.id = where.id ? { in: (where.id.in || []).filter((id: string) => studentIds.includes(id)) } : { in: studentIds };
+    } else if (class_id) {
       const enrollments = await prisma.studentClassEnrollment.findMany({
         where: { class_id, enrollment_status: 'active' },
         select: { student_id: true },
       });
       const studentIds = enrollments.map(e => e.student_id);
-      where.id = { in: studentIds };
+      where.id = where.id ? { in: (where.id.in || []).filter((id: string) => studentIds.includes(id)) } : { in: studentIds };
     }
 
     const total = await prisma.student.count({ where });
@@ -81,13 +89,16 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Re
     if (students.length > 0) {
       const studentIds = students.map(s => s.id);
 
-      const [feeAssignments, enrollments] = await Promise.all([
+      const [feeAssignments, enrollments, subjectEnrollments] = await Promise.all([
         prisma.studentFeeAssignment.findMany({
           where: { student_id: { in: studentIds } },
         }),
         prisma.studentClassEnrollment.findMany({
           where: { student_id: { in: studentIds }, enrollment_status: 'active' },
           include: { class: true },
+        }),
+        prisma.studentSubjectEnrollment.findMany({
+          where: { student_id: { in: studentIds }, status: 'active' },
         }),
       ]);
 
@@ -100,9 +111,16 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Re
         enrollmentMap[e.student_id].push(e);
       });
 
+      const subjectMap: Record<string, any[]> = {};
+      subjectEnrollments.forEach(se => {
+        if (!subjectMap[se.student_id]) subjectMap[se.student_id] = [];
+        subjectMap[se.student_id].push(se);
+      });
+
       enrichedStudents = students.map(s => {
         const feeAssignment = feeMap[s.id];
         const studentEnrollments = enrollmentMap[s.id] || [];
+        const studentSubjects = subjectMap[s.id] || [];
         return {
           ...s,
           id: s.id,
@@ -111,6 +129,9 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Re
           total_paid: feeAssignment?.total_paid || 0,
           classes: studentEnrollments.map((e: any) => ({
             id: e.class?.id, name: e.class?.class_name, code: e.class?.class_code,
+          })),
+          subjects: studentSubjects.map((se: any) => ({
+            subject: se.subject, class_id: se.class_id, status: se.status,
           })),
           attendance_percentage: studentEnrollments[0]?.overall_attendance_percentage || 0,
         };
@@ -183,10 +204,13 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
       return;
     }
 
-    const [enrollments, feeAssignment, payments, parentMapping, recentTests] = await Promise.all([
+    const [enrollments, subjectEnrollments, feeAssignment, payments, parentMapping, recentTests] = await Promise.all([
       prisma.studentClassEnrollment.findMany({
         where: { student_id: student.id },
-        include: { class: true },
+        include: { class: { include: { schedule: true } } },
+      }),
+      prisma.studentSubjectEnrollment.findMany({
+        where: { student_id: student.id, status: 'active' },
       }),
       prisma.studentFeeAssignment.findFirst({ where: { student_id: student.id } }),
       prisma.feePayment.findMany({ where: { student_id: student.id } }),
@@ -211,6 +235,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
           ...e.class,
           enrollment: { ...e, class_id: e.class_id },
         })),
+        subject_enrollments: subjectEnrollments,
         fee: feeAssignment,
         payments,
         parent: parentMapping?.parent,
@@ -269,6 +294,21 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
         admission_type: admission_type || 'fresh',
       },
     });
+
+    // Enroll in subjects if subjects array provided
+    const { subjects } = req.body;
+    if (class_id && subjects && Array.isArray(subjects) && subjects.length > 0) {
+      await prisma.studentSubjectEnrollment.createMany({
+        data: subjects.map((subj: string) => ({
+          student_id: student.id,
+          class_id,
+          subject: subj,
+          enrollment_date: new Date().toISOString(),
+          status: 'active',
+        })),
+        skipDuplicates: true,
+      });
+    }
 
     if (parent_name && parent_phone) {
       const pLName = (last_name || '').toLowerCase();
@@ -351,7 +391,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
 router.post('/:id/enroll', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
-    const { class_id } = req.body;
+    const { class_id, subjects } = req.body;
     if (!class_id) {
       res.status(400).json({ success: false, message: 'Class ID is required' });
       return;
@@ -379,6 +419,20 @@ router.post('/:id/enroll', authenticateToken, authorize('admin', 'teacher'), asy
         enrollment_status: 'active',
       },
     });
+
+    // Enroll in specific subjects if provided
+    if (subjects && Array.isArray(subjects) && subjects.length > 0) {
+      await prisma.studentSubjectEnrollment.createMany({
+        data: subjects.map((subj: string) => ({
+          student_id: student.id,
+          class_id,
+          subject: subj,
+          enrollment_date: new Date().toISOString(),
+          status: 'active',
+        })),
+        skipDuplicates: true,
+      });
+    }
 
     await prisma.class.update({
       where: { id: class_id },
@@ -607,6 +661,53 @@ router.post('/delete-many', authenticateToken, authorize('admin'), async (req: R
   }
 });
 
+// PUT /api/students/:id/subjects - Update subject enrollments for a student
+router.put('/:id/subjects', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = paramId(req);
+    const { class_id, subjects } = req.body;
+
+    if (!class_id || !subjects || !Array.isArray(subjects)) {
+      res.status(400).json({ success: false, message: 'class_id and subjects array are required' });
+      return;
+    }
+
+    const student = await prisma.student.findUnique({ where: { id } });
+    if (!student) {
+      res.status(404).json({ success: false, message: 'Student not found' });
+      return;
+    }
+
+    // Remove all existing subject enrollments for this class
+    await prisma.studentSubjectEnrollment.deleteMany({
+      where: { student_id: student.id, class_id },
+    });
+
+    // Create new subject enrollments
+    if (subjects.length > 0) {
+      await prisma.studentSubjectEnrollment.createMany({
+        data: subjects.map((subj: string) => ({
+          student_id: student.id,
+          class_id,
+          subject: subj,
+          enrollment_date: new Date().toISOString(),
+          status: 'active',
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    const updatedEnrollments = await prisma.studentSubjectEnrollment.findMany({
+      where: { student_id: student.id, class_id, status: 'active' },
+    });
+
+    res.json({ success: true, data: updatedEnrollments, message: 'Subject enrollments updated' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
@@ -617,6 +718,7 @@ router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request
     }
 
     // Delete related records
+    await prisma.studentSubjectEnrollment.deleteMany({ where: { student_id: id } });
     await prisma.studentClassEnrollment.deleteMany({ where: { student_id: id } });
     await prisma.attendance.deleteMany({ where: { student_id: id } });
     await prisma.testResult.deleteMany({ where: { student_id: id } });
@@ -639,3 +741,4 @@ router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request
 });
 
 export default router;
+
