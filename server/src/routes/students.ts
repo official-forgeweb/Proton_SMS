@@ -230,6 +230,97 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
   }
 });
 
+// POST /api/students/bulk - Bulk import students
+router.post('/bulk', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { students } = req.body;
+    
+    if (!students || !Array.isArray(students)) {
+      res.status(400).json({ success: false, message: 'Students array is required' });
+      return;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    let created = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < students.length; i++) {
+      const student = students[i];
+      try {
+        const { first_name, last_name, date_of_birth, gender, email, phone, school_name, class_id, admission_type } = student;
+
+        if (!first_name || !phone) {
+          errors.push(`Row ${i + 1}: Missing required fields (first_name or phone)`);
+          continue;
+        }
+
+        const fName = (first_name || 'student').toLowerCase();
+        const lName = (last_name || '').toLowerCase();
+        const userEmail = email || `${fName}.${lName}.${Math.floor(Math.random() * 10000)}@proton.com`;
+
+        const existingEmail = await prisma.user.findUnique({ where: { email: userEmail } });
+        if (existingEmail) {
+          errors.push(`Row ${i + 1}: Email already exists - ${userEmail}`);
+          continue;
+        }
+
+        const user = await prisma.user.create({
+          data: {
+            email: userEmail,
+            password_hash: await bcrypt.hash(`Proton@${Math.floor(1000 + Math.random() * 9000)}`, salt),
+            role: 'student',
+          },
+        });
+
+        const proId = generateProId();
+        const newStudent = await prisma.student.create({
+          data: {
+            user_id: user.id,
+            PRO_ID: proId,
+            first_name,
+            last_name,
+            date_of_birth: date_of_birth || null,
+            gender: gender || 'male',
+            email,
+            phone,
+            school_name,
+            enrollment_date: new Date().toISOString(),
+            enrollment_number: `ENR${proId}`,
+            admission_type: admission_type || 'fresh',
+          },
+        });
+
+        if (class_id) {
+          await prisma.studentClassEnrollment.create({
+            data: {
+              student_id: newStudent.id,
+              class_id,
+              enrollment_date: new Date().toISOString(),
+            },
+          });
+          await prisma.class.update({
+            where: { id: class_id },
+            data: { current_students_count: { increment: 1 } },
+          });
+        }
+
+        created++;
+      } catch (err: any) {
+        errors.push(`Row ${i + 1}: ${err.message}`);
+      }
+    }
+
+    invalidateCache('/api/students');
+    res.status(201).json({
+      success: true,
+      data: { created, failed: students.length - created, errors },
+    });
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message || 'Server error' });
+  }
+});
+
 // POST /api/students
 router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {

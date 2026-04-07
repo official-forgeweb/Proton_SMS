@@ -22,6 +22,7 @@ import feeRoutes from './routes/fees';
 import dashboardRoutes from './routes/dashboard';
 import permissionsRoutes from './routes/permissions';
 import reportsRoutes from './routes/reports';
+import timetableRoutes from './routes/timetable';
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use('/api/fees', feeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/permissions', permissionsRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/timetable', timetableRoutes);
 
 // Health check
 app.get('/api/health', dbHealthCheck, (req, res) => {

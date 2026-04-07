@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
     LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
     Calendar, CreditCard, BarChart3, Settings, LogOut, Phone,
-    UserCheck, FileText, Bell, Menu, X, Target,
+    UserCheck, FileText, Bell, Menu, X, Target, Clock,
     Home, PenTool, Award, HelpCircle, MessageSquare, Zap, Shield
 } from 'lucide-react';
 import { useState } from 'react';
@@ -18,6 +18,7 @@ const adminNav = [
             { label: 'Students', href: '/admin/students', icon: GraduationCap },
             { label: 'Teachers', href: '/admin/teachers', icon: Users },
             { label: 'Classes', href: '/admin/classes', icon: BookOpen },
+            { label: 'Timetable', href: '/admin/timetable', icon: Calendar },
             { label: 'Enquiries', href: '/admin/enquiries', icon: Phone },
         ]
     },
@@ -73,6 +74,7 @@ const studentNavSections = [
         items: [
             { label: 'Dashboard', href: '/student', icon: LayoutDashboard },
             { label: 'Attendance', href: '/student/attendance', icon: Calendar },
+            { label: 'My Schedule', href: '/student/timetable', icon: Clock },
             { label: 'Performance', href: '/student/performance', icon: Award },
         ]
     },

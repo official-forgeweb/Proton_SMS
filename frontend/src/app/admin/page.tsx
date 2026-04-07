@@ -576,7 +576,7 @@ export default function AdminDashboard() {
                         display: 'flex', flexDirection: 'column',
                         gridColumn: 'span 4', animationDelay: '800ms'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ background: '#FFF0F1', padding: '10px', borderRadius: '12px', color: '#E53935' }}>
                                     <Zap size={22} strokeWidth={2.5} />
@@ -588,18 +588,15 @@ export default function AdminDashboard() {
                                     <p style={{ fontSize: '13px', color: '#8F92A1', marginTop: '2px', fontWeight: 500 }}>System activity logs</p>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => router.push('/admin/activity')}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', borderRadius: '10px' }}
-                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F0F0F5'}
-                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
-                            >
-                                <MoreHorizontal size={22} color="#8F92A1" />
-                            </button>
+                            {recentActivity.length > 4 && (
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#E53935', background: '#FFF0F1', padding: '6px 12px', borderRadius: '20px' }}>
+                                    +{recentActivity.length - 4} more
+                                </span>
+                            )}
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingLeft: '8px' }}>
-                            {recentActivity.length > 0 ? recentActivity.map((activity: any, i: number) => {
+                            {recentActivity.length > 0 ? recentActivity.slice(0, 4).map((activity: any, i: number) => {
                                 const getActivityConfig = (type: string) => {
                                     switch (type) {
                                         case 'enrollment': return { icon: GraduationCap, bg: '#FFF0F1', color: '#E53935', border: '#E53935' };
@@ -612,35 +609,34 @@ export default function AdminDashboard() {
                                 const Icon = config.icon;
                                 
                                 return (
-                                    <div key={i} className="activity-timeline-item" style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', position: 'relative', paddingBottom: '28px' }}>
-                                        {/* Timeline Line */}
+                                    <div key={i} className="activity-timeline-item" style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', position: 'relative', paddingBottom: '20px' }}>
                                         <div className="timeline-line" style={{
-                                            position: 'absolute', left: '22px', top: '44px', bottom: '-4px', width: '2px',
+                                            position: 'absolute', left: '19px', top: '40px', bottom: '-4px', width: '2px',
                                             background: '#F0F0F5', zIndex: 0
                                         }} />
 
                                         <div style={{
-                                            width: '46px', height: '46px', borderRadius: '50%',
+                                            width: '40px', height: '40px', borderRadius: '50%',
                                             background: '#FFFFFF', display: 'flex', alignItems: 'center',
                                             justifyContent: 'center', color: config.color, flexShrink: 0,
                                             boxShadow: `0 4px 12px ${config.color}20`,
                                             border: `2px solid ${config.bg}`, zIndex: 1
                                         }}>
-                                            <Icon size={20} strokeWidth={2.5} />
+                                            <Icon size={18} strokeWidth={2.5} />
                                         </div>
-                                        <div style={{ flex: 1, paddingTop: '2px', transition: 'transform 0.2s', cursor: 'pointer' }} 
+                                        <div style={{ flex: 1, paddingTop: '0px', transition: 'transform 0.2s', cursor: 'pointer' }} 
                                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'}
                                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'}
                                         >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                                <h4 style={{ fontWeight: 800, fontSize: '15px', color: '#1A1D3B', textTransform: 'capitalize', letterSpacing: '0.01em' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <h4 style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B', textTransform: 'capitalize', letterSpacing: '0.01em' }}>
                                                     {activity.type}
                                                 </h4>
-                                                <span style={{ fontSize: '12px', color: '#A1A5B7', fontWeight: 600, background: '#F8F9FD', padding: '4px 10px', borderRadius: '20px' }}>
+                                                <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 600, background: '#F8F9FD', padding: '3px 8px', borderRadius: '20px' }}>
                                                     {new Date(activity.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             </div>
-                                            <p style={{ fontSize: '13px', color: '#5E6278', lineHeight: 1.6, fontWeight: 500 }}>{activity.message}</p>
+                                            <p style={{ fontSize: '13px', color: '#5E6278', lineHeight: 1.5, fontWeight: 500 }}>{activity.message}</p>
                                         </div>
                                     </div>
                                 );
@@ -655,21 +651,20 @@ export default function AdminDashboard() {
                         <button 
                             onClick={() => router.push('/admin/activity')}
                             style={{
-                                width: '100%', padding: '16px', background: 'transparent', border: '1px dashed #D8D8E5',
-                                color: '#1A1D3B', borderRadius: '16px', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
-                                transition: 'all 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                width: '100%', padding: '14px 20px', 
+                                background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
+                                border: 'none', color: '#FFFFFF', borderRadius: '14px', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
+                                transition: 'all 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                boxShadow: '0 8px 20px -6px rgba(229,57,53,0.4)',
+                                marginTop: '8px'
                             }}
                             onMouseEnter={e => {
-                                (e.currentTarget as HTMLElement).style.background = '#1A1D3B';
-                                (e.currentTarget as HTMLElement).style.color = '#FFFFFF';
-                                (e.currentTarget as HTMLElement).style.borderStyle = 'solid';
-                                (e.currentTarget as HTMLElement).style.borderColor = '#1A1D3B';
+                                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                                (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 28px -6px rgba(229,57,53,0.5)';
                             }}
                             onMouseLeave={e => {
-                                (e.currentTarget as HTMLElement).style.background = 'transparent';
-                                (e.currentTarget as HTMLElement).style.color = '#1A1D3B';
-                                (e.currentTarget as HTMLElement).style.borderStyle = 'dashed';
-                                (e.currentTarget as HTMLElement).style.borderColor = '#D8D8E5';
+                                (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px -6px rgba(229,57,53,0.4)';
                             }}
                         >
                             Explore All Activities <ChevronRight size={18} />

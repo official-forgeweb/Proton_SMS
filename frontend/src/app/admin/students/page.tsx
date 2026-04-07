@@ -5,7 +5,7 @@ import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import {
     Search, Plus, Trash2, Edit2, ChevronLeft, ChevronRight,
-    GraduationCap, Users, Filter, BookOpen, ChevronDown, X, Eye, TrendingUp, Download
+    GraduationCap, Users, Filter, BookOpen, ChevronDown, X, Eye, TrendingUp, Download, Upload
 } from 'lucide-react';
 
 const INLINE_STYLES = (
@@ -276,6 +276,28 @@ export default function StudentsPage() {
                         </p>
                     </div>
                     <div style={{ display: 'flex', gap: '12px' }}>
+                        <button
+                            onClick={() => router.push('/admin/students/import')}
+                            style={{
+                                background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0',
+                                borderRadius: '14px', padding: '12px 20px', fontSize: '15px',
+                                fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
+                                cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                            }}
+                            onMouseEnter={e => {
+                                (e.currentTarget.style.transform = 'translateY(-2px)');
+                                (e.currentTarget.style.borderColor = '#E53935');
+                                (e.currentTarget.style.color = '#E53935');
+                            }}
+                            onMouseLeave={e => {
+                                (e.currentTarget.style.transform = 'translateY(0)');
+                                (e.currentTarget.style.borderColor = '#E2E8F0');
+                                (e.currentTarget.style.color = '#1A1D3B');
+                            }}
+                        >
+                            <Upload size={18} strokeWidth={2.5} color="#5E6278" /> Import
+                        </button>
                         <button
                             onClick={exportToExcel}
                             style={{

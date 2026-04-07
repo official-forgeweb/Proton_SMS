@@ -162,6 +162,7 @@ model Teacher {
   user              User              @relation(fields: [user_id], references: [id])
   primary_classes   Class[]           @relation("PrimaryTeacher")
   class_schedules   ClassSchedule[]
+  timetable_entries Timetable[]       @relation("TimetableTeacher")
   demo_classes      DemoClass[]
   tests_created     Test[]
   homework_created  Homework[]
@@ -202,6 +203,7 @@ model Class {
   // Relations
   primary_teacher      Teacher?                @relation("PrimaryTeacher", fields: [primary_teacher_id], references: [id])
   schedule             ClassSchedule[]
+  timetable_entries    Timetable[]
   student_enrollments  StudentClassEnrollment[]
   subject_enrollments  StudentSubjectEnrollment[]
   attendance_records   Attendance[]
@@ -213,6 +215,34 @@ model Class {
   @@index([status])
   @@index([primary_teacher_id])
   @@map("classes")
+}
+
+// ──────────────────────────────────────────────
+// Timetable (Date-specific class sessions)
+// ──────────────────────────────────────────────
+
+model Timetable {
+  id          String   @id @default(uuid())
+  class_id    String
+  subject     String
+  teacher_id  String?
+  date        String                // e.g. "2026-04-08"
+  start_time  String                // e.g. "17:00"
+  end_time    String?               // e.g. "18:00"
+  room        String?
+  notes       String?
+  status      String   @default("scheduled")  // scheduled | completed | cancelled
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  teacher     Teacher? @relation("TimetableTeacher", fields: [teacher_id], references: [id])
+
+  @@index([class_id, date])
+  @@index([teacher_id, date])
+  @@index([date])
+  @@map("timetable")
 }
 
 model ClassSchedule {
