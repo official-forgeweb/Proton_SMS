@@ -145,14 +145,29 @@ export default function StudentProfilePage() {
                 .animate-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
                 .animate-scale { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
                 .stat-card {
-                    background: white; border-radius: 16px; padding: 20px; border: 1px solid #F1F2F6;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    background: white; border-radius: 20px; padding: 18px; border: 1px solid #F1F4F9;
+                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                     position: relative; overflow: hidden;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
                 }
-                .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.06); }
-                .stat-card::before {
-                    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-                    border-radius: 3px 3px 0 0;
+                .stat-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(0,0,0,0.06); }
+                .stat-card-icon {
+                    width: 44px; height: 44px; border-radius: 14px;
+                    display: flex; alignItems: center; justifyContent: center;
+                    transition: all 0.3s;
+                }
+                .stat-card:hover .stat-card-icon { transform: scale(1.1) rotate(5deg); }
+                .progress-bar-glow {
+                    height: 8px; border-radius: 8px; background: #F1F2F6; overflow: hidden; position: relative;
+                }
+                .progress-bar-fill {
+                    height: 100%; border-radius: 8px; transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+                    position: relative;
+                }
+                .progress-bar-fill::after {
+                    content: ''; position: absolute; inset: 0;
+                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                    animation: shimmer 2s infinite linear;
                 }
                 .tab-btn {
                     padding: 10px 20px; border: none; border-radius: 12px; font-size: 14px;
@@ -254,87 +269,101 @@ export default function StudentProfilePage() {
 
             {/* Quick Stats  */}
             <div className="animate-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px', animationDelay: '100ms' }}>
-                <div className="stat-card" style={{ borderTop: '3px solid #E53935' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                            <p style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Attendance</p>
-                            <h3 style={{ fontSize: '28px', fontWeight: 800, color: getScoreColor(attPct), margin: 0, lineHeight: 1 }}>{attPct}%</h3>
-                        </div>
-                        <div style={{ padding: '10px', background: '#FFEBEE', borderRadius: '12px', color: '#E53935' }}>
-                            <Activity size={20} />
-                        </div>
+                {/* Attendance Card */}
+                <div className="stat-card" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <div className="stat-card-icon" style={{ background: '#FFF0F1', color: '#E53935', width: '44px', height: '44px', flexShrink: 0 }}>
+                        <Activity size={22} strokeWidth={2.5} />
                     </div>
-                    <div className="progress-bar" style={{ marginTop: '14px' }}>
-                        <div className="progress-fill" style={{ width: `${attPct}%`, background: `linear-gradient(90deg, ${getScoreColor(attPct)}, ${getScoreColor(attPct)}cc)` }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Attendance</span>
+                            <span style={{ fontSize: '9px', fontWeight: 800, color: attPct >= 75 ? '#10B981' : '#F43F5E', background: attPct >= 75 ? '#ECFDF5' : '#FFF1F2', padding: '2px 6px', borderRadius: '4px' }}>
+                                {attPct >= 75 ? 'GOOD' : 'LOW'}
+                            </span>
+                        </div>
+                        <h3 style={{ fontSize: '24px', fontWeight: 850, color: '#1A1D3B', margin: 0 }}>{attPct}%</h3>
+                        <div className="progress-bar-glow" style={{ height: '4px', margin: '8px 0' }}>
+                            <div className="progress-bar-fill" style={{ width: `${attPct}%`, background: '#E53935' }} />
+                        </div>
+                        <p style={{ fontSize: '11px', color: '#5E6278', fontWeight: 600, margin: 0 }}>
+                            <span style={{ color: '#E53935', fontWeight: 800 }}>{attendance?.summary?.present || 0}</span> / {attendance?.summary?.total || 0} Sessions
+                        </p>
                     </div>
-                    <p style={{ fontSize: '11px', color: '#A1A5B7', marginTop: '8px', fontWeight: 600 }}>{attendance?.summary?.present || 0} present / {attendance?.summary?.total || 0} days</p>
                 </div>
 
-                <div className="stat-card" style={{ borderTop: '3px solid #7C3AED' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                            <p style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Avg Score</p>
-                            <h3 style={{ fontSize: '28px', fontWeight: 800, color: getScoreColor(avgScore), margin: 0, lineHeight: 1 }}>{avgScore}%</h3>
-                        </div>
-                        <div style={{ padding: '10px', background: '#EDE7F6', borderRadius: '12px', color: '#7C3AED' }}>
-                            <Target size={20} />
-                        </div>
+                {/* Avg Score Card */}
+                <div className="stat-card" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <div className="stat-card-icon" style={{ background: '#F5F3FF', color: '#7C3AED', width: '44px', height: '44px', flexShrink: 0 }}>
+                        <Target size={22} strokeWidth={2.5} />
                     </div>
-                    <div className="progress-bar" style={{ marginTop: '14px' }}>
-                        <div className="progress-fill" style={{ width: `${avgScore}%`, background: 'linear-gradient(90deg, #7C3AED, #9F67FF)' }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Avg Score</span>
+                            <span style={{ fontSize: '9px', fontWeight: 800, color: '#7C3AED', background: '#F5F3FF', padding: '2px 6px', borderRadius: '4px' }}>STABLE</span>
+                        </div>
+                        <h3 style={{ fontSize: '24px', fontWeight: 850, color: '#1A1D3B', margin: 0 }}>{avgScore}%</h3>
+                        <div className="progress-bar-glow" style={{ height: '4px', margin: '8px 0' }}>
+                            <div className="progress-bar-fill" style={{ width: `${avgScore}%`, background: '#7C3AED' }} />
+                        </div>
+                        <p style={{ fontSize: '11px', color: '#5E6278', fontWeight: 600, margin: 0 }}>
+                            {passedTests} Pass • {failedTests} Fail
+                        </p>
                     </div>
-                    <p style={{ fontSize: '11px', color: '#A1A5B7', marginTop: '8px', fontWeight: 600 }}>{passedTests} passed, {failedTests} failed of {totalTests} tests</p>
                 </div>
 
-                <div className="stat-card" style={{ borderTop: '3px solid #059669' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                            <p style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Fee Status</p>
-                            <h3 style={{
-                                fontSize: '18px', fontWeight: 800, margin: 0, lineHeight: 1,
-                                color: feeInfo?.assignment?.payment_status === 'paid' ? '#059669' : feeInfo?.assignment?.payment_status === 'partial' ? '#D97706' : '#DC2626'
-                            }}>
-                                {(feeInfo?.assignment?.payment_status || 'NOT SET').toUpperCase()}
-                            </h3>
-                        </div>
-                        <div style={{ padding: '10px', background: '#ECFDF5', borderRadius: '12px', color: '#059669' }}>
-                            <DollarSign size={20} />
-                        </div>
+                {/* Fee Status Card */}
+                <div className="stat-card" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <div className="stat-card-icon" style={{ 
+                        background: feeInfo?.assignment?.payment_status === 'paid' ? '#ECFDF5' : feeInfo?.assignment?.payment_status === 'partial' ? '#FFFBEB' : '#FFF1F2', 
+                        color: feeInfo?.assignment?.payment_status === 'paid' ? '#10B981' : feeInfo?.assignment?.payment_status === 'partial' ? '#F59E0B' : '#EF4444',
+                        width: '44px', height: '44px', flexShrink: 0 
+                    }}>
+                        <DollarSign size={22} strokeWidth={2.5} />
                     </div>
-                    {feeInfo?.assignment && (
-                        <div style={{ marginTop: '14px', display: 'flex', gap: '16px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Fee Status</span>
+                            <span style={{ 
+                                fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px',
+                                background: feeInfo?.assignment?.payment_status === 'paid' ? '#ECFDF5' : feeInfo?.assignment?.payment_status === 'partial' ? '#FFFBEB' : '#FFF1F2', 
+                                color: feeInfo?.assignment?.payment_status === 'paid' ? '#10B981' : feeInfo?.assignment?.payment_status === 'partial' ? '#F59E0B' : '#EF4444'
+                            }}>{(feeInfo?.assignment?.payment_status || 'N/A').toUpperCase()}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', marginTop: '2px' }}>
                             <div>
-                                <p style={{ fontSize: '10px', color: '#A1A5B7', fontWeight: 700 }}>PAID</p>
-                                <p style={{ fontSize: '14px', fontWeight: 800, color: '#059669' }}>₹{(feeInfo.assignment.total_paid || 0).toLocaleString()}</p>
+                                <p style={{ fontSize: '8px', fontWeight: 800, color: '#A1A5B7', margin: 0 }}>PAID</p>
+                                <p style={{ fontSize: '15px', fontWeight: 850, color: '#10B981', margin: 0 }}>₹{feeInfo?.assignment?.total_paid?.toLocaleString() || '0'}</p>
                             </div>
+                            <div style={{ borderLeft: '1.5px solid #F1F4F9', paddingLeft: '8px', height: '18px' }} />
                             <div>
-                                <p style={{ fontSize: '10px', color: '#A1A5B7', fontWeight: 700 }}>PENDING</p>
-                                <p style={{ fontSize: '14px', fontWeight: 800, color: '#DC2626' }}>₹{(feeInfo.assignment.total_pending || 0).toLocaleString()}</p>
+                                <p style={{ fontSize: '8px', fontWeight: 800, color: '#A1A5B7', margin: 0 }}>DUE</p>
+                                <p style={{ fontSize: '15px', fontWeight: 850, color: '#EF4444', margin: 0 }}>₹{feeInfo?.assignment?.total_pending || '0'}</p>
                             </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className="stat-card" style={{ borderTop: '3px solid #0EA5E9' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                            <p style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Enrolled</p>
-                            <h3 style={{ fontSize: '28px', fontWeight: 800, color: '#0EA5E9', margin: 0, lineHeight: 1 }}>{student.classes?.length || 0}</h3>
-                        </div>
-                        <div style={{ padding: '10px', background: '#E0F2FE', borderRadius: '12px', color: '#0EA5E9' }}>
-                            <BookOpen size={20} />
                         </div>
                     </div>
-                    <p style={{ fontSize: '12px', color: '#8F92A1', marginTop: '10px', fontWeight: 600 }}>
-                        {(student.subject_enrollments || []).length} subject{(student.subject_enrollments || []).length !== 1 ? 's' : ''} enrolled
-                    </p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
-                        {(student.subject_enrollments || []).slice(0, 5).map((se: any, i: number) => (
-                            <span key={i} style={{
-                                padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700,
-                                background: '#E0F2FE', color: '#0369A1'
-                            }}>{se.subject}</span>
-                        ))}
+                </div>
+
+                {/* Enrolled Card */}
+                <div className="stat-card" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <div className="stat-card-icon" style={{ background: '#F0F9FF', color: '#0EA5E9', width: '44px', height: '44px', flexShrink: 0 }}>
+                        <BookOpen size={22} strokeWidth={2.5} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Enrolled</span>
+                            <span style={{ fontSize: '9px', fontWeight: 800, color: '#0EA5E9', background: '#F0F9FF', padding: '2px 6px', borderRadius: '4px' }}>ACTIVE</span>
+                        </div>
+                        <h3 style={{ fontSize: '24px', fontWeight: 850, color: '#1A1D3B', margin: 0, lineHeight: 1 }}>
+                            {student.classes?.length || 0} <span style={{ fontSize: '13px', color: '#A1A5B7', fontWeight: 600 }}>Batches</span>
+                        </h3>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                            {(student.subject_enrollments || []).slice(0, 2).map((se: any, i: number) => (
+                                <span key={i} style={{
+                                    padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700,
+                                    background: '#F1F5F9', color: '#475569'
+                                }}>{se.subject}</span>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
