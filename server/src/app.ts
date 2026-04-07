@@ -7,6 +7,8 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { env } from './config/env';
+import { errorHandler } from './middleware/errorHandler';
+import { dbHealthCheck } from './middleware/dbHealth';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -63,7 +65,7 @@ app.use('/api/permissions', permissionsRoutes);
 app.use('/api/reports', reportsRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', dbHealthCheck, (req, res) => {
   res.json({
     success: true,
     message: 'Proton LMS API is running',
@@ -78,12 +80,6 @@ app.use((req, res) => {
 });
 
 // Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Server error:', err);
-  res.status(500).json({
-    success: false,
-    message: env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
-  });
-});
+app.use(errorHandler);
 
 export default app;

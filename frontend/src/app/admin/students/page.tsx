@@ -5,8 +5,94 @@ import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import {
     Search, Plus, Trash2, Edit2, ChevronLeft, ChevronRight,
-    GraduationCap, Users, Filter, BookOpen, ChevronDown, X, Eye, TrendingUp
+    GraduationCap, Users, Filter, BookOpen, ChevronDown, X, Eye, TrendingUp, Download
 } from 'lucide-react';
+
+const INLINE_STYLES = (
+    <style dangerouslySetInnerHTML={{__html: `
+                @keyframes fadeInUp {
+                    from { opacity: 0; transform: translateY(30px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes shimmer {
+                    0% { background-position: -200% 0; }
+                    100% { background-position: 200% 0; }
+                }
+                .animate-fade-in {
+                    animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    opacity: 0;
+                }
+                .glass-panel {
+                    background: rgba(255, 255, 255, 0.92);
+                    backdrop-filter: blur(20px);
+                }
+                .table-row-hover {
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .table-row-hover:hover {
+                    background: linear-gradient(135deg, #FAFBFF 0%, #F5F7FF 100%);
+                    transform: scale(1.002);
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+                }
+                .table-row-hover:hover td:first-child {
+                    border-top-left-radius: 12px;
+                    border-bottom-left-radius: 12px;
+                }
+                .table-row-hover:hover td:last-child {
+                    border-top-right-radius: 12px;
+                    border-bottom-right-radius: 12px;
+                }
+                .bg-mesh {
+                    background-color: #f7f8fc;
+                    background-image: radial-gradient(at 40% 20%, hsla(28,100%,74%,0.12) 0px, transparent 50%),
+                                      radial-gradient(at 80% 0%, hsla(189,100%,56%,0.12) 0px, transparent 50%),
+                                      radial-gradient(at 0% 50%, hsla(355,100%,93%,0.12) 0px, transparent 50%);
+                }
+                .filter-select {
+                    padding: 10px 36px 10px 14px;
+                    border: 1px solid #E2E8F0;
+                    border-radius: 12px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #1A1D3B;
+                    background: #FFFFFF;
+                    cursor: pointer;
+                    outline: none;
+                    appearance: none;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238F92A1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+                    background-repeat: no-repeat;
+                    background-position: right 12px center;
+                    transition: all 0.2s;
+                    min-width: 140px;
+                }
+                .filter-select:focus {
+                    border-color: #E53935;
+                    box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.08);
+                }
+                .filter-select.active {
+                    border-color: #E53935;
+                    background-color: #FFF5F5;
+                    color: #E53935;
+                }
+                .subject-tag {
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 3px 8px;
+                    border-radius: 6px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 0.02em;
+                    margin-right: 4px;
+                    margin-bottom: 2px;
+                }
+                .skeleton-row {
+                    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+                    background-size: 200% 100%;
+                    animation: shimmer 1.5s infinite;
+                    border-radius: 8px;
+                }
+            `}} />
+);
 
 export default function StudentsPage() {
     const router = useRouter();
@@ -115,91 +201,59 @@ export default function StudentsPage() {
         setSearch('');
     };
 
+    const exportToExcel = async () => {
+        try {
+            const params: any = { limit: 1000000 };
+            if (search) params.search = search;
+            if (selectedBatch) params.class_id = selectedBatch;
+            if (selectedSubject) params.subject = selectedSubject;
+            if (selectedStatus) params.status = selectedStatus;
+            if (selectedFeeStatus) params.fee_status = selectedFeeStatus;
+            
+            const res = await api.get('/students', { params });
+            const allStudents = res.data.data || [];
+            
+            const headers = ['PRO_ID', 'First Name', 'Last Name', 'Class Name', 'Subjects', 'Phone', 'Email', 'Fee Status', 'Attendance %', 'Academic Status', 'Gender'];
+            
+            const csvRows = [headers.join(',')];
+            
+            allStudents.forEach((s: any) => {
+                const row = [
+                    s.PRO_ID || '',
+                    s.first_name || '',
+                    s.last_name || '',
+                    s.classes?.[0]?.name || 'None',
+                    (s.subjects?.map((sub: any) => sub.subject) || []).join('; '),
+                    s.phone || '',
+                    s.email || '',
+                    s.fee_status || 'pending',
+                    s.attendance_percentage || 0,
+                    s.academic_status || 'active',
+                    s.gender || ''
+                ];
+                csvRows.push(row.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','));
+            });
+            
+            const csvData = csvRows.join('\n');
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'Students_Export_' + new Date().toISOString().split('T')[0] + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error exporting data:', error);
+            alert('Failed to export data');
+        }
+    };
+
     return (
         <DashboardLayout requiredRole="admin">
-            <style dangerouslySetInnerHTML={{__html: `
-                @keyframes fadeInUp {
-                    from { opacity: 0; transform: translateY(30px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes shimmer {
-                    0% { background-position: -200% 0; }
-                    100% { background-position: 200% 0; }
-                }
-                .animate-fade-in {
-                    animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                    opacity: 0;
-                }
-                .glass-panel {
-                    background: rgba(255, 255, 255, 0.92);
-                    backdrop-filter: blur(20px);
-                }
-                .table-row-hover {
-                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                }
-                .table-row-hover:hover {
-                    background: linear-gradient(135deg, #FAFBFF 0%, #F5F7FF 100%);
-                    transform: scale(1.002);
-                    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
-                }
-                .table-row-hover:hover td:first-child {
-                    border-top-left-radius: 12px;
-                    border-bottom-left-radius: 12px;
-                }
-                .table-row-hover:hover td:last-child {
-                    border-top-right-radius: 12px;
-                    border-bottom-right-radius: 12px;
-                }
-                .bg-mesh {
-                    background-color: #f7f8fc;
-                    background-image: radial-gradient(at 40% 20%, hsla(28,100%,74%,0.12) 0px, transparent 50%),
-                                      radial-gradient(at 80% 0%, hsla(189,100%,56%,0.12) 0px, transparent 50%),
-                                      radial-gradient(at 0% 50%, hsla(355,100%,93%,0.12) 0px, transparent 50%);
-                }
-                .filter-select {
-                    padding: 10px 36px 10px 14px;
-                    border: 1px solid #E2E8F0;
-                    border-radius: 12px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #1A1D3B;
-                    background: #FFFFFF;
-                    cursor: pointer;
-                    outline: none;
-                    appearance: none;
-                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238F92A1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-                    background-repeat: no-repeat;
-                    background-position: right 12px center;
-                    transition: all 0.2s;
-                    min-width: 140px;
-                }
-                .filter-select:focus {
-                    border-color: #E53935;
-                    box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.08);
-                }
-                .filter-select.active {
-                    border-color: #E53935;
-                    background-color: #FFF5F5;
-                    color: #E53935;
-                }
-                .subject-tag {
-                    display: inline-flex;
-                    align-items: center;
-                    padding: 3px 8px;
-                    border-radius: 6px;
-                    font-size: 11px;
-                    font-weight: 700;
-                    letter-spacing: 0.02em;
-                    margin-right: 4px;
-                    margin-bottom: 2px;
-                }
-                .skeleton-row {
-                    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
-                    background-size: 200% 100%;
-                    animation: shimmer 1.5s infinite;
-                    border-radius: 8px;
-                }
-            `}} />
+            {INLINE_STYLES}
 
             <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: '100%', borderRadius: '24px' }}>
 
@@ -221,27 +275,49 @@ export default function StudentsPage() {
                             Home &rsaquo; <span style={{ color: '#E53935', fontWeight: 700 }}>Students</span>
                         </p>
                     </div>
-                    <button
-                        onClick={() => router.push('/admin/students/add')}
-                        style={{
-                            background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
-                            color: 'white', border: 'none',
-                            borderRadius: '14px', padding: '12px 24px', fontSize: '15px',
-                            fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
-                            cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(229,57,53,0.4)',
-                            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                        }}
-                        onMouseEnter={e => {
-                            (e.currentTarget.style.transform = 'translateY(-2px)');
-                            (e.currentTarget.style.boxShadow = '0 12px 28px -6px rgba(229,57,53,0.5)');
-                        }}
-                        onMouseLeave={e => {
-                            (e.currentTarget.style.transform = 'translateY(0)');
-                            (e.currentTarget.style.boxShadow = '0 8px 24px -6px rgba(229,57,53,0.4)');
-                        }}
-                    >
-                        <Plus size={20} strokeWidth={2.5} /> Add Student
-                    </button>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <button
+                            onClick={exportToExcel}
+                            style={{
+                                background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0',
+                                borderRadius: '14px', padding: '12px 20px', fontSize: '15px',
+                                fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
+                                cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                            }}
+                            onMouseEnter={e => {
+                                (e.currentTarget.style.transform = 'translateY(-2px)');
+                                (e.currentTarget.style.borderColor = '#A1A5B7');
+                            }}
+                            onMouseLeave={e => {
+                                (e.currentTarget.style.transform = 'translateY(0)');
+                                (e.currentTarget.style.borderColor = '#E2E8F0');
+                            }}
+                        >
+                            <Download size={20} strokeWidth={2.5} color="#5E6278" /> Export
+                        </button>
+                        <button
+                            onClick={() => router.push('/admin/students/add')}
+                            style={{
+                                background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
+                                color: 'white', border: 'none',
+                                borderRadius: '14px', padding: '12px 24px', fontSize: '15px',
+                                fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
+                                cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(229,57,53,0.4)',
+                                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                            }}
+                            onMouseEnter={e => {
+                                (e.currentTarget.style.transform = 'translateY(-2px)');
+                                (e.currentTarget.style.boxShadow = '0 12px 28px -6px rgba(229,57,53,0.5)');
+                            }}
+                            onMouseLeave={e => {
+                                (e.currentTarget.style.transform = 'translateY(0)');
+                                (e.currentTarget.style.boxShadow = '0 8px 24px -6px rgba(229,57,53,0.4)');
+                            }}
+                        >
+                            <Plus size={20} strokeWidth={2.5} /> Add Student
+                        </button>
+                    </div>
                 </div>
 
                 {/* Main Card */}

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { cacheMiddleware, invalidateCache } from '../middleware/cache';
 
 const router = Router();
 
@@ -14,7 +15,7 @@ const generateProId = (): string =>
 const paramId = (req: Request): string => String(req.params.id);
 
 // GET /api/students
-router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, authorize('admin', 'teacher'), cacheMiddleware(10), async (req: Request, res: Response): Promise<void> => {
   try {
     const { search, status, class_id, subject, fee_status, page = '1', limit = '50' } = req.query as Record<string, string>;
     const pageNum = parseInt(page);
@@ -23,7 +24,7 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Re
     let where: any = {};
 
     if (req.user!.role === 'teacher') {
-      const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
+      const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id }, select: { id: true } });
       if (teacher) {
         const myClasses = await prisma.class.findMany({
           where: { primary_teacher_id: teacher.id },
@@ -75,68 +76,50 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Re
       where.id = where.id ? { in: (where.id.in || []).filter((id: string) => studentIds.includes(id)) } : { in: studentIds };
     }
 
-    const total = await prisma.student.count({ where });
+    // Run count + data fetch in PARALLEL with included relations (reduces DB round-trips from 5 to 2)
     const skip = (pageNum - 1) * limitNum;
+    const [total, students] = await Promise.all([
+      prisma.student.count({ where }),
+      prisma.student.findMany({
+        where,
+        skip,
+        take: limitNum,
+        select: {
+          id: true, PRO_ID: true, first_name: true, last_name: true,
+          email: true, phone: true, gender: true, academic_status: true,
+          fee_assignments: {
+            take: 1,
+            select: { payment_status: true, final_fee: true, total_paid: true },
+          },
+          class_enrollments: {
+            where: { enrollment_status: 'active' },
+            select: {
+              overall_attendance_percentage: true,
+              class: { select: { id: true, class_name: true, class_code: true } },
+            },
+          },
+          subject_enrollments: {
+            where: { status: 'active' },
+            select: { subject: true, class_id: true, status: true },
+          },
+        },
+      }),
+    ]);
 
-    const students = await prisma.student.findMany({
-      where,
-      skip,
-      take: limitNum,
-    });
-
-    let enrichedStudents: any[] = students;
-
-    if (students.length > 0) {
-      const studentIds = students.map(s => s.id);
-
-      const [feeAssignments, enrollments, subjectEnrollments] = await Promise.all([
-        prisma.studentFeeAssignment.findMany({
-          where: { student_id: { in: studentIds } },
-        }),
-        prisma.studentClassEnrollment.findMany({
-          where: { student_id: { in: studentIds }, enrollment_status: 'active' },
-          include: { class: true },
-        }),
-        prisma.studentSubjectEnrollment.findMany({
-          where: { student_id: { in: studentIds }, status: 'active' },
-        }),
-      ]);
-
-      const feeMap: Record<string, any> = {};
-      feeAssignments.forEach(f => { feeMap[f.student_id] = f; });
-
-      const enrollmentMap: Record<string, any[]> = {};
-      enrollments.forEach(e => {
-        if (!enrollmentMap[e.student_id]) enrollmentMap[e.student_id] = [];
-        enrollmentMap[e.student_id].push(e);
-      });
-
-      const subjectMap: Record<string, any[]> = {};
-      subjectEnrollments.forEach(se => {
-        if (!subjectMap[se.student_id]) subjectMap[se.student_id] = [];
-        subjectMap[se.student_id].push(se);
-      });
-
-      enrichedStudents = students.map(s => {
-        const feeAssignment = feeMap[s.id];
-        const studentEnrollments = enrollmentMap[s.id] || [];
-        const studentSubjects = subjectMap[s.id] || [];
-        return {
-          ...s,
-          id: s.id,
-          fee_status: feeAssignment?.payment_status || 'pending',
-          total_fee: feeAssignment?.final_fee || 0,
-          total_paid: feeAssignment?.total_paid || 0,
-          classes: studentEnrollments.map((e: any) => ({
-            id: e.class?.id, name: e.class?.class_name, code: e.class?.class_code,
-          })),
-          subjects: studentSubjects.map((se: any) => ({
-            subject: se.subject, class_id: se.class_id, status: se.status,
-          })),
-          attendance_percentage: studentEnrollments[0]?.overall_attendance_percentage || 0,
-        };
-      });
-    }
+    let enrichedStudents: any[] = students.map(s => ({
+      id: s.id, PRO_ID: s.PRO_ID, first_name: s.first_name, last_name: s.last_name,
+      email: s.email, phone: s.phone, gender: s.gender, academic_status: s.academic_status,
+      fee_status: s.fee_assignments[0]?.payment_status || 'pending',
+      total_fee: s.fee_assignments[0]?.final_fee || 0,
+      total_paid: s.fee_assignments[0]?.total_paid || 0,
+      classes: s.class_enrollments.map((e: any) => ({
+        id: e.class?.id, name: e.class?.class_name, code: e.class?.class_code,
+      })),
+      subjects: s.subject_enrollments.map((se: any) => ({
+        subject: se.subject, class_id: se.class_id, status: se.status,
+      })),
+      attendance_percentage: s.class_enrollments[0]?.overall_attendance_percentage || 0,
+    }));
 
     if (fee_status) enrichedStudents = enrichedStudents.filter(s => s.fee_status === fee_status);
 
@@ -151,7 +134,7 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Re
 });
 
 // GET /api/students/stats
-router.get('/stats', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/stats', authenticateToken, authorize('admin', 'teacher'), cacheMiddleware(30), async (req: Request, res: Response): Promise<void> => {
   try {
     const [total, active, maleCount, femaleCount, feeAgg] = await Promise.all([
       prisma.student.count(),
@@ -351,6 +334,7 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
       });
     }
 
+    invalidateCache('/api/students');
     res.status(201).json({
       success: true,
       data: {
@@ -377,6 +361,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
       where: { id },
       data: req.body,
     });
+    invalidateCache('/api/students');
     res.json({ success: true, data: { ...student, id: student.id } });
   } catch (error: any) {
     if (error.code === 'P2025') {
@@ -655,6 +640,7 @@ router.post('/delete-many', authenticateToken, authorize('admin'), async (req: R
       return;
     }
     await prisma.student.deleteMany({ where: { id: { in: ids } } });
+    invalidateCache('/api/students');
     res.json({ success: true, message: 'Students deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -733,6 +719,7 @@ router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request
         await prisma.user.delete({ where: { id: student.user_id } });
     }
 
+    invalidateCache('/api/students');
     res.json({ success: true, message: 'Student and associated data deleted' });
   } catch (error) {
     console.error(error);

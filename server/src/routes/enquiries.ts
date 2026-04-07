@@ -16,7 +16,12 @@ router.get('/demos/all', authenticateToken, authorize('admin', 'teacher'), async
   try {
     const demos = await prisma.demoClass.findMany({
       orderBy: { demo_date: 'desc' },
-      include: { enquiry: true },
+      include: {
+        enquiry: {
+          select: { id: true, student_name: true, phone: true }
+        }
+      },
+      take: 100 // Memory boundary limit
     });
     const data = demos.map((d: any) => ({
       ...d,

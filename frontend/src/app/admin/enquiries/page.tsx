@@ -132,83 +132,139 @@ export default function EnquiriesPage() {
                     />
                 </div>
 
-                {/* Enquiry Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
+                {/* Enquiries Table */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {isLoading ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {[1, 2, 3, 4, 5, 6].map(i => (
-                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '60px', borderRadius: '12px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
                             ))}
                         </div>
-                    ) :  enquiries.length === 0 ? (
-                        <div style={{ gridColumn: '1 / -1', background: '#FFFFFF', borderRadius: '18px', padding: '60px', textAlign: 'center', border: '1px solid #F0F0F5', color: '#A1A5B7' }}>
-                            <Phone size={48} style={{ marginBottom: '16px', opacity: 0.4 }} />
+                    ) : enquiries.length === 0 ? (
+                        <div style={{ background: '#FFFFFF', borderRadius: '18px', padding: '60px', textAlign: 'center', border: '1px solid #F0F0F5', color: '#A1A5B7' }}>
+                            <Phone size={48} style={{ marginBottom: '16px', opacity: 0.4, margin: '0 auto' }} />
                             <h3 style={{ fontSize: '16px', color: '#5E6278', marginBottom: '8px', fontWeight: 700 }}>No Enquiries Found</h3>
                             <p style={{ fontSize: '13px' }}>Start by creating a new enquiry or adjust your filters.</p>
                         </div>
                     ) : (
-                        enquiries.map((enq, idx) => {
-                            const sc = statusConfig[enq.status] || statusConfig.new;
-                            const pc = priorityConfig[enq.priority] || priorityConfig.medium;
-                            return (
-                            <div
-                                    key={enq.id}
-                                    className="animate-fade-in"
-                                    style={{ cursor: 'pointer', animationDelay: `${idx * 50}ms`, padding: '20px', background: '#FFFFFF', borderRadius: '18px', border: '1px solid #F0F0F5', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', transition: 'transform 0.2s, box-shadow 0.2s' }}
-                                    onClick={() => router.push(`/admin/enquiries/${enq.id}`)}
-                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)'; }}
-                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)'; }}
-                                >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                                        <div>
-                                            <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#A1A5B7', fontWeight: 600, letterSpacing: '0.05em' }}>
-                                                {enq.enquiry_number}
-                                            </span>
-                                            <h3 style={{ fontSize: '15px', fontWeight: 700, marginTop: '4px', color: '#1A1D3B' }}>{enq.student_name}</h3>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: pc.color, display: 'inline-block' }} />
-                                            <span style={{ padding: '3px 10px', borderRadius: '50px', background: sc.bg, color: sc.color, fontSize: '11px', fontWeight: 700 }}>
-                                                {sc.label}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: '#5E6278' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <Phone size={13} color="#A1A5B7" /> {enq.phone}
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <Target size={13} color="#A1A5B7" /> {enq.interested_course}
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <Calendar size={13} color="#A1A5B7" /> {new Date(enq.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                                        <button style={{ flex: 1, padding: '7px 4px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }} onClick={(e) => updateStatus(enq.id, 'contacted', e)}>
-                                            Interested
-                                        </button>
-                                        <button style={{ flex: 1, padding: '7px 4px', background: '#F4F5F9', color: '#5E6278', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }} onClick={(e) => updateStatus(enq.id, 'new', e)}>
-                                            Pending
-                                        </button>
-                                        <button style={{ flex: 1, padding: '7px 4px', background: '#FEE2E2', color: '#EF4444', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }} onClick={(e) => updateStatus(enq.id, 'not_interested', e)}>
-                                            Not Interested
-                                        </button>
-                                    </div>
-
-                                    {enq.assigned_teacher_name && (
-                                        <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #F0F0F5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: '12px', color: '#A1A5B7' }}>
-                                                Assigned: <strong style={{ color: '#5E6278' }}>{enq.assigned_teacher_name}</strong>
-                                            </span>
-                                            <ChevronRight size={14} color="#A1A5B7" />
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })
+                        <div style={{ overflowX: 'auto', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', padding: '4px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 3px', minWidth: '900px' }}>
+                                <thead>
+                                    <tr>
+                                        {['Enquiry', 'Contact', 'Course & Date', 'Status & Priority', 'Assigned', 'Actions'].map((h, i) => (
+                                            <th key={i} style={{
+                                                padding: '14px 16px', textAlign: 'left',
+                                                color: '#A1A5B7', fontWeight: 700, fontSize: '11px',
+                                                textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap',
+                                            }}>
+                                                {h}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {enquiries.map((enq, idx) => {
+                                        const sc = statusConfig[enq.status] || statusConfig.new;
+                                        const pc = priorityConfig[enq.priority] || priorityConfig.medium;
+                                        return (
+                                            <tr 
+                                                key={enq.id} 
+                                                className="table-row-hover animate-fade-in" 
+                                                style={{ cursor: 'pointer', animationDelay: `${(idx % 10) * 50}ms` }}
+                                                onClick={() => router.push(`/admin/enquiries/${enq.id}`)}
+                                            >
+                                                <td style={{ padding: '12px 16px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                        <span style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B' }}>{enq.student_name}</span>
+                                                        <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#8F92A1', fontWeight: 600 }}>{enq.enquiry_number}</span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '12px 16px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '13px', color: '#5E6278', fontWeight: 500 }}>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Phone size={12} color="#A1A5B7" /> {enq.phone}</span>
+                                                        {enq.parent_name && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><User size={12} color="#A1A5B7" /> {enq.parent_name}</span>}
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '12px 16px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1D3B' }}>{enq.interested_course || 'Unknown'}</span>
+                                                        <span style={{ fontSize: '12px', color: '#A1A5B7', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <Calendar size={12} />
+                                                            {new Date(enq.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '12px 16px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
+                                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: pc.color, display: 'inline-block' }} title={`Priority: ${enq.priority}`} />
+                                                            <span style={{ padding: '4px 10px', borderRadius: '50px', background: sc.bg, color: sc.color, fontSize: '11px', fontWeight: 700 }}>
+                                                                {sc.label}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '12px 16px' }}>
+                                                    {enq.assigned_teacher_name ? (
+                                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#5E6278', background: '#F8F9FD', padding: '4px 10px', borderRadius: '6px' }}>
+                                                            {enq.assigned_teacher_name}
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ fontSize: '12px', color: '#A1A5B7', fontStyle: 'italic' }}>Unassigned</span>
+                                                    )}
+                                                </td>
+                                                <td style={{ padding: '12px 16px' }}>
+                                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                        <button 
+                                                            onClick={(e) => updateStatus(enq.id, 'contacted', e)}
+                                                            title="Mark as Contacted"
+                                                            style={{
+                                                                background: '#E8F5E9', border: 'none', cursor: 'pointer',
+                                                                color: '#2E7D32', width: '32px', height: '32px', borderRadius: '8px',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseEnter={e => { e.currentTarget.style.background = '#2E7D32'; e.currentTarget.style.color = 'white'; }}
+                                                            onMouseLeave={e => { e.currentTarget.style.background = '#E8F5E9'; e.currentTarget.style.color = '#2E7D32'; }}
+                                                        >
+                                                            <CheckCircle size={15} strokeWidth={2.5} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => updateStatus(enq.id, 'not_interested', e)}
+                                                            title="Mark as Not Interested"
+                                                            style={{
+                                                                background: '#FEE2E2', border: 'none', cursor: 'pointer',
+                                                                color: '#EF4444', width: '32px', height: '32px', borderRadius: '8px',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseEnter={e => { e.currentTarget.style.background = '#EF4444'; e.currentTarget.style.color = 'white'; }}
+                                                            onMouseLeave={e => { e.currentTarget.style.background = '#FEE2E2'; e.currentTarget.style.color = '#EF4444'; }}
+                                                        >
+                                                            <X size={15} strokeWidth={2.5} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); router.push(`/admin/enquiries/${enq.id}`); }}
+                                                            title="View Details"
+                                                            style={{
+                                                                background: '#F0F4FF', border: 'none', cursor: 'pointer',
+                                                                color: '#3B82F6', width: '32px', height: '32px', borderRadius: '8px',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseEnter={e => { e.currentTarget.style.background = '#3B82F6'; e.currentTarget.style.color = 'white'; }}
+                                                            onMouseLeave={e => { e.currentTarget.style.background = '#F0F4FF'; e.currentTarget.style.color = '#3B82F6'; }}
+                                                        >
+                                                            <ArrowRight size={15} strokeWidth={2.5} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
             </div>

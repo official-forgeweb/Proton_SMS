@@ -90,6 +90,7 @@ model Student {
   fee_payments            FeePayment[]
 
   @@index([academic_status])
+  @@index([phone])
   @@map("students")
 }
 
@@ -303,6 +304,7 @@ model Enquiry {
 
   @@index([status])
   @@index([assigned_to])
+  @@index([phone])
   @@map("enquiries")
 }
 
@@ -346,6 +348,7 @@ model DemoClass {
   @@index([enquiry_id])
   @@index([teacher_id])
   @@index([status])
+  @@index([class_id])
   @@map("demo_classes")
 }
 

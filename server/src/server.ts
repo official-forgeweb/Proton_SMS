@@ -15,7 +15,7 @@ const startServer = async (): Promise<void> => {
     console.error('⚠️  Seed data failed (server will still start):', err instanceof Error ? err.message : err);
   }
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`\n🚀 Proton LMS Server running on port ${PORT}`);
     console.log(`📡 API: http://localhost:${PORT}/api`);
     console.log(`🔍 Health: http://localhost:${PORT}/api/health`);
@@ -25,6 +25,23 @@ const startServer = async (): Promise<void> => {
     console.log(`   Student: rahul.sharma@email.com / Student@123`);
     console.log(`   Parent: parent.sharma@email.com / Parent@123\n`);
   });
+
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`\n${signal} signal received: closing HTTP server`);
+    try {
+      await import('./config/database').then((mod) => mod.disconnectDB());
+      console.log('✅ Database connections closed.');
+    } catch (err) {
+      console.error('❌ Error during database disconnect:', err);
+    }
+    server.close(() => {
+      console.log('HTTP server closed');
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 };
 
 startServer();
