@@ -21,9 +21,15 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
     if (req.user!.role === 'student') {
         const student = await prisma.student.findUnique({
             where: { user_id: req.user!.id },
-            include: {
-                class_enrollments: { where: { enrollment_status: 'active' } },
-                subject_enrollments: { where: { status: 'active' } }
+            select: {
+                class_enrollments: { 
+                    where: { enrollment_status: 'active' },
+                    select: { class_id: true }
+                },
+                subject_enrollments: { 
+                    where: { status: 'active' },
+                    select: { subject: true }
+                }
             }
         });
 
@@ -35,8 +41,18 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         const classIds = student.class_enrollments.map(e => e.class_id);
         const enrolledSubjects = student.subject_enrollments.map(e => e.subject);
 
+        console.log(`[Timetable] Student Fetch: UserID=${req.user!.id}, Classes=${classIds.length}, Subjects=${enrolledSubjects.length}`);
+        console.log(`[Timetable] Detail: Classes=[${classIds.join(', ')}], Subjects=[${enrolledSubjects.join(', ')}]`);
+
+        // If student is in classes, show those classes
         where.class_id = { in: classIds };
-        where.subject = { in: enrolledSubjects };
+        
+        // If they have specific subject enrollments, restrict to those subjects.
+        if (enrolledSubjects.length > 0) {
+            where.subject = { in: enrolledSubjects };
+        }
+        
+        console.log(`[Timetable] Query Filter:`, JSON.stringify(where));
     } else if (req.user!.role === 'teacher') {
         const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
         if (teacher) {
@@ -96,7 +112,7 @@ router.post('/', authenticateToken, authorize('admin'), async (req: Request, res
 // PUT /api/timetable/:id (Admin only)
 router.put('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const entry = await prisma.timetable.update({
       where: { id },
       data: req.body
@@ -115,7 +131,7 @@ router.put('/:id', authenticateToken, authorize('admin'), async (req: Request, r
 // DELETE /api/timetable/:id (Admin only)
 router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await prisma.timetable.delete({ where: { id } });
     res.json({ success: true, message: 'Entry deleted' });
   } catch (error: any) {

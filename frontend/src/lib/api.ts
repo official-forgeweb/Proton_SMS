@@ -4,7 +4,7 @@ const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api',
     headers: { 'Content-Type': 'application/json' },
     withCredentials: true,
-    timeout: 15000, // 15s timeout to avoid hanging requests
+    timeout: 30000, // 30s timeout to allow for potential DB Cold Starts (Neon)
 });
 
 // Request interceptor - attach token
