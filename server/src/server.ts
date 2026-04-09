@@ -6,14 +6,22 @@ import { env } from './config/env';
 const PORT = env.PORT;
 
 const startServer = async (): Promise<void> => {
-  await connectDB();
+  // Execute DB connection and seeding in the background
+  // so the HTTP server can start immediately, even if internet drops
+  const dbInit = async () => {
+    try {
+      await connectDB();
+      try {
+        await seedData();
+      } catch (err) {
+        console.error('⚠️  Seed data failed (server will still start):', err instanceof Error ? err.message : err);
+      }
+    } catch (err) {
+      console.error('⚠️ Database init failed in background:', err instanceof Error ? err.message : err);
+    }
+  };
 
-  // Seed in a try-catch so server starts even if seeding fails (e.g. DB is temporarily down)
-  try {
-    await seedData();
-  } catch (err) {
-    console.error('⚠️  Seed data failed (server will still start):', err instanceof Error ? err.message : err);
-  }
+  dbInit();
 
   const server = app.listen(PORT, () => {
     console.log(`\n🚀 Proton LMS Server running on port ${PORT}`);

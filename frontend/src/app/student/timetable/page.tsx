@@ -5,14 +5,19 @@ import api from '@/lib/api';
 import { Calendar, Clock, MapPin, User, ChevronRight, AlertCircle } from 'lucide-react';
 
 export default function StudentTimetablePage() {
-    const [timetable, setTimetable] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [rawTimetable, setRawTimetable] = useState<any[]>([]);
+    const [filters, setFilters] = useState({
+        subject: '',
+        class_name: '',
+        timeFilter: 'all'
+    });
 
     const fetchTimetable = async () => {
         try {
             setIsLoading(true);
             const res = await api.get('/timetable');
-            setTimetable(res.data.data);
+            setRawTimetable(res.data.data);
         } catch (error) {
             console.error(error);
         } finally {
@@ -23,6 +28,41 @@ export default function StudentTimetablePage() {
     useEffect(() => {
         fetchTimetable();
     }, []);
+
+    const subjects = Array.from(new Set(rawTimetable.map(t => t.subject))).filter(Boolean) as string[];
+    const classNames = Array.from(new Set(rawTimetable.map(t => t.class_ref?.class_name))).filter(Boolean) as string[];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const startOfWeek = new Date(today);
+    const dayOfWeek = startOfWeek.getDay();
+    const diffToMonday = startOfWeek.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    startOfWeek.setDate(diffToMonday);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(endOfWeek.getDate() + 6);
+
+    const timetable = rawTimetable.filter(item => {
+        if (filters.subject && item.subject !== filters.subject) return false;
+        if (filters.class_name && item.class_ref?.class_name !== filters.class_name) return false;
+
+        if (filters.timeFilter !== 'all') {
+            const [year, month, day] = item.date.split('-').map(Number);
+            const itemDate = new Date(year, month - 1, day);
+            if (filters.timeFilter === 'today') {
+                if (itemDate.getTime() !== today.getTime()) return false;
+            } else if (filters.timeFilter === 'yesterday') {
+                if (itemDate.getTime() !== yesterday.getTime()) return false;
+            } else if (filters.timeFilter === 'this_week') {
+                if (itemDate < startOfWeek || itemDate > endOfWeek) return false;
+            }
+        }
+        return true;
+    });
 
     // Helper to group by date
     const groupedTimetable = timetable.reduce((acc: any, curr: any) => {
@@ -44,6 +84,46 @@ export default function StudentTimetablePage() {
             </div>
 
             <div className="page-body">
+                {/* Filters */}
+                <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '20px', marginBottom: '32px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', alignItems: 'flex-end' }}>
+                        <div>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Subject</label>
+                            <select 
+                                value={filters.subject}
+                                onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
+                                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
+                            >
+                                <option value="">All Subjects</option>
+                                {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Class</label>
+                            <select 
+                                value={filters.class_name}
+                                onChange={(e) => setFilters({ ...filters, class_name: e.target.value })}
+                                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
+                            >
+                                <option value="">All Classes</option>
+                                {classNames.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Time Period</label>
+                            <select 
+                                value={filters.timeFilter}
+                                onChange={(e) => setFilters({ ...filters, timeFilter: e.target.value })}
+                                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
+                            >
+                                <option value="all">All Time</option>
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="this_week">This Week</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
                 {isLoading ? (
                     <div style={{ display: 'grid', gap: '16px' }}>
                         {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '100px', borderRadius: '16px' }} />)}

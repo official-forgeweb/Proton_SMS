@@ -233,9 +233,9 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 {/* Top Header */}
                 <header style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '16px 32px', background: 'rgba(247, 248, 252, 0.65)', backdropFilter: 'blur(12px)',
+                    padding: '16px 32px', background: '#FFFFFF',
                     position: 'sticky', top: 0, zIndex: 30,
-                    borderBottom: '1px solid rgba(228, 230, 239, 0.4)',
+                    borderBottom: '1px solid #EEEEF5',
                 }}>
                     {/* Search Bar */}
                     <div style={{
@@ -257,23 +257,14 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                     {/* Right Side Actions */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         {/* Notification bell */}
-                        <button style={{
+                        <button className="header-action-btn" style={{
                             background: '#FFFFFF', border: '1px solid #EEEEF5', cursor: 'pointer',
                             position: 'relative', width: '40px', height: '40px', borderRadius: '50%',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                             transition: 'all 0.2s',
-                        }}
-                            onMouseEnter={e => {
-                                (e.currentTarget as HTMLElement).style.borderColor = '#E53935';
-                                (e.currentTarget as HTMLElement).style.background = '#FFF5F5';
-                            }}
-                            onMouseLeave={e => {
-                                (e.currentTarget as HTMLElement).style.borderColor = '#EEEEF5';
-                                (e.currentTarget as HTMLElement).style.background = '#FFFFFF';
-                            }}
-                        >
-                            <Bell size={18} color="#5E6278" />
+                        }}>
+                            <Bell size={18} className="icon-default" />
                             <span style={{
                                 position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px',
                                 background: '#EF4444', borderRadius: '50%', border: '2px solid white',
@@ -281,23 +272,14 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                         </button>
 
                         {/* Message */}
-                        <button style={{
+                        <button className="header-action-btn" style={{
                             background: '#FFFFFF', border: '1px solid #EEEEF5', cursor: 'pointer',
                             width: '40px', height: '40px', borderRadius: '50%',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                             transition: 'all 0.2s',
-                        }}
-                            onMouseEnter={e => {
-                                (e.currentTarget as HTMLElement).style.borderColor = '#E53935';
-                                (e.currentTarget as HTMLElement).style.background = '#FFF5F5';
-                            }}
-                            onMouseLeave={e => {
-                                (e.currentTarget as HTMLElement).style.borderColor = '#EEEEF5';
-                                (e.currentTarget as HTMLElement).style.background = '#FFFFFF';
-                            }}
-                        >
-                            <MessageSquare size={18} color="#5E6278" />
+                        }}>
+                            <MessageSquare size={18} className="icon-default" />
                         </button>
 
                         {/* Divider */}

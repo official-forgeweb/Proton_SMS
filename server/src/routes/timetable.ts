@@ -28,7 +28,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
                 },
                 subject_enrollments: { 
                     where: { status: 'active' },
-                    select: { subject: true }
+                    select: { class_id: true, subject: true }
                 }
             }
         });
@@ -39,20 +39,29 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         }
 
         const classIds = student.class_enrollments.map(e => e.class_id);
-        const enrolledSubjects = student.subject_enrollments.map(e => e.subject);
+        const subjectEnrolls = student.subject_enrollments;
 
-        console.log(`[Timetable] Student Fetch: UserID=${req.user!.id}, Classes=${classIds.length}, Subjects=${enrolledSubjects.length}`);
-        console.log(`[Timetable] Detail: Classes=[${classIds.join(', ')}], Subjects=[${enrolledSubjects.join(', ')}]`);
+        const subjectsByClass: Record<string, string[]> = {};
+        subjectEnrolls.forEach(e => {
+            if (!subjectsByClass[e.class_id]) subjectsByClass[e.class_id] = [];
+            subjectsByClass[e.class_id].push(e.subject);
+        });
 
-        // If student is in classes, show those classes
-        where.class_id = { in: classIds };
-        
-        // If they have specific subject enrollments, restrict to those subjects.
-        if (enrolledSubjects.length > 0) {
-            where.subject = { in: enrolledSubjects };
+        const orConditions = classIds.map(cid => {
+            const subjects = subjectsByClass[cid];
+            if (subjects && subjects.length > 0) {
+                return { class_id: cid, subject: { in: subjects } };
+            }
+            return { class_id: cid };
+        });
+
+        if (where.OR) {
+            // Unlikely to have OR here already, but just in case
+            where.AND = [ { OR: where.OR }, { OR: orConditions } ];
+            delete where.OR;
+        } else {
+            where.OR = orConditions;
         }
-        
-        console.log(`[Timetable] Query Filter:`, JSON.stringify(where));
     } else if (req.user!.role === 'teacher') {
         const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
         if (teacher) {
@@ -80,6 +89,79 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/timetable/generate (Admin only)
+router.post('/generate', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { start_date, end_date, class_id } = req.body;
+    
+    if (!start_date || !end_date) {
+        res.status(400).json({ success: false, message: 'start_date and end_date are required' });
+        return;
+    }
+
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+    
+    if (startDate > endDate) {
+        res.status(400).json({ success: false, message: 'Start date must be before or equal to end date' });
+        return;
+    }
+
+    let classWhere: any = { status: 'ongoing' };
+    if (class_id) classWhere.id = class_id;
+
+    const classes = await prisma.class.findMany({
+        where: classWhere,
+        include: { schedule: true }
+    });
+
+    const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    let createdCount = 0;
+
+    for (const c of classes) {
+        if (!c.schedule || c.schedule.length === 0) continue;
+
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const dayOfWeek = daysMap[d.getDay()];
+            const dateStr = d.toISOString().split('T')[0];
+
+            for (const sched of c.schedule) {
+                if (sched.days && sched.days.includes(dayOfWeek)) {
+                    // Check if entry already exists to avoid duplicates
+                    const existing = await prisma.timetable.findFirst({
+                        where: {
+                            class_id: c.id,
+                            subject: sched.subject || '',
+                            date: dateStr,
+                        }
+                    });
+
+                    if (!existing) {
+                        await prisma.timetable.create({
+                            data: {
+                                class_id: c.id,
+                                subject: sched.subject || '',
+                                teacher_id: sched.teacher_id,
+                                date: dateStr,
+                                start_time: sched.time_start || '09:00',
+                                end_time: sched.time_end || '10:00',
+                                status: 'scheduled'
+                            }
+                        });
+                        createdCount++;
+                    }
+                }
+            }
+        }
+    }
+
+    res.json({ success: true, message: `Successfully generated ${createdCount} schedule entries.`, count: createdCount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error generating timetable' });
   }
 });
 

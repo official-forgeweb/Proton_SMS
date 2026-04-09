@@ -221,49 +221,6 @@ export default function AdminDashboard() {
 
     return (
         <DashboardLayout requiredRole="admin">
-            <style dangerouslySetInnerHTML={{__html: `
-                @keyframes fadeInUp {
-                    from { opacity: 0; transform: translateY(30px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .animate-fade-in {
-                    animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                    opacity: 0;
-                }
-                .glass-panel {
-                    background: rgba(255, 255, 255, 0.85);
-                    
-                    }
-                .card-hover:hover {
-                    transform: translateY(-6px) scale(1.01);
-                }
-                .activity-timeline-item:last-child .timeline-line {
-                    display: none;
-                }
-                .table-row-hover {
-                    transition: all 0.2s ease;
-                }
-                .table-row-hover:hover {
-                    background: #F8F9FD;
-                    transform: scale(1.005);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-                }
-                .table-row-hover:hover td:first-child {
-                    border-top-left-radius: 12px;
-                    border-bottom-left-radius: 12px;
-                }
-                .table-row-hover:hover td:last-child {
-                    border-top-right-radius: 12px;
-                    border-bottom-right-radius: 12px;
-                }
-                .bg-mesh {
-                    background-color: #f7f8fc;
-                    background-image: radial-gradient(at 40% 20%, hsla(28,100%,74%,0.15) 0px, transparent 50%),
-                                      radial-gradient(at 80% 0%, hsla(189,100%,56%,0.15) 0px, transparent 50%),
-                                      radial-gradient(at 0% 50%, hsla(355,100%,93%,0.15) 0px, transparent 50%);
-                }
-            `}} />
-
             <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: '100%', borderRadius: '24px' }}>
                 
                 {/* Header Section */}
@@ -407,9 +364,7 @@ export default function AdminDashboard() {
                             </div>
                             <button 
                                 onClick={() => router.push('/admin/students')}
-                                style={{ background: '#F8F9FD', border: 'none', cursor: 'pointer', padding: '8px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
-                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F0F0F5'}
-                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#F8F9FD'}
+                                className="dashboard-action-btn"
                             >
                                 <ChevronRight size={20} color="#1A1D3B" />
                             </button>
@@ -488,13 +443,7 @@ export default function AdminDashboard() {
                             </div>
                             <button 
                                 onClick={() => router.push('/admin/students')}
-                                style={{
-                                    background: '#F8F9FD', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-                                    borderRadius: '12px', padding: '10px 16px', fontSize: '13px', color: '#1A1D3B', fontWeight: 700, transition: 'all 0.2s',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-                                }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#1A1D3B'; (e.currentTarget as HTMLElement).style.color = '#FFFFFF'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F8F9FD'; (e.currentTarget as HTMLElement).style.color = '#1A1D3B'; }}
+                                className="dashboard-view-all-btn"
                             >
                                 View All <ChevronRight size={16} />
                             </button>
@@ -624,10 +573,7 @@ export default function AdminDashboard() {
                                         }}>
                                             <Icon size={18} strokeWidth={2.5} />
                                         </div>
-                                        <div style={{ flex: 1, paddingTop: '0px', transition: 'transform 0.2s', cursor: 'pointer' }} 
-                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'}
-                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'}
-                                        >
+                                        <div style={{ flex: 1, paddingTop: '0px', cursor: 'pointer' }} className="activity-item-content">
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                                                 <h4 style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B', textTransform: 'capitalize', letterSpacing: '0.01em' }}>
                                                     {activity.type}
@@ -650,22 +596,8 @@ export default function AdminDashboard() {
 
                         <button 
                             onClick={() => router.push('/admin/activity')}
-                            style={{
-                                width: '100%', padding: '14px 20px', 
-                                background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
-                                border: 'none', color: '#FFFFFF', borderRadius: '14px', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
-                                transition: 'all 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                boxShadow: '0 8px 20px -6px rgba(229,57,53,0.4)',
-                                marginTop: '8px'
-                            }}
-                            onMouseEnter={e => {
-                                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                                (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 28px -6px rgba(229,57,53,0.5)';
-                            }}
-                            onMouseLeave={e => {
-                                (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px -6px rgba(229,57,53,0.4)';
-                            }}
+                            className="btn-primary"
+                            style={{ width: '100%', padding: '14px', marginTop: '8px' }}
                         >
                             Explore All Activities <ChevronRight size={18} />
                         </button>

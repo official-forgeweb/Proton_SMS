@@ -2,6 +2,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { 
     Calendar, Plus, Clock, Trash2, Edit2, AlertTriangle, 
     CheckCircle, X, MapPin, User, ChevronRight, Filter
@@ -13,7 +15,15 @@ export default function AdminTimetablePage() {
     const [teachers, setTeachers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [showGenerateModal, setShowGenerateModal] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
     const [editingEntry, setEditingEntry] = useState<any>(null);
+
+    const [generateData, setGenerateData] = useState({
+        class_id: '',
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    });
     const [formData, setFormData] = useState({
         class_id: '',
         subject: '',
@@ -83,6 +93,21 @@ export default function AdminTimetablePage() {
         }
     };
 
+    const handleGenerate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsGenerating(true);
+        try {
+            const res = await api.post('/timetable/generate', generateData);
+            alert(res.data.message);
+            setShowGenerateModal(false);
+            fetchTimetable();
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Failed to generate timetable');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this schedule?')) return;
         try {
@@ -130,13 +155,22 @@ export default function AdminTimetablePage() {
                         <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>Timetable Management</h1>
                         <p style={{ color: '#5E6278', fontSize: '15px', marginTop: '6px', fontWeight: 500 }}>Schedule date-specific classes and assignments.</p>
                     </div>
-                    <button 
-                        onClick={() => openModal()}
-                        className="btn-primary hover-lift"
-                        style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
-                    >
-                        <Plus size={20} strokeWidth={2.5} /> Schedule Class
-                    </button>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <button 
+                            onClick={() => setShowGenerateModal(true)}
+                            className="btn-secondary hover-lift"
+                            style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#F8F9FD', color: '#1A1D3B', border: '1px solid #E2E8F0', padding: '10px 16px', borderRadius: '12px', fontWeight: 600 }}
+                        >
+                            <Calendar size={20} /> Auto-Generate Timetable
+                        </button>
+                        <button 
+                            onClick={() => openModal()}
+                            className="btn-primary hover-lift"
+                            style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                        >
+                            <Plus size={20} strokeWidth={2.5} /> Schedule Class
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -157,20 +191,20 @@ export default function AdminTimetablePage() {
                         </div>
                         <div>
                             <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Start Date</label>
-                            <input 
-                                type="date"
-                                value={filters.start_date}
-                                onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
-                                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
+                            <DatePicker 
+                                selected={filters.start_date ? new Date(filters.start_date) : null}
+                                onChange={(date: Date | null) => setFilters({ ...filters, start_date: date ? date.toISOString().split('T')[0] : '' })}
+                                dateFormat="MMMM d, yyyy"
+                                customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
                             />
                         </div>
                         <div>
                             <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>End Date</label>
-                            <input 
-                                type="date"
-                                value={filters.end_date}
-                                onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
-                                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
+                            <DatePicker 
+                                selected={filters.end_date ? new Date(filters.end_date) : null}
+                                onChange={(date: Date | null) => setFilters({ ...filters, end_date: date ? date.toISOString().split('T')[0] : '' })}
+                                dateFormat="MMMM d, yyyy"
+                                customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
                             />
                         </div>
                     </div>
@@ -250,7 +284,17 @@ export default function AdminTimetablePage() {
                                     <select 
                                         required
                                         value={formData.class_id}
-                                        onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
+                                        onChange={(e) => {
+                                            const classId = e.target.value;
+                                            setFormData({ 
+                                                ...formData, 
+                                                class_id: classId, 
+                                                subject: '', 
+                                                teacher_id: '',
+                                                start_time: '09:00',
+                                                end_time: '10:00'
+                                            });
+                                        }}
                                         style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
                                     >
                                         <option value="">Select a Class</option>
@@ -259,14 +303,46 @@ export default function AdminTimetablePage() {
                                 </div>
                                 <div style={{ gridColumn: 'span 2' }}>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Subject</label>
-                                    <input 
+                                    <select 
                                         required
-                                        type="text"
-                                        placeholder="e.g. Physics"
                                         value={formData.subject}
-                                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
-                                    />
+                                        onChange={(e) => {
+                                            const subject = e.target.value;
+                                            const selectedClass = classes.find(c => c.id === formData.class_id);
+                                            let newTeacherId = formData.teacher_id;
+                                            let newStartTime = formData.start_time;
+                                            let newEndTime = formData.end_time;
+
+                                            if (selectedClass && selectedClass.schedule) {
+                                                const sched = selectedClass.schedule.find((s: any) => s.subject === subject);
+                                                if (sched) {
+                                                    if (sched.teacher_id) newTeacherId = sched.teacher_id;
+                                                    if (sched.time_start) newStartTime = sched.time_start;
+                                                    if (sched.time_end) newEndTime = sched.time_end;
+                                                }
+                                            }
+
+                                            setFormData({ 
+                                                ...formData, 
+                                                subject,
+                                                teacher_id: newTeacherId,
+                                                start_time: newStartTime,
+                                                end_time: newEndTime
+                                            });
+                                        }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', background: !formData.class_id ? '#F8F9FD' : '#FFFFFF' }}
+                                        disabled={!formData.class_id}
+                                    >
+                                        <option value="">{formData.class_id ? "Select a Subject" : "Select a Class first"}</option>
+                                        {formData.class_id && classes.find(c => c.id === formData.class_id) && 
+                                            Array.from(new Set([
+                                                classes.find(c => c.id === formData.class_id)?.subject,
+                                                ...(classes.find(c => c.id === formData.class_id)?.schedule || []).map((s: any) => s.subject)
+                                            ].filter(Boolean))).map(subject => (
+                                                <option key={subject as string} value={subject as string}>{subject as string}</option>
+                                            ))
+                                        }
+                                    </select>
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Teacher</label>
@@ -281,31 +357,32 @@ export default function AdminTimetablePage() {
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Date</label>
-                                    <input 
+                                    <DatePicker
                                         required
-                                        type="date"
-                                        value={formData.date}
-                                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
+                                        selected={formData.date ? new Date(formData.date) : null}
+                                        onChange={(date: Date | null) => setFormData({ ...formData, date: date ? date.toISOString().split('T')[0] : '' })}
+                                        dateFormat="MMMM d, yyyy"
+                                        customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
+                                        showMonthDropdown scrollableYearDropdown dropdownMode="select"
                                     />
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Start Time</label>
-                                    <input 
+                                    <DatePicker
                                         required
-                                        type="time"
-                                        value={formData.start_time}
-                                        onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
+                                        selected={formData.start_time ? new Date(`2000-01-01T${formData.start_time}:00`) : null}
+                                        onChange={(date: Date | null) => { if (date) { setFormData({ ...formData, start_time: date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0') }); } }}
+                                        showTimeSelect showTimeSelectOnly timeIntervals={15} timeCaption="Start" dateFormat="h:mm aa"
+                                        customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
                                     />
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>End Time</label>
-                                    <input 
-                                        type="time"
-                                        value={formData.end_time}
-                                        onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
+                                    <DatePicker
+                                        selected={formData.end_time ? new Date(`2000-01-01T${formData.end_time}:00`) : null}
+                                        onChange={(date: Date | null) => { if (date) { setFormData({ ...formData, end_time: date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0') }); } }}
+                                        showTimeSelect showTimeSelectOnly timeIntervals={15} timeCaption="End" dateFormat="h:mm aa"
+                                        customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
                                     />
                                 </div>
                                 <div style={{ gridColumn: 'span 2' }}>
@@ -321,6 +398,64 @@ export default function AdminTimetablePage() {
                             </div>
                             <button className="btn-primary" style={{ width: '100%', padding: '14px', marginTop: '10px' }}>
                                 {editingEntry ? 'Update Schedule' : 'Create Schedule'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Auto-Generate Modal */}
+            {showGenerateModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+                    <div style={{ background: '#FFFFFF', width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '32px', position: 'relative' }}>
+                        <button onClick={() => setShowGenerateModal(false)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer' }}>
+                            <X size={24} color="#A1A5B7" />
+                        </button>
+                        <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1D3B', marginBottom: '8px' }}>
+                            Auto-Generate Schedule
+                        </h2>
+                        <p style={{ color: '#5E6278', fontSize: '14px', marginBottom: '24px' }}>
+                            Automatically create daily schedule entries based on your batches' weekly class configurations.
+                        </p>
+                        
+                        <form onSubmit={handleGenerate}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
+                                <div>
+                                    <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Target Class (Optional)</label>
+                                    <select 
+                                        value={generateData.class_id}
+                                        onChange={(e) => setGenerateData({ ...generateData, class_id: e.target.value })}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
+                                    >
+                                        <option value="">All Active Classes</option>
+                                        {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
+                                    </select>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Start Date</label>
+                                        <DatePicker
+                                            required
+                                            selected={generateData.start_date ? new Date(generateData.start_date) : null}
+                                            onChange={(date: Date | null) => setGenerateData({ ...generateData, start_date: date ? date.toISOString().split('T')[0] : '' })}
+                                            dateFormat="MMMM d, yyyy"
+                                            customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>End Date</label>
+                                        <DatePicker
+                                            required
+                                            selected={generateData.end_date ? new Date(generateData.end_date) : null}
+                                            onChange={(date: Date | null) => setGenerateData({ ...generateData, end_date: date ? date.toISOString().split('T')[0] : '' })}
+                                            dateFormat="MMMM d, yyyy"
+                                            customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <button disabled={isGenerating} className="btn-primary" style={{ width: '100%', padding: '14px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                                {isGenerating ? 'Generating...' : <><Calendar size={18} /> Generate Schedule</>}
                             </button>
                         </form>
                     </div>

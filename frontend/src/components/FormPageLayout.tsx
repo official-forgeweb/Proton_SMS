@@ -57,17 +57,14 @@ export default function FormPageLayout({
 
         .premium-mesh {
             position: absolute;
-            top: -50%; left: -50%; right: -50%; bottom: -50%;
+            top: -10%; left: -10%; right: -10%; bottom: -10%;
             z-index: 0;
             background: 
                 radial-gradient(circle at 10% 20%, hsla(355, 100%, 93%, 0.4) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, hsla(210, 100%, 90%, 0.4) 0%, transparent 40%),
-                radial-gradient(circle at 50% 50%, hsla(180, 100%, 95%, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 10%, hsla(280, 100%, 95%, 0.3) 0%, transparent 40%);
+                radial-gradient(circle at 90% 80%, hsla(210, 100%, 90%, 0.4) 0%, transparent 40%);
             background-size: 200% 200%;
-            animation: meshGradient 20s ease infinite;
-            filter: blur(80px);
-            opacity: 0.7;
+            animation: meshGradient 30s ease infinite;
+            opacity: 0.5;
         }
 
         .noise-overlay {
@@ -83,15 +80,14 @@ export default function FormPageLayout({
             position: relative;
             z-index: 10;
             width: 100%;
-            max-width: ${maxWidth};
-            background: rgba(255, 255, 255, 0.94);
+            background: rgba(255, 255, 255, 0.98);
             border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(226, 232, 240, 0.8);
             box-shadow: 
-                0 40px 120px -20px rgba(26, 29, 59, 0.12),
+                0 40px 120px -20px rgba(26, 29, 59, 0.08),
                 0 0 0 1px rgba(226, 232, 240, 0.4);
             padding: 60px;
-            animation: slideUpFade 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         .form-input {
@@ -103,14 +99,14 @@ export default function FormPageLayout({
             font-size: 15px;
             font-weight: 500;
             color: #1A1D3B;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             outline: none;
         }
 
         .form-input:focus {
-            border-color: ${accentColor};
+            border-color: var(--accentColor, #E53935);
             background: #FFFFFF;
-            box-shadow: 0 0 0 4px ${accentColor}18;
+            box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1);
             transform: translateY(-2px);
         }
 
@@ -126,7 +122,7 @@ export default function FormPageLayout({
         }
 
         .form-section {
-            background: rgba(248, 249, 253, 0.4);
+            background: #F8F9FD;
             border: 1px solid #F1F2F7;
             padding: 32px;
             border-radius: 24px;
@@ -134,7 +130,6 @@ export default function FormPageLayout({
             transition: all 0.3s ease;
         }
         .form-section:hover {
-            background: rgba(248, 249, 253, 0.8);
             border-color: #E2E8F0;
         }
 
@@ -150,7 +145,7 @@ export default function FormPageLayout({
 
         .btn-submit {
             padding: 16px 40px;
-            background: linear-gradient(135deg, ${accentColor} 0%, ${accentColor}CC 100%);
+            background: var(--accentColor, #E53935);
             color: white;
             border: none;
             border-radius: 18px;
@@ -158,12 +153,12 @@ export default function FormPageLayout({
             font-size: 16px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 30px -5px ${accentColor}40;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .btn-submit:hover:not(:disabled) {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 20px 40px -5px ${accentColor}60;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
         }
 
         .btn-cancel {
@@ -208,7 +203,7 @@ export default function FormPageLayout({
             border-radius: 16px; font-size: 15px; color: #1A1D3B; outline: none; transition: all 0.3s;
         }
         .react-datepicker__input-container input:focus {
-            border-color: ${accentColor}; background: #FFF; box-shadow: 0 0 0 4px ${accentColor}18;
+            border-color: var(--accentColor, #E53935); background: #FFF; box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1);
         }
     `;
 
@@ -216,11 +211,11 @@ export default function FormPageLayout({
         <DashboardLayout requiredRole={requiredRole}>
             <style dangerouslySetInnerHTML={{ __html: customStyles }} />
             
-            <div className="page-container">
+            <div className="page-container" style={{ '--accentColor': accentColor } as React.CSSProperties}>
                 <div className="premium-mesh" />
                 <div className="noise-overlay" />
 
-                <div className="form-central-card">
+                <div className="form-central-card" style={{ maxWidth }}>
                     {/* Back Button */}
                     <div style={{ position: 'absolute', top: '40px', left: '60px' }}>
                         <button
@@ -232,16 +227,6 @@ export default function FormPageLayout({
                                 padding: '10px 18px', borderRadius: '14px', transition: 'all 0.3s ease',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
                             }}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.color = accentColor;
-                                e.currentTarget.style.borderColor = accentColor;
-                                e.currentTarget.style.transform = 'translateX(-5px)';
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.color = '#5E6278';
-                                e.currentTarget.style.borderColor = '#E2E8F0';
-                                e.currentTarget.style.transform = 'translateX(0)';
-                            }}
                         >
                             <ArrowLeft size={16} strokeWidth={3} /> {backLabel.toUpperCase()}
                         </button>
@@ -251,11 +236,11 @@ export default function FormPageLayout({
                     <div style={{ textAlign: 'center', marginBottom: '56px', animation: 'headerIn 0.8s ease' }}>
                         {icon && (
                             <div style={{
-                                background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}E6 100%)`,
+                                background: accentColor,
                                 width: '72px', height: '72px', borderRadius: '24px',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: 'white', margin: '0 auto 28px',
-                                boxShadow: `0 20px 40px ${accentColor}30`,
+                                boxShadow: `0 10px 20px rgba(229,57,53,0.2)`,
                             }}>
                                 {icon}
                             </div>

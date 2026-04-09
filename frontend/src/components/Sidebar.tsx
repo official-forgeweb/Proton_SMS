@@ -231,30 +231,12 @@ export default function Sidebar() {
                                         <Link
                                             href={item.href || '#'}
                                             onClick={() => setIsOpen(false)}
+                                            className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
                                             style={{
                                                 display: 'flex', alignItems: 'center', gap: '12px',
                                                 padding: '12px 14px', borderRadius: '12px', textDecoration: 'none',
-                                                background: isActive ? 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)' : 'transparent',
-                                                color: isActive ? '#FFFFFF' : '#9CA3AF',
                                                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                fontWeight: isActive ? 600 : 500,
-                                                fontSize: '14px',
                                                 position: 'relative', zIndex: 1,
-                                                boxShadow: isActive ? '0 6px 16px rgba(229,57,53,0.25)' : 'none',
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (!isActive) {
-                                                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
-                                                    (e.currentTarget as HTMLElement).style.color = '#FFFFFF';
-                                                    (e.currentTarget as HTMLElement).style.transform = 'inherit';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!isActive) {
-                                                    (e.currentTarget as HTMLElement).style.background = 'transparent';
-                                                    (e.currentTarget as HTMLElement).style.color = '#9CA3AF';
-                                                    (e.currentTarget as HTMLElement).style.transform = 'none';
-                                                }
                                             }}
                                         >
                                             <Icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ opacity: isActive ? 1 : 0.8 }} />
@@ -274,22 +256,13 @@ export default function Sidebar() {
                 <div style={{ padding: '6px 24px 28px', position: 'relative', zIndex: 1 }}>
                     <button
                         onClick={logout}
+                        className="sidebar-signout-btn"
                         style={{
                             display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center',
                             background: 'rgba(255,255,255,0.05)', cursor: 'pointer', fontSize: '14px',
                             border: '1px solid rgba(255,255,255,0.1)', color: '#9CA3AF', fontWeight: 600, width: '100%',
                             padding: '12px 0', transition: 'all 0.2s',
                             borderRadius: '12px',
-                        }}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.background = 'rgba(229,57,53,0.15)';
-                            e.currentTarget.style.color = '#E53935';
-                            e.currentTarget.style.borderColor = 'rgba(229,57,53,0.3)';
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                            e.currentTarget.style.color = '#9CA3AF';
-                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
                         }}
                     >
                         <LogOut size={18} strokeWidth={2} />

@@ -26,21 +26,34 @@ const getCachedUser = async (userId: string) => {
   // Try up to 2 times with a small delay for transient DB errors
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, email: true, role: true, is_active: true },
-      });
+      // Small timeout for the query to fail fast if internet is bad (using race)
+      const user = await Promise.race([
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, email: true, role: true, is_active: true },
+        }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Prisma Query Timeout')), 15000))
+      ]);
+      
       if (user) {
         userCache.set(userId, { user, timestamp: Date.now() });
       }
       return user;
     } catch (err: any) {
       const code = err?.code;
-      if (TRANSIENT_PRISMA_CODES.has(code) && attempt < 1) {
+      const isTimeout = err?.message === 'Prisma Query Timeout';
+      
+      if ((TRANSIENT_PRISMA_CODES.has(code) || isTimeout) && attempt < 1) {
         // Wait 500ms and retry once
         await new Promise(r => setTimeout(r, 500));
         continue;
       }
+      
+      if (cached) {
+        console.warn(`⚠️ DB unreachable or slow, serving stale auth cache for user ${userId}`);
+        return cached.user; // Serve stale user on error to keep app snappy
+      }
+      
       throw err;
     }
   }

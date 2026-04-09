@@ -596,6 +596,110 @@ h6 {
   overflow-x: hidden;
 }
 
+.header-action-btn:hover {
+  background: #FFF5F5 !important;
+  border-color: #E53935 !important;
+}
+
+.header-action-btn .icon-default {
+  color: #5E6278;
+  transition: all 0.2s;
+}
+
+.header-action-btn:hover .icon-default {
+  color: #E53935;
+}
+
+.sidebar-signout-btn:hover {
+  background: rgba(229,57,53,0.15) !important;
+  color: #E53935 !important;
+  border-color: rgba(229,57,53,0.3) !important;
+}
+
+/* Dashboard Specific Optimizations */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255,255,255,0.8);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.04);
+}
+
+.card-hover {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-6px) scale(1.01);
+}
+
+.table-row-hover {
+  transition: all 0.2s ease;
+}
+
+.table-row-hover:hover {
+  background: #F8F9FD;
+  transform: scale(1.005);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.table-row-hover:hover td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.table-row-hover:hover td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.dashboard-action-btn {
+  background: #F8F9FD;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  borderRadius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.dashboard-action-btn:hover {
+  background: #F0F0F5;
+}
+
+.dashboard-view-all-btn {
+  background: #F8F9FD;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #1A1D3B;
+  font-weight: 700;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.dashboard-view-all-btn:hover {
+  background: #1A1D3B;
+  color: #FFFFFF;
+}
+
+.activity-item-content {
+  transition: transform 0.2s;
+}
+
+.activity-item-content:hover {
+  transform: translateY(-2px);
+}
+
+.activity-timeline-item:last-child .timeline-line {
+  display: none;
+}
+
 .page-header {
   padding: 24px 32px;
   background: var(--bg-secondary);

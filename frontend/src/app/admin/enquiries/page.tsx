@@ -141,8 +141,8 @@ export default function EnquiriesPage() {
                     border-bottom-right-radius: 12px;
                 }
                 .glass-panel {
-                    background: rgba(255, 255, 255, 0.92);
-                    backdrop-filter: blur(20px);
+                    background: #FFFFFF;
+                    border: 1px solid #E2E8F0;
                 }
                 .filter-pill {
                     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
