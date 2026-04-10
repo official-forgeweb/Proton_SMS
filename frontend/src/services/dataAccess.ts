@@ -216,7 +216,27 @@ export async function getTeacherDashboardData(userId: string): Promise<TeacherDa
     const today = new Date().toISOString().split('T')[0];
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()];
 
-    const todaysClasses = myClasses
+    const classIds = myClasses.map(c => c.id);
+
+    const [todayTimetable, todaysAttendance, studentCountsAgg, pendingEvaluations, myEnquiries, pendingDemos, assignedEnquiriesCount, pendingDemosCount] = await Promise.all([
+      prisma.timetable.findMany({
+          where: { teacher_id: teacher.id, date: today },
+          include: { class_ref: true }
+      }),
+      prisma.attendance.findMany({ where: { attendance_date: today, class_id: { in: classIds } } }),
+      prisma.studentClassEnrollment.groupBy({
+        by: ['class_id'],
+        where: { class_id: { in: classIds }, enrollment_status: 'active' },
+        _count: true,
+      }),
+      prisma.testResult.count(),
+      prisma.enquiry.findMany({ where: { assigned_to: userId }, take: 5 }),
+      prisma.demoClass.findMany({ where: { teacher_id: teacher.id, status: 'scheduled' }, take: 5 }),
+      prisma.enquiry.count({ where: { assigned_to: userId } }),
+      prisma.demoClass.count({ where: { teacher_id: teacher.id, status: 'scheduled' } }),
+    ]);
+
+    const todaysClassesBase = myClasses
       .filter(c => {
         const hasLegacyDay = c.class_days?.includes(dayOfWeek);
         const hasScheduleDay = c.schedule?.some((s: any) => s.teacher_id === teacher.id && s.days?.includes(dayOfWeek));
@@ -231,21 +251,27 @@ export async function getTeacherDashboardData(userId: string): Promise<TeacherDa
         };
       });
 
-    const classIds = myClasses.map(c => c.id);
-
-    const [todaysAttendance, studentCountsAgg, pendingEvaluations, myEnquiries, pendingDemos, assignedEnquiriesCount, pendingDemosCount] = await Promise.all([
-      prisma.attendance.findMany({ where: { attendance_date: today, class_id: { in: classIds } } }),
-      prisma.studentClassEnrollment.groupBy({
-        by: ['class_id'],
-        where: { class_id: { in: classIds }, enrollment_status: 'active' },
-        _count: true,
-      }),
-      prisma.testResult.count(),
-      prisma.enquiry.findMany({ where: { assigned_to: userId }, take: 5 }),
-      prisma.demoClass.findMany({ where: { teacher_id: teacher.id, status: 'scheduled' }, take: 5 }),
-      prisma.enquiry.count({ where: { assigned_to: userId } }),
-      prisma.demoClass.count({ where: { teacher_id: teacher.id, status: 'scheduled' } }),
-    ]);
+    // Merge date-specific timetable entries (override or add)
+    const todaysClasses = [...todaysClassesBase];
+    todayTimetable.forEach(t => {
+        const existingIdx = todaysClasses.findIndex(c => c.id === t.class_id);
+        if (existingIdx !== -1) {
+            todaysClasses[existingIdx] = {
+                ...todaysClasses[existingIdx],
+                class_time_start: t.start_time,
+                class_time_end: t.end_time,
+                room_number: t.room || todaysClasses[existingIdx].room_number
+            };
+        } else if (t.class_ref) {
+            // If it's a date-specific class not in the regular schedule
+            todaysClasses.push({
+                ...t.class_ref,
+                class_time_start: t.start_time,
+                class_time_end: t.end_time,
+                room_number: t.room
+            });
+        }
+    });
 
     const studentCountMap: Record<string, number> = {};
     studentCountsAgg.forEach(r => { studentCountMap[r.class_id] = r._count; });
