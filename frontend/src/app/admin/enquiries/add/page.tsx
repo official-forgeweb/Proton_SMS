@@ -18,8 +18,7 @@ export default function AddEnquiryPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const payload = { ...formData };
-            delete payload.note; // We will handle note via remarks API
+            const { note, ...payload } = formData;
             
             const res = await api.post('/enquiries', payload);
             

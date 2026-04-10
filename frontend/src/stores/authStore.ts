@@ -49,6 +49,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             localStorage.setItem('accessToken', accessToken);
             localStorage.setItem('user', JSON.stringify(user));
 
+            // Set cookie for Server Components to read (httpOnly: false so JS can manage it)
+            document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
+
             set({ user, isAuthenticated: true, isLoading: false, serverError: false });
         } catch (error: any) {
             throw new Error(error.response?.data?.message || 'Login failed');
@@ -58,6 +61,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     logout: () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
+        // Clear the access_token cookie
+        document.cookie = 'access_token=; path=/; max-age=0; SameSite=Lax';
         set({ user: null, isAuthenticated: false, isLoading: false, serverError: false });
         window.location.href = '/login';
     },

@@ -1,25 +1,30 @@
-'use client';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
-import api from '@/lib/api';
 import { BookOpen, Users, Clock, Calendar, MapPin } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { requireRole } from '@/lib/sharedAuth';
+import { getClassDetailData } from '@/services/dataAccess';
+import { redirect } from 'next/navigation';
 
-export default function ClassProfilePage() {
-    const params = useParams();
-    const router = useRouter();
-    const [cls, setCls] = useState<any>(null);
-    const [isLoading, setIsLoading] = useState(true);
+export const dynamic = 'force-dynamic';
 
-    useEffect(() => {
-        if (params.id) {
-            api.get(`/classes/${params.id}`).then(res => setCls(res.data.data)).catch(console.error).finally(() => setIsLoading(false));
-        }
-    }, [params.id]);
+export default async function ClassProfilePage({ params }: { params: { id: string } }) {
+    const session = await requireRole('admin');
+    if (!session) redirect('/login');
 
-    if (isLoading) return <DashboardLayout requiredRole="admin"><div style={{ padding: '40px', textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div></DashboardLayout>;
+    const data = await getClassDetailData(params.id);
 
-    if (!cls) return <DashboardLayout requiredRole="admin"><div className="empty-state"><h3>Class not found</h3><button className="btn btn-primary" onClick={() => router.push('/admin/classes')}>Back</button></div></DashboardLayout>;
+    if (!data || !data.class) {
+         return (
+             <DashboardLayout requiredRole="admin">
+                 <div className="empty-state">
+                     <h3>Class not found</h3>
+                     <Link href="/admin/classes" className="btn btn-primary">Back</Link>
+                 </div>
+             </DashboardLayout>
+         );
+    }
+
+    const { class: cls, students, subject_counts } = data;
 
     return (
         <DashboardLayout requiredRole="admin">
@@ -31,7 +36,7 @@ export default function ClassProfilePage() {
                         {cls.subject} • {cls.grade_level} • Batch: {cls.batch_type}
                     </p>
                 </div>
-                <button className="btn btn-secondary" onClick={() => router.push('/admin/classes')}>Back</button>
+                <Link href="/admin/classes" className="btn btn-secondary" style={{ textDecoration: 'none' }}>Back</Link>
             </div>
 
             <div className="page-body">
@@ -57,8 +62,12 @@ export default function ClassProfilePage() {
                             {cls.schedule && cls.schedule.length > 0 ? cls.schedule.map((session: any, i: number) => (
                                 <div key={i} style={{ padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '8px', borderLeft: '3px solid var(--primary)' }}>
                                     <p style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>{session.subject}</p>
-                                    <p style={{ fontSize: '13px', display: 'flex', gap: '8px', marginBottom: '4px' }}><Users size={14} /> <strong>Teacher:</strong> {session.teacher_id?.first_name} {session.teacher_id?.last_name || 'Unassigned'}</p>
-                                    <p style={{ fontSize: '13px', display: 'flex', gap: '8px' }}><Clock size={14} /> <strong>Time:</strong> {session.time_start} - {session.time_end}</p>
+                                    <p style={{ fontSize: '13px', display: 'flex', gap: '8px', marginBottom: '4px' }}>
+                                        <Users size={14} /> <strong>Teacher:</strong> {session.teacher?.first_name ? `${session.teacher.first_name} ${session.teacher.last_name}` : 'Unassigned'}
+                                    </p>
+                                    <p style={{ fontSize: '13px', display: 'flex', gap: '8px' }}>
+                                        <Clock size={14} /> <strong>Time:</strong> {session.time_start} - {session.time_end}
+                                    </p>
                                 </div>
                             )) : (
                                 <div style={{ padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
@@ -75,23 +84,34 @@ export default function ClassProfilePage() {
                                 <Users size={18} color="var(--info)" /> Enrolled Students
                             </h3>
                         </div>
-                        {cls.students?.length > 0 ? (
+                        {students && students.length > 0 ? (
                             <table className="data-table">
                                 <thead>
                                     <tr>
                                         <th>PRO_ID</th>
                                         <th>Name</th>
                                         <th>Phone</th>
+                                        <th>Enrolled Subjects</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {cls.students.map((student: any) => (
+                                    {students.map((student: any) => (
                                         <tr key={student.id}>
                                             <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{student.PRO_ID}</td>
                                             <td style={{ fontWeight: 600 }}>{student.first_name} {student.last_name}</td>
                                             <td>{student.phone}</td>
-                                            <td><button className="btn btn-secondary btn-sm" onClick={() => router.push(`/admin/students/${student.id}`)}>View</button></td>
+                                            <td>
+                                                {student.enrolled_subjects?.map((sub: string) => (
+                                                    <span key={sub} className="badge badge-info" style={{ marginRight: '4px' }}>{sub}</span>
+                                                ))}
+                                                {(!student.enrolled_subjects || student.enrolled_subjects.length === 0) && '-'}
+                                            </td>
+                                            <td>
+                                                <Link href={`/admin/students/${student.id}`} className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
+                                                    View
+                                                </Link>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
