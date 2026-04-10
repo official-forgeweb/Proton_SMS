@@ -153,7 +153,7 @@ export default function StudentProfilePage() {
                 .stat-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(0,0,0,0.06); }
                 .stat-card-icon {
                     width: 44px; height: 44px; border-radius: 14px;
-                    display: flex; alignItems: center; justifyContent: center;
+                    display: flex; align-items: center; justify-content: center;
                     transition: all 0.3s;
                 }
                 .stat-card:hover .stat-card-icon { transform: scale(1.1) rotate(5deg); }
@@ -316,28 +316,28 @@ export default function StudentProfilePage() {
                     <div className="stat-card-icon" style={{ 
                         background: feeInfo?.assignment?.payment_status === 'paid' ? '#ECFDF5' : feeInfo?.assignment?.payment_status === 'partial' ? '#FFFBEB' : '#FFF1F2', 
                         color: feeInfo?.assignment?.payment_status === 'paid' ? '#10B981' : feeInfo?.assignment?.payment_status === 'partial' ? '#F59E0B' : '#EF4444',
-                        width: '44px', height: '44px', flexShrink: 0 
+                        width: '50px', height: '50px', flexShrink: 0 
                     }}>
-                        <DollarSign size={22} strokeWidth={2.5} />
+                        <DollarSign size={26} strokeWidth={2.5} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Fee Status</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Fee Status</span>
                             <span style={{ 
-                                fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px',
+                                fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px',
                                 background: feeInfo?.assignment?.payment_status === 'paid' ? '#ECFDF5' : feeInfo?.assignment?.payment_status === 'partial' ? '#FFFBEB' : '#FFF1F2', 
                                 color: feeInfo?.assignment?.payment_status === 'paid' ? '#10B981' : feeInfo?.assignment?.payment_status === 'partial' ? '#F59E0B' : '#EF4444'
                             }}>{(feeInfo?.assignment?.payment_status || 'N/A').toUpperCase()}</span>
                         </div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', marginTop: '2px' }}>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginTop: '4px' }}>
                             <div>
-                                <p style={{ fontSize: '8px', fontWeight: 800, color: '#A1A5B7', margin: 0 }}>PAID</p>
-                                <p style={{ fontSize: '15px', fontWeight: 850, color: '#10B981', margin: 0 }}>₹{feeInfo?.assignment?.total_paid?.toLocaleString() || '0'}</p>
+                                <p style={{ fontSize: '9px', fontWeight: 800, color: '#A1A5B7', margin: 0 }}>PAID</p>
+                                <p style={{ fontSize: '18px', fontWeight: 850, color: '#10B981', margin: 0 }}>₹{feeInfo?.assignment?.total_paid?.toLocaleString() || '0'}</p>
                             </div>
-                            <div style={{ borderLeft: '1.5px solid #F1F4F9', paddingLeft: '8px', height: '18px' }} />
+                            <div style={{ borderLeft: '1.5px solid #F1F4F9', paddingLeft: '10px', height: '22px' }} />
                             <div>
-                                <p style={{ fontSize: '8px', fontWeight: 800, color: '#A1A5B7', margin: 0 }}>DUE</p>
-                                <p style={{ fontSize: '15px', fontWeight: 850, color: '#EF4444', margin: 0 }}>₹{feeInfo?.assignment?.total_pending || '0'}</p>
+                                <p style={{ fontSize: '9px', fontWeight: 800, color: '#A1A5B7', margin: 0 }}>DUE</p>
+                                <p style={{ fontSize: '18px', fontWeight: 850, color: '#EF4444', margin: 0 }}>₹{feeInfo?.assignment?.total_pending || '0'}</p>
                             </div>
                         </div>
                     </div>

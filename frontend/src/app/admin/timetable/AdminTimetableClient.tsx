@@ -48,6 +48,13 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
         end_date: initialFilters.end_date
     });
 
+    const [localFilters, setLocalFilters] = useState({
+        subject: '',
+        teacher_id: '',
+        room: ''
+    });
+    const [sortBy, setSortBy] = useState('date_asc');
+
     const fetchTimetable = useCallback(async () => {
         try {
             setIsLoading(true);
@@ -151,24 +158,56 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
 
     return (
         <>
-            <div className="page-header" style={{ marginBottom: '32px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>Timetable Management</h1>
-                        <p style={{ color: '#5E6278', fontSize: '15px', marginTop: '6px', fontWeight: 500 }}>Schedule date-specific classes and assignments.</p>
+            <div className="page-header" style={{ marginBottom: '36px', width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '24px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '300px' }}>
+                        <h1 style={{ fontSize: '32px', fontWeight: 900, color: '#1A1D3B', margin: 0, letterSpacing: '-0.03em' }}>Timetable Management</h1>
+                        <p style={{ color: '#5E6278', fontSize: '16px', marginTop: '6px', fontWeight: 500 }}>Schedule date-specific classes and assignments.</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                         <button 
                             onClick={() => setShowGenerateModal(true)}
-                            className="btn-secondary hover-lift"
-                            style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#F8F9FD', color: '#1A1D3B', border: '1px solid #E2E8F0', padding: '10px 16px', borderRadius: '12px', fontWeight: 600 }}
+                            className="hover-lift"
+                            style={{ 
+                                display: 'flex', alignItems: 'center', gap: '10px', 
+                                background: 'white', color: '#1A1D3B', 
+                                border: '1px solid #E2E8F0', padding: '12px 20px', 
+                                borderRadius: '14px', fontWeight: 700, fontSize: '14px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                cursor: 'pointer'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.08)';
+                                e.currentTarget.style.borderColor = '#1A1D3B';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)';
+                                e.currentTarget.style.borderColor = '#E2E8F0';
+                            }}
                         >
-                            <Calendar size={20} /> Auto-Generate Timetable
+                            <Calendar size={18} /> Auto-Generate Timetable
                         </button>
                         <button 
                             onClick={() => openModal()}
-                            className="btn-primary hover-lift"
-                            style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                            className="hover-lift"
+                            style={{ 
+                                display: 'flex', alignItems: 'center', gap: '10px',
+                                background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
+                                color: 'white', border: 'none', padding: '12px 24px',
+                                borderRadius: '14px', fontWeight: 700, fontSize: '14px',
+                                boxShadow: '0 4px 15px rgba(229, 57, 53, 0.3)',
+                                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                cursor: 'pointer'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.boxShadow = '0 8px 25px rgba(229, 57, 53, 0.4)';
+                                e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.boxShadow = '0 4px 15px rgba(229, 57, 53, 0.3)';
+                                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                            }}
                         >
                             <Plus size={20} strokeWidth={2.5} /> Schedule Class
                         </button>
@@ -179,7 +218,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
             <div className="page-body">
                 {/* Filters */}
                 <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '20px', marginBottom: '32px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '20px', alignItems: 'flex-end' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', alignItems: 'flex-end', marginBottom: '20px' }}>
                         <div>
                             <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Select Class</label>
                             <select 
@@ -210,6 +249,56 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                             />
                         </div>
                     </div>
+                    
+                    {/* Local Timetable Filters & Sorting */}
+                    <div style={{ padding: '20px 0 0 0', borderTop: '1px solid #F1F4F9', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px', alignItems: 'flex-end' }}>
+                        <div>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Subject</label>
+                            <select 
+                                value={localFilters.subject}
+                                onChange={(e) => setLocalFilters({ ...localFilters, subject: e.target.value })}
+                                style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '13px' }}
+                            >
+                                <option value="">All Subjects</option>
+                                {Array.from(new Set(timetable.map(t => t.subject).filter(Boolean))).map((s: any) => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Teacher</label>
+                            <select 
+                                value={localFilters.teacher_id}
+                                onChange={(e) => setLocalFilters({ ...localFilters, teacher_id: e.target.value })}
+                                style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '13px' }}
+                            >
+                                <option value="">All Teachers</option>
+                                {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Room</label>
+                            <select 
+                                value={localFilters.room}
+                                onChange={(e) => setLocalFilters({ ...localFilters, room: e.target.value })}
+                                style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '13px' }}
+                            >
+                                <option value="">All Rooms</option>
+                                {Array.from(new Set(timetable.map(t => t.room).filter(Boolean))).map((r: any) => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Sort By</label>
+                            <select 
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '13px' }}
+                            >
+                                <option value="date_asc">Date (Oldest First)</option>
+                                <option value="date_desc">Date (Newest First)</option>
+                                <option value="subject_asc">Subject (A-Z)</option>
+                                <option value="subject_desc">Subject (Z-A)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 {isLoading ? (
@@ -224,7 +313,21 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                     </div>
                 ) : (
                     <div style={{ display: 'grid', gap: '16px' }}>
-                        {timetable.map((entry) => (
+                        {[...timetable]
+                            .filter(entry => {
+                                if (localFilters.subject && entry.subject !== localFilters.subject) return false;
+                                if (localFilters.teacher_id && entry.teacher_id !== localFilters.teacher_id) return false;
+                                if (localFilters.room && entry.room && !entry.room.toLowerCase().includes(localFilters.room.toLowerCase())) return false;
+                                return true;
+                            })
+                            .sort((a, b) => {
+                                if (sortBy === 'date_asc') return new Date(a.date).getTime() - new Date(b.date).getTime() || a.start_time.localeCompare(b.start_time);
+                                if (sortBy === 'date_desc') return new Date(b.date).getTime() - new Date(a.date).getTime() || b.start_time.localeCompare(a.start_time);
+                                if (sortBy === 'subject_asc') return a.subject.localeCompare(b.subject);
+                                if (sortBy === 'subject_desc') return b.subject.localeCompare(a.subject);
+                                return 0;
+                            })
+                            .map((entry) => (
                             <div key={entry.id} className="card hover-lift" style={{ padding: '20px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                                     <div style={{ textAlign: 'center', minWidth: '80px', padding: '12px', background: '#F8F9FD', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
