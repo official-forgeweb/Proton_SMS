@@ -52,6 +52,8 @@ model User {
   enquiry_remarks      EnquiryRemark[]
   attendance_marked    Attendance[]
   fee_payments_received FeePayment[]
+  queries_created    StudentQuery[]   @relation("QueryCreatedBy")
+  queries_resolved   StudentQuery[]   @relation("QueryResolvedBy")
 
   @@map("users")
 }
@@ -88,6 +90,7 @@ model Student {
   homework_submissions    HomeworkSubmission[]
   fee_assignments         StudentFeeAssignment[]
   fee_payments            FeePayment[]
+  queries                 StudentQuery[]
 
   @@index([academic_status])
   @@index([phone])
@@ -166,6 +169,7 @@ model Teacher {
   demo_classes      DemoClass[]
   tests_created     Test[]
   homework_created  Homework[]
+  queries_targeted  StudentQuery[]    @relation("QueryTargetTeacher")
 
   @@index([employment_status])
   @@map("teachers")
@@ -211,6 +215,7 @@ model Class {
   homework             Homework[]
   fee_structures       FeeStructure[]
   demo_classes         DemoClass[]
+  video_lectures       VideoLecture[]
 
   @@index([status])
   @@index([primary_teacher_id])
@@ -583,4 +588,66 @@ model FeePayment {
   @@index([student_id])
   @@index([payment_status])
   @@map("fee_payments")
+}
+
+// ──────────────────────────────────────────────
+// Student Queries (Support / Requests)
+// ──────────────────────────────────────────────
+
+model StudentQuery {
+  id              String   @id @default(uuid())
+  query_number    String   @unique
+  student_id      String
+  query_type      String                // phone_change_student, phone_change_parent, whatsapp_student, whatsapp_parent, old_assignment, parent_meeting, personal_session, leave_application, other
+  query_subtype   String?               // e.g. assignment name, teacher name, etc.
+  description     String?               // Free text details
+  target_teacher_id String?             // For parent_meeting / personal_session
+  status          String   @default("new")   // new, processing, resolved, unresolved
+  priority        String   @default("medium") // low, medium, high
+  raised_by       String                // "teacher" or "student"
+  created_by_user_id String?            // User who created the query
+  resolved_by_user_id String?           // User who resolved/updated the query
+  resolved_at     DateTime?
+  resolution_note String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  student         Student   @relation(fields: [student_id], references: [id])
+  target_teacher  Teacher?  @relation("QueryTargetTeacher", fields: [target_teacher_id], references: [id])
+  created_by_user User?     @relation("QueryCreatedBy", fields: [created_by_user_id], references: [id])
+  resolved_by_user User?    @relation("QueryResolvedBy", fields: [resolved_by_user_id], references: [id])
+
+  @@index([student_id])
+  @@index([status])
+  @@index([query_type])
+  @@index([created_by_user_id])
+  @@map("student_queries")
+}
+
+// ──────────────────────────────────────────────
+// Video Lectures (YouTube videos uploaded via Excel)
+// ──────────────────────────────────────────────
+
+model VideoLecture {
+  id          String   @id @default(uuid())
+  date        String                  // e.g. "2026-04-10"
+  time        String                  // e.g. "17:00"
+  class_id    String
+  subject     String
+  video_url   String                  // YouTube URL
+  title       String?                 // Optional title
+  status      String   @default("active")  // active | inactive
+  uploaded_by String?                 // User ID who uploaded
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
+
+  @@unique([date, time, class_id, subject])
+  @@index([class_id, date])
+  @@index([date])
+  @@index([subject])
+  @@map("video_lectures")
 }

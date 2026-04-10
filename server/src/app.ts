@@ -23,6 +23,8 @@ import dashboardRoutes from './routes/dashboard';
 import permissionsRoutes from './routes/permissions';
 import reportsRoutes from './routes/reports';
 import timetableRoutes from './routes/timetable';
+import queryRoutes from './routes/queries';
+import videoLectureRoutes from './routes/videoLectures';
 
 const app = express();
 
@@ -65,6 +67,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/permissions', permissionsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/timetable', timetableRoutes);
+app.use('/api/queries', queryRoutes);
+app.use('/api/video-lectures', videoLectureRoutes);
 
 // Health check
 app.get('/api/health', dbHealthCheck, (req, res) => {

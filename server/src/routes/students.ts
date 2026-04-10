@@ -17,13 +17,13 @@ const paramId = (req: Request): string => String(req.params.id);
 // GET /api/students
 router.get('/', authenticateToken, authorize('admin', 'teacher'), cacheMiddleware(10), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { search, status, class_id, subject, fee_status, page = '1', limit = '50' } = req.query as Record<string, string>;
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+    const { search, status, class_id, subject, fee_status, global_search, page = '1', limit = '50' } = req.query as Record<string, string>;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
 
     let where: any = {};
 
-    if (req.user!.role === 'teacher') {
+    if (req.user!.role === 'teacher' && global_search !== 'true') {
       const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id }, select: { id: true } });
       if (teacher) {
         const myClasses = await prisma.class.findMany({

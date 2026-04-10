@@ -165,16 +165,26 @@ router.post('/generate', authenticateToken, authorize('admin'), async (req: Requ
   }
 });
 
-// POST /api/timetable (Admin only)
-router.post('/', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+// POST /api/timetable (Admin or Teacher)
+router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { class_id, subject, teacher_id, date, start_time, end_time, room, notes } = req.body;
+
+    let finalTeacherId = teacher_id;
+    if (req.user!.role === 'teacher') {
+        const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
+        if (!teacher) {
+            res.status(403).json({ success: false, message: 'Teacher profile not found' });
+            return;
+        }
+        finalTeacherId = teacher.id;
+    }
 
     const entry = await prisma.timetable.create({
       data: {
         class_id,
         subject,
-        teacher_id,
+        teacher_id: finalTeacherId,
         date,
         start_time,
         end_time,
@@ -191,13 +201,29 @@ router.post('/', authenticateToken, authorize('admin'), async (req: Request, res
   }
 });
 
-// PUT /api/timetable/:id (Admin only)
-router.put('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+// PUT /api/timetable/:id (Admin or Teacher)
+router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
+    const updateData = { ...req.body };
+
+    if (req.user!.role === 'teacher') {
+        const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
+        if (!teacher) {
+            res.status(403).json({ success: false, message: 'Teacher profile not found' });
+            return;
+        }
+        const existing = await prisma.timetable.findUnique({ where: { id } });
+        if (!existing || existing.teacher_id !== teacher.id) {
+            res.status(403).json({ success: false, message: 'Not authorized to update this entry' });
+            return;
+        }
+        updateData.teacher_id = teacher.id; // Override to prevent changing
+    }
+
     const entry = await prisma.timetable.update({
       where: { id },
-      data: req.body
+      data: updateData
     });
 
     res.json({ success: true, data: entry });
@@ -210,10 +236,24 @@ router.put('/:id', authenticateToken, authorize('admin'), async (req: Request, r
   }
 });
 
-// DELETE /api/timetable/:id (Admin only)
-router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+// DELETE /api/timetable/:id (Admin or Teacher)
+router.delete('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
+
+    if (req.user!.role === 'teacher') {
+        const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
+        if (!teacher) {
+            res.status(403).json({ success: false, message: 'Teacher profile not found' });
+            return;
+        }
+        const existing = await prisma.timetable.findUnique({ where: { id } });
+        if (!existing || existing.teacher_id !== teacher.id) {
+            res.status(403).json({ success: false, message: 'Not authorized to delete this entry' });
+            return;
+        }
+    }
+
     await prisma.timetable.delete({ where: { id } });
     res.json({ success: true, message: 'Entry deleted' });
   } catch (error: any) {

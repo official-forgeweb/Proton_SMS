@@ -6,7 +6,7 @@ import {
     LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
     Calendar, CreditCard, BarChart3, Settings, LogOut, Phone,
     UserCheck, FileText, Bell, Menu, X, Target, Clock,
-    Home, PenTool, Award, HelpCircle, MessageSquare, Zap, Shield
+    Home, PenTool, Award, HelpCircle, MessageSquare, Zap, Shield, Video, PlayCircle
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -35,6 +35,8 @@ const adminNav = [
             { label: 'Tests', href: '/admin/tests', icon: ClipboardList },
             { label: 'Homework', href: '/admin/homework', icon: PenTool },
             { label: 'Demos', href: '/admin/demos', icon: Target },
+            { label: 'Video Lectures', href: '/admin/video-lectures', icon: Video },
+            { label: 'Student Queries', href: '/admin/queries', icon: MessageSquare },
             { label: 'Settings', href: '/admin/settings', icon: Settings },
         ]
     },
@@ -51,6 +53,7 @@ const teacherNavSections = [
         section: 'MENU',
         items: [
             { label: 'Dashboard', href: '/teacher', icon: LayoutDashboard },
+            { label: 'My Schedule', href: '/teacher/timetable', icon: Calendar },
             { label: 'My Classes', href: '/teacher/classes', icon: BookOpen, permissionKey: 'classes' },
             { label: 'Students', href: '/teacher/students', icon: GraduationCap, permissionKey: 'students' },
             { label: 'Enquiries', href: '/teacher/enquiries', icon: Phone, permissionKey: 'enquiries' },
@@ -63,6 +66,7 @@ const teacherNavSections = [
             { label: 'Tests', href: '/teacher/tests', icon: ClipboardList, permissionKey: 'tests' },
             { label: 'Homework', href: '/teacher/homework', icon: PenTool, permissionKey: 'homework' },
             { label: 'Demo Classes', href: '/teacher/demos', icon: Target, permissionKey: 'demos' },
+            { label: 'Student Queries', href: '/teacher/queries', icon: MessageSquare },
             { label: 'Reports', href: '/teacher/reports', icon: BarChart3 },
         ]
     }
@@ -83,6 +87,8 @@ const studentNavSections = [
         items: [
             { label: 'Tests', href: '/student/tests', icon: ClipboardList },
             { label: 'Homework', href: '/student/homework', icon: PenTool },
+            { label: 'Video Lectures', href: '/student/video-lectures', icon: PlayCircle },
+            { label: 'My Queries', href: '/student/queries', icon: MessageSquare },
             { label: 'Profile', href: '/student/profile', icon: Users },
         ]
     }

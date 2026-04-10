@@ -32,8 +32,12 @@ export default function TeacherDashboardClient({ data }: Props) {
                         </p>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        <button className="btn btn-secondary btn-sm" style={{ height: '40px', padding: '0 16px', borderRadius: '10px' }}>
-                            <Calendar size={16} style={{ marginRight: '8px' }} /> Schedule
+                        <button 
+                            onClick={() => router.push('/teacher/timetable')}
+                            className="btn btn-secondary btn-sm" 
+                            style={{ height: '40px', padding: '0 16px', borderRadius: '10px', cursor: 'pointer' }}
+                        >
+                            <Calendar size={16} style={{ marginRight: '8px' }} /> My Schedule
                         </button>
                     </div>
                 </div>
