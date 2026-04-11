@@ -3,6 +3,10 @@ import { useEffect, useState, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { Video, Upload, Trash2, Search, Edit3, X, FileSpreadsheet, Plus, AlertTriangle } from 'lucide-react';
+import ToolBottomBar from '@/components/ToolBottomBar';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { customAlert, customConfirm } from '@/utils/dialog';
 
 export default function AdminVideoLecturesPage() {
     const [lectures, setLectures] = useState<any[]>([]);
@@ -10,6 +14,7 @@ export default function AdminVideoLecturesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadReport, setUploadReport] = useState<any>(null);
+    const [previewData, setPreviewData] = useState<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [filters, setFilters] = useState({ class_id: '', subject: '', date: '' });
@@ -52,12 +57,20 @@ export default function AdminVideoLecturesPage() {
         }
     };
 
+    const getYouTubeId = (url: string) => {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('preview', 'true'); 
 
         try {
             setIsUploading(true);
@@ -65,36 +78,63 @@ export default function AdminVideoLecturesPage() {
             const res = await api.post('/video-lectures/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            setUploadReport(res.data.data);
+            if (res.data.data.previewRecords) {
+                setPreviewData(res.data.data);
+            }
+        } catch (error: any) {
+            await customAlert(error.response?.data?.message || 'Upload failed', 'Upload Error');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleConfirmUpload = async () => {
+        if (!previewData?.previewRecords) return;
+        try {
+            setIsUploading(true);
+            const res = await api.post('/video-lectures/confirm-upload', { records: previewData.previewRecords });
+            setPreviewData(null);
+            setUploadReport({ 
+                ...previewData, 
+                inserted: res.data.data.inserted, 
+                skipped: res.data.data.skipped, 
+                errors: [...previewData.errors, ...res.data.data.errors] 
+            });
             fetchLectures();
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Upload failed');
+            await customAlert('Failed to confirm upload', 'Upload Confirmation Error');
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
+    const handleCancelUpload = () => {
+        setPreviewData(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
     const handleBulkDelete = async () => {
         if (selectedIds.size === 0) return;
-        if (!confirm(`Delete ${selectedIds.size} lectures?`)) return;
+        if (!await customConfirm(`Are you sure you want to delete ${selectedIds.size} lectures?`, 'Confirm Bulk Deletion')) return;
 
         try {
             await api.delete('/video-lectures/bulk', { data: { ids: Array.from(selectedIds) } });
             setSelectedIds(new Set());
             fetchLectures();
         } catch (error) {
-            alert('Delete failed');
+            await customAlert('Delete failed', 'Error');
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this lecture?')) return;
+        if (!await customConfirm('Are you sure you want to delete this lecture?', 'Confirm Deletion')) return;
         try {
             await api.delete(`/video-lectures/${id}`);
             fetchLectures();
         } catch (error) {
-            alert('Delete failed');
+            await customAlert('Delete failed', 'Error');
         }
     };
 
@@ -105,7 +145,7 @@ export default function AdminVideoLecturesPage() {
             setEditEntry(null);
             fetchLectures();
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Update failed');
+            await customAlert(error.response?.data?.message || 'Update failed', 'Error');
         }
     };
 
@@ -132,8 +172,29 @@ export default function AdminVideoLecturesPage() {
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <input type="file" accept=".xlsx" ref={fileInputRef} onChange={handleFileUpload} style={{ display: 'none' }} />
-                    <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="btn-primary" style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {isUploading ? <><span className="spinner" style={{ width: '16px', height: '16px' }} /> Uploading...</> : <><FileSpreadsheet size={18} /> Upload Excel</>}
+                    <button 
+                        onClick={() => fileInputRef.current?.click()} 
+                        disabled={isUploading} 
+                        className="hover-lift"
+                        style={{ 
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
+                            color: 'white', border: 'none', padding: '12px 24px',
+                            borderRadius: '14px', fontWeight: 700, fontSize: '14px',
+                            boxShadow: '0 4px 15px rgba(229, 57, 53, 0.3)',
+                            transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                            cursor: 'pointer'
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.boxShadow = '0 8px 25px rgba(229, 57, 53, 0.4)';
+                            e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(229, 57, 53, 0.3)';
+                            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                        }}
+                    >
+                        {isUploading ? <><span className="spinner" style={{ width: '16px', height: '16px' }} /> Uploading...</> : <><FileSpreadsheet size={20} strokeWidth={2.5} /> Upload Excel</>}
                     </button>
                     {selectedIds.size > 0 && (
                         <button onClick={handleBulkDelete} style={{ background: '#FEF2F2', color: '#EF4444', border: 'none', borderRadius: '14px', padding: '12px 20px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -171,18 +232,38 @@ export default function AdminVideoLecturesPage() {
             )}
 
             <div style={{ background: '#FFFFFF', padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid #E2E8F0', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <Search size={20} color="#8F92A1" />
-                <input type="text" placeholder="Search Subject..." value={filters.subject} onChange={e => setFilters({ ...filters, subject: e.target.value })}
-                    style={{ padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '14px', flex: 1, minWidth: '200px' }}
-                />
-                <select value={filters.class_id} onChange={e => setFilters({ ...filters, class_id: e.target.value })}
+                <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: '200px', background: '#FFF', borderRadius: '12px', border: '1.5px solid #E2E8F0', padding: '0 16px' }}>
+                    <Search size={20} color="#8F92A1" />
+                    <input 
+                        type="text" 
+                        list="subject-options"
+                        placeholder="Search or Select Subject..." 
+                        value={filters.subject} 
+                        onChange={e => setFilters({ ...filters, subject: e.target.value })}
+                        style={{ padding: '12px 12px', border: 'none', outline: 'none', fontSize: '14px', flex: 1, background: 'transparent' }}
+                    />
+                    <datalist id="subject-options">
+                        {Array.from(new Set(classes.flatMap(c => (filters.class_id && c.id !== filters.class_id) ? [] : (c.schedule?.map((s: any) => s.subject).filter(Boolean) || [])))).map((subj: any, i) => (
+                            <option key={i} value={subj} />
+                        ))}
+                    </datalist>
+                </div>
+                <select value={filters.class_id} onChange={e => setFilters({ ...filters, class_id: e.target.value, subject: '' })}
                     style={{ padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '14px', fontWeight: 600, minWidth: '150px' }}>
                     <option value="">All Classes</option>
                     {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
                 </select>
-                <input type="date" value={filters.date} onChange={e => setFilters({ ...filters, date: e.target.value })}
-                    style={{ padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '14px', fontWeight: 600 }}
-                />
+                <div style={{ flexShrink: 0, width: '180px' }}>
+                    <DatePicker
+                        selected={filters.date ? new Date(filters.date) : null}
+                        onChange={(date: Date | null) => setFilters({ ...filters, date: date ? date.toISOString().split('T')[0] : '' })}
+                        dateFormat="MMMM d, yyyy"
+                        placeholderText="Filter by Date..."
+                        customInput={<input style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '14px', fontWeight: 600 }} />}
+                        isClearable={true}
+                        showMonthDropdown scrollableYearDropdown dropdownMode="select"
+                    />
+                </div>
             </div>
 
             <div className="card" style={{ padding: '24px', borderRadius: '20px', border: '1px solid #E2E8F0', background: '#FFFFFF' }}>
@@ -222,9 +303,26 @@ export default function AdminVideoLecturesPage() {
                                             <div style={{ fontSize: '12px' }}>{lecture.time}</div>
                                         </td>
                                         <td style={{ padding: '16px 12px' }}>
-                                            <a href={lecture.video_url} target="_blank" rel="noreferrer" style={{ color: '#E53935', fontSize: '14px', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <Video size={14} /> Open Video
-                                            </a>
+                                            {(() => {
+                                                const videoId = getYouTubeId(lecture.video_url);
+                                                return (
+                                                    <a href={lecture.video_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', group: 'true' }}>
+                                                        <div style={{ position: 'relative', width: '100px', aspectRatio: '16/9', background: '#F1F1F4', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #E2E8F0' }}>
+                                                            {videoId ? (
+                                                                <img src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} alt="thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            ) : (
+                                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><AlertTriangle size={16} color="#A1A5B7" /></div>
+                                                            )}
+                                                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                <div style={{ background: '#E53935', borderRadius: '50%', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(229,57,53,0.4)' }}>
+                                                                    <Video size={12} color="#FFF" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <span style={{ color: '#E53935', fontSize: '13px', fontWeight: 700 }}>Watch</span>
+                                                    </a>
+                                                );
+                                            })()}
                                         </td>
                                         <td style={{ padding: '16px 12px', textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -251,11 +349,24 @@ export default function AdminVideoLecturesPage() {
                         <div style={{ display: 'grid', gap: '16px', marginBottom: '24px' }}>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 600, color: '#5E6278' }}>Date</label>
-                                <input type="date" value={editEntry.date} onChange={e => setEditEntry({...editEntry, date: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />
+                                <DatePicker
+                                    required
+                                    selected={editEntry.date ? new Date(editEntry.date) : null}
+                                    onChange={(date: Date | null) => setEditEntry({ ...editEntry, date: date ? date.toISOString().split('T')[0] : '' })}
+                                    dateFormat="MMMM d, yyyy"
+                                    customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
+                                    showMonthDropdown scrollableYearDropdown dropdownMode="select"
+                                />
                             </div>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 600, color: '#5E6278' }}>Time</label>
-                                <input type="time" value={editEntry.time} onChange={e => setEditEntry({...editEntry, time: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />
+                                <DatePicker
+                                    required
+                                    selected={editEntry.time ? new Date(`2000-01-01T${editEntry.time}:00`) : null}
+                                    onChange={(date: Date | null) => { if (date) { setEditEntry({ ...editEntry, time: date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0') }); } }}
+                                    showTimeSelect showTimeSelectOnly timeIntervals={15} timeCaption="Time" dateFormat="h:mm aa"
+                                    customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
+                                />
                             </div>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 600, color: '#5E6278' }}>Subject</label>
@@ -276,6 +387,67 @@ export default function AdminVideoLecturesPage() {
                     </div>
                 </div>
             )}
+
+            {/* Preview Confirm Modal */}
+            {previewData && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '20px' }}>
+                    <div style={{ background: '#FFFFFF', width: '100%', maxWidth: '900px', maxHeight: '90vh', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 48px rgba(0,0,0,0.2)' }}>
+                        <div style={{ padding: '24px 32px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8F9FD' }}>
+                            <div>
+                                <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#1A1D3B' }}>Confirm Video Upload</h2>
+                                <p style={{ margin: '4px 0 0 0', color: '#5E6278', fontSize: '14px' }}>Please verify the thumbnails and data to ensure accurate upload.</p>
+                            </div>
+                            <button onClick={handleCancelUpload} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', borderRadius: '50%', color: '#A1A5B7', transition: '0.2s hover' }}><X size={24} /></button>
+                        </div>
+                        
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '32px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '24px' }}>
+                            {previewData.previewRecords.map((record: any, idx: number) => {
+                                const videoId = getYouTubeId(record.video_url);
+                                return (
+                                    <div key={idx} style={{ background: '#FFFFFF', borderRadius: '16px', overflow: 'hidden', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                                        {videoId ? (
+                                            <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
+                                                <iframe
+                                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                                                    src={`https://www.youtube.com/embed/${videoId}?controls=0&mute=1`}
+                                                    allowFullScreen
+                                                    title={record.title}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div style={{ width: '100%', aspectRatio: '16/9', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <AlertTriangle size={28} color="#EF4444" />
+                                            </div>
+                                        )}
+                                        <div style={{ padding: '16px' }}>
+                                            <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', fontWeight: 700, color: '#1A1D3B' }}>{record.title}</h4>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#5E6278', fontWeight: 500 }}>
+                                                <span>Subject: <b>{record.subject}</b></span>
+                                                <span>{record.time}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                        
+                        <div style={{ padding: '20px 32px', borderTop: '1px solid #E2E8F0', background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ color: '#5E6278', fontSize: '14px', fontWeight: 600 }}>
+                                Found <span style={{ color: '#4F60FF', fontWeight: 800 }}>{previewData.previewRecords.length}</span> valid videos ready for insertion. 
+                                {previewData.errors?.length > 0 && <span style={{ color: '#EF4444' }}> ({previewData.errors.length} skipped)</span>}
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button onClick={handleCancelUpload} style={{ padding: '12px 24px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#FFFFFF', color: '#5E6278', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+                                <button onClick={handleConfirmUpload} disabled={isUploading} style={{ background: '#00C07F', color: '#FFFFFF', border: 'none', padding: '12px 32px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 8px 16px rgba(0,192,127,0.2)' }}>
+                                    {isUploading ? <span className="spinner" style={{ width: '16px', height: '16px' }} /> : <Upload size={18} />}
+                                    Confirm & Upload
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <ToolBottomBar />
         </DashboardLayout>
     );
 }

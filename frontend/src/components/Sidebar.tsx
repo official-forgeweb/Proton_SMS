@@ -20,6 +20,7 @@ const adminNav = [
             { label: 'Classes', href: '/admin/classes', icon: BookOpen },
             { label: 'Timetable', href: '/admin/timetable', icon: Calendar },
             { label: 'Enquiries', href: '/admin/enquiries', icon: Phone },
+            { label: 'Operations', href: '/admin/operations', icon: Zap },
         ]
     },
     {
@@ -30,20 +31,9 @@ const adminNav = [
         ]
     },
     {
-        section: 'TOOLS',
+        section: 'SYSTEM',
         items: [
-            { label: 'Tests', href: '/admin/tests', icon: ClipboardList },
-            { label: 'Homework', href: '/admin/homework', icon: PenTool },
-            { label: 'Demos', href: '/admin/demos', icon: Target },
-            { label: 'Video Lectures', href: '/admin/video-lectures', icon: Video },
-            { label: 'Student Queries', href: '/admin/queries', icon: MessageSquare },
             { label: 'Settings', href: '/admin/settings', icon: Settings },
-        ]
-    },
-    {
-        section: 'ADMIN',
-        items: [
-            { label: 'Access Control', href: '/admin/permissions', icon: Shield },
         ]
     }
 ];
@@ -57,17 +47,7 @@ const teacherNavSections = [
             { label: 'My Classes', href: '/teacher/classes', icon: BookOpen, permissionKey: 'classes' },
             { label: 'Students', href: '/teacher/students', icon: GraduationCap, permissionKey: 'students' },
             { label: 'Enquiries', href: '/teacher/enquiries', icon: Phone, permissionKey: 'enquiries' },
-        ]
-    },
-    {
-        section: 'TOOLS',
-        items: [
-            { label: 'Attendance', href: '/teacher/attendance', icon: UserCheck, permissionKey: 'attendance' },
-            { label: 'Tests', href: '/teacher/tests', icon: ClipboardList, permissionKey: 'tests' },
-            { label: 'Homework', href: '/teacher/homework', icon: PenTool, permissionKey: 'homework' },
-            { label: 'Demo Classes', href: '/teacher/demos', icon: Target, permissionKey: 'demos' },
-            { label: 'Student Queries', href: '/teacher/queries', icon: MessageSquare },
-            { label: 'Reports', href: '/teacher/reports', icon: BarChart3 },
+            { label: 'Operations', href: '/teacher/operations', icon: Zap },
         ]
     }
 ];
@@ -80,16 +60,7 @@ const studentNavSections = [
             { label: 'Attendance', href: '/student/attendance', icon: Calendar },
             { label: 'My Schedule', href: '/student/timetable', icon: Clock },
             { label: 'Performance', href: '/student/performance', icon: Award },
-        ]
-    },
-    {
-        section: 'TOOLS',
-        items: [
-            { label: 'Tests', href: '/student/tests', icon: ClipboardList },
-            { label: 'Homework', href: '/student/homework', icon: PenTool },
-            { label: 'Video Lectures', href: '/student/video-lectures', icon: PlayCircle },
-            { label: 'My Queries', href: '/student/queries', icon: MessageSquare },
-            { label: 'Profile', href: '/student/profile', icon: Users },
+            { label: 'Operations', href: '/student/operations', icon: Zap },
         ]
     }
 ];
@@ -101,19 +72,13 @@ const parentNavSections = [
             { label: 'Dashboard', href: '/parent', icon: LayoutDashboard },
             { label: 'My Children', href: '/parent/children', icon: GraduationCap },
             { label: 'Attendance', href: '/parent/attendance', icon: Calendar },
+            { label: 'Operations', href: '/parent/operations', icon: Zap },
         ]
     },
     {
         section: 'FINANCIAL',
         items: [
             { label: 'Fees', href: '/parent/fees', icon: CreditCard },
-        ]
-    },
-    {
-        section: 'TOOLS',
-        items: [
-            { label: 'Tests', href: '/parent/tests', icon: ClipboardList },
-            { label: 'Notifications', href: '/parent/notifications', icon: Bell },
         ]
     }
 ];
@@ -209,7 +174,7 @@ export default function Sidebar() {
                             color: '#FFFFFF', 
                             letterSpacing: '-0.5px' 
                         }}>
-                            Proton Academy
+                            Proton
                         </span>
                     </Link>
                 </div>

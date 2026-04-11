@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import multer from 'multer';
 import * as xlsx from 'xlsx';
+import express from 'express';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -105,6 +106,21 @@ router.post('/upload', authenticateToken, authorize('admin', 'teacher'), upload.
     }
 
     // Insert records and handle duplicates safely
+    if (req.body.preview === 'true') {
+      res.json({
+        success: true,
+        message: 'Preview generated',
+        data: {
+          total: rawData.length,
+          valid: recordsToInsert.length,
+          skipped,
+          errors,
+          previewRecords: recordsToInsert
+        }
+      });
+      return;
+    }
+
     for (let i = 0; i < recordsToInsert.length; i++) {
       const record = recordsToInsert[i];
       try {
@@ -135,6 +151,42 @@ router.post('/upload', authenticateToken, authorize('admin', 'teacher'), upload.
   } catch (error: any) {
     console.error('Excel upload error:', error);
     res.status(500).json({ success: false, message: 'Server error processing file' });
+  }
+});
+
+// 1.5 Confirm Upload (Bulk Insert)
+router.post('/confirm-upload', authenticateToken, authorize('admin', 'teacher'), express.json(), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { records } = req.body;
+    if (!Array.isArray(records) || records.length === 0) {
+      res.status(400).json({ success: false, message: 'No records provided' });
+      return;
+    }
+
+    let inserted = 0;
+    let skipped = 0;
+    const errors: Array<{ reason: string }> = [];
+
+    for (let i = 0; i < records.length; i++) {
+        try {
+            await prisma.videoLecture.create({ data: records[i] });
+            inserted++;
+        } catch (err: any) {
+            skipped++;
+            if (err.code === 'P2002') {
+                errors.push({ reason: `Duplicate entry for ${records[i].subject} - ${records[i].date}` });
+            } else {
+                errors.push({ reason: `Database error: ${err.message}` });
+            }
+        }
+    }
+
+    res.json({
+        success: true,
+        data: { inserted, skipped, errors }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

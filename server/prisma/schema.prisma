@@ -54,6 +54,7 @@ model User {
   fee_payments_received FeePayment[]
   queries_created    StudentQuery[]   @relation("QueryCreatedBy")
   queries_resolved   StudentQuery[]   @relation("QueryResolvedBy")
+  study_materials_uploaded StudyMaterial[] @relation("UploaderMaterial")
 
   @@map("users")
 }
@@ -216,6 +217,7 @@ model Class {
   fee_structures       FeeStructure[]
   demo_classes         DemoClass[]
   video_lectures       VideoLecture[]
+  study_materials      StudyMaterial[]
 
   @@index([status])
   @@index([primary_teacher_id])
@@ -650,4 +652,53 @@ model VideoLecture {
   @@index([date])
   @@index([subject])
   @@map("video_lectures")
+}
+
+// ──────────────────────────────────────────────
+// Study Materials (PDF Documents directly uploaded to Cloudinary)
+// ──────────────────────────────────────────────
+
+model StudyMaterial {
+  id          String   @id @default(uuid())
+  title       String
+  subject     String
+  class_id    String
+  pdf_url     String
+  uploaded_by String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  status      String   @default("active")  // active, hidden
+
+  // Relations
+  class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  uploader    User     @relation("UploaderMaterial", fields: [uploaded_by], references: [id])
+
+  @@index([class_id])
+  @@index([subject])
+  @@index([uploaded_by])
+  @@map("study_materials")
+}
+
+// ──────────────────────────────────────────────
+// global settings
+// ──────────────────────────────────────────────
+
+model SystemSetting {
+  id                       String   @id @default("global")
+  institution_name         String   @default("Proton Coaching")
+  contact_email            String   @default("admin@protoncoaching.com")
+  phone_number             String   @default("+91-0000000000")
+  currency                 String   @default("INR")
+  address                  String?
+
+  allow_student_registration Boolean  @default(true)
+  require_email_verification Boolean  @default(false)
+  enable_2fa                 Boolean  @default(false)
+  
+  email_notifications        Boolean  @default(true)
+  sms_notifications          Boolean  @default(true)
+
+  updated_at                 DateTime @updatedAt
+
+  @@map("system_settings")
 }
