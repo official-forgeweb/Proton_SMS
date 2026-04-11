@@ -105,10 +105,20 @@ export default function Sidebar() {
         if (!pathname) return false;
         // Exact match
         if (pathname === item.href) return true;
+        
         // Start match to keep active when in sub-pages (e.g. /admin/students/1)
         if (item.href && item.href !== `/${user?.role}` && pathname.startsWith(item.href)) {
             return true;
         }
+
+        // Highlight Operations tab when inside any of its sub-tools
+        if (item.label === 'Operations') {
+            const operationRoutes = ['/study-materials', '/video-lectures', '/tests', '/homework', '/demos', '/queries', '/permissions'];
+            if (operationRoutes.some(route => pathname.includes(route))) {
+                return true;
+            }
+        }
+        
         return false;
     };
 
@@ -171,9 +181,9 @@ export default function Sidebar() {
                 {/* Navigation Sections */}
                 <nav style={{ flex: 1, padding: '0 16px', overflowY: 'auto', overflowX: 'hidden' }} className="hide-scrollbar">
                     {navSections.map((section) => (
-                        <div key={section.section} style={{ marginBottom: 0 }}>
+                        <div key={section.section} style={{ marginBottom: '12px' }}>
                             {/* Section Label */}
-                            <div style={{ padding: '10px 12px 4px', marginBottom: 0 }}>
+                            <div style={{ padding: '12px 12px 6px', marginBottom: 0 }}>
                                 <p style={{
                                     fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em',
                                     color: '#6B7280', textTransform: 'uppercase',
@@ -187,7 +197,7 @@ export default function Sidebar() {
                                 const isActive = isItemActive(item);
 
                                 return (
-                                    <div key={item.label} style={{ marginBottom: 0 }}>
+                                    <div key={item.label} style={{ marginBottom: '4px' }}>
                                         <Link
                                             href={item.href || '#'}
                                             onClick={() => setIsOpen(false)}
