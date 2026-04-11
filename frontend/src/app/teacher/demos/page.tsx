@@ -1,4 +1,5 @@
 'use client';
+import ToolBottomBar from '@/components/ToolBottomBar';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import PermissionGuard from '@/components/PermissionGuard';
@@ -89,3 +90,4 @@ export default function TeacherDemosPage() {
         </PermissionGuard>
     );
 }
+

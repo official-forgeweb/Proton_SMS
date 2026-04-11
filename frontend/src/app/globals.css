@@ -538,7 +538,7 @@ h6 {
   flex-direction: column;
   z-index: 50;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 0 24px 24px 0;
+  border-radius: 0 !important;
   box-shadow: 4px 0 24px rgba(0,0,0,0.06);
 }
 

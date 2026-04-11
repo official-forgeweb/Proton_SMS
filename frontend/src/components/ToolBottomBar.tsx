@@ -56,18 +56,22 @@ export default function ToolBottomBar() {
 
     return (
         <div style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: 'calc(50vw + 130px)', // Account for 260px sidebar
+            transform: 'translateX(-50%)',
+            zIndex: 40,
             background: '#FFFFFF',
-            borderTop: '1px solid #F1F4F9',
-            padding: '16px 24px',
+            border: '1px solid #F1F4F9',
+            padding: '12px 24px',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
             overflowX: 'auto',
-            borderRadius: '16px',
-            marginTop: '32px',
-            boxShadow: '0 -4px 20px rgba(0,0,0,0.02)'
+            borderRadius: '100px', // Pill shape
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
         }} className="hide-scrollbar">
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#A1A5B7', marginRight: '8px', whiteSpace: 'nowrap' }}>QUICK JUMP:</span>
+            <span style={{ fontSize: '12px', fontWeight: 800, color: '#A1A5B7', marginRight: '8px', whiteSpace: 'nowrap', letterSpacing: '0.05em' }}>JUMP TO:</span>
             {tools.map((tool) => {
                 const Icon = tool.icon;
                 const isActive = pathname === tool.href;

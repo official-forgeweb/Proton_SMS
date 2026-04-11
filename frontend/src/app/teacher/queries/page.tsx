@@ -1,4 +1,5 @@
 'use client';
+import ToolBottomBar from '@/components/ToolBottomBar';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -324,6 +325,8 @@ export default function TeacherQueriesPage() {
                     </div>
                 </div>
             )}
+            <ToolBottomBar />
         </DashboardLayout>
     );
 }
+

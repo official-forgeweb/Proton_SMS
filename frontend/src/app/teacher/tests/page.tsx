@@ -1,4 +1,5 @@
 'use client';
+import ToolBottomBar from '@/components/ToolBottomBar';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -114,7 +115,9 @@ export default function TeacherTestsPage() {
                 )}
             </div>
 
+            <ToolBottomBar />
         </DashboardLayout>
         </PermissionGuard>
     );
 }
+

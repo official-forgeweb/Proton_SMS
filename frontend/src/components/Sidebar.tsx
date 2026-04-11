@@ -143,8 +143,6 @@ export default function Sidebar() {
                     left: 0,
                     top: 0,
                     zIndex: 50,
-                    overflowY: 'auto',
-                    overflowX: 'hidden',
                 }}
             >
                 {/* Subtle dark radial glow for depth */}
@@ -154,37 +152,28 @@ export default function Sidebar() {
                     pointerEvents: 'none', zIndex: 0
                 }} />
                 {/* Logo */}
-                <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+                <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
                     <Link href={`/${user?.role}`} style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
                         <img 
                             src="/image.png" 
                             alt="Proton Logo" 
                             style={{ 
-                                width: '42px', 
-                                height: '42px', 
+                                width: '72px', 
+                                height: '72px', 
                                 borderRadius: '50%',
-                                boxShadow: '0 4px 12px rgba(229,57,53,0.3)',
+                                boxShadow: '0 4px 16px rgba(229,57,53,0.4)',
                                 backgroundColor: '#FF0000'
                             }} 
                         />
-                        <span style={{ 
-                            fontFamily: 'Poppins, sans-serif', 
-                            fontWeight: 800, 
-                            fontSize: '22px', 
-                            color: '#FFFFFF', 
-                            letterSpacing: '-0.5px' 
-                        }}>
-                            Proton
-                        </span>
                     </Link>
                 </div>
 
                 {/* Navigation Sections */}
-                <nav style={{ flex: 1, padding: '8px 16px' }}>
+                <nav style={{ flex: 1, padding: '0 16px', overflowY: 'auto', overflowX: 'hidden' }} className="hide-scrollbar">
                     {navSections.map((section) => (
-                        <div key={section.section} style={{ marginBottom: '8px' }}>
+                        <div key={section.section} style={{ marginBottom: 0 }}>
                             {/* Section Label */}
-                            <div style={{ padding: '16px 12px 8px', marginBottom: '2px' }}>
+                            <div style={{ padding: '10px 12px 4px', marginBottom: 0 }}>
                                 <p style={{
                                     fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em',
                                     color: '#6B7280', textTransform: 'uppercase',
@@ -198,14 +187,14 @@ export default function Sidebar() {
                                 const isActive = isItemActive(item);
 
                                 return (
-                                    <div key={item.label} style={{ marginBottom: '2px' }}>
+                                    <div key={item.label} style={{ marginBottom: 0 }}>
                                         <Link
                                             href={item.href || '#'}
                                             onClick={() => setIsOpen(false)}
                                             className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
                                             style={{
                                                 display: 'flex', alignItems: 'center', gap: '12px',
-                                                padding: '12px 14px', borderRadius: '12px', textDecoration: 'none',
+                                                padding: '10px 14px', borderRadius: '12px', textDecoration: 'none',
                                                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                                 position: 'relative', zIndex: 1,
                                             }}
@@ -224,7 +213,7 @@ export default function Sidebar() {
                 
 
                 {/* Sign Out */}
-                <div style={{ padding: '6px 24px 28px', position: 'relative', zIndex: 1 }}>
+                <div style={{ padding: '6px 24px 16px', position: 'relative', zIndex: 1 }}>
                     <button
                         onClick={logout}
                         className="sidebar-signout-btn"

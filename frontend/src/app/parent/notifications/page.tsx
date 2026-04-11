@@ -1,4 +1,5 @@
 'use client';
+import ToolBottomBar from '@/components/ToolBottomBar';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Bell, CheckCircle } from 'lucide-react';
 
@@ -25,6 +26,8 @@ export default function ParentNotificationsPage() {
                     </div>
                 </div>
             </div>
+            <ToolBottomBar />
         </DashboardLayout>
     );
 }
+

@@ -1,4 +1,5 @@
 'use client';
+import ToolBottomBar from '@/components/ToolBottomBar';
 import { useEffect, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
@@ -338,6 +339,8 @@ export default function AdminQueriesPage() {
                     </div>
                 </div>
             )}
+            <ToolBottomBar />
         </DashboardLayout>
     );
 }
+

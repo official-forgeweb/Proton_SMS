@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import PermissionGuard from '@/components/PermissionGuard';
 import { UserCheck, Search, Users } from 'lucide-react';
 import api from '@/lib/api';
+import ToolBottomBar from '@/components/ToolBottomBar';
 
 export default function TeacherAttendancePage() {
     const [data, setData] = useState<any>(null);
@@ -75,6 +76,7 @@ export default function TeacherAttendancePage() {
                     </div>
                 )}
             </div>
+            <ToolBottomBar />
         </DashboardLayout>
         </PermissionGuard>
     );

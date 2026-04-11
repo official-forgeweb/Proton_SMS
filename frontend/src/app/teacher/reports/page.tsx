@@ -1,4 +1,5 @@
 'use client';
+import ToolBottomBar from '@/components/ToolBottomBar';
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { BarChart3, TrendingUp, Download, PieChart, Activity, ArrowRight, Loader2 } from 'lucide-react';
@@ -236,6 +237,8 @@ export default function ReportsPage() {
                     })}
                 </div>
             </div>
+            <ToolBottomBar />
         </DashboardLayout>
     );
 }
+
