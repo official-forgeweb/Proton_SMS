@@ -45,8 +45,8 @@ export default function AdminStudyMaterialsPage() {
             
             const res = await api.get(`/study-materials?${params.toString()}`);
             setMaterials(res.data.data);
-        } catch (error) {
-            console.error('Failed to fetch study materials');
+        } catch (error: any) {
+            console.error('Failed to fetch study materials:', error?.response?.data || error?.message || error);
         } finally {
             setIsLoading(false);
         }

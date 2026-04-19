@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import crypto from 'crypto';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get Cloudinary Signature for Direct Frontend Uploads
 router.get('/signature', authenticateToken, authorize('admin', 'teacher'), (req, res) => {
