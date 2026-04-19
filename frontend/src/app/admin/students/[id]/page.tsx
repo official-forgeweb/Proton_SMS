@@ -251,6 +251,26 @@ export default function StudentProfilePage() {
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
                         <button
+                            onClick={() => router.push(`/admin/students/${params.id}/edit`)}
+                            style={{
+                                background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
+                                border: 'none', color: 'white', padding: '10px 18px', borderRadius: '12px',
+                                fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                gap: '6px', fontSize: '13px', transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                boxShadow: '0 4px 15px rgba(229, 57, 53, 0.3)'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                                e.currentTarget.style.boxShadow = '0 8px 25px rgba(229, 57, 53, 0.4)';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                e.currentTarget.style.boxShadow = '0 4px 15px rgba(229, 57, 53, 0.3)';
+                            }}
+                        >
+                            <Edit2 size={15} /> Edit Student
+                        </button>
+                        <button
                             onClick={() => router.push('/admin/students')}
                             style={{
                                 background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',

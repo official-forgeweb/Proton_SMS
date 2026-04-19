@@ -635,7 +635,12 @@ export async function getTeacherStudentsData(teacherUserId: string) {
     if (!teacher) return { students: [], totalCount: 0 };
     
     const myClasses = await prisma.class.findMany({
-      where: { primary_teacher_id: teacher.id },
+      where: {
+        OR: [
+          { primary_teacher_id: teacher.id },
+          { schedule: { some: { teacher_id: teacher.id } } }
+        ]
+      },
       select: { id: true },
     });
     

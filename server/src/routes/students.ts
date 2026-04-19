@@ -27,7 +27,12 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), cacheMiddlewar
       const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id }, select: { id: true } });
       if (teacher) {
         const myClasses = await prisma.class.findMany({
-          where: { primary_teacher_id: teacher.id },
+          where: {
+            OR: [
+              { primary_teacher_id: teacher.id },
+              { schedule: { some: { teacher_id: teacher.id } } }
+            ]
+          },
           select: { id: true },
         });
         const classIds = myClasses.map(c => c.id);
@@ -369,19 +374,66 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
       },
     });
 
-    // Enroll in subjects if subjects array provided
-    const { subjects } = req.body;
-    if (class_id && subjects && Array.isArray(subjects) && subjects.length > 0) {
-      await prisma.studentSubjectEnrollment.createMany({
-        data: subjects.map((subj: string) => ({
+    // Enroll in subjects if subjects array provided (per class)
+    const { subjects, class_ids } = req.body;
+    
+    // Support both single class_id and multiple class_ids
+    const allClassIds: string[] = [];
+    if (class_ids && Array.isArray(class_ids)) {
+      allClassIds.push(...class_ids);
+    } else if (class_id) {
+      allClassIds.push(class_id);
+    }
+
+    // Enroll student in all selected classes
+    for (const cid of allClassIds) {
+      await prisma.studentClassEnrollment.create({
+        data: {
           student_id: student.id,
-          class_id,
-          subject: subj,
+          class_id: cid,
           enrollment_date: new Date().toISOString(),
-          status: 'active',
-        })),
-        skipDuplicates: true,
+        },
       });
+      await prisma.class.update({
+        where: { id: cid },
+        data: { current_students_count: { increment: 1 } },
+      });
+    }
+
+    // Enroll in subjects - supports both flat array and per-class map
+    // subjects can be: ["Physics", "Maths"] (legacy, applied to class_id)
+    // OR: { "class-uuid-1": ["Physics"], "class-uuid-2": ["Chemistry"] }
+    if (subjects) {
+      if (Array.isArray(subjects) && subjects.length > 0 && allClassIds.length > 0) {
+        // Legacy flat array - apply to first class
+        const targetClassId = class_id || allClassIds[0];
+        await prisma.studentSubjectEnrollment.createMany({
+          data: subjects.map((subj: string) => ({
+            student_id: student.id,
+            class_id: targetClassId,
+            subject: subj,
+            enrollment_date: new Date().toISOString(),
+            status: 'active',
+          })),
+          skipDuplicates: true,
+        });
+      } else if (typeof subjects === 'object' && !Array.isArray(subjects)) {
+        // Per-class subject map
+        for (const [cid, subjectList] of Object.entries(subjects)) {
+          if (Array.isArray(subjectList) && subjectList.length > 0) {
+            await prisma.studentSubjectEnrollment.createMany({
+              data: (subjectList as string[]).map((subj: string) => ({
+                student_id: student.id,
+                class_id: cid,
+                subject: subj,
+                enrollment_date: new Date().toISOString(),
+                status: 'active',
+              })),
+              skipDuplicates: true,
+            });
+          }
+        }
+      }
     }
 
     if (parent_name && parent_phone) {
@@ -411,20 +463,6 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
       });
     }
 
-    if (class_id) {
-      await prisma.studentClassEnrollment.create({
-        data: {
-          student_id: student.id,
-          class_id,
-          enrollment_date: new Date().toISOString(),
-        },
-      });
-      await prisma.class.update({
-        where: { id: class_id },
-        data: { current_students_count: { increment: 1 } },
-      });
-    }
-
     invalidateCache('/api/students');
     res.status(201).json({
       success: true,
@@ -448,13 +486,66 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
 router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
+    const { class_ids, subjects, ...studentFields } = req.body;
+
+    // Update basic student info
     const student = await prisma.student.update({
       where: { id },
-      data: req.body,
+      data: studentFields,
     });
+
+    // If class_ids provided, sync class enrollments
+    if (class_ids && Array.isArray(class_ids)) {
+      const existing = await prisma.studentClassEnrollment.findMany({
+        where: { student_id: id },
+        select: { class_id: true },
+      });
+      const existingIds = existing.map(e => e.class_id);
+      
+      // Add new enrollments
+      const toAdd = class_ids.filter((cid: string) => !existingIds.includes(cid));
+      for (const cid of toAdd) {
+        await prisma.studentClassEnrollment.create({
+          data: { student_id: id, class_id: cid, enrollment_date: new Date().toISOString() },
+        });
+        await prisma.class.update({ where: { id: cid }, data: { current_students_count: { increment: 1 } } });
+      }
+
+      // Remove old enrollments
+      const toRemove = existingIds.filter(cid => !class_ids.includes(cid));
+      for (const cid of toRemove) {
+        await prisma.studentClassEnrollment.deleteMany({ where: { student_id: id, class_id: cid } });
+        await prisma.studentSubjectEnrollment.deleteMany({ where: { student_id: id, class_id: cid } });
+        await prisma.class.update({ where: { id: cid }, data: { current_students_count: { decrement: 1 } } });
+      }
+    }
+
+    // If subjects map provided { class_id: ["subject1", "subject2"] }, sync per-class
+    if (subjects && typeof subjects === 'object' && !Array.isArray(subjects)) {
+      for (const [cid, subjectList] of Object.entries(subjects)) {
+        if (!Array.isArray(subjectList)) continue;
+        // Remove old subject enrollments for this class
+        await prisma.studentSubjectEnrollment.deleteMany({ where: { student_id: id, class_id: cid } });
+        // Create new ones
+        if ((subjectList as string[]).length > 0) {
+          await prisma.studentSubjectEnrollment.createMany({
+            data: (subjectList as string[]).map((subj: string) => ({
+              student_id: id,
+              class_id: cid,
+              subject: subj,
+              enrollment_date: new Date().toISOString(),
+              status: 'active',
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+    }
+
     invalidateCache('/api/students');
     res.json({ success: true, data: { ...student, id: student.id } });
   } catch (error: any) {
+    console.error('PUT /students/:id error:', error);
     if (error.code === 'P2025') {
       res.status(404).json({ success: false, message: 'Student not found' });
       return;

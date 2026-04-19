@@ -7,11 +7,12 @@ import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ClassProfilePage({ params }: { params: { id: string } }) {
+export default async function ClassProfilePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     const session = await requireRole('admin');
     if (!session) redirect('/login');
 
-    const data = await getClassDetailData(params.id);
+    const data = await getClassDetailData(id);
 
     if (!data || !data.class) {
          return (

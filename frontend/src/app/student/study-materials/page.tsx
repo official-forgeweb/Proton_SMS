@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
-import { BookOpen, FileText, Eye, Download, Search, BookMarked, MonitorPlay } from 'lucide-react';
+import { BookOpen, FileText, Eye, Download, Search, BookMarked, MonitorPlay, X, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import ToolBottomBar from '@/components/ToolBottomBar';
 
@@ -11,6 +11,36 @@ export default function StudentStudyMaterialsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState('');
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewTitle, setPreviewTitle] = useState('');
+    const [downloading, setDownloading] = useState<string | null>(null);
+
+    const handleDownload = async (url: string, title: string) => {
+        try {
+            setDownloading(url);
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `${title}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error('Download failed:', error);
+            // Fallback: open in new tab
+            window.open(url, '_blank');
+        } finally {
+            setDownloading(null);
+        }
+    };
+
+    const handlePreview = (url: string, title: string) => {
+        setPreviewUrl(url);
+        setPreviewTitle(title);
+    };
 
     useEffect(() => {
         fetchMaterials();
@@ -96,32 +126,86 @@ export default function StudentStudyMaterialsPage() {
                             </div>
 
                             <div style={{ marginTop: 'auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <a 
-                                    href={item.pdf_url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
+                                <button 
+                                    onClick={() => handlePreview(item.pdf_url, item.title)}
                                     style={{ 
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                                         padding: '12px', background: '#F8F9FD', border: '1px solid #E2E8F0', borderRadius: '12px',
-                                        color: '#1A1D3B', fontWeight: 700, fontSize: '14px', textDecoration: 'none', transition: 'background 0.2s'
+                                        color: '#1A1D3B', fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'background 0.2s'
                                     }}
                                 >
                                     <Eye size={18} /> Preview
-                                </a>
-                                <a 
-                                    href={item.pdf_url} 
-                                    download 
+                                </button>
+                                <button 
+                                    onClick={() => handleDownload(item.pdf_url, item.title)}
+                                    disabled={downloading === item.pdf_url}
                                     style={{ 
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                                         padding: '12px', background: '#EEF0FF', border: '1px solid #EEF0FF', borderRadius: '12px',
-                                        color: '#4F60FF', fontWeight: 700, fontSize: '14px', textDecoration: 'none', transition: 'background 0.2s'
+                                        color: '#4F60FF', fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'background 0.2s',
+                                        opacity: downloading === item.pdf_url ? 0.6 : 1
                                     }}
                                 >
-                                    <Download size={18} /> Download
-                                </a>
+                                    {downloading === item.pdf_url ? <Loader2 size={18} className="spin" /> : <Download size={18} />}
+                                    {downloading === item.pdf_url ? 'Downloading...' : 'Download'}
+                                </button>
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+            {/* PDF Preview Modal */}
+            {previewUrl && (
+                <div style={{ 
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                    zIndex: 200, padding: '24px', backdropFilter: 'blur(4px)'
+                }}>
+                    <div style={{ 
+                        width: '100%', maxWidth: '900px', height: '90vh', 
+                        background: '#FFFFFF', borderRadius: '24px', 
+                        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                        boxShadow: '0 25px 60px rgba(0,0,0,0.3)'
+                    }}>
+                        <div style={{ 
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                            padding: '20px 24px', borderBottom: '1px solid #E2E8F0'
+                        }}>
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#1A1D3B' }}>
+                                {previewTitle}
+                            </h3>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <button
+                                    onClick={() => handleDownload(previewUrl, previewTitle)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                        padding: '8px 16px', background: '#EEF0FF', border: 'none',
+                                        borderRadius: '10px', color: '#4F60FF', fontWeight: 700,
+                                        fontSize: '13px', cursor: 'pointer'
+                                    }}
+                                >
+                                    <Download size={16} /> Download
+                                </button>
+                                <button 
+                                    onClick={() => { setPreviewUrl(null); setPreviewTitle(''); }}
+                                    style={{ 
+                                        background: '#F4F5F9', border: 'none', borderRadius: '10px',
+                                        width: '40px', height: '40px', display: 'flex', alignItems: 'center', 
+                                        justifyContent: 'center', cursor: 'pointer'
+                                    }}
+                                >
+                                    <X size={20} color="#5E6278" />
+                                </button>
+                            </div>
+                        </div>
+                        <div style={{ flex: 1, background: '#F0F0F5' }}>
+                            <iframe 
+                                src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`}
+                                style={{ width: '100%', height: '100%', border: 'none' }}
+                                title="PDF Preview"
+                            />
+                        </div>
+                    </div>
                 </div>
             )}
             <ToolBottomBar />

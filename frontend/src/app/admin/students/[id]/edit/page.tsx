@@ -1,30 +1,61 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { Users, BookOpen, Check, ChevronDown, X } from 'lucide-react';
+import { Edit2, BookOpen, Check, Users } from 'lucide-react';
 
-export default function AddStudentPage() {
+export default function EditStudentPage() {
+    const params = useParams();
     const router = useRouter();
     const [classes, setClasses] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const emptyForm = {
+    const [formData, setFormData] = useState({
         first_name: '', last_name: '', email: '', phone: '', date_of_birth: '',
-        gender: 'male', school_name: '', admission_type: 'fresh',
+        gender: 'male', school_name: '', academic_status: 'active',
         class_ids: [] as string[],
-        subjects: {} as Record<string, string[]>,  // { classId: ["Physics", "Maths"] }
-    };
-    const [formData, setFormData] = useState(emptyForm);
+        subjects: {} as Record<string, string[]>,
+    });
 
     useEffect(() => {
-        api.get('/classes').then(res => setClasses(res.data.data || [])).catch(console.error);
-    }, []);
+        if (params.id) {
+            Promise.all([
+                api.get(`/students/${params.id}`),
+                api.get('/classes'),
+            ]).then(([studentRes, classesRes]) => {
+                const s = studentRes.data.data;
+                const allClasses = classesRes.data.data || [];
+                setClasses(allClasses);
 
-    // Get subjects for a specific class
+                // Build class_ids from enrollments
+                const enrolledClassIds = (s.classes || []).map((c: any) => c.id);
+
+                // Build subjects map from subject_enrollments
+                const subjectsMap: Record<string, string[]> = {};
+                (s.subject_enrollments || []).forEach((se: any) => {
+                    if (!subjectsMap[se.class_id]) subjectsMap[se.class_id] = [];
+                    subjectsMap[se.class_id].push(se.subject);
+                });
+
+                setFormData({
+                    first_name: s.first_name || '',
+                    last_name: s.last_name || '',
+                    email: s.email || '',
+                    phone: s.phone || '',
+                    date_of_birth: s.date_of_birth || '',
+                    gender: s.gender || 'male',
+                    school_name: s.school_name || '',
+                    academic_status: s.academic_status || 'active',
+                    class_ids: enrolledClassIds,
+                    subjects: subjectsMap,
+                });
+            }).catch(console.error).finally(() => setIsLoading(false));
+        }
+    }, [params.id]);
+
     const getClassSubjects = (classId: string): string[] => {
         const cls = classes.find(c => c.id === classId);
         if (!cls?.schedule) return [];
@@ -53,13 +84,15 @@ export default function AddStudentPage() {
     const toggleSubject = (classId: string, subject: string) => {
         setFormData(prev => {
             const current = prev.subjects[classId] || [];
-            const newSubjects = {
-                ...prev.subjects,
-                [classId]: current.includes(subject)
-                    ? current.filter(s => s !== subject)
-                    : [...current, subject]
+            return {
+                ...prev,
+                subjects: {
+                    ...prev.subjects,
+                    [classId]: current.includes(subject)
+                        ? current.filter(s => s !== subject)
+                        : [...current, subject]
+                }
             };
-            return { ...prev, subjects: newSubjects };
         });
     };
 
@@ -78,52 +111,39 @@ export default function AddStudentPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const submitData: any = { ...formData };
-            if (submitData.class_ids.length === 0) {
-                delete submitData.class_ids;
-                delete submitData.subjects;
-            }
-            // Clean empty subject arrays
-            if (submitData.subjects) {
-                const cleaned: Record<string, string[]> = {};
-                for (const [cid, subs] of Object.entries(submitData.subjects)) {
-                    if (Array.isArray(subs) && subs.length > 0) cleaned[cid] = subs as string[];
-                }
-                submitData.subjects = Object.keys(cleaned).length > 0 ? cleaned : undefined;
-            }
-            await api.post('/students', submitData);
-            router.push('/admin/students');
+            const { class_ids, subjects, ...studentFields } = formData;
+            await api.put(`/students/${params.id}`, {
+                ...studentFields,
+                class_ids,
+                subjects,
+            });
+            router.push(`/admin/students/${params.id}`);
         } catch (error: any) {
-            console.error('Error saving student:', error);
-            alert(error.response?.data?.message || 'Failed to save student');
+            console.error('Error updating student:', error);
+            alert(error.response?.data?.message || 'Failed to update student');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const subjectColors: Record<string, { bg: string; color: string; border: string; activeBg: string }> = {
-        'Mathematics': { bg: '#F5F3FF', color: '#7C3AED', border: '#DDD6FE', activeBg: '#EDE9FE' },
-        'Maths': { bg: '#F5F3FF', color: '#7C3AED', border: '#DDD6FE', activeBg: '#EDE9FE' },
-        'Physics': { bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE', activeBg: '#DBEAFE' },
-        'Chemistry': { bg: '#FFF7ED', color: '#EA580C', border: '#FED7AA', activeBg: '#FFEDD5' },
-        'Biology': { bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0', activeBg: '#DCFCE7' },
-        'English': { bg: '#FDF2F8', color: '#DB2777', border: '#FBCFE8', activeBg: '#FCE7F3' },
+    const subjectColors: Record<string, { color: string; activeBg: string }> = {
+        'Mathematics': { color: '#7C3AED', activeBg: '#EDE9FE' },
+        'Maths': { color: '#7C3AED', activeBg: '#EDE9FE' },
+        'Physics': { color: '#2563EB', activeBg: '#DBEAFE' },
+        'Chemistry': { color: '#EA580C', activeBg: '#FFEDD5' },
+        'Biology': { color: '#16A34A', activeBg: '#DCFCE7' },
+        'English': { color: '#DB2777', activeBg: '#FCE7F3' },
     };
 
     const getSubjectStyle = (subject: string, isActive: boolean) => {
-        const colors = subjectColors[subject] || { bg: '#F8F9FD', color: '#5E6278', border: '#E2E8F0', activeBg: '#F1F2F6' };
+        const colors = subjectColors[subject] || { color: '#5E6278', activeBg: '#F1F2F6' };
         return {
             background: isActive ? colors.activeBg : '#FFFFFF',
             color: isActive ? colors.color : '#8F92A1',
             border: `2px solid ${isActive ? colors.color : '#E2E8F0'}`,
-            borderRadius: '12px',
-            padding: '10px 16px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: 700 as const,
-            display: 'flex' as const,
-            alignItems: 'center' as const,
-            gap: '8px',
+            borderRadius: '12px', padding: '10px 16px', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 700 as const,
+            display: 'flex' as const, alignItems: 'center' as const, gap: '8px',
             transition: 'all 0.2s',
             boxShadow: isActive ? `0 2px 8px ${colors.color}20` : 'none',
         };
@@ -131,67 +151,86 @@ export default function AddStudentPage() {
 
     return (
         <FormPageLayout
-            title="Add New Student"
-            subtitle="Register a new student into the system"
-            backHref="/admin/students"
-            backLabel="Back to Students"
+            title="Edit Student"
+            subtitle="Update student information and class enrollments"
+            backHref={`/admin/students/${params.id}`}
+            backLabel="Back to Profile"
             requiredRole="admin"
-            icon={<Users size={20} strokeWidth={2.5} />}
+            icon={<Edit2 size={20} strokeWidth={2.5} />}
+            maxWidth="900px"
         >
-            <form onSubmit={handleSubmit}>
-                <div className="form-section">
-                    <div className="form-section-title">
-                        <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} />
-                        Personal Information
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                        <div>
-                            <label className="form-label">First Name *</label>
-                            <input required className="form-input" value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} placeholder="Enter first name" />
-                        </div>
-                        <div>
-                            <label className="form-label">Last Name *</label>
-                            <input required className="form-input" value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} placeholder="Enter last name" />
-                        </div>
-                        <div>
-                            <label className="form-label">Primary Mobile Number *</label>
-                            <input required className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
-                        </div>
-                        <div>
-                            <label className="form-label">Email Address</label>
-                            <input type="email" className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="student@example.com" />
-                        </div>
-                        <div>
-                            <label className="form-label">Date of Birth</label>
-                            <DatePicker
-                                required
-                                showMonthDropdown showYearDropdown scrollableYearDropdown
-                                yearDropdownItemNumber={100} dropdownMode="select"
-                                selected={formData.date_of_birth ? new Date(formData.date_of_birth) : null}
-                                onChange={(date: Date | null) => setFormData({ ...formData, date_of_birth: date ? date.toISOString().split('T')[0] : '' })}
-                                dateFormat="MMMM d, yyyy" placeholderText="Select date of birth"
-                            />
-                        </div>
-                        <div>
-                            <label className="form-label">Gender</label>
-                            <select className="form-input" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-                    </div>
+            {isLoading ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%' }}>
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                    ))}
                 </div>
-
-                <div className="form-section">
-                    <div className="form-section-title">
-                        <BookOpen size={16} strokeWidth={2.5} style={{ color: '#E53935' }} />
-                        Academic Details
+            ) : (
+                <form onSubmit={handleSubmit}>
+                    <div className="form-section">
+                        <div className="form-section-title">
+                            <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} />
+                            Personal Information
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                            <div>
+                                <label className="form-label">First Name *</label>
+                                <input required className="form-input" value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="form-label">Last Name *</label>
+                                <input required className="form-input" value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="form-label">Phone *</label>
+                                <input required className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="form-label">Email</label>
+                                <input type="email" className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="form-label">Date of Birth</label>
+                                <DatePicker
+                                    showMonthDropdown showYearDropdown scrollableYearDropdown
+                                    yearDropdownItemNumber={100} dropdownMode="select"
+                                    selected={formData.date_of_birth ? new Date(formData.date_of_birth) : null}
+                                    onChange={(date: Date | null) => setFormData({ ...formData, date_of_birth: date ? date.toISOString().split('T')[0] : '' })}
+                                    dateFormat="MMMM d, yyyy" placeholderText="Select date of birth"
+                                />
+                            </div>
+                            <div>
+                                <label className="form-label">Gender</label>
+                                <select className="form-input" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="form-label">School Name</label>
+                                <input className="form-input" value={formData.school_name} onChange={e => setFormData({ ...formData, school_name: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="form-label">Academic Status</label>
+                                <select className="form-input" value={formData.academic_status} onChange={e => setFormData({ ...formData, academic_status: e.target.value })}>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="suspended">Suspended</option>
+                                    <option value="alumni">Alumni</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                        <div style={{ gridColumn: '1 / -1' }}>
+
+                    <div className="form-section">
+                        <div className="form-section-title">
+                            <BookOpen size={16} strokeWidth={2.5} style={{ color: '#E53935' }} />
+                            Class Enrollments & Subjects
+                        </div>
+                        <div>
                             <label className="form-label">
-                                Assign Batches / Classes
+                                Enrolled Batches
                                 <span style={{ fontSize: '12px', color: '#8F92A1', fontWeight: 500, marginLeft: '8px' }}>
                                     ({formData.class_ids.length} selected)
                                 </span>
@@ -213,7 +252,6 @@ export default function AddStudentPage() {
                                                 style={{
                                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                                     padding: '14px 18px', cursor: 'pointer',
-                                                    transition: 'all 0.2s'
                                                 }}
                                             >
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -244,7 +282,6 @@ export default function AddStudentPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Subject selection for this class */}
                                             {isSelected && classSubjects.length > 0 && (
                                                 <div style={{ padding: '0 18px 16px', borderTop: '1px solid #F1F2F6' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0 8px' }}>
@@ -252,10 +289,7 @@ export default function AddStudentPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => selectAllSubjects(cls.id)}
-                                                            style={{
-                                                                background: 'none', border: 'none', cursor: 'pointer',
-                                                                fontSize: '12px', fontWeight: 700, color: '#E53935',
-                                                            }}
+                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#E53935' }}
                                                         >
                                                             {(formData.subjects[cls.id]?.length || 0) === classSubjects.length ? 'Deselect All' : 'Select All'}
                                                         </button>
@@ -290,20 +324,16 @@ export default function AddStudentPage() {
                                 })}
                             </div>
                         </div>
-                        <div>
-                            <label className="form-label">Previous School Name</label>
-                            <input className="form-input" value={formData.school_name} onChange={e => setFormData({ ...formData, school_name: e.target.value })} placeholder="Ex. Delhi Public School" />
-                        </div>
                     </div>
-                </div>
 
-                <div className="form-actions">
-                    <button type="button" className="btn-cancel" onClick={() => router.push('/admin/students')}>Cancel</button>
-                    <button type="submit" className="btn-submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Saving...' : 'Save Student'}
-                    </button>
-                </div>
-            </form>
+                    <div className="form-actions">
+                        <button type="button" className="btn-cancel" onClick={() => router.push(`/admin/students/${params.id}`)}>Cancel</button>
+                        <button type="submit" className="btn-submit" disabled={isSubmitting}>
+                            {isSubmitting ? 'Updating...' : 'Update Student'}
+                        </button>
+                    </div>
+                </form>
+            )}
         </FormPageLayout>
     );
 }
