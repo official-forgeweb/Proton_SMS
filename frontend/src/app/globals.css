@@ -824,6 +824,9 @@ h6 {
 }
 
 .empty-state svg {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
   width: 64px;
   height: 64px;
   margin-bottom: 16px;

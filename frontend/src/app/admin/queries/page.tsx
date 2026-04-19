@@ -176,7 +176,7 @@ export default function AdminQueriesPage() {
                     </div>
                 ) : queries.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '60px', background: '#F8F9FD', borderRadius: '24px' }}>
-                        <MessageSquare size={48} color="#A1A5B7" style={{ marginBottom: '16px' }} />
+                        <MessageSquare size={48} color="#A1A5B7" style={{ display: 'block', margin: '0 auto 16px auto' }} />
                         <h3 style={{ color: '#1A1D3B', fontWeight: 700 }}>No queries found</h3>
                         <p style={{ color: '#5E6278', fontSize: '14px' }}>No queries match the current filters.</p>
                     </div>

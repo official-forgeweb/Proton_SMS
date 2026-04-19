@@ -81,8 +81,8 @@ export default function StudentAttendancePage() {
 
                             {history.length > 0 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {history.map((record) => (
-                                        <div key={record._id} style={{
+                                    {history.map((record, i) => (
+                                        <div key={record.id || record._id || i} style={{
                                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                             padding: '12px 16px', border: '1px solid var(--border-primary)', borderRadius: '8px',
                                             background: record.status === 'present' ? 'var(--bg-tertiary)' : record.status === 'late' ? 'var(--warning-light)' : '#FEE2E2'

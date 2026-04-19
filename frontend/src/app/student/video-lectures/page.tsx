@@ -77,7 +77,7 @@ export default function StudentVideoLecturesPage() {
                 </div>
             ) : dates.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '80px 20px', background: '#FFFFFF', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
-                    <Video size={64} color="#A1A5B7" style={{ marginBottom: '20px' }} />
+                    <Video size={64} color="#A1A5B7" style={{ display: 'block', margin: '0 auto 20px auto' }} />
                     <h3 style={{ margin: '0 0 8px 0', color: '#1A1D3B', fontSize: '20px', fontWeight: 800 }}>No Lectures Available</h3>
                     <p style={{ margin: 0, color: '#8F92A1', fontSize: '15px' }}>Check back later or adjust your filters.</p>
                 </div>

@@ -271,7 +271,7 @@ export default function AdminVideoLecturesPage() {
                     <div style={{ display: 'grid', gap: '12px' }}>{[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '70px', borderRadius: '12px' }} />)}</div>
                 ) : lectures.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                        <Video size={48} color="#A1A5B7" style={{ marginBottom: '16px' }} />
+                        <Video size={48} color="#A1A5B7" style={{ display: 'block', margin: '0 auto 16px auto' }} />
                         <h3 style={{ margin: '0 0 8px 0', color: '#1A1D3B', fontSize: '18px' }}>No Lectures Found</h3>
                         <p style={{ margin: 0, color: '#8F92A1', fontSize: '14px' }}>Upload an Excel file to get started.</p>
                     </div>

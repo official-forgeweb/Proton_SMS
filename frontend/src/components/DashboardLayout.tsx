@@ -48,67 +48,128 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
         return (
             <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                minHeight: '100vh', background: '#F4F5F9', flexDirection: 'column',
-                position: 'relative', overflow: 'hidden'
+                minHeight: '100vh', background: '#F8F9FD', flexDirection: 'column',
+                position: 'relative', overflow: 'hidden', zIndex: 9999
             }}>
                 <style dangerouslySetInnerHTML={{__html: `
-                    @keyframes pulseGlow {
-                        0% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.4); transform: scale(0.98); }
-                        70% { box-shadow: 0 0 0 20px rgba(229, 57, 53, 0); transform: scale(1); }
-                        100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0); transform: scale(0.98); }
+                    @keyframes spin-slow {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
                     }
-                    @keyframes float {
-                        0% { transform: translateY(0px); }
-                        50% { transform: translateY(-10px); }
-                        100% { transform: translateY(0px); }
+                    @keyframes pulse-soft {
+                        0%, 100% { transform: scale(1); opacity: 1; }
+                        50% { transform: scale(0.95); opacity: 0.8; }
                     }
-                    @keyframes shimmer {
-                        0% { background-position: -1000px 0; }
-                        100% { background-position: 1000px 0; }
+                    @keyframes loader-progress {
+                        0% { left: -100%; right: 100%; }
+                        50% { left: 0%; right: 0%; }
+                        100% { left: 100%; right: -100%; }
                     }
-                    .premium-loader-icon {
-                        animation: pulseGlow 2s infinite ease-in-out, float 3s infinite ease-in-out;
+                    @keyframes fade-in-up {
+                        from { opacity: 0; transform: translateY(15px); }
+                        to { opacity: 1; transform: translateY(0); }
                     }
-                    .loading-text {
-                        background: linear-gradient(90deg, #1A1D3B 0%, #E53935 50%, #1A1D3B 100%);
-                        background-size: 200% auto;
-                        color: transparent;
-                        -webkit-background-clip: text;
-                        background-clip: text;
-                        animation: shimmer 2s linear infinite;
+                    @keyframes dot-blink {
+                        0% { opacity: 0.2; }
+                        20% { opacity: 1; }
+                        100% { opacity: 0.2; }
+                    }
+                    
+                    .premium-backdrop {
+                        position: absolute;
+                        top: 0; left: 0; right: 0; bottom: 0;
+                        background: radial-gradient(circle at 50% -20%, rgba(229, 57, 53, 0.08) 0%, rgba(248, 249, 253, 1) 60%);
+                        z-index: 0;
+                    }
+                    .loader-logo-container {
+                        position: relative;
+                        width: 90px; height: 90px;
+                        display: flex; align-items: center; justify-content: center;
+                        margin-bottom: 36px;
+                        z-index: 10;
+                        animation: pulse-soft 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                    }
+                    .loader-ring {
+                        position: absolute;
+                        top: -12px; left: -12px; right: -12px; bottom: -12px;
+                        border-radius: 50%;
+                        border: 2px dashed rgba(229, 57, 53, 0.25);
+                        animation: spin-slow 15s linear infinite;
+                    }
+                    .loader-ring-inner {
+                        position: absolute;
+                        top: -4px; left: -4px; right: -4px; bottom: -4px;
+                        border-radius: 50%;
+                        border: 2px solid transparent;
+                        border-top-color: #E53935;
+                        border-right-color: rgba(229, 57, 53, 0.3);
+                        animation: spin-slow 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+                    }
+                    .logo-cube {
+                        width: 64px; height: 64px;
+                        background: linear-gradient(135deg, #E53935 0%, #C62828 100%);
+                        border-radius: 18px;
+                        display: flex; align-items: center; justify-content: center;
+                        box-shadow: 0 16px 32px rgba(229, 57, 53, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+                    }
+                    .text-container {
+                        z-index: 10;
+                        text-align: center;
+                        animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    }
+                    .loading-bar-track {
+                        width: 220px; height: 4px;
+                        background: rgba(229, 57, 53, 0.08);
+                        border-radius: 4px;
+                        margin: 28px auto 0;
+                        overflow: hidden;
+                        position: relative;
+                    }
+                    .loading-bar-fill {
+                        position: absolute;
+                        top: 0; bottom: 0;
+                        background: linear-gradient(90deg, #E53935, #FF5252);
+                        border-radius: 4px;
+                        animation: loader-progress 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                        width: 50%;
                     }
                 `}} />
                 
-                <div style={{
-                    width: '300px', height: '300px', position: 'absolute',
-                    background: 'radial-gradient(circle, rgba(229,57,53,0.05) 0%, transparent 70%)',
-                    top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                    borderRadius: '50%', pointerEvents: 'none'
-                }} />
+                <div className="premium-backdrop" />
 
-                <div style={{ textAlign: 'center', zIndex: 10 }} className="premium-loader-icon">
-                    <div style={{
-                        width: '80px', height: '80px', borderRadius: '24px',
-                        background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        margin: '0 auto 24px', boxShadow: '0 12px 32px rgba(229, 57, 53, 0.3)'
-                    }}>
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                <div className="loader-logo-container">
+                    <div className="loader-ring" />
+                    <div className="loader-ring-inner" />
+                    <div className="logo-cube">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                            <path d="M2 17l10 5 10-5" />
+                            <path d="M2 12l10 5 10-5" />
                         </svg>
                     </div>
-                    <h2 className="loading-text" style={{ 
-                        fontSize: '24px', fontWeight: 800, margin: '0 0 8px 0',
-                        fontFamily: 'Poppins, sans-serif'
+                </div>
+
+                <div className="text-container">
+                    <h2 style={{ 
+                        fontSize: '32px', fontWeight: 850, color: '#1A1D3B', 
+                        margin: '0 0 8px 0', letterSpacing: '-0.03em',
+                        fontFamily: 'SF Pro Display, Inter, sans-serif'
                     }}>
                         Proton LMS
                     </h2>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                        <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px', borderColor: '#E53935', borderTopColor: 'transparent' }} />
-                        <p style={{ color: '#5E6278', fontSize: '14px', fontWeight: 600, margin: 0 }}>
-                            Loading workspace...
-                        </p>
+                    <p style={{ 
+                        color: '#5E6278', fontSize: '16px', fontWeight: 600, margin: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px'
+                    }}>
+                        Preparing your workspace
+                        <span style={{ display: 'inline-flex', width: '24px', textAlign: 'left' }}>
+                            <span style={{ animation: 'dot-blink 1.4s infinite both' }}>.</span>
+                            <span style={{ animation: 'dot-blink 1.4s infinite both 0.2s' }}>.</span>
+                            <span style={{ animation: 'dot-blink 1.4s infinite both 0.4s' }}>.</span>
+                        </span>
+                    </p>
+                    <div className="loading-bar-track">
+                        <div className="loading-bar-fill" />
                     </div>
                 </div>
             </div>

@@ -149,7 +149,7 @@ export default function AdminActivityPage() {
                             );
                         }) : (
                             <div className="card" style={{ textAlign: 'center', padding: '60px', borderRadius: '20px' }}>
-                                <Clock size={48} color="#A1A5B7" style={{ marginBottom: '16px' }} />
+                                <Clock size={48} color="#A1A5B7" style={{ display: 'block', margin: '0 auto 16px auto' }} />
                                 <h3 style={{ color: '#1A1D3B' }}>No activity found</h3>
                                 <p style={{ color: '#A1A5B7' }}>Try adjusting your search or filter.</p>
                             </div>
