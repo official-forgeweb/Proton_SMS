@@ -50,7 +50,12 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         const orConditions = classIds.map(cid => {
             const subjects = subjectsByClass[cid];
             if (subjects && subjects.length > 0) {
-                return { class_id: cid, subject: { in: subjects } };
+                return { 
+                    class_id: cid, 
+                    OR: subjects.map(s => ({
+                        subject: { contains: s.trim(), mode: 'insensitive' }
+                    }))
+                };
             }
             return { class_id: cid };
         });

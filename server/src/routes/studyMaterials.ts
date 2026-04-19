@@ -79,8 +79,63 @@ router.get('/', authenticateToken, async (req, res) => {
         if (subject) filters.subject = String(subject);
 
         // If Student, restrict to their class subjects
-        // (Assuming you'll enhance this via student's enrolled class later, or via frontend passing class_id securely)
-        
+        if (userRole === 'student') {
+            const student = await prisma.student.findUnique({ 
+                where: { user_id: userId },
+                select: {
+                    class_enrollments: { 
+                        where: { enrollment_status: 'active' },
+                        select: { class_id: true }
+                    },
+                    subject_enrollments: { 
+                        where: { status: 'active' },
+                        select: { class_id: true, subject: true }
+                    }
+                }
+            });
+
+            if (student) {
+                const classIds = student.class_enrollments.map(e => e.class_id);
+                const subjectEnrolls = student.subject_enrollments;
+
+                if (classIds.length === 0) {
+                    res.json({ success: true, data: [] });
+                    return;
+                }
+
+                const subjectsByClass: Record<string, string[]> = {};
+                subjectEnrolls.forEach(e => {
+                    if (!subjectsByClass[e.class_id]) subjectsByClass[e.class_id] = [];
+                    subjectsByClass[e.class_id].push(e.subject);
+                });
+
+                const orConditions = classIds.map(cid => {
+                    const subjects = subjectsByClass[cid];
+                    if (subjects && subjects.length > 0) {
+                        return { 
+                            class_id: cid, 
+                            OR: subjects.map(s => ({
+                                subject: { contains: s.trim(), mode: 'insensitive' }
+                            }))
+                        };
+                    }
+                    return { class_id: cid };
+                });
+
+                if (filters.OR) {
+                    filters.AND = [ { OR: filters.OR }, { OR: orConditions } ];
+                    delete filters.OR;
+                } else {
+                    filters.OR = orConditions;
+                }
+
+                if (filters.class_id && !classIds.includes(filters.class_id)) {
+                    res.json({ success: true, data: [] });
+                    return;
+                }
+            }
+        }
+
         const materials = await prisma.studyMaterial.findMany({
             where: filters,
             include: {

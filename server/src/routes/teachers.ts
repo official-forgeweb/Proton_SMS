@@ -14,7 +14,7 @@ const generateEmployeeId = (): string =>
 const paramId = (req: Request): string => String(req.params.id);
 
 // GET /api/teachers
-router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, authorize('admin', 'teacher', 'student'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { search, subject, status } = req.query as Record<string, string>;
     let where: any = {};

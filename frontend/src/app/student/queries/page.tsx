@@ -87,14 +87,33 @@ export default function StudentQueriesPage() {
 
     return (
         <DashboardLayout requiredRole="student">
-            <div className="page-header" style={{ marginBottom: '32px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="page-header" style={{ marginBottom: '32px', width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '24px', flexWrap: 'wrap' }}>
                     <div>
                         <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>My Queries</h1>
                         <p style={{ color: '#5E6278', fontSize: '15px', marginTop: '6px', fontWeight: 500 }}>Submit and track your support requests.</p>
                     </div>
-                    <button onClick={() => setShowCreateModal(true)} className="btn-primary hover-lift"
-                        style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button 
+                        onClick={() => setShowCreateModal(true)}
+                        className="hover-lift"
+                        style={{ 
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
+                            color: 'white', border: 'none', padding: '12px 24px',
+                            borderRadius: '14px', fontWeight: 700, fontSize: '14px',
+                            boxShadow: '0 4px 15px rgba(229, 57, 53, 0.3)',
+                            transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                            cursor: 'pointer'
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.boxShadow = '0 8px 25px rgba(229, 57, 53, 0.4)';
+                            e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(229, 57, 53, 0.3)';
+                            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                        }}
+                    >
                         <Plus size={20} strokeWidth={2.5} /> Raise Query
                     </button>
                 </div>

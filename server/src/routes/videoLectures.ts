@@ -200,21 +200,61 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
     if (subject) where.subject = { contains: String(subject), mode: 'insensitive' };
     if (date) where.date = String(date);
 
-    // If student, restrict to their enrolled classes
+    // If student, restrict to their enrolled classes and OPTED SUBJECTS
     if (req.user!.role === 'student') {
-        const student = await prisma.student.findUnique({ where: { user_id: req.user!.id } });
+        const student = await prisma.student.findUnique({ 
+            where: { user_id: req.user!.id },
+            select: {
+                class_enrollments: { 
+                    where: { enrollment_status: 'active' },
+                    select: { class_id: true }
+                },
+                subject_enrollments: { 
+                    where: { status: 'active' },
+                    select: { class_id: true, subject: true }
+                }
+            }
+        });
+        
         if (student) {
-            const enrollments = await prisma.studentClassEnrollment.findMany({
-                where: { student_id: student.id, enrollment_status: 'active' },
-                select: { class_id: true }
-            });
-            const myClassIds = enrollments.map(e => e.class_id);
-            if (where.class_id && !myClassIds.includes(where.class_id)) {
+            const classIds = student.class_enrollments.map(e => e.class_id);
+            const subjectEnrolls = student.subject_enrollments;
+
+            if (classIds.length === 0) {
                 res.json({ success: true, data: [] });
                 return;
             }
-            if (!where.class_id) {
-                where.class_id = { in: myClassIds };
+
+            const subjectsByClass: Record<string, string[]> = {};
+            subjectEnrolls.forEach(e => {
+                if (!subjectsByClass[e.class_id]) subjectsByClass[e.class_id] = [];
+                subjectsByClass[e.class_id].push(e.subject);
+            });
+
+            const orConditions = classIds.map(cid => {
+                const subjects = subjectsByClass[cid];
+                if (subjects && subjects.length > 0) {
+                    return { 
+                        class_id: cid, 
+                        OR: subjects.map(s => ({
+                            subject: { contains: s.trim(), mode: 'insensitive' }
+                        }))
+                    };
+                }
+                return { class_id: cid };
+            });
+
+            if (where.OR) {
+                where.AND = [ { OR: where.OR }, { OR: orConditions } ];
+                delete where.OR;
+            } else {
+                where.OR = orConditions;
+            }
+            
+            // If they supplied a manual class filter that they aren't part of, block it
+            if (where.class_id && !classIds.includes(where.class_id)) {
+                res.json({ success: true, data: [] });
+                return;
             }
         }
     }
