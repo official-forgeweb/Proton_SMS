@@ -626,17 +626,45 @@ router.get('/:id/attendance', authenticateToken, async (req: Request, res: Respo
       return;
     }
 
-    const { month, year } = req.query as Record<string, string>;
+    const { month, year, class_id } = req.query as Record<string, string>;
     let attWhere: any = { student_id: student.id };
     if (month && year) {
       const prefix = `${year}-${String(parseInt(month)).padStart(2, '0')}`;
       attWhere.attendance_date = { startsWith: prefix };
     }
+    if (class_id) {
+      attWhere.class_id = class_id;
+    }
 
-    const records = await prisma.attendance.findMany({
-      where: attWhere,
-      orderBy: { attendance_date: 'desc' },
-    });
+    // Fetch records, enrollments, and subject enrollments in parallel
+    const [records, enrollments, subjectEnrollments] = await Promise.all([
+      prisma.attendance.findMany({
+        where: attWhere,
+        orderBy: { attendance_date: 'desc' },
+        include: {
+          class: { select: { id: true, class_name: true, class_code: true, subject: true } },
+        },
+      }),
+      prisma.studentClassEnrollment.findMany({
+        where: { student_id: student.id, enrollment_status: 'active' },
+        include: {
+          class: { select: { id: true, class_name: true, class_code: true, subject: true } },
+        },
+      }),
+      prisma.studentSubjectEnrollment.findMany({
+        where: { student_id: student.id, status: 'active' },
+        select: { class_id: true, subject: true },
+      }),
+    ]);
+
+    const enrolledClasses = enrollments.map(e => ({
+      id: e.class?.id,
+      class_name: e.class?.class_name,
+      class_code: e.class?.class_code,
+      subject: e.class?.subject,
+      enrollment_date: e.enrollment_date,
+      subjects: subjectEnrollments.filter(se => se.class_id === e.class_id).map(se => se.subject),
+    }));
 
     const totalRecords = records.length;
     const present = records.filter(r => r.status === 'present').length;
@@ -645,7 +673,14 @@ router.get('/:id/attendance', authenticateToken, async (req: Request, res: Respo
     res.json({
       success: true,
       data: {
-        records,
+        records: records.map(r => ({
+          ...r,
+          class_name: r.class?.class_name,
+          class_code: r.class?.class_code,
+          class_subject: r.class?.subject,
+        })),
+        enrolled_classes: enrolledClasses,
+        enrollment_date: student.enrollment_date,
         summary: {
           total: totalRecords,
           present,
@@ -656,6 +691,7 @@ router.get('/:id/attendance', authenticateToken, async (req: Request, res: Respo
       },
     });
   } catch (error) {
+    console.error('Student attendance error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
