@@ -59,6 +59,8 @@ export default function StudentTimetablePage() {
     const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
     const [selectedDayIdx, setSelectedDayIdx] = useState(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
     const [filterSubject, setFilterSubject] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
+    const [filterTeacher, setFilterTeacher] = useState('');
     const todayRef = useMemo(() => new Date(), []);
     const weekDates = useMemo(() => {
         const ref = new Date(todayRef);
@@ -101,12 +103,32 @@ export default function StudentTimetablePage() {
         return result.sort();
     }, [rawTimetable]);
 
+    // unique teachers for filter
+    const teachers = useMemo(() => {
+        const seen = new Set<string>();
+        const result: { id: string; name: string }[] = [];
+        rawTimetable.forEach(t => {
+            if (t.teacher && !seen.has(t.teacher_id)) {
+                seen.add(t.teacher_id);
+                result.push({ id: t.teacher_id, name: `${t.teacher.first_name || ''} ${t.teacher.last_name || ''}`.trim() });
+            }
+        });
+        return result.sort((a, b) => a.name.localeCompare(b.name));
+    }, [rawTimetable]);
+
     // Filter + group by date
     const entriesByDate = useMemo(() => {
         const map: Record<string, any[]> = {};
-        const filtered = filterSubject
-            ? rawTimetable.filter(t => t.subject === filterSubject)
-            : rawTimetable;
+        let filtered = rawTimetable;
+        if (filterSubject) {
+            filtered = filtered.filter(t => (t.subject || '').trim().toLowerCase() === filterSubject.trim().toLowerCase());
+        }
+        if (filterStatus) {
+            filtered = filtered.filter(t => t.status === filterStatus);
+        }
+        if (filterTeacher) {
+            filtered = filtered.filter(t => t.teacher_id === filterTeacher);
+        }
 
         filtered.forEach(entry => {
             if (!map[entry.date]) map[entry.date] = [];
@@ -114,17 +136,42 @@ export default function StudentTimetablePage() {
         });
 
         // Sort each day by start_time
-        Object.values(map).forEach(arr => arr.sort((a, b) => a.start_time.localeCompare(b.start_time)));
+        Object.values(map).forEach(arr => arr.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')));
         return map;
-    }, [rawTimetable, filterSubject]);
+    }, [rawTimetable, filterSubject, filterStatus, filterTeacher]);
 
-    // Stats
+    // Stats (use raw unfiltered data so stats don't change with filters)
+    const rawEntriesByDate = useMemo(() => {
+        const map: Record<string, any[]> = {};
+        rawTimetable.forEach(entry => {
+            if (!map[entry.date]) map[entry.date] = [];
+            map[entry.date].push(entry);
+        });
+        Object.values(map).forEach(arr => arr.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')));
+        return map;
+    }, [rawTimetable]);
+
     const weekEntries = useMemo(() => {
         const dateStrs = weekDates.map(formatDateStr);
         return dateStrs.flatMap(d => entriesByDate[d] || []);
     }, [weekDates, entriesByDate]);
 
+    const rawTodayEntries = rawEntriesByDate[todayStr] || [];
     const todayEntries = entriesByDate[todayStr] || [];
+
+    // Next upcoming class (time-aware, uses unfiltered data)
+    const nextClass = useMemo(() => {
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        for (const entry of rawTodayEntries) {
+            if (!entry.start_time) continue;
+            const [h, m] = entry.start_time.split(':').map(Number);
+            if (h * 60 + m > nowMinutes) return entry;
+        }
+        return null;
+    }, [rawTodayEntries]);
+
+    const hasActiveFilters = filterSubject || filterStatus || filterTeacher;
 
     return (
         <DashboardLayout requiredRole="student">
@@ -193,26 +240,66 @@ export default function StudentTimetablePage() {
                         )}
                     </div>
 
-                    {/* Subject filter */}
-                    <select
-                        value={filterSubject}
-                        onChange={e => setFilterSubject(e.target.value)}
-                        style={{
-                            padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
-                            fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
-                            background: filterSubject ? '#EEF2FF' : 'white', color: '#1A1D3B',
-                        }}
-                    >
-                        <option value="">All Subjects</option>
-                        {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                    {/* Filters */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <select
+                            value={filterSubject}
+                            onChange={e => setFilterSubject(e.target.value)}
+                            style={{
+                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
+                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
+                                background: filterSubject ? '#EEF2FF' : 'white', color: '#1A1D3B',
+                            }}
+                        >
+                            <option value="">All Subjects</option>
+                            {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <select
+                            value={filterStatus}
+                            onChange={e => setFilterStatus(e.target.value)}
+                            style={{
+                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
+                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
+                                background: filterStatus ? '#EEF2FF' : 'white', color: '#1A1D3B',
+                            }}
+                        >
+                            <option value="">All Status</option>
+                            <option value="scheduled">Scheduled</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <select
+                            value={filterTeacher}
+                            onChange={e => setFilterTeacher(e.target.value)}
+                            style={{
+                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
+                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
+                                background: filterTeacher ? '#EEF2FF' : 'white', color: '#1A1D3B',
+                            }}
+                        >
+                            <option value="">All Teachers</option>
+                            {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                        {hasActiveFilters && (
+                            <button
+                                onClick={() => { setFilterSubject(''); setFilterStatus(''); setFilterTeacher(''); }}
+                                style={{
+                                    padding: '8px 14px', borderRadius: '10px', border: '1px solid #FCA5A5',
+                                    fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                                    background: '#FEF2F2', color: '#DC2626',
+                                }}
+                            >
+                                ✕ Clear
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* ── Quick Stats ── */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '14px', marginBottom: '24px' }}>
                     <div style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
                         <p style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Today</p>
-                        <p style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0 0' }}>{todayEntries.length}</p>
+                        <p style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0 0' }}>{rawTodayEntries.length}</p>
                         <p style={{ fontSize: '12px', opacity: 0.75 }}>classes</p>
                     </div>
                     <div style={{ background: 'linear-gradient(135deg, #0EA5E9, #06B6D4)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
@@ -225,13 +312,19 @@ export default function StudentTimetablePage() {
                         <p style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0 0' }}>{subjects.length}</p>
                         <p style={{ fontSize: '12px', opacity: 0.75 }}>enrolled</p>
                     </div>
-                    {todayEntries.length > 0 && (
+                    {nextClass ? (
                         <div style={{ background: 'white', borderRadius: '16px', padding: '18px 20px', border: '1px solid #E2E8F0' }}>
                             <p style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Next Class</p>
-                            <p style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: '4px 0 0' }}>{todayEntries[0]?.subject}</p>
-                            <p style={{ fontSize: '12px', color: '#64748B' }}>{formatTime12(todayEntries[0]?.start_time)}</p>
+                            <p style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: '4px 0 0' }}>{nextClass.subject}</p>
+                            <p style={{ fontSize: '12px', color: '#64748B' }}>{formatTime12(nextClass.start_time)}</p>
                         </div>
-                    )}
+                    ) : rawTodayEntries.length > 0 ? (
+                        <div style={{ background: 'linear-gradient(135deg, #10B981, #059669)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
+                            <p style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</p>
+                            <p style={{ fontSize: '16px', fontWeight: 800, margin: '4px 0 0' }}>All Done ✓</p>
+                            <p style={{ fontSize: '12px', opacity: 0.75 }}>for today</p>
+                        </div>
+                    ) : null}
                 </div>
 
                 {isLoading ? (
@@ -297,23 +390,38 @@ export default function StudentTimetablePage() {
                                         )}
                                         {dayEntries.map((entry: any) => {
                                             const palette = getSubjectPalette(entry.subject);
+                                            const statusColor = entry.status === 'completed' ? '#10B981' : entry.status === 'cancelled' ? '#EF4444' : palette.dot;
                                             return (
                                                 <div key={entry.id} style={{
-                                                    background: palette.bg, border: `1.5px solid ${palette.border}`,
+                                                    background: entry.status === 'cancelled' ? '#FEF2F2' : palette.bg,
+                                                    border: `1.5px solid ${entry.status === 'cancelled' ? '#FECACA' : palette.border}`,
                                                     borderRadius: '12px', padding: '10px 12px',
-                                                    borderLeft: `4px solid ${palette.dot}`,
+                                                    borderLeft: `4px solid ${statusColor}`,
+                                                    opacity: entry.status === 'cancelled' ? 0.65 : 1,
                                                     transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'default',
                                                 }}
                                                     onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; }}
                                                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                                                 >
-                                                    <p style={{ fontSize: '13px', fontWeight: 800, color: palette.text, margin: 0, lineHeight: 1.2 }}>
-                                                        {entry.subject}
-                                                    </p>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                        <p style={{ fontSize: '13px', fontWeight: 800, color: palette.text, margin: 0, lineHeight: 1.2 }}>
+                                                            {entry.subject}
+                                                        </p>
+                                                        {entry.status !== 'scheduled' && (
+                                                            <span style={{ fontSize: '8px', fontWeight: 800, padding: '2px 5px', borderRadius: '4px', background: entry.status === 'completed' ? '#D1FAE5' : '#FEE2E2', color: entry.status === 'completed' ? '#065F46' : '#991B1B', textTransform: 'uppercase', letterSpacing: '0.3px', lineHeight: 1 }}>
+                                                                {entry.status === 'completed' ? '✓' : '✕'}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <p style={{ fontSize: '11px', color: '#64748B', margin: '4px 0 0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                         <Clock size={10} /> {formatTime12(entry.start_time)}
                                                         {entry.end_time ? ` – ${formatTime12(entry.end_time)}` : ''}
                                                     </p>
+                                                    {entry.teacher && (
+                                                        <p style={{ fontSize: '10px', color: '#64748B', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                            <User size={9} /> {entry.teacher.first_name} {entry.teacher.last_name}
+                                                        </p>
+                                                    )}
                                                     {entry.room && (
                                                         <p style={{ fontSize: '10px', color: '#94A3B8', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: '3px' }}>
                                                             <MapPin size={9} /> {entry.room}
@@ -487,11 +595,11 @@ export default function StudentTimetablePage() {
                             return (
                                 <span
                                     key={s}
-                                    onClick={() => setFilterSubject(filterSubject === s ? '' : s)}
+                                    onClick={() => setFilterSubject(filterSubject.toLowerCase() === s.toLowerCase() ? '' : s)}
                                     style={{
                                         fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '8px',
-                                        background: filterSubject === s ? p.dot : p.bg,
-                                        color: filterSubject === s ? 'white' : p.text,
+                                        background: filterSubject.toLowerCase() === s.toLowerCase() ? p.dot : p.bg,
+                                        color: filterSubject.toLowerCase() === s.toLowerCase() ? 'white' : p.text,
                                         border: `1px solid ${p.border}`, cursor: 'pointer',
                                         transition: 'all 0.2s',
                                     }}

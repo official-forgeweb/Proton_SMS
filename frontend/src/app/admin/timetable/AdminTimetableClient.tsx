@@ -1,13 +1,58 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { 
-    Calendar, Plus, Clock, Trash2, Edit2, AlertTriangle, 
-    CheckCircle, X, MapPin, User, ChevronRight, Filter
-} from 'lucide-react';
+import { Calendar, Plus, Clock, Trash2, Edit2, AlertTriangle, CheckCircle, X, MapPin, User, ChevronRight, ChevronLeft, BookOpen, Layers } from 'lucide-react';
+
+const SUBJECT_PALETTES: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+    'Physics':     { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF', dot: '#3B82F6' },
+    'Chemistry':   { bg: '#FFF7ED', border: '#FED7AA', text: '#C2410C', dot: '#F97316' },
+    'Mathematics': { bg: '#F5F3FF', border: '#DDD6FE', text: '#5B21B6', dot: '#8B5CF6' },
+    'Maths':       { bg: '#F5F3FF', border: '#DDD6FE', text: '#5B21B6', dot: '#8B5CF6' },
+    'Biology':     { bg: '#F0FDF4', border: '#BBF7D0', text: '#166534', dot: '#22C55E' },
+    'English':     { bg: '#FDF2F8', border: '#FBCFE8', text: '#9D174D', dot: '#EC4899' },
+    'Hindi':       { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E', dot: '#F59E0B' },
+    'SST':         { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46', dot: '#10B981' },
+    'Computer':    { bg: '#F0F9FF', border: '#BAE6FD', text: '#0C4A6E', dot: '#0EA5E9' },
+};
+
+const getSubjectPalette = (subject: string) =>
+    SUBJECT_PALETTES[subject] || { bg: '#F8FAFC', border: '#E2E8F0', text: '#475569', dot: '#94A3B8' };
+
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const FULL_DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+function getWeekDates(refDate: Date) {
+    const d = new Date(refDate);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    const dates: Date[] = [];
+    for (let i = 0; i < 7; i++) {
+        const dt = new Date(monday);
+        dt.setDate(monday.getDate() + i);
+        dates.push(dt);
+    }
+    return dates;
+}
+
+function formatDateStr(d: Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function formatTime12(time24: string) {
+    if (!time24) return '';
+    const [h, m] = time24.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour = h % 12 || 12;
+    return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+}
 
 interface Props {
   initialTimetable: any[];
@@ -20,7 +65,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
     const [timetable, setTimetable] = useState<any[]>(initialTimetable);
     const [classes, setClasses] = useState<any[]>(initialClasses);
     const [teachers, setTeachers] = useState<any[]>(initialTeachers);
-    const [isLoading, setIsLoading] = useState(false); // Initially false because we have initialData
+    const [isLoading, setIsLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -42,49 +87,40 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
         notes: ''
     });
 
-    const [filters, setFilters] = useState({
-        class_id: '',
-        start_date: initialFilters.start_date,
-        end_date: initialFilters.end_date
-    });
+    const [filterClass, setFilterClass] = useState('');
+    const [filterSubject, setFilterSubject] = useState('');
+    const [filterTeacher, setFilterTeacher] = useState('');
 
-    const [localFilters, setLocalFilters] = useState({
-        subject: '',
-        teacher_id: '',
-        room: ''
-    });
-    const [sortBy, setSortBy] = useState('date_asc');
+    const [weekOffset, setWeekOffset] = useState(0);
+    const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
+    const [selectedDayIdx, setSelectedDayIdx] = useState(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
+    
+    const todayRef = useMemo(() => new Date(), []);
+    const weekDates = useMemo(() => {
+        const ref = new Date(todayRef);
+        ref.setDate(ref.getDate() + weekOffset * 7);
+        return getWeekDates(ref);
+    }, [todayRef, weekOffset]);
 
     const fetchTimetable = useCallback(async () => {
         try {
             setIsLoading(true);
-            const params: any = {};
-            if (filters.class_id) params.class_id = filters.class_id;
-            if (filters.start_date && filters.end_date) {
-                params.start_date = filters.start_date;
-                params.end_date = filters.end_date;
-            }
-            const res = await api.get('/timetable', { params });
-            setTimetable(res.data.data);
+            const startStr = formatDateStr(weekDates[0]);
+            const endStr = formatDateStr(weekDates[6]);
+            const res = await api.get('/timetable', { 
+                params: { start_date: startStr, end_date: endStr } 
+            });
+            setTimetable(res.data.data || []);
         } catch (error) {
             console.error(error);
         } finally {
             setIsLoading(false);
         }
-    }, [filters]);
+    }, [weekDates]);
 
-    // Only refetch when filters change (ignoring initial mount)
     useEffect(() => {
-        // We skip the very first render because we have initialData
-        // A simple heuristic: if filters haven't changed from initialFilters, we don't fetch.
-        // Actually it's easier to just fetch whenever filters change and not worry about first render
-        // But to avoid double fetch, we can use a ref or just let it fetch (very fast locally).
-        // For precision, let's only fetch if it differs from initial.
-        const isInitial = filters.class_id === '' && filters.start_date === initialFilters.start_date && filters.end_date === initialFilters.end_date;
-        if (!isInitial) {
-            fetchTimetable();
-        }
-    }, [filters, fetchTimetable, initialFilters]);
+        fetchTimetable();
+    }, [fetchTimetable]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -127,7 +163,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
         }
     };
 
-    const openModal = (entry: any = null) => {
+    const openModal = (entry: any = null, prefillDate?: string) => {
         if (entry) {
             setEditingEntry(entry);
             setFormData({
@@ -146,7 +182,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                 class_id: '',
                 subject: '',
                 teacher_id: '',
-                date: new Date().toISOString().split('T')[0],
+                date: prefillDate || new Date().toISOString().split('T')[0],
                 start_time: '09:00',
                 end_time: '10:00',
                 room: '',
@@ -155,6 +191,63 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
         }
         setShowModal(true);
     };
+
+    // unique subjects for filter
+    const subjects = useMemo(() => {
+        const seen = new Set<string>();
+        const result: string[] = [];
+        timetable.forEach(t => {
+            const s = (t.subject || '').trim();
+            if (s && !seen.has(s.toLowerCase())) {
+                seen.add(s.toLowerCase());
+                result.push(s);
+            }
+        });
+        return result.sort();
+    }, [timetable]);
+
+    const entriesByDate = useMemo(() => {
+        const map: Record<string, any[]> = {};
+        let filtered = timetable;
+        if (filterSubject) {
+            filtered = filtered.filter(t => (t.subject || '').trim().toLowerCase() === filterSubject.trim().toLowerCase());
+        }
+        if (filterClass) {
+            filtered = filtered.filter(t => t.class_id === filterClass);
+        }
+        if (filterTeacher) {
+            filtered = filtered.filter(t => t.teacher_id === filterTeacher);
+        }
+
+        filtered.forEach(entry => {
+            if (!map[entry.date]) map[entry.date] = [];
+            map[entry.date].push(entry);
+        });
+
+        // Sort each day by start_time
+        Object.values(map).forEach(arr => arr.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')));
+        return map;
+    }, [timetable, filterSubject, filterClass, filterTeacher]);
+
+    const rawEntriesByDate = useMemo(() => {
+        const map: Record<string, any[]> = {};
+        timetable.forEach(entry => {
+            if (!map[entry.date]) map[entry.date] = [];
+            map[entry.date].push(entry);
+        });
+        Object.values(map).forEach(arr => arr.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')));
+        return map;
+    }, [timetable]);
+
+    const weekEntries = useMemo(() => {
+        const dateStrs = weekDates.map(formatDateStr);
+        return dateStrs.flatMap(d => entriesByDate[d] || []);
+    }, [weekDates, entriesByDate]);
+
+    const todayStr = formatDateStr(new Date());
+    const rawTodayEntries = rawEntriesByDate[todayStr] || [];
+
+    const hasActiveFilters = filterSubject || filterClass || filterTeacher;
 
     return (
         <>
@@ -216,158 +309,434 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
             </div>
 
             <div className="page-body">
-                {/* Filters */}
-                <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '20px', marginBottom: '32px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', alignItems: 'flex-end', marginBottom: '20px' }}>
-                        <div>
-                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Select Class</label>
-                            <select 
-                                value={filters.class_id}
-                                onChange={(e) => setFilters({ ...filters, class_id: e.target.value })}
-                                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
-                            >
-                                <option value="">All Classes</option>
-                                {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Start Date</label>
-                            <DatePicker 
-                                selected={filters.start_date ? new Date(filters.start_date) : null}
-                                onChange={(date: Date | null) => setFilters({ ...filters, start_date: date ? date.toISOString().split('T')[0] : '' })}
-                                dateFormat="MMMM d, yyyy"
-                                customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
-                            />
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>End Date</label>
-                            <DatePicker 
-                                selected={filters.end_date ? new Date(filters.end_date) : null}
-                                onChange={(date: Date | null) => setFilters({ ...filters, end_date: date ? date.toISOString().split('T')[0] : '' })}
-                                dateFormat="MMMM d, yyyy"
-                                customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
-                            />
-                        </div>
+                {/* ── Top Bar: View Toggle + Nav + Filter ── */}
+                <div style={{
+                    display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center',
+                    justifyContent: 'space-between', marginBottom: '24px',
+                    padding: '14px 20px', background: 'white', borderRadius: '16px',
+                    border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}>
+                    {/* View Mode Toggle */}
+                    <div style={{ display: 'flex', background: '#F1F5F9', borderRadius: '10px', padding: '3px' }}>
+                        <button
+                            onClick={() => setViewMode('week')}
+                            style={{
+                                padding: '7px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                fontWeight: 700, fontSize: '13px',
+                                background: viewMode === 'week' ? 'white' : 'transparent',
+                                color: viewMode === 'week' ? '#1A1D3B' : '#94A3B8',
+                                boxShadow: viewMode === 'week' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            <Layers size={14} style={{ marginRight: '6px', verticalAlign: '-2px' }} />Week
+                        </button>
+                        <button
+                            onClick={() => setViewMode('day')}
+                            style={{
+                                padding: '7px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                fontWeight: 700, fontSize: '13px',
+                                background: viewMode === 'day' ? 'white' : 'transparent',
+                                color: viewMode === 'day' ? '#1A1D3B' : '#94A3B8',
+                                boxShadow: viewMode === 'day' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            <Calendar size={14} style={{ marginRight: '6px', verticalAlign: '-2px' }} />Day
+                        </button>
                     </div>
-                    
-                    {/* Local Timetable Filters & Sorting */}
-                    <div style={{ padding: '20px 0 0 0', borderTop: '1px solid #F1F4F9', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px', alignItems: 'flex-end' }}>
-                        <div>
-                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Subject</label>
-                            <select 
-                                value={localFilters.subject}
-                                onChange={(e) => setLocalFilters({ ...localFilters, subject: e.target.value })}
-                                style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '13px' }}
+
+                    {/* Week Navigation */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button onClick={() => setWeekOffset(w => w - 1)} style={{ background: '#F1F5F9', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                            <ChevronLeft size={18} color="#64748B" />
+                        </button>
+                        <span style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B', minWidth: '180px', textAlign: 'center' }}>
+                            {weekDates[0].toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – {weekDates[6].toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                        <button onClick={() => setWeekOffset(w => w + 1)} style={{ background: '#F1F5F9', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                            <ChevronRight size={18} color="#64748B" />
+                        </button>
+                        {weekOffset !== 0 && (
+                            <button onClick={() => setWeekOffset(0)} style={{ background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '8px', padding: '6px 14px', cursor: 'pointer', color: '#4F46E5', fontWeight: 700, fontSize: '12px' }}>
+                                Today
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Filters */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <select
+                            value={filterSubject}
+                            onChange={e => setFilterSubject(e.target.value)}
+                            style={{
+                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
+                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
+                                background: filterSubject ? '#EEF2FF' : 'white', color: '#1A1D3B',
+                            }}
+                        >
+                            <option value="">All Subjects</option>
+                            {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <select
+                            value={filterClass}
+                            onChange={e => setFilterClass(e.target.value)}
+                            style={{
+                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
+                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
+                                background: filterClass ? '#EEF2FF' : 'white', color: '#1A1D3B',
+                            }}
+                        >
+                            <option value="">All Classes</option>
+                            {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
+                        </select>
+                        <select
+                            value={filterTeacher}
+                            onChange={e => setFilterTeacher(e.target.value)}
+                            style={{
+                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
+                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
+                                background: filterTeacher ? '#EEF2FF' : 'white', color: '#1A1D3B',
+                            }}
+                        >
+                            <option value="">All Teachers</option>
+                            {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
+                        </select>
+                        {hasActiveFilters && (
+                            <button
+                                onClick={() => { setFilterSubject(''); setFilterClass(''); setFilterTeacher(''); }}
+                                style={{
+                                    padding: '8px 14px', borderRadius: '10px', border: '1px solid #FCA5A5',
+                                    fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                                    background: '#FEF2F2', color: '#DC2626',
+                                }}
                             >
-                                <option value="">All Subjects</option>
-                                {Array.from(new Set(timetable.map(t => t.subject).filter(Boolean))).map((s: any) => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Teacher</label>
-                            <select 
-                                value={localFilters.teacher_id}
-                                onChange={(e) => setLocalFilters({ ...localFilters, teacher_id: e.target.value })}
-                                style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '13px' }}
-                            >
-                                <option value="">All Teachers</option>
-                                {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Room</label>
-                            <select 
-                                value={localFilters.room}
-                                onChange={(e) => setLocalFilters({ ...localFilters, room: e.target.value })}
-                                style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '13px' }}
-                            >
-                                <option value="">All Rooms</option>
-                                {Array.from(new Set(timetable.map(t => t.room).filter(Boolean))).map((r: any) => <option key={r} value={r}>{r}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#8F92A1', display: 'block', marginBottom: '8px' }}>Sort By</label>
-                            <select 
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '13px' }}
-                            >
-                                <option value="date_asc">Date (Oldest First)</option>
-                                <option value="date_desc">Date (Newest First)</option>
-                                <option value="subject_asc">Subject (A-Z)</option>
-                                <option value="subject_desc">Subject (Z-A)</option>
-                            </select>
-                        </div>
+                                ✕ Clear
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* ── Quick Stats ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+                    <div style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
+                        <p style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Today</p>
+                        <p style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0 0' }}>{rawTodayEntries.length}</p>
+                        <p style={{ fontSize: '12px', opacity: 0.75 }}>classes</p>
+                    </div>
+                    <div style={{ background: 'linear-gradient(135deg, #0EA5E9, #06B6D4)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
+                        <p style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>This Week</p>
+                        <p style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0 0' }}>{weekEntries.length}</p>
+                        <p style={{ fontSize: '12px', opacity: 0.75 }}>classes</p>
+                    </div>
+                    <div style={{ background: 'linear-gradient(135deg, #F59E0B, #EF4444)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
+                        <p style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Subjects</p>
+                        <p style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0 0' }}>{subjects.length}</p>
+                        <p style={{ fontSize: '12px', opacity: 0.75 }}>scheduled</p>
+                    </div>
+                    <div style={{ background: 'linear-gradient(135deg, #10B981, #059669)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
+                        <p style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active Classes</p>
+                        <p style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0 0' }}>{classes.length}</p>
+                        <p style={{ fontSize: '12px', opacity: 0.75 }}>total</p>
                     </div>
                 </div>
 
                 {isLoading ? (
                     <div style={{ display: 'grid', gap: '16px' }}>
-                        {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '16px' }} />)}
+                        {[1, 2, 3].map(i => <div key={i} className="animate-fade-in" style={{ height: '120px', borderRadius: '16px', background: '#F8F9FD', border: '1px solid #E2E8F0', animationDelay: `${i * 100}ms` }} />)}
                     </div>
-                ) : timetable.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '60px', background: '#F8F9FD', borderRadius: '24px' }}>
-                        <Calendar size={48} color="#A1A5B7" style={{ display: 'block', margin: '0 auto 16px auto' }} />
-                        <h3 style={{ color: '#1A1D3B', fontWeight: 700 }}>No schedule found</h3>
-                        <p style={{ color: '#5E6278', fontSize: '14px' }}>There are no classes scheduled for this period.</p>
+                ) : viewMode === 'week' ? (
+                    /* ── WEEK GRID VIEW ── */
+                    <div style={{
+                        background: 'white', borderRadius: '20px', overflow: 'hidden',
+                        border: '1px solid #E2E8F0', boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+                    }}>
+                        {/* Day headers */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #F1F5F9', background: '#FAFBFC' }}>
+                            {weekDates.map((d, i) => {
+                                const isToday = formatDateStr(d) === todayStr;
+                                return (
+                                    <div
+                                        key={i}
+                                        onClick={() => { setSelectedDayIdx(i); setViewMode('day'); }}
+                                        style={{
+                                            padding: '16px 8px', textAlign: 'center', cursor: 'pointer',
+                                            borderRight: i < 6 ? '1px solid #F1F5F9' : 'none',
+                                            background: isToday ? 'linear-gradient(135deg, #EEF2FF, #E0E7FF)' : 'transparent',
+                                            transition: 'background 0.2s',
+                                        }}
+                                    >
+                                        <p style={{ fontSize: '12px', fontWeight: 700, color: isToday ? '#4F46E5' : '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                                            {DAY_LABELS[i]}
+                                        </p>
+                                        <p style={{
+                                            fontSize: '20px', fontWeight: 800,
+                                            color: isToday ? '#4F46E5' : '#1A1D3B',
+                                            margin: '2px 0 0',
+                                            width: '36px', height: '36px', lineHeight: '36px',
+                                            borderRadius: '10px', marginLeft: 'auto', marginRight: 'auto',
+                                            background: isToday ? '#4F46E5' : 'transparent',
+                                            ...(isToday ? { color: 'white' } : {}),
+                                        }}>
+                                            {d.getDate()}
+                                        </p>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Grid body */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', minHeight: '340px' }}>
+                            {weekDates.map((d, i) => {
+                                const dateStr = formatDateStr(d);
+                                const dayEntries = entriesByDate[dateStr] || [];
+                                const isToday = dateStr === todayStr;
+                                return (
+                                    <div key={i} style={{
+                                        padding: '10px 8px', borderRight: i < 6 ? '1px solid #F1F5F9' : 'none',
+                                        minHeight: '300px', background: isToday ? 'rgba(238,242,255,0.3)' : 'transparent',
+                                        display: 'flex', flexDirection: 'column', gap: '8px',
+                                    }}>
+                                        {dayEntries.length === 0 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, opacity: 0.3, fontSize: '12px', color: '#94A3B8' }}>
+                                                No class
+                                            </div>
+                                        )}
+                                        {dayEntries.map((entry: any) => {
+                                            const palette = getSubjectPalette(entry.subject);
+                                            const statusColor = palette.dot;
+                                            return (
+                                                <div key={entry.id} style={{
+                                                    background: palette.bg,
+                                                    border: `1.5px solid ${palette.border}`,
+                                                    borderRadius: '12px', padding: '10px 12px',
+                                                    borderLeft: `4px solid ${statusColor}`,
+                                                    transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer',
+                                                    position: 'relative'
+                                                }}
+                                                    onClick={() => openModal(entry)}
+                                                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                                >
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                        <p style={{ fontSize: '13px', fontWeight: 800, color: palette.text, margin: 0, lineHeight: 1.2 }}>
+                                                            {entry.subject}
+                                                        </p>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }} 
+                                                            style={{ background: 'white', border: '1px solid #FEE2E2', borderRadius: '4px', cursor: 'pointer', padding: '2px', color: '#EF4444', opacity: 0.6 }} 
+                                                            onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                                                            onMouseLeave={e => e.currentTarget.style.opacity = '0.6'}
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 size={12} strokeWidth={2.5} />
+                                                        </button>
+                                                    </div>
+                                                    <p style={{ fontSize: '11px', color: '#64748B', margin: '4px 0 0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <Clock size={10} /> {formatTime12(entry.start_time)}
+                                                        {entry.end_time ? ` – ${formatTime12(entry.end_time)}` : ''}
+                                                    </p>
+                                                    {entry.teacher && (
+                                                        <p style={{ fontSize: '10px', color: '#64748B', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                            <User size={9} /> {entry.teacher.first_name} {entry.teacher.last_name}
+                                                        </p>
+                                                    )}
+                                                    {entry.room && (
+                                                        <p style={{ fontSize: '10px', color: '#94A3B8', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                            <MapPin size={9} /> {entry.room}
+                                                        </p>
+                                                    )}
+                                                    <p style={{ fontSize: '10px', color: '#94A3B8', margin: '3px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 700 }}>
+                                                        {entry.class_ref?.class_name}
+                                                    </p>
+                                                </div>
+                                            );
+                                        })}
+                                        <button onClick={() => openModal(null, dateStr)} style={{ marginTop: 'auto', alignSelf: 'center', padding: '6px 12px', borderRadius: '8px', border: '1px dashed #CBD5E1', background: 'transparent', color: '#64748B', fontWeight: 700, fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '4px' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#94A3B8'; e.currentTarget.style.color = '#1A1D3B'; e.currentTarget.style.background = '#F8FAFC'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.color = '#64748B'; e.currentTarget.style.background = 'transparent'; }}>
+                                            <Plus size={12} /> Add
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 ) : (
-                    <div style={{ display: 'grid', gap: '16px' }}>
-                        {[...timetable]
-                            .filter(entry => {
-                                if (localFilters.subject && entry.subject !== localFilters.subject) return false;
-                                if (localFilters.teacher_id && entry.teacher_id !== localFilters.teacher_id) return false;
-                                if (localFilters.room && entry.room && !entry.room.toLowerCase().includes(localFilters.room.toLowerCase())) return false;
-                                return true;
-                            })
-                            .sort((a, b) => {
-                                if (sortBy === 'date_asc') return new Date(a.date).getTime() - new Date(b.date).getTime() || a.start_time.localeCompare(b.start_time);
-                                if (sortBy === 'date_desc') return new Date(b.date).getTime() - new Date(a.date).getTime() || b.start_time.localeCompare(a.start_time);
-                                if (sortBy === 'subject_asc') return a.subject.localeCompare(b.subject);
-                                if (sortBy === 'subject_desc') return b.subject.localeCompare(a.subject);
-                                return 0;
-                            })
-                            .map((entry) => (
-                            <div key={entry.id} className="card hover-lift" style={{ padding: '20px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                                    <div style={{ textAlign: 'center', minWidth: '80px', padding: '12px', background: '#F8F9FD', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
-                                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#E53935', textTransform: 'uppercase' }}>
-                                            {new Date(entry.date).toLocaleDateString('en-US', { month: 'short' })}
-                                        </div>
-                                        <div style={{ fontSize: '24px', fontWeight: 800, color: '#1A1D3B' }}>
-                                            {new Date(entry.date).toLocaleDateString('en-US', { day: 'numeric' })}
-                                        </div>
+                    /* ── DAY VIEW ── */
+                    <div>
+                        {/* Day selector tabs */}
+                        <div style={{
+                            display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto',
+                            padding: '4px', background: '#F8FAFC', borderRadius: '14px',
+                        }}>
+                            {weekDates.map((d, i) => {
+                                const dateStr = formatDateStr(d);
+                                const isToday = dateStr === todayStr;
+                                const isSelected = i === selectedDayIdx;
+                                const count = (entriesByDate[dateStr] || []).length;
+                                return (
+                                    <button
+                                        key={i}
+                                        onClick={() => setSelectedDayIdx(i)}
+                                        style={{
+                                            flex: 1, padding: '14px 10px', borderRadius: '12px',
+                                            border: 'none', cursor: 'pointer', textAlign: 'center',
+                                            background: isSelected ? (isToday ? 'linear-gradient(135deg, #6366F1, #8B5CF6)' : 'white') : 'transparent',
+                                            color: isSelected ? (isToday ? 'white' : '#1A1D3B') : '#94A3B8',
+                                            boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                                            transition: 'all 0.2s', minWidth: '80px',
+                                        }}
+                                    >
+                                        <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', margin: 0, opacity: 0.85 }}>{DAY_LABELS[i]}</p>
+                                        <p style={{ fontSize: '22px', fontWeight: 800, margin: '2px 0 0' }}>{d.getDate()}</p>
+                                        {count > 0 && (
+                                            <span style={{
+                                                fontSize: '10px', fontWeight: 700,
+                                                background: isSelected && isToday ? 'rgba(255,255,255,0.25)' : '#EEF2FF',
+                                                color: isSelected && isToday ? 'white' : '#6366F1',
+                                                padding: '2px 8px', borderRadius: '6px', display: 'inline-block', marginTop: '4px',
+                                            }}>
+                                                {count} class{count > 1 ? 'es' : ''}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Day entries - timeline style */}
+                        {(() => {
+                            const dateStr = formatDateStr(weekDates[selectedDayIdx]);
+                            const dayEntries = entriesByDate[dateStr] || [];
+
+                            if (dayEntries.length === 0) {
+                                return (
+                                    <div style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+                                        <Calendar size={48} color="#CBD5E1" style={{ margin: '0 auto' }} />
+                                        <h3 style={{ fontSize: '18px', fontWeight: 700, marginTop: '16px', color: '#1A1D3B' }}>No Classes</h3>
+                                        <p style={{ color: '#64748B', fontSize: '14px', marginTop: '6px' }}>
+                                            There are no classes scheduled for {FULL_DAY_LABELS[selectedDayIdx]}, {weekDates[selectedDayIdx].toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}.
+                                        </p>
+                                        <button onClick={() => openModal(null, dateStr)} style={{ marginTop: '20px', padding: '10px 20px', borderRadius: '12px', background: '#F8F9FD', color: '#1A1D3B', fontWeight: 700, border: '1px solid #E2E8F0', cursor: 'pointer' }}>
+                                            + Schedule Class
+                                        </button>
                                     </div>
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>{entry.subject}</h3>
-                                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', background: '#DBEAFE', color: '#3B82F6', fontWeight: 800 }}>{entry.class_ref?.class_name}</span>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-                                            <span style={{ fontSize: '13px', color: '#5E6278', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <Clock size={14} color="#A1A5B7" /> {entry.start_time} - {entry.end_time}
-                                            </span>
-                                            <span style={{ fontSize: '13px', color: '#5E6278', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <User size={14} color="#A1A5B7" /> {entry.teacher ? `${entry.teacher.first_name} ${entry.teacher.last_name}` : 'Unassigned'}
-                                            </span>
-                                            {entry.room && (
-                                                <span style={{ fontSize: '13px', color: '#5E6278', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    <MapPin size={14} color="#A1A5B7" /> {entry.room}
-                                                </span>
-                                            )}
-                                        </div>
+                                );
+                            }
+
+                            return (
+                                <div style={{ position: 'relative', paddingLeft: '32px' }}>
+                                    {/* Vertical timeline line */}
+                                    <div style={{ position: 'absolute', left: '14px', top: '20px', bottom: '20px', width: '3px', background: 'linear-gradient(to bottom, #6366F1, #8B5CF6, #C7D2FE)', borderRadius: '2px' }} />
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        {dayEntries.map((entry: any, idx: number) => {
+                                            const palette = getSubjectPalette(entry.subject);
+                                            return (
+                                                <div key={entry.id} style={{ position: 'relative', display: 'flex', gap: '20px', alignItems: 'stretch' }}>
+                                                    {/* Timeline dot */}
+                                                    <div style={{
+                                                        position: 'absolute', left: '-26px', top: '24px',
+                                                        width: '14px', height: '14px', borderRadius: '50%',
+                                                        background: palette.dot, border: '3px solid white',
+                                                        boxShadow: '0 0 0 2px ' + palette.dot + '40', zIndex: 2,
+                                                    }} />
+
+                                                    {/* Time column */}
+                                                    <div style={{ minWidth: '80px', paddingTop: '16px', textAlign: 'right', flexShrink: 0 }}>
+                                                        <p style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>{formatTime12(entry.start_time)}</p>
+                                                        {entry.end_time && <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0', fontWeight: 600 }}>{formatTime12(entry.end_time)}</p>}
+                                                    </div>
+
+                                                    {/* Card */}
+                                                    <div style={{
+                                                        flex: 1, background: 'white', borderRadius: '18px',
+                                                        border: `1.5px solid ${palette.border}`,
+                                                        borderLeft: `5px solid ${palette.dot}`,
+                                                        padding: '20px 24px',
+                                                        transition: 'transform 0.2s, box-shadow 0.2s',
+                                                        cursor: 'pointer',
+                                                    }}
+                                                        onClick={() => openModal(entry)}
+                                                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateX(4px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${palette.dot}15`; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.transform = 'translateX(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                                    >
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                                                            <div>
+                                                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>{entry.subject}</h3>
+                                                                <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 0', fontWeight: 500 }}>
+                                                                    {entry.class_ref?.class_name}
+                                                                </p>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }} style={{ padding: '6px', borderRadius: '8px', background: '#FEF2F2', border: '1px solid #FECACA', cursor: 'pointer', color: '#DC2626' }}>
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '14px' }}>
+                                                            {entry.teacher && (
+                                                                <span style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                                                                    <User size={14} color="#94A3B8" /> {entry.teacher.first_name} {entry.teacher.last_name}
+                                                                </span>
+                                                            )}
+                                                            {entry.room && (
+                                                                <span style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                                                                    <MapPin size={14} color="#94A3B8" /> {entry.room}
+                                                                </span>
+                                                            )}
+                                                            <span style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                                                                <Clock size={14} color="#94A3B8" /> {formatTime12(entry.start_time)}{entry.end_time ? ` – ${formatTime12(entry.end_time)}` : ''}
+                                                            </span>
+                                                        </div>
+
+                                                        {entry.notes && (
+                                                            <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '10px', fontStyle: 'italic' }}>
+                                                                📝 {entry.notes}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        <button onClick={() => openModal(null, dateStr)} style={{ alignSelf: 'flex-start', marginTop: '10px', padding: '10px 20px', borderRadius: '12px', border: '2px dashed #CBD5E1', background: 'transparent', color: '#64748B', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#94A3B8'; e.currentTarget.style.color = '#1A1D3B'; e.currentTarget.style.background = '#F8FAFC'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.color = '#64748B'; e.currentTarget.style.background = 'transparent'; }}>
+                                            <Plus size={16} /> Schedule Additional Class
+                                        </button>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={() => openModal(entry)} style={{ padding: '10px', borderRadius: '12px', background: '#F8F9FD', border: '1px solid #E2E8F0', cursor: 'pointer' }}>
-                                        <Edit2 size={16} color="#5E6278" />
-                                    </button>
-                                    <button onClick={() => handleDelete(entry.id)} style={{ padding: '10px', borderRadius: '12px', background: '#FFF5F5', border: '1px solid #FEE2E2', cursor: 'pointer' }}>
-                                        <Trash2 size={16} color="#E53935" />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })()}
+                    </div>
+                )}
+
+                {/* Subject Legend */}
+                {subjects.length > 0 && (
+                    <div style={{
+                        marginTop: '24px', padding: '16px 20px', background: 'white',
+                        borderRadius: '14px', border: '1px solid #E2E8F0',
+                        display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center',
+                    }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', marginRight: '4px' }}>
+                            <BookOpen size={13} style={{ verticalAlign: '-2px', marginRight: '4px' }} />Subjects
+                        </span>
+                        {subjects.map(s => {
+                            const p = getSubjectPalette(s);
+                            return (
+                                <span
+                                    key={s}
+                                    onClick={() => setFilterSubject(filterSubject.toLowerCase() === s.toLowerCase() ? '' : s)}
+                                    style={{
+                                        fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '8px',
+                                        background: filterSubject.toLowerCase() === s.toLowerCase() ? p.dot : p.bg,
+                                        color: filterSubject.toLowerCase() === s.toLowerCase() ? 'white' : p.text,
+                                        border: `1px solid ${p.border}`, cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                    }}
+                                >
+                                    {s}
+                                </span>
+                            );
+                        })}
                     </div>
                 )}
             </div>

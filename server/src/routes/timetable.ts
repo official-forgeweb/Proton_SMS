@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 
@@ -53,7 +54,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
                 return { 
                     class_id: cid, 
                     OR: subjects.map(s => ({
-                        subject: { contains: s.trim(), mode: 'insensitive' }
+                        subject: { contains: s.trim(), mode: 'insensitive' as const }
                     }))
                 };
             }

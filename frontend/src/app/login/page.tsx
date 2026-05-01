@@ -143,19 +143,20 @@ export default function LoginPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', background: '#F1F5F9', padding: '6px', borderRadius: '14px', marginBottom: '32px', border: '1px solid #E2E8F0' }}>
-                    <button className={"method-btn " + (loginMethod === 'email' ? 'active' : '')} onClick={() => setLoginMethod('email')}>
+                    <button suppressHydrationWarning className={"method-btn " + (loginMethod === 'email' ? 'active' : '')} onClick={() => setLoginMethod('email')}>
                         <Mail size={16} /> Email
                     </button>
-                    <button className={"method-btn " + (loginMethod === 'proId' ? 'active' : '')} onClick={() => setLoginMethod('proId')}>
+                    <button suppressHydrationWarning className={"method-btn " + (loginMethod === 'proId' ? 'active' : '')} onClick={() => setLoginMethod('proId')}>
                         <Hash size={16} /> User ID
                     </button>
                 </div>
 
-                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <form suppressHydrationWarning onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {loginMethod === 'email' ? (
                         <div style={{ position: 'relative' }}>
                             <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                             <input
+                                suppressHydrationWarning
                                 type="email" className="login-input" placeholder="alice@example.com"
                                 value={email} onChange={(e) => setEmail(e.target.value)} required
                             />
@@ -164,6 +165,7 @@ export default function LoginPage() {
                         <div style={{ position: 'relative' }}>
                             <Hash size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                             <input
+                                suppressHydrationWarning
                                 type="text" className="login-input" placeholder="e.g., PRO123 or EMP456"
                                 value={proId} onChange={(e) => setProId(e.target.value)} required
                             />
@@ -173,10 +175,12 @@ export default function LoginPage() {
                     <div style={{ position: 'relative' }}>
                         <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                         <input
+                            suppressHydrationWarning
                             type={showPassword ? 'text' : 'password'} className="login-input" placeholder="Enter your password"
                             value={password} onChange={(e) => setPassword(e.target.value)} required
                         />
                         <button
+                            suppressHydrationWarning
                             type="button" onClick={() => setShowPassword(!showPassword)}
                             style={{
                                 position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
@@ -195,7 +199,7 @@ export default function LoginPage() {
                         </a>
                     </div>
 
-                    <button type="submit" className="login-button" disabled={isLoading} style={{ marginTop: '8px' }}>
+                    <button suppressHydrationWarning type="submit" className="login-button" disabled={isLoading} style={{ marginTop: '8px' }}>
                         {isLoading ? (
                             <div style={{ width: '22px', height: '22px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                         ) : (

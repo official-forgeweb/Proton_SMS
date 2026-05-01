@@ -56,7 +56,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
   try {
     const id = paramId(req);
     const teacher = isUUID(id)
-      ? await prisma.teacher.findUnique({ where: { id } })
+      ? await prisma.teacher.findFirst({ where: { OR: [{ id }, { user_id: id }] } })
       : await prisma.teacher.findFirst({ where: { employee_id: id } });
 
     if (!teacher) {
@@ -129,14 +129,20 @@ router.post('/', authenticateToken, authorize('admin'), async (req: Request, res
 router.put('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
+    const { password, ...teacherFields } = req.body;
+    
+    if (teacherFields.hasOwnProperty('experience_years')) {
+      teacherFields.experience_years = teacherFields.experience_years ? parseInt(teacherFields.experience_years) : null;
+    }
+
     const teacher = await prisma.teacher.update({
       where: { id },
-      data: req.body,
+      data: teacherFields,
     });
 
-    if (req.body.password && teacher.user_id) {
+    if (password && teacher.user_id) {
       const salt = await bcrypt.genSalt(10);
-      const password_hash = await bcrypt.hash(req.body.password, salt);
+      const password_hash = await bcrypt.hash(password, salt);
       await prisma.user.update({ where: { id: teacher.user_id }, data: { password_hash } });
     }
 

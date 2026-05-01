@@ -18,6 +18,7 @@ export default function EditStudentPage() {
         gender: 'male', school_name: '', academic_status: 'active',
         class_ids: [] as string[],
         subjects: {} as Record<string, string[]>,
+        password: '',
     });
 
     useEffect(() => {
@@ -51,6 +52,7 @@ export default function EditStudentPage() {
                     academic_status: s.academic_status || 'active',
                     class_ids: enrolledClassIds,
                     subjects: subjectsMap,
+                    password: '',
                 });
             }).catch(console.error).finally(() => setIsLoading(false));
         }
@@ -111,12 +113,11 @@ export default function EditStudentPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const { class_ids, subjects, ...studentFields } = formData;
-            await api.put(`/students/${params.id}`, {
-                ...studentFields,
-                class_ids,
-                subjects,
-            });
+            const { class_ids, subjects, password, ...studentFields } = formData;
+            const submitData: any = { ...studentFields, class_ids, subjects };
+            if (password) submitData.password = password;
+            
+            await api.put(`/students/${params.id}`, submitData);
             router.push(`/admin/students/${params.id}`);
         } catch (error: any) {
             console.error('Error updating student:', error);
@@ -219,6 +220,10 @@ export default function EditStudentPage() {
                                     <option value="suspended">Suspended</option>
                                     <option value="alumni">Alumni</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label className="form-label">Password</label>
+                                <input type="text" className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Leave blank to keep unchanged" />
                             </div>
                         </div>
                     </div>

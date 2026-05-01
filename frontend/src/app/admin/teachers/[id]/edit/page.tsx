@@ -13,7 +13,7 @@ export default function EditTeacherPage() {
     const [formData, setFormData] = useState({
         first_name: '', last_name: '', email: '', phone: '', qualification: '',
         specialization: '', experience_years: '', role_type: 'subject_teacher',
-        gender: 'male',
+        gender: 'male', password: '',
     });
 
     useEffect(() => {
@@ -30,6 +30,7 @@ export default function EditTeacherPage() {
                     experience_years: t.experience_years || '',
                     role_type: t.role_type || 'subject_teacher',
                     gender: t.gender || 'male',
+                    password: '',
                 });
             }).catch(console.error).finally(() => setIsLoading(false));
         }
@@ -39,7 +40,9 @@ export default function EditTeacherPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            await api.put(`/teachers/${params.id}`, formData);
+            const submitData = { ...formData };
+            if (!submitData.password) delete submitData.password;
+            await api.put(`/teachers/${params.id}`, submitData);
             router.push(`/admin/teachers/${params.id}`);
         } catch (error) {
             console.error('Error updating teacher:', error);
@@ -91,6 +94,10 @@ export default function EditTeacherPage() {
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label className="form-label">Password</label>
+                                <input type="text" className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Leave blank to keep unchanged" />
                             </div>
                         </div>
                     </div>

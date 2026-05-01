@@ -184,7 +184,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
   try {
     const id = paramId(req);
     const student = isUUID(id)
-      ? await prisma.student.findUnique({ where: { id } })
+      ? await prisma.student.findFirst({ where: { OR: [{ id }, { user_id: id }] } })
       : await prisma.student.findUnique({ where: { PRO_ID: id } });
 
     if (!student) {
@@ -486,13 +486,19 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
 router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
-    const { class_ids, subjects, ...studentFields } = req.body;
+    const { class_ids, subjects, password, ...studentFields } = req.body;
 
     // Update basic student info
     const student = await prisma.student.update({
       where: { id },
       data: studentFields,
     });
+
+    if (password && student.user_id) {
+      const salt = await bcrypt.genSalt(10);
+      const password_hash = await bcrypt.hash(password, salt);
+      await prisma.user.update({ where: { id: student.user_id }, data: { password_hash } });
+    }
 
     // If class_ids provided, sync class enrollments
     if (class_ids && Array.isArray(class_ids)) {
@@ -618,7 +624,7 @@ router.get('/:id/attendance', authenticateToken, async (req: Request, res: Respo
   try {
     const id = paramId(req);
     const student = isUUID(id)
-      ? await prisma.student.findUnique({ where: { id } })
+      ? await prisma.student.findFirst({ where: { OR: [{ id }, { user_id: id }] } })
       : await prisma.student.findUnique({ where: { PRO_ID: id } });
 
     if (!student) {
@@ -701,7 +707,7 @@ router.get('/:id/tests', authenticateToken, async (req: Request, res: Response):
   try {
     const id = paramId(req);
     const student = isUUID(id)
-      ? await prisma.student.findUnique({ where: { id } })
+      ? await prisma.student.findFirst({ where: { OR: [{ id }, { user_id: id }] } })
       : await prisma.student.findUnique({ where: { PRO_ID: id } });
 
     if (!student) {
@@ -741,7 +747,7 @@ router.get('/:id/fees', authenticateToken, async (req: Request, res: Response): 
   try {
     const id = paramId(req);
     const student = isUUID(id)
-      ? await prisma.student.findUnique({ where: { id } })
+      ? await prisma.student.findFirst({ where: { OR: [{ id }, { user_id: id }] } })
       : await prisma.student.findUnique({ where: { PRO_ID: id } });
 
     if (!student) {
