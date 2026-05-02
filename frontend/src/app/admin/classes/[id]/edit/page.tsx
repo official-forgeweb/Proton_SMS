@@ -131,7 +131,7 @@ export default function EditClassPage() {
                                         </div>
                                         <div>
                                             <label className="form-label" style={{ fontSize: '12px' }}>Teacher</label>
-                                            <select required className="form-input" value={session.teacher_id?._id || session.teacher_id} onChange={e => updateSession(i, 'teacher_id', e.target.value)}>
+                                            <select required className="form-input" value={session.teacher_id?._id || session.teacher_id || ''} onChange={e => updateSession(i, 'teacher_id', e.target.value)}>
                                                 <option value="">Select Teacher...</option>
                                                 {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
                                             </select>

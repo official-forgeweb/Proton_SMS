@@ -115,6 +115,7 @@ export default function AdminStudentsClient({ initialData }: Props) {
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(initialData.totalCount);
     const [showFilters, setShowFilters] = useState(false);
+    const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
     const limit = 20;
 
     // Get available subjects for selected batch
@@ -136,6 +137,34 @@ export default function AdminStudentsClient({ initialData }: Props) {
         } catch (error: any) {
             console.error('Error deleting student:', error);
             alert(error.response?.data?.message || 'Failed to delete student');
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!window.confirm(`Are you sure you want to delete ${selectedStudentIds.length} students? This action cannot be undone.`)) return;
+        try {
+            await api.post('/students/delete-many', { ids: selectedStudentIds });
+            setSelectedStudentIds([]);
+            fetchStudents();
+        } catch (error: any) {
+            console.error('Error deleting students:', error);
+            alert(error.response?.data?.message || 'Failed to delete students');
+        }
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedStudentIds(students.map(s => s.id));
+        } else {
+            setSelectedStudentIds([]);
+        }
+    };
+
+    const handleSelectStudent = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedStudentIds(prev => [...prev, id]);
+        } else {
+            setSelectedStudentIds(prev => prev.filter(studentId => studentId !== id));
         }
     };
 
@@ -171,6 +200,7 @@ export default function AdminStudentsClient({ initialData }: Props) {
     // Skip the very first fetch since we have initialData
     // We only fetch when these dependencies change.
     useEffect(() => { setPage(1); }, [search, selectedBatch, selectedSubject, selectedStatus, selectedFeeStatus]);
+    useEffect(() => { setSelectedStudentIds([]); }, [students]);
     useEffect(() => {
         // Simple trick to avoid fetching on mount if it's the exact state of initialData
         if (
@@ -193,7 +223,7 @@ export default function AdminStudentsClient({ initialData }: Props) {
     const totalPages = Math.ceil(totalCount / limit);
     const activeFilterCount = [selectedBatch, selectedSubject, selectedStatus, selectedFeeStatus].filter(Boolean).length;
 
-    const displayStudents = students.map(s => ({
+    const displayStudents = useMemo(() => students.map(s => ({
         id: s.id,
         name: `${s.first_name || ''} ${s.last_name || ''}`.trim(),
         roll: s.PRO_ID || '#00',
@@ -205,7 +235,7 @@ export default function AdminStudentsClient({ initialData }: Props) {
         attendance: s.attendance_percentage || 0,
         academic_status: s.academic_status || 'active',
         gender: s.gender || 'N/A',
-    }));
+    })), [students]);
 
     const getFeeStatusColor = (status: string) => {
         switch (status) {
@@ -299,6 +329,30 @@ export default function AdminStudentsClient({ initialData }: Props) {
                         </p>
                     </div>
                     <div style={{ display: 'flex', gap: '12px' }}>
+                        {selectedStudentIds.length > 0 && (
+                            <button
+                                onClick={handleBulkDelete}
+                                style={{
+                                    background: '#FEE2E2', color: '#EF4444', border: '1px solid #FCA5A5',
+                                    borderRadius: '14px', padding: '12px 20px', fontSize: '15px',
+                                    fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
+                                    cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                                }}
+                                onMouseEnter={e => {
+                                    (e.currentTarget.style.transform = 'translateY(-2px)');
+                                    (e.currentTarget.style.background = '#EF4444');
+                                    (e.currentTarget.style.color = '#FFFFFF');
+                                }}
+                                onMouseLeave={e => {
+                                    (e.currentTarget.style.transform = 'translateY(0)');
+                                    (e.currentTarget.style.background = '#FEE2E2');
+                                    (e.currentTarget.style.color = '#EF4444');
+                                }}
+                            >
+                                <Trash2 size={18} strokeWidth={2.5} /> Delete Selected ({selectedStudentIds.length})
+                            </button>
+                        )}
                         <button
                             onClick={() => router.push('/admin/students/import')}
                             style={{
@@ -582,6 +636,14 @@ export default function AdminStudentsClient({ initialData }: Props) {
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 3px', minWidth: '900px' }}>
                                 <thead>
                                     <tr>
+                                        <th style={{ padding: '14px 16px', width: '40px' }}>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={displayStudents.length > 0 && selectedStudentIds.length === displayStudents.length}
+                                                onChange={handleSelectAll}
+                                                style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#E53935' }}
+                                            />
+                                        </th>
                                         {['Student', 'PRO ID', 'Batch', 'Subjects', 'Fee Status', 'Phone', 'Actions'].map(h => (
                                             <th key={h} style={{
                                                 padding: '14px 16px', textAlign: 'left',
@@ -609,9 +671,17 @@ export default function AdminStudentsClient({ initialData }: Props) {
                                             <tr
                                                 key={s.id || i}
                                                 className="table-row-hover"
-                                                style={{ cursor: 'pointer' }}
+                                                style={{ cursor: 'pointer', background: selectedStudentIds.includes(s.id) ? '#FFF5F5' : 'transparent' }}
                                                 onClick={() => router.push(`/admin/students/${s.id}`)}
                                             >
+                                                <td style={{ padding: '12px 16px' }} onClick={(e) => e.stopPropagation()}>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={selectedStudentIds.includes(s.id)}
+                                                        onChange={(e) => handleSelectStudent(s.id, e)}
+                                                        style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#E53935' }}
+                                                    />
+                                                </td>
                                                 <td style={{ padding: '12px 16px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                         <img

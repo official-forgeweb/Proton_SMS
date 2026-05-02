@@ -863,10 +863,34 @@ router.post('/delete-many', authenticateToken, authorize('admin'), async (req: R
       res.status(400).json({ success: false, message: 'IDs array required' });
       return;
     }
+
+    // Delete related records
+    await prisma.studentSubjectEnrollment.deleteMany({ where: { student_id: { in: ids } } });
+    await prisma.studentClassEnrollment.deleteMany({ where: { student_id: { in: ids } } });
+    await prisma.attendance.deleteMany({ where: { student_id: { in: ids } } });
+    await prisma.testResult.deleteMany({ where: { student_id: { in: ids } } });
+    await prisma.homeworkSubmission.deleteMany({ where: { student_id: { in: ids } } });
+    await prisma.parentStudentMapping.deleteMany({ where: { student_id: { in: ids } } });
+    await prisma.studentFeeAssignment.deleteMany({ where: { student_id: { in: ids } } });
+    await prisma.feePayment.deleteMany({ where: { student_id: { in: ids } } });
+    await prisma.studentQuery.deleteMany({ where: { student_id: { in: ids } } });
+
+    // Get user_ids to delete associated user accounts
+    const students = await prisma.student.findMany({ where: { id: { in: ids } }, select: { user_id: true } });
+    const userIds = students.map(s => s.user_id).filter(id => id);
+
     await prisma.student.deleteMany({ where: { id: { in: ids } } });
+
+    if (userIds.length > 0) {
+      // Need to delete user records without throwing errors if they have other associations, 
+      // but student user accounts typically don't. 
+      await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    }
+
     invalidateCache('/api/students');
     res.json({ success: true, message: 'Students deleted successfully' });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -936,10 +960,13 @@ router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request
     await prisma.parentStudentMapping.deleteMany({ where: { student_id: id } });
     await prisma.studentFeeAssignment.deleteMany({ where: { student_id: id } });
     await prisma.feePayment.deleteMany({ where: { student_id: id } });
+    await prisma.studentQuery.deleteMany({ where: { student_id: id } });
 
     await prisma.student.delete({ where: { id } });
     
     if (student.user_id) {
+        // Find and delete any queries created by this user just in case
+        await prisma.studentQuery.deleteMany({ where: { created_by_user_id: student.user_id } });
         await prisma.user.delete({ where: { id: student.user_id } });
     }
 
