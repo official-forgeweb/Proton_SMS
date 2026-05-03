@@ -42,15 +42,17 @@ export default function StudentAttendancePage() {
     const [records, setRecords] = useState<AttendanceRecord[]>([]);
     const [enrolledClasses, setEnrolledClasses] = useState<EnrolledClass[]>([]);
     const [enrollmentDate, setEnrollmentDate] = useState<string | null>(null);
-    const [summary, setSummary] = useState<AttendanceSummary>({ total: 0, present: 0, absent: 0, late: 0, percentage: 0 });
     const [isLoading, setIsLoading] = useState(true);
 
     // Filters
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-    const [selectedClassId, setSelectedClassId] = useState<string>('all');
+    
+    // Class & Subject Selection
+    const [selectedClassName, setSelectedClassName] = useState<string>('');
+    const [selectedSubjectName, setSelectedSubjectName] = useState<string>('');
 
-    // Fetch attendance — use auth store user ID directly (backend accepts user_id via PRO_ID lookup)
+    // Fetch ALL attendance for the month
     useEffect(() => {
         const userId = user?.id || user?.profile?.PRO_ID;
         if (!userId) return;
@@ -58,18 +60,68 @@ export default function StudentAttendancePage() {
             setIsLoading(true);
             try {
                 const params: any = { month: selectedMonth, year: selectedYear };
-                if (selectedClassId !== 'all') params.class_id = selectedClassId;
-
                 const res = await api.get(`/students/${userId}/attendance`, { params });
                 const data = res.data.data;
                 setRecords(data.records || []);
                 setEnrolledClasses(data.enrolled_classes || []);
                 setEnrollmentDate(data.enrollment_date || null);
-                setSummary(data.summary || { total: 0, present: 0, absent: 0, late: 0, percentage: 0 });
             } catch (err) { console.error(err); } finally { setIsLoading(false); }
         };
         fetchAttendance();
-    }, [user, selectedMonth, selectedYear, selectedClassId]);
+    }, [user, selectedMonth, selectedYear]);
+
+    // Derive available options
+    const availableOptions = useMemo(() => {
+        const options: Array<{ classId: string; className: string; subjectName: string; label: string }> = [];
+        enrolledClasses.forEach(cls => {
+            const cName = cls.class_name || cls.class_code;
+            if (cls.subjects && cls.subjects.length > 0) {
+                cls.subjects.forEach(sub => {
+                    options.push({ classId: cls.id, className: cName, subjectName: sub, label: `${cName} - ${sub}` });
+                });
+            } else if (cls.subject) {
+                options.push({ classId: cls.id, className: cName, subjectName: cls.subject, label: `${cName} - ${cls.subject}` });
+            } else {
+                options.push({ classId: cls.id, className: cName, subjectName: 'General', label: cName });
+            }
+        });
+        return options;
+    }, [enrolledClasses]);
+
+    const classNames = useMemo(() => Array.from(new Set(availableOptions.map(o => o.className))), [availableOptions]);
+    const subjectsForClass = useMemo(() => availableOptions.filter(o => o.className === selectedClassName).map(o => o.subjectName), [availableOptions, selectedClassName]);
+
+    // Auto-select valid class & subject
+    useEffect(() => {
+        if (availableOptions.length > 0) {
+            const isValid = availableOptions.find(o => o.className === selectedClassName && o.subjectName === selectedSubjectName);
+            if (!isValid) {
+                setSelectedClassName(availableOptions[0].className);
+                setSelectedSubjectName(availableOptions[0].subjectName);
+            }
+        }
+    }, [availableOptions, selectedClassName, selectedSubjectName]);
+
+    const activeClassId = useMemo(() => {
+        const opt = availableOptions.find(o => o.className === selectedClassName && o.subjectName === selectedSubjectName);
+        return opt ? opt.classId : null;
+    }, [selectedClassName, selectedSubjectName, availableOptions]);
+
+    // Filter records for active class ONLY
+    const filteredRecords = useMemo(() => {
+        if (!activeClassId) return [];
+        return records.filter(r => r.class_id === activeClassId);
+    }, [records, activeClassId]);
+
+    // Calculate summary dynamically
+    const summary = useMemo(() => {
+        const total = filteredRecords.length;
+        const present = filteredRecords.filter(r => r.status === 'present').length;
+        const late = filteredRecords.filter(r => r.status === 'late').length;
+        const absent = total - present - late;
+        const percentage = total > 0 ? ((present + late) / total * 100) : 0;
+        return { total, present, absent, late, percentage };
+    }, [filteredRecords]);
 
     // Build calendar data
     const calendarData = useMemo(() => {
@@ -80,23 +132,19 @@ export default function StudentAttendancePage() {
         const daysInMonth = lastDay.getDate();
         const startDayOfWeek = firstDay.getDay();
 
-        // Build attendance map
-        const attendanceMap: Record<string, AttendanceRecord> = {};
-        records.forEach(r => {
+        // Build attendance map grouped by date
+        const attendanceMap: Record<string, AttendanceRecord[]> = {};
+        filteredRecords.forEach(r => {
             const dateStr = r.attendance_date;
-            // If multiple records for same date (different classes), prioritize in order: present > late > absent
-            if (!attendanceMap[dateStr] || 
-                (r.status === 'present') ||
-                (r.status === 'late' && attendanceMap[dateStr].status === 'absent')) {
-                attendanceMap[dateStr] = r;
-            }
+            if (!attendanceMap[dateStr]) attendanceMap[dateStr] = [];
+            attendanceMap[dateStr].push(r);
         });
 
-        const days: Array<{ day: number | null; date: string; record: AttendanceRecord | null; isToday: boolean; isFuture: boolean }> = [];
+        const days: Array<{ day: number | null; date: string; records: AttendanceRecord[]; isToday: boolean; isFuture: boolean }> = [];
         
         // Empty cells before first day
         for (let i = 0; i < startDayOfWeek; i++) {
-            days.push({ day: null, date: '', record: null, isToday: false, isFuture: false });
+            days.push({ day: null, date: '', records: [], isToday: false, isFuture: false });
         }
 
         const today = new Date();
@@ -111,14 +159,14 @@ export default function StudentAttendancePage() {
             days.push({
                 day: d,
                 date: dateStr,
-                record: attendanceMap[dateStr] || null,
+                records: attendanceMap[dateStr] || [],
                 isToday,
                 isFuture,
             });
         }
 
         return days;
-    }, [records, selectedMonth, selectedYear]);
+    }, [filteredRecords, selectedMonth, selectedYear]);
 
     // Navigate months
     const goToPreviousMonth = () => {
@@ -170,25 +218,46 @@ export default function StudentAttendancePage() {
                         Filters
                     </div>
 
-                    {/* Subject / Class filter */}
-                    <select
-                        id="attendance-class-filter"
-                        value={selectedClassId}
-                        onChange={e => setSelectedClassId(e.target.value)}
-                        style={{
-                            padding: '8px 16px', borderRadius: '10px', border: '1.5px solid var(--border-primary)',
-                            fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)',
-                            background: selectedClassId !== 'all' ? 'linear-gradient(135deg, #EEF2FF, #E0E7FF)' : 'white',
-                            cursor: 'pointer', outline: 'none', minWidth: '180px',
-                        }}
-                    >
-                        <option value="all">All Subjects</option>
-                        {enrolledClasses.map(cls => (
-                            <option key={cls.id} value={cls.id}>
-                                {cls.class_name || cls.class_code} {cls.subject ? `(${cls.subject})` : ''}
-                            </option>
-                        ))}
-                    </select>
+                    {/* Class Filter */}
+                    {classNames.length > 0 && (
+                        <select
+                            value={selectedClassName}
+                            onChange={e => {
+                                const newClass = e.target.value;
+                                setSelectedClassName(newClass);
+                                const subs = availableOptions.filter(o => o.className === newClass);
+                                if (subs.length > 0) setSelectedSubjectName(subs[0].subjectName);
+                            }}
+                            style={{
+                                padding: '8px 16px', borderRadius: '10px', border: '1.5px solid var(--border-primary)',
+                                fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)',
+                                background: 'linear-gradient(135deg, #EEF2FF, #E0E7FF)',
+                                cursor: 'pointer', outline: 'none', minWidth: '140px',
+                            }}
+                        >
+                            {classNames.map(name => (
+                                <option key={name} value={name}>{name}</option>
+                            ))}
+                        </select>
+                    )}
+
+                    {/* Subject Filter */}
+                    {subjectsForClass.length > 0 && (
+                        <select
+                            value={selectedSubjectName}
+                            onChange={e => setSelectedSubjectName(e.target.value)}
+                            style={{
+                                padding: '8px 16px', borderRadius: '10px', border: '1.5px solid var(--border-primary)',
+                                fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)',
+                                background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)',
+                                cursor: 'pointer', outline: 'none', minWidth: '140px',
+                            }}
+                        >
+                            {subjectsForClass.map(sub => (
+                                <option key={sub} value={sub}>{sub}</option>
+                            ))}
+                        </select>
+                    )}
 
                     {/* Month filter */}
                     <select
@@ -389,87 +458,63 @@ export default function StudentAttendancePage() {
                                         return <div key={`empty-${idx}`} style={{ padding: '16px', minHeight: '80px', background: '#FAFBFC', borderBottom: '1px solid #F8FAFC', borderRight: idx % 7 !== 6 ? '1px solid #F8FAFC' : 'none' }} />;
                                     }
 
-                                    const status = cell.record?.status;
+                                    const dayRecords = cell.records || [];
+                                    const hasRecords = dayRecords.length > 0;
+                                    
                                     let bgColor = 'transparent';
-                                    let dotColor = 'transparent';
-                                    let textColor = 'var(--text-primary)';
-                                    let statusLabel = '';
+                                    let textColor = cell.isFuture ? '#CBD5E1' : 'var(--text-primary)';
 
-                                    if (status === 'present') {
-                                        bgColor = '#ECFDF5';
-                                        dotColor = '#10B981';
-                                        textColor = '#065F46';
-                                        statusLabel = 'Present';
-                                    } else if (status === 'absent') {
-                                        bgColor = '#FEF2F2';
-                                        dotColor = '#EF4444';
-                                        textColor = '#991B1B';
-                                        statusLabel = 'Absent';
-                                    } else if (status === 'late') {
-                                        bgColor = '#FFFBEB';
-                                        dotColor = '#F59E0B';
-                                        textColor = '#92400E';
-                                        statusLabel = 'Leave';
-                                    }
-
-                                    if (cell.isFuture) {
-                                        textColor = '#CBD5E1';
+                                    if (hasRecords) {
+                                        const status = dayRecords[0].status;
+                                        if (status === 'present') { bgColor = '#ECFDF5'; textColor = '#065F46'; }
+                                        else if (status === 'absent') { bgColor = '#FEF2F2'; textColor = '#991B1B'; }
+                                        else if (status === 'late') { bgColor = '#FFFBEB'; textColor = '#92400E'; }
                                     }
 
                                     return (
                                         <div
                                             key={cell.date}
                                             style={{
-                                                padding: '10px',
+                                                padding: '8px',
                                                 minHeight: '80px',
                                                 background: cell.isToday ? 'linear-gradient(135deg, #EEF2FF, #E0E7FF)' : bgColor,
                                                 borderBottom: '1px solid #F1F5F9',
                                                 borderRight: idx % 7 !== 6 ? '1px solid #F1F5F9' : 'none',
                                                 position: 'relative',
-                                                transition: 'all 0.2s ease',
-                                                cursor: status ? 'default' : 'default',
                                             }}
                                         >
-                                            {/* Day number */}
-                                            <div style={{
-                                                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                                            }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                 <span style={{
-                                                    fontSize: '15px', fontWeight: cell.isToday ? 800 : 600,
+                                                    fontSize: '14px', fontWeight: cell.isToday ? 800 : 600,
                                                     color: cell.isToday ? '#4F46E5' : textColor,
-                                                    width: '28px', height: '28px', borderRadius: '8px',
+                                                    width: '24px', height: '24px', borderRadius: '6px',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     background: cell.isToday ? 'rgba(79,70,229,0.12)' : 'transparent',
                                                 }}>
                                                     {cell.day}
                                                 </span>
-                                                {dotColor !== 'transparent' && (
-                                                    <span style={{
-                                                        width: '8px', height: '8px', borderRadius: '50%',
-                                                        background: dotColor, flexShrink: 0, marginTop: '2px',
-                                                    }} />
-                                                )}
                                             </div>
 
-                                            {/* Status label */}
-                                            {statusLabel && (
-                                                <div style={{
-                                                    marginTop: '6px', fontSize: '10px', fontWeight: 600,
-                                                    color: dotColor, textTransform: 'uppercase', letterSpacing: '0.5px',
-                                                    padding: '2px 6px', borderRadius: '4px',
-                                                    background: `${dotColor}15`, display: 'inline-block',
-                                                }}>
-                                                    {statusLabel}
-                                                </div>
-                                            )}
-
-                                            {/* Class info */}
-                                            {cell.record?.class_name && (
-                                                <div style={{
-                                                    marginTop: '2px', fontSize: '9px', color: '#94A3B8',
-                                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                                }}>
-                                                    {cell.record.class_name}
+                                            {/* Subject Status Badge */}
+                                            {hasRecords && (
+                                                <div style={{ marginTop: '8px' }}>
+                                                    {(() => {
+                                                        const rec = dayRecords[0];
+                                                        let statColor = '#059669';
+                                                        let statBg = 'rgba(16,185,129,0.15)';
+                                                        let statText = 'Present';
+                                                        if (rec.status === 'absent') { statColor = '#DC2626'; statBg = 'rgba(239,68,68,0.15)'; statText = 'Absent'; }
+                                                        if (rec.status === 'late') { statColor = '#D97706'; statBg = 'rgba(245,158,11,0.15)'; statText = 'Leave'; }
+                                                        
+                                                        return (
+                                                            <div style={{
+                                                                fontSize: '11px', fontWeight: 600, color: statColor, background: statBg,
+                                                                padding: '4px 8px', borderRadius: '4px', display: 'inline-block'
+                                                            }}>
+                                                                {statText}
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </div>
                                             )}
                                         </div>
@@ -523,29 +568,30 @@ export default function StudentAttendancePage() {
                                     </h3>
                                 </div>
                                 <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
-                                    {enrolledClasses.map(cls => (
+                                    {availableOptions.map(opt => (
                                         <div
-                                            key={cls.id}
-                                            onClick={() => setSelectedClassId(cls.id === selectedClassId ? 'all' : cls.id)}
+                                            key={`${opt.classId}-${opt.subjectName}`}
+                                            onClick={() => {
+                                                setSelectedClassName(opt.className);
+                                                setSelectedSubjectName(opt.subjectName);
+                                            }}
                                             style={{
                                                 padding: '16px 20px', borderRadius: '14px',
-                                                border: cls.id === selectedClassId ? '2px solid #6366F1' : '1.5px solid #E2E8F0',
-                                                background: cls.id === selectedClassId ? 'linear-gradient(135deg, #EEF2FF, #F5F3FF)' : '#FAFBFC',
+                                                border: (opt.className === selectedClassName && opt.subjectName === selectedSubjectName) ? '2px solid #6366F1' : '1.5px solid #E2E8F0',
+                                                background: (opt.className === selectedClassName && opt.subjectName === selectedSubjectName) ? 'linear-gradient(135deg, #EEF2FF, #F5F3FF)' : '#FAFBFC',
                                                 cursor: 'pointer', transition: 'all 0.2s ease',
                                             }}
                                         >
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <div>
                                                     <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                                                        {cls.class_name || cls.class_code}
+                                                        {opt.subjectName}
                                                     </p>
-                                                    {cls.subjects.length > 0 && (
-                                                        <p style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
-                                                            {cls.subjects.join(', ')}
-                                                        </p>
-                                                    )}
+                                                    <p style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
+                                                        {opt.className}
+                                                    </p>
                                                 </div>
-                                                {cls.id === selectedClassId && (
+                                                {(opt.className === selectedClassName && opt.subjectName === selectedSubjectName) && (
                                                     <span style={{
                                                         fontSize: '11px', fontWeight: 600, color: '#6366F1',
                                                         background: 'rgba(99,102,241,0.1)', padding: '4px 10px',
@@ -555,11 +601,6 @@ export default function StudentAttendancePage() {
                                                     </span>
                                                 )}
                                             </div>
-                                            {cls.enrollment_date && (
-                                                <p style={{ fontSize: '11px', color: '#94A3B8', marginTop: '6px' }}>
-                                                    Enrolled: {new Date(cls.enrollment_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                </p>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -583,7 +624,7 @@ export default function StudentAttendancePage() {
                                     </h3>
                                 </div>
                                 <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                    {records.map((record, i) => (
+                                    {filteredRecords.map((record, i) => (
                                         <div key={record.id || i} style={{
                                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                             padding: '14px 24px',
@@ -634,7 +675,7 @@ export default function StudentAttendancePage() {
                         )}
 
                         {/* Empty state */}
-                        {records.length === 0 && !isLoading && (
+                        {filteredRecords.length === 0 && !isLoading && (
                             <div style={{
                                 marginTop: '24px', textAlign: 'center', padding: '60px 20px',
                                 background: 'white', borderRadius: '20px',
