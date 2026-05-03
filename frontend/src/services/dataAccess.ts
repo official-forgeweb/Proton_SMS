@@ -46,6 +46,7 @@ export interface AdminDashboardData {
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   return withRetry(async () => {
+    // Split into two batches to prevent Prisma connection pool timeouts
     const [
       totalStudents, activeStudents,
       totalTeachers, activeTeachers,
@@ -54,9 +55,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       totalDemos, completedDemos,
       totalParents,
       revenueAgg, pendingAgg,
-      recentStudents, recentPayments, recentEnquiries,
-      genderAgg,
-      topStudents,
     ] = await Promise.all([
       prisma.student.count(),
       prisma.student.count({ where: { academic_status: 'active' } }),
@@ -76,6 +74,13 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       prisma.studentFeeAssignment.aggregate({
         _sum: { total_pending: true },
       }),
+    ]);
+
+    const [
+      recentStudents, recentPayments, recentEnquiries,
+      genderAgg,
+      topStudents,
+    ] = await Promise.all([
       prisma.student.findMany({ orderBy: { created_at: 'desc' }, take: 5 }),
       prisma.feePayment.findMany({
         orderBy: { created_at: 'desc' },
