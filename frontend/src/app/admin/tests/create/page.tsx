@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
+import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ClipboardList } from 'lucide-react';
@@ -14,8 +15,10 @@ export default function CreateTestPage() {
     const [formData, setFormData] = useState({
         test_name: '', class_id: '', subject: '', test_type: 'weekly_test',
         test_date: new Date().toISOString().split('T')[0],
-        duration_minutes: 60, total_marks: 100, passing_marks: 33
+        duration_minutes: 60, total_marks: 100, passing_marks: 33,
+        description: '', images: [] as string[]
     });
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     useEffect(() => {
         api.get('/classes').then(res => setClasses(res.data.data)).catch(console.error);
@@ -32,6 +35,39 @@ export default function CreateTestPage() {
             alert('Failed to create test');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        setUploadingImage(true);
+        try {
+            // Get Authentication Signature from backend
+            const sigRes = await api.get('/study-materials/signature');
+            const { signature, timestamp, folder, cloudName, apiKey } = sigRes.data.data;
+
+            if (!cloudName || !apiKey) {
+                throw new Error("Missing Cloudinary configuration variables in the server.");
+            }
+
+            const formData = new FormData();
+            formData.append('file', e.target.files[0]);
+            formData.append('api_key', apiKey);
+            formData.append('timestamp', timestamp.toString());
+            formData.append('signature', signature);
+            formData.append('folder', folder);
+            
+            const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
+
+            const res = await axios.post(cloudinaryUrl, formData);
+            if (res.data.secure_url) {
+                setFormData(prev => ({ ...prev, images: [...prev.images, res.data.secure_url] }));
+            }
+        } catch (error) {
+            console.error('Image upload failed', error);
+            alert('Failed to upload image. Please check your Cloudinary configuration.');
+        } finally {
+            setUploadingImage(false);
         }
     };
 
@@ -103,6 +139,47 @@ export default function CreateTestPage() {
                         <div>
                             <label className="form-label">Pass Marks *</label>
                             <input type="number" required className="form-input" value={formData.passing_marks} onChange={e => setFormData({ ...formData, passing_marks: Number(e.target.value) })} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="form-section">
+                    <div className="form-section-title">Additional Details</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
+                        <div>
+                            <label className="form-label">Syllabus / Description</label>
+                            <textarea 
+                                className="form-input" 
+                                placeholder="Details about the syllabus or instructions..." 
+                                value={formData.description} 
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                style={{ minHeight: '100px', resize: 'vertical' }}
+                            />
+                        </div>
+                        <div>
+                            <label className="form-label">Attachments (Images)</label>
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                onChange={handleImageUpload} 
+                                disabled={uploadingImage}
+                                className="form-input"
+                            />
+                            {uploadingImage && <span style={{ fontSize: '12px', color: '#E53935' }}>Uploading...</span>}
+                            {formData.images.length > 0 && (
+                                <div style={{ display: 'flex', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
+                                    {formData.images.map((img, idx) => (
+                                        <div key={idx} style={{ position: 'relative' }}>
+                                            <img src={img} alt="attachment" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
+                                            <button 
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                                                style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                            >×</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

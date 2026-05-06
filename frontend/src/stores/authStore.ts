@@ -14,7 +14,7 @@ interface UserProfile {
 interface User {
     id: string;
     email: string;
-    role: 'admin' | 'teacher' | 'student' | 'parent';
+    role: 'admin' | 'teacher' | 'student';
     profile: UserProfile;
 }
 

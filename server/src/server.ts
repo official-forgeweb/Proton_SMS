@@ -29,9 +29,6 @@ const startServer = async (): Promise<void> => {
     console.log(`🔍 Health: http://localhost:${PORT}/api/health`);
     console.log(`\n📧 Demo Credentials:`);
     console.log(`   Admin: admin@protoncoaching.com / Admin@123`);
-    console.log(`   Teacher: amit@protoncoaching.com / Teacher@123`);
-    console.log(`   Student: rahul.sharma@email.com / Student@123`);
-    console.log(`   Parent: parent.sharma@email.com / Parent@123\n`);
   });
 
   const gracefulShutdown = async (signal: string) => {

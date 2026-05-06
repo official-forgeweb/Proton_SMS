@@ -14,7 +14,6 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
       totalClasses, activeClasses,
       totalEnquiries, newEnquiries,
       totalDemos, completedDemos,
-      totalParents,
       contacted, demoScheduled, demoCompleted, enrolled,
       revenueAgg, pendingAgg,
       recentStudents, recentPayments, recentEnquiries,
@@ -31,7 +30,6 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
       prisma.enquiry.count({ where: { status: 'new' } }),
       prisma.demoClass.count(),
       prisma.demoClass.count({ where: { status: 'completed' } }),
-      prisma.parent.count(),
       prisma.enquiry.count({ where: { status: { in: ['contacted', 'demo_scheduled', 'demo_completed', 'enrolled'] } } }),
       prisma.enquiry.count({ where: { status: { in: ['demo_scheduled', 'demo_completed', 'enrolled'] } } }),
       prisma.enquiry.count({ where: { status: { in: ['demo_completed', 'enrolled'] } } }),
@@ -114,7 +112,6 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
           enquiries: { total: totalEnquiries, new: newEnquiries },
           demos: { total: totalDemos, completed: completedDemos },
           revenue: { total: totalRevenue, pending: totalPending },
-          parents: { total: totalParents },
         },
         funnel: {
           enquiries: totalEnquiries, contacted, demo_scheduled: demoScheduled, demo_completed: demoCompleted, enrolled,
@@ -366,117 +363,5 @@ router.get('/student', authenticateToken, authorize('student'), cacheMiddleware(
   }
 });
 
-// GET /api/dashboard/parent
-router.get('/parent', authenticateToken, authorize('parent'), cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
-  try {
-    const parent = await prisma.parent.findUnique({ where: { user_id: req.user!.id } });
-    if (!parent) {
-      res.status(404).json({ success: false, message: 'Parent profile not found' });
-      return;
-    }
-
-    const mappings = await prisma.parentStudentMapping.findMany({
-      where: { parent_id: parent.id },
-      include: { student: true },
-    });
-    const studentIds = mappings.map(m => m.student?.id).filter(Boolean) as string[];
-
-    if (studentIds.length === 0) {
-      res.json({ success: true, data: { parent: { ...parent, id: parent.id }, children: [] } });
-      return;
-    }
-
-    const [allEnrollments, allAttendance, allRecentTests, allFeeAssignments] = await Promise.all([
-      prisma.studentClassEnrollment.findMany({
-        where: { student_id: { in: studentIds }, enrollment_status: 'active' },
-        include: { class: true },
-      }),
-      prisma.attendance.findMany({ where: { student_id: { in: studentIds } } }),
-      prisma.testResult.findMany({
-        where: { student_id: { in: studentIds } },
-        orderBy: { created_at: 'desc' },
-        include: { test: true },
-      }),
-      prisma.studentFeeAssignment.findMany({ where: { student_id: { in: studentIds } } }),
-    ]);
-
-    // Build lookup maps
-    const enrollmentMap: Record<string, any[]> = {};
-    allEnrollments.forEach(e => {
-      if (!enrollmentMap[e.student_id]) enrollmentMap[e.student_id] = [];
-      enrollmentMap[e.student_id].push(e);
-    });
-
-    const attendanceMap: Record<string, any[]> = {};
-    allAttendance.forEach(a => {
-      if (!attendanceMap[a.student_id]) attendanceMap[a.student_id] = [];
-      attendanceMap[a.student_id].push(a);
-    });
-
-    const testMap: Record<string, any> = {};
-    allRecentTests.forEach(t => {
-      if (!testMap[t.student_id]) testMap[t.student_id] = t;
-    });
-
-    const feeMap: Record<string, any> = {};
-    allFeeAssignments.forEach(f => { feeMap[f.student_id] = f; });
-
-    const children = await Promise.all(mappings.map(async m => {
-      const student = m.student;
-      if (!student) return null;
-      const sid = student.id;
-
-      const studentAttendance = attendanceMap[sid] || [];
-      const present = studentAttendance.filter((a: any) => a.status === 'present' || a.status === 'late').length;
-      const attendancePercent = studentAttendance.length > 0 ? ((present / studentAttendance.length) * 100).toFixed(1) : 0;
-
-      const enrollment = (enrollmentMap[sid] || [])[0];
-      const recentTest = testMap[sid];
-      const feeAssign = feeMap[sid];
-
-      // Performance & attendance trends per child
-      const performanceAgg: any[] = await prisma.$queryRaw`
-        SELECT EXTRACT(MONTH FROM created_at) as month, AVG(percentage) as "avgScore"
-        FROM test_results
-        WHERE student_id = ${sid}
-        GROUP BY EXTRACT(MONTH FROM created_at)
-        ORDER BY month
-      `;
-
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const last30DaysAttendance = await prisma.attendance.findMany({
-        where: { student_id: sid, attendance_date: { gte: thirtyDaysAgo } },
-        orderBy: { attendance_date: 'asc' },
-      });
-
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const performanceData = monthNames.map((name, index) => {
-        const perf = performanceAgg.find((p: any) => Number(p.month) === index + 1);
-        return { name, value: perf ? Math.round(Number(perf.avgScore)) : 0 };
-      });
-
-      const attendanceTrend = last30DaysAttendance.map(a => ({
-        date: a.attendance_date.split('-').slice(1).join('/'),
-        status: a.status === 'present' || a.status === 'late' ? 1 : 0,
-      }));
-
-      return {
-        ...student,
-        id: student.id,
-        relationship: m.relationship,
-        class_name: enrollment?.class?.class_name,
-        attendance_percentage: parseFloat(String(attendancePercent)),
-        last_test: recentTest ? { ...recentTest, test_name: recentTest.test?.test_name } : null,
-        fee: feeAssign ? { total: feeAssign.final_fee, paid: feeAssign.total_paid, pending: feeAssign.total_pending, status: feeAssign.payment_status } : null,
-        charts: { performance: performanceData, attendance: attendanceTrend },
-      };
-    }));
-
-    res.json({ success: true, data: { parent: { ...parent, id: parent.id }, children } });
-  } catch (error) {
-    console.error('Dashboard parent error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
 
 export default router;

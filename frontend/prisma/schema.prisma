@@ -23,7 +23,6 @@ enum UserRole {
   admin
   teacher
   student
-  parent
 }
 
 enum AttendanceStatus {
@@ -52,13 +51,14 @@ model User {
   // Relations
   student              Student?
   teacher              Teacher?
-  parent               Parent?
   enquiries_assigned   Enquiry[]        @relation("AssignedTo")
   enquiry_remarks      EnquiryRemark[]
   attendance_marked    Attendance[]
   fee_payments_received FeePayment[]
   queries_created    StudentQuery[]   @relation("QueryCreatedBy")
   queries_resolved   StudentQuery[]   @relation("QueryResolvedBy")
+  notifications_received Notification[] @relation("NotificationRecipient")
+  notifications_sent     Notification[] @relation("NotificationSender")
 
   @@map("users")
 }
@@ -87,7 +87,6 @@ model Student {
 
   // Relations
   user                    User                     @relation(fields: [user_id], references: [id])
-  parent_mappings         ParentStudentMapping[]
   class_enrollments       StudentClassEnrollment[]
   subject_enrollments     StudentSubjectEnrollment[]
   attendance_records      Attendance[]
@@ -100,46 +99,6 @@ model Student {
   @@index([academic_status])
   @@index([phone])
   @@map("students")
-}
-
-// ──────────────────────────────────────────────
-// Parent
-// ──────────────────────────────────────────────
-
-model Parent {
-  id           String   @id @default(uuid())
-  user_id      String   @unique
-  first_name   String?
-  last_name    String?
-  email        String?
-  phone        String?
-  relationship String?
-  occupation   String?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-
-  // Relations
-  user             User                   @relation(fields: [user_id], references: [id])
-  student_mappings ParentStudentMapping[]
-
-  @@map("parents")
-}
-
-model ParentStudentMapping {
-  id               String  @id @default(uuid())
-  parent_id        String
-  student_id       String
-  relationship     String?
-  is_primary       Boolean @default(true)
-  can_make_payments Boolean @default(true)
-
-  // Relations
-  parent  Parent  @relation(fields: [parent_id], references: [id])
-  student Student @relation(fields: [student_id], references: [id])
-
-  @@index([parent_id])
-  @@index([student_id])
-  @@map("parent_student_mappings")
 }
 
 // ──────────────────────────────────────────────
@@ -426,6 +385,8 @@ model Test {
   duration_minutes  Int?
   total_marks       Float?
   passing_marks     Float?
+  description       String?
+  images            String[] @default([])
   status            String   @default("scheduled")
   results_published Boolean  @default(false)
   students_appeared Int      @default(0)
@@ -627,4 +588,53 @@ model StudentQuery {
   @@index([query_type])
   @@index([created_by_user_id])
   @@map("student_queries")
+}
+
+// ──────────────────────────────────────────────
+// Notifications
+// ──────────────────────────────────────────────
+
+model Notification {
+  id           String   @id @default(uuid())
+  recipient_id String
+  sender_id    String?
+  type         String                  // test_scheduled, marks_uploaded, announcement, general
+  title        String
+  message      String
+  reference_id String?                 // ID of related entity (test, etc.)
+  is_read      Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  // Relations
+  recipient    User     @relation("NotificationRecipient", fields: [recipient_id], references: [id], onDelete: Cascade)
+  sender       User?    @relation("NotificationSender", fields: [sender_id], references: [id])
+
+  @@index([recipient_id, is_read])
+  @@index([recipient_id, created_at])
+  @@index([type])
+  @@map("notifications")
+}
+
+// ──────────────────────────────────────────────
+// global settings
+// ──────────────────────────────────────────────
+
+model SystemSetting {
+  id                       String   @id @default("global")
+  institution_name         String   @default("Proton Coaching")
+  contact_email            String   @default("admin@protoncoaching.com")
+  phone_number             String   @default("+91-0000000000")
+  currency                 String   @default("INR")
+  address                  String?
+
+  allow_student_registration Boolean  @default(true)
+  require_email_verification Boolean  @default(false)
+  enable_2fa                 Boolean  @default(false)
+  
+  email_notifications        Boolean  @default(true)
+  sms_notifications          Boolean  @default(true)
+
+  updated_at                 DateTime @updatedAt
+
+  @@map("system_settings")
 }

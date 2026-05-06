@@ -192,7 +192,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
       return;
     }
 
-    const [enrollments, subjectEnrollments, feeAssignment, payments, parentMapping, recentTests] = await Promise.all([
+    const [enrollments, subjectEnrollments, feeAssignment, payments, recentTests] = await Promise.all([
       prisma.studentClassEnrollment.findMany({
         where: { student_id: student.id },
         include: { class: { include: { schedule: true } } },
@@ -202,10 +202,6 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
       }),
       prisma.studentFeeAssignment.findFirst({ where: { student_id: student.id } }),
       prisma.feePayment.findMany({ where: { student_id: student.id } }),
-      prisma.parentStudentMapping.findFirst({
-        where: { student_id: student.id },
-        include: { parent: true },
-      }),
       prisma.testResult.findMany({
         where: { student_id: student.id },
         orderBy: { created_at: 'desc' },
@@ -226,7 +222,6 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
         subject_enrollments: subjectEnrollments,
         fee: feeAssignment,
         payments,
-        parent: parentMapping?.parent,
         recent_tests: recentTests.map((tr: any) => ({ ...tr, test: tr.test })),
       },
     });
@@ -329,7 +324,7 @@ router.post('/bulk', authenticateToken, authorize('admin'), async (req: Request,
 // POST /api/students
 router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { first_name, last_name, date_of_birth, gender, email, phone, school_name, class_id, admission_type, parent_name, parent_phone, parent_email, parent_relationship } = req.body;
+    const { first_name, last_name, date_of_birth, gender, email, phone, school_name, class_id, admission_type } = req.body;
 
     const salt = await bcrypt.genSalt(10);
     let password = `Proton@${Math.floor(1000 + Math.random() * 9000)}`;
@@ -436,32 +431,6 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
       }
     }
 
-    if (parent_name && parent_phone) {
-      const pLName = (last_name || '').toLowerCase();
-      const parentUser = await prisma.user.create({
-        data: {
-          email: parent_email || `parent.${pLName}.${Math.floor(Math.random() * 10000)}@proton.com`,
-          password_hash: await bcrypt.hash(`Parent@${Math.floor(1000 + Math.random() * 9000)}`, salt),
-          role: 'parent',
-        },
-      });
-      const parent = await prisma.parent.create({
-        data: {
-          user_id: parentUser.id,
-          first_name: parent_name,
-          last_name,
-          email: parent_email,
-          phone: parent_phone,
-        },
-      });
-      await prisma.parentStudentMapping.create({
-        data: {
-          parent_id: parent.id,
-          student_id: student.id,
-          relationship: parent_relationship || 'father',
-        },
-      });
-    }
 
     invalidateCache('/api/students');
     res.status(201).json({
@@ -870,7 +839,6 @@ router.post('/delete-many', authenticateToken, authorize('admin'), async (req: R
     await prisma.attendance.deleteMany({ where: { student_id: { in: ids } } });
     await prisma.testResult.deleteMany({ where: { student_id: { in: ids } } });
     await prisma.homeworkSubmission.deleteMany({ where: { student_id: { in: ids } } });
-    await prisma.parentStudentMapping.deleteMany({ where: { student_id: { in: ids } } });
     await prisma.studentFeeAssignment.deleteMany({ where: { student_id: { in: ids } } });
     await prisma.feePayment.deleteMany({ where: { student_id: { in: ids } } });
     await prisma.studentQuery.deleteMany({ where: { student_id: { in: ids } } });
@@ -957,7 +925,6 @@ router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request
     await prisma.attendance.deleteMany({ where: { student_id: id } });
     await prisma.testResult.deleteMany({ where: { student_id: id } });
     await prisma.homeworkSubmission.deleteMany({ where: { student_id: id } });
-    await prisma.parentStudentMapping.deleteMany({ where: { student_id: id } });
     await prisma.studentFeeAssignment.deleteMany({ where: { student_id: id } });
     await prisma.feePayment.deleteMany({ where: { student_id: id } });
     await prisma.studentQuery.deleteMany({ where: { student_id: id } });

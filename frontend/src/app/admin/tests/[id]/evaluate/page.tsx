@@ -75,6 +75,18 @@ export default function EvaluateTestPage() {
         }));
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currentIndex: number) => {
+        if (e.key === 'ArrowDown' || e.key === 'Enter') {
+            e.preventDefault();
+            const nextInput = document.getElementById(`marks-input-${currentIndex + 1}`);
+            if (nextInput) nextInput.focus();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const prevInput = document.getElementById(`marks-input-${currentIndex - 1}`);
+            if (prevInput) prevInput.focus();
+        }
+    };
+
     const togglePresence = (studentId: string) => {
         setResults(prev => ({
             ...prev,
@@ -240,6 +252,7 @@ export default function EvaluateTestPage() {
                                                         <input
                                                             type="number"
                                                             className="input-field"
+                                                            id={`marks-input-${students.indexOf(student)}`}
                                                             style={{
                                                                 padding: '6px 12px',
                                                                 opacity: res?.present ? 1 : 0.5,
@@ -248,6 +261,7 @@ export default function EvaluateTestPage() {
                                                             placeholder="0"
                                                             value={res?.marks ?? ''}
                                                             onChange={(e) => handleMarksChange(student.id, e.target.value)}
+                                                            onKeyDown={(e) => handleKeyDown(e, students.indexOf(student))}
                                                             disabled={!res?.present}
                                                             min="0"
                                                             max={testData.total_marks}

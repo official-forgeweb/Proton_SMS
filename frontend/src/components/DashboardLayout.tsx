@@ -3,7 +3,8 @@ import { useEffect, useState, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import Sidebar from '@/components/Sidebar';
-import { Search, Bell, MessageSquare, WifiOff, RefreshCw } from 'lucide-react';
+import { Search, Bell, MessageSquare, WifiOff, RefreshCw, X, Check } from 'lucide-react';
+import api from '@/lib/api';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -14,10 +15,56 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
     const router = useRouter();
     const { user, isAuthenticated, isLoading, serverError, checkAuth } = useAuthStore();
     const [retrying, setRetrying] = useState(false);
+    
+    // Notifications State
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showNotifications, setShowNotifications] = useState(false);
 
     useEffect(() => {
         checkAuth();
     }, []);
+
+    const fetchNotifications = useCallback(async () => {
+        if (!isAuthenticated) return;
+        try {
+            const [listRes, countRes] = await Promise.all([
+                api.get('/notifications?limit=5'),
+                api.get('/notifications/unread-count')
+            ]);
+            setNotifications(listRes.data.data || []);
+            setUnreadCount(countRes.data.data?.count || 0);
+        } catch (error) {
+            console.error('Failed to fetch notifications');
+        }
+    }, [isAuthenticated]);
+
+    useEffect(() => {
+        if (isAuthenticated && !serverError) {
+            fetchNotifications();
+            // Poll every 30 seconds
+            const interval = setInterval(fetchNotifications, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [isAuthenticated, serverError, fetchNotifications]);
+
+    const markAsRead = async (id: string) => {
+        try {
+            await api.put(`/notifications/${id}/read`);
+            fetchNotifications();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const markAllAsRead = async () => {
+        try {
+            await api.put('/notifications/read-all');
+            fetchNotifications();
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     // Auto-retry when server error is detected
     useEffect(() => {
@@ -318,19 +365,105 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                     {/* Right Side Actions */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         {/* Notification bell */}
-                        <button className="header-action-btn" style={{
-                            background: '#FFFFFF', border: '1px solid #EEEEF5', cursor: 'pointer',
-                            position: 'relative', width: '40px', height: '40px', borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                            transition: 'all 0.2s',
-                        }}>
-                            <Bell size={18} className="icon-default" />
-                            <span style={{
-                                position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px',
-                                background: '#EF4444', borderRadius: '50%', border: '2px solid white',
-                            }} />
-                        </button>
+                        <div style={{ position: 'relative' }}>
+                            <button 
+                                className="header-action-btn" 
+                                onClick={() => setShowNotifications(!showNotifications)}
+                                style={{
+                                    background: showNotifications ? '#F8F9FD' : '#FFFFFF', 
+                                    border: '1px solid #EEEEF5', cursor: 'pointer',
+                                    position: 'relative', width: '40px', height: '40px', borderRadius: '50%',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                <Bell size={18} className="icon-default" />
+                                {unreadCount > 0 && (
+                                    <span style={{
+                                        position: 'absolute', top: '-4px', right: '-4px',
+                                        background: '#EF4444', color: 'white', fontSize: '10px',
+                                        fontWeight: 800, width: '18px', height: '18px',
+                                        borderRadius: '50%', display: 'flex', alignItems: 'center',
+                                        justifyContent: 'center', border: '2px solid white',
+                                    }}>
+                                        {unreadCount > 9 ? '9+' : unreadCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Notifications Dropdown */}
+                            {showNotifications && (
+                                <>
+                                    <div 
+                                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }}
+                                        onClick={() => setShowNotifications(false)}
+                                    />
+                                    <div style={{
+                                        position: 'absolute', top: '120%', right: 0, width: '360px',
+                                        background: 'white', borderRadius: '16px', zIndex: 50,
+                                        boxShadow: '0 12px 48px rgba(0,0,0,0.12)', border: '1px solid #EEEEF5',
+                                        overflow: 'hidden', animation: 'fadeInDown 0.2s ease forwards'
+                                    }}>
+                                        <div style={{ 
+                                            padding: '16px 20px', borderBottom: '1px solid #EEEEF5',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                            background: '#F8F9FD'
+                                        }}>
+                                            <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0 }}>Notifications</h3>
+                                            {unreadCount > 0 && (
+                                                <button onClick={markAllAsRead} style={{
+                                                    background: 'none', border: 'none', color: '#E53935',
+                                                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: '4px'
+                                                }}>
+                                                    <Check size={14} /> Mark all read
+                                                </button>
+                                            )}
+                                        </div>
+                                        
+                                        <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                                            {notifications.length > 0 ? (
+                                                notifications.map(n => (
+                                                    <div 
+                                                        key={n.id} 
+                                                        style={{ 
+                                                            padding: '16px 20px', borderBottom: '1px solid #EEEEF5',
+                                                            background: n.is_read ? 'white' : '#FFF4E5',
+                                                            display: 'flex', gap: '12px', cursor: 'pointer',
+                                                            transition: 'background 0.2s'
+                                                        }}
+                                                        onClick={() => !n.is_read && markAsRead(n.id)}
+                                                    >
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                                                <h4 style={{ fontSize: '14px', fontWeight: n.is_read ? 600 : 800, margin: 0, color: '#1A1D3B' }}>
+                                                                    {n.title}
+                                                                </h4>
+                                                                <span style={{ fontSize: '11px', color: '#A1A5B7', whiteSpace: 'nowrap' }}>
+                                                                    {new Date(n.created_at).toLocaleDateString()}
+                                                                </span>
+                                                            </div>
+                                                            <p style={{ fontSize: '13px', color: '#5E6278', margin: 0, lineHeight: 1.4 }}>
+                                                                {n.message}
+                                                            </p>
+                                                        </div>
+                                                        {!n.is_read && (
+                                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#E53935', marginTop: '6px' }} />
+                                                        )}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div style={{ padding: '40px 20px', textAlign: 'center', color: '#A1A5B7' }}>
+                                                    <Bell size={24} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+                                                    <p style={{ margin: 0, fontSize: '14px' }}>No notifications right now.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
 
                         {/* Message */}
                         <button className="header-action-btn" style={{

@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { ClipboardList, Plus, Calendar, FileText, CheckCircle, Clock, BookOpen, Target, Timer, Trophy, ChevronRight, LayoutGrid, Search, Filter } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function TestsPage() {
     const router = useRouter();
@@ -18,6 +19,19 @@ export default function TestsPage() {
 
     const fetchTests = () => {
         api.get('/tests').then(res => setTests(res.data.data)).catch(console.error).finally(() => setIsLoading(false));
+    };
+
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (!confirm('Are you sure you want to delete this test? All associated results will also be deleted.')) return;
+        try {
+            await api.delete(`/tests/${id}`);
+            setTests(tests.filter(t => t.id !== id));
+            toast.success('Test deleted successfully');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to delete test');
+        }
     };
 
 
@@ -108,7 +122,7 @@ export default function TestsPage() {
                 </div>
 
                 {/* Tests Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                     {isLoading ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
                             {[1, 2, 3, 4, 5, 6].map(i => (
@@ -128,7 +142,7 @@ export default function TestsPage() {
                             const isCompleted = test.status === 'completed';
                             return (
                                 <div key={test.id} className="animate-fade-in glass-card" style={{ animationDelay: `${idx * 60}ms` }}>
-                                    <div style={{ padding: '24px' }}>
+                                    <div style={{ padding: '20px' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                                             <div style={{ padding: '6px 14px', borderRadius: '50px', fontSize: '11px', fontWeight: 900, background: 'rgba(229, 57, 53, 0.08)', color: '#E53935', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                                                 {test.test_type?.replace('_', ' ')}
@@ -139,10 +153,16 @@ export default function TestsPage() {
                                             </div>
                                         </div>
 
-                                        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.01em', marginBottom: '6px' }}>
+                                        {test.images && test.images.length > 0 && (
+                                            <div style={{ marginBottom: '16px', borderRadius: '12px', overflow: 'hidden', height: '120px' }}>
+                                                <img src={test.images[0]} alt="Test Syllabus" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            </div>
+                                        )}
+
+                                        <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.01em', marginBottom: '6px' }}>
                                             {test.test_name}
                                         </h3>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
                                             <span style={{ fontSize: '14px', color: '#5E6278', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                 <BookOpen size={14} /> {test.subject}
                                             </span>
@@ -151,20 +171,20 @@ export default function TestsPage() {
                                             </span>
                                         </div>
 
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
-                                            <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '16px', border: '1px solid #F1F5F9' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
+                                            <div style={{ background: '#F8FAFC', padding: '10px', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px' }}>
                                                     <Calendar size={12} /> Date
                                                 </div>
                                                 <div style={{ fontSize: '13px', fontWeight: 800, color: '#1A1D3B' }}>{test.test_date}</div>
                                             </div>
-                                            <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '16px', border: '1px solid #F1F5F9' }}>
+                                            <div style={{ background: '#F8FAFC', padding: '10px', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px' }}>
                                                     <Target size={12} /> Marks
                                                 </div>
                                                 <div style={{ fontSize: '13px', fontWeight: 800, color: '#1A1D3B' }}>{test.total_marks}</div>
                                             </div>
-                                            <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '16px', border: '1px solid #F1F5F9' }}>
+                                            <div style={{ background: '#F8FAFC', padding: '10px', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px' }}>
                                                     <Timer size={12} /> Dur.
                                                 </div>
@@ -175,7 +195,7 @@ export default function TestsPage() {
                                         <button
                                             onClick={() => router.push(`/admin/tests/${test.id}`)}
                                             style={{ 
-                                                width: '100%', padding: '14px', borderRadius: '16px', 
+                                                width: '100%', padding: '12px', borderRadius: '12px', 
                                                 background: isCompleted ? 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)' : '#FFFFFF', 
                                                 color: isCompleted ? 'white' : '#1A1D3B', 
                                                 border: isCompleted ? 'none' : '1px solid #E2E8F0',
@@ -195,6 +215,19 @@ export default function TestsPage() {
                                             {isCompleted ? <Trophy size={16} /> : <FileText size={16} />}
                                             {isCompleted ? 'Analyze Results' : 'Manage Test'}
                                             <ChevronRight size={16} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => handleDelete(e, test.id)}
+                                            style={{ 
+                                                width: '100%', padding: '10px', borderRadius: '12px', marginTop: '8px',
+                                                background: '#FFF5F5', color: '#E53935', border: '1px solid #FFE5E5',
+                                                fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = '#FEE2E2'}
+                                            onMouseLeave={e => e.currentTarget.style.background = '#FFF5F5'}
+                                        >
+                                            Delete Test
                                         </button>
                                     </div>
                                 </div>

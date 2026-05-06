@@ -19,7 +19,6 @@ import prisma, { withRetry } from '@/lib/prisma';
 export interface AdminDashboardStats {
   students: { total: number; active: number };
   teachers: { total: number; active: number };
-  parents: { total: number };
   classes: { total: number; active: number };
   enquiries: { total: number; new: number };
   demos: { total: number; completed: number };
@@ -53,7 +52,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       totalClasses, activeClasses,
       totalEnquiries, newEnquiries,
       totalDemos, completedDemos,
-      totalParents,
       revenueAgg, pendingAgg,
     ] = await Promise.all([
       prisma.student.count(),
@@ -66,7 +64,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       prisma.enquiry.count({ where: { status: 'new' } }),
       prisma.demoClass.count(),
       prisma.demoClass.count({ where: { status: 'completed' } }),
-      prisma.parent.count(),
       prisma.feePayment.aggregate({
         where: { payment_status: 'completed' },
         _sum: { amount_paid: true },
@@ -174,7 +171,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         enquiries: { total: totalEnquiries, new: newEnquiries },
         demos: { total: totalDemos, completed: completedDemos },
         revenue: { total: totalRevenue, pending: totalPending },
-        parents: { total: totalParents },
       },
       recent_activity: recentActivity,
       charts: {

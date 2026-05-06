@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { sendNotification, getStudentUserIdsForClass } from './notifications';
 
 const router = Router();
 
@@ -29,11 +30,24 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
           select: { id: true },
         });
         const classIds = myClasses.map(c => c.id);
-        if (where.class_id && !classIds.includes(where.class_id)) {
-          res.json({ success: true, data: [] });
-          return;
+        
+        const teacherOrCondition = [
+          { class_id: { in: classIds } },
+          { created_by: teacher.id }
+        ];
+
+        if (where.class_id) {
+          where = {
+            ...where,
+            AND: [
+              { class_id: where.class_id },
+              { OR: teacherOrCondition }
+            ]
+          };
+          delete where.class_id;
+        } else {
+          where.OR = teacherOrCondition;
         }
-        if (!where.class_id) where.class_id = { in: classIds };
       }
     }
 
@@ -136,18 +150,62 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
       if (teacher) createdBy = teacher.id;
     }
 
+    const { description, images, ...restBody } = req.body;
+
     const test = await prisma.test.create({
       data: {
         test_code: generateTestCode(),
-        ...req.body,
-        status: req.body.status || 'scheduled',
+        ...restBody,
+        description: description || null,
+        images: images || [],
+        status: restBody.status || 'scheduled',
         results_published: false,
         students_appeared: 0,
         created_by: createdBy,
       },
     });
 
+    // Send notifications to all students in the class
+    const studentUserIds = await getStudentUserIdsForClass(test.class_id);
+    if (studentUserIds.length > 0) {
+      await sendNotification(
+        studentUserIds,
+        req.user!.id,
+        'test_scheduled',
+        `New Test Scheduled: ${test.test_name}`,
+        `A new ${test.test_type?.replace('_', ' ') || 'test'} "${test.test_name}" has been scheduled for ${test.test_date || 'TBD'}. Subject: ${test.subject || 'N/A'}. Total Marks: ${test.total_marks || 'N/A'}.`,
+        test.id
+      );
+    }
+
     res.status(201).json({ success: true, data: { ...test, id: test.id } });
+  } catch (error) {
+    console.error('Create test error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// PUT /api/tests/:id
+router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = paramId(req);
+    const existing = await prisma.test.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ success: false, message: 'Test not found' });
+      return;
+    }
+
+    const { description, images, ...restBody } = req.body;
+    const test = await prisma.test.update({
+      where: { id },
+      data: {
+        ...restBody,
+        description: description !== undefined ? description : existing.description,
+        images: images !== undefined ? images : existing.images,
+      },
+    });
+
+    res.json({ success: true, data: { ...test, id: test.id } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
@@ -205,7 +263,32 @@ router.post('/:id/results', authenticateToken, authorize('admin', 'teacher'), as
       },
     });
 
+    // Send notification to students that marks have been uploaded
+    const studentUserIds = await getStudentUserIdsForClass(test.class_id);
+    if (studentUserIds.length > 0) {
+      await sendNotification(
+        studentUserIds,
+        req.user!.id,
+        'marks_uploaded',
+        `Results Published: ${test.test_name}`,
+        `Results for "${test.test_name}" (${test.subject || 'N/A'}) have been published. Check your performance now!`,
+        test.id
+      );
+    }
+
     res.json({ success: true, data: savedResults, message: 'Results saved successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// DELETE /api/tests/:id
+router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = paramId(req);
+    await prisma.testResult.deleteMany({ where: { test_id: id } });
+    await prisma.test.delete({ where: { id } });
+    res.json({ success: true, message: 'Test deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }

@@ -65,24 +65,6 @@ const studentNavSections = [
     }
 ];
 
-const parentNavSections = [
-    {
-        section: 'MENU',
-        items: [
-            { label: 'Dashboard', href: '/parent', icon: LayoutDashboard },
-            { label: 'My Children', href: '/parent/children', icon: GraduationCap },
-            { label: 'Attendance', href: '/parent/attendance', icon: Calendar },
-            { label: 'Operations', href: '/parent/operations', icon: Zap },
-        ]
-    },
-    {
-        section: 'FINANCIAL',
-        items: [
-            { label: 'Fees', href: '/parent/fees', icon: CreditCard },
-        ]
-    }
-];
-
 export default function Sidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuthStore();
@@ -98,8 +80,7 @@ export default function Sidebar() {
                 !item.permissionKey || teacherPermissions.includes(item.permissionKey)
             )
         }))
-            : user?.role === 'student' ? studentNavSections
-                : user?.role === 'parent' ? parentNavSections : adminNav;
+            : user?.role === 'student' ? studentNavSections : adminNav;
 
     const isItemActive = (item: any): boolean => {
         if (!pathname) return false;

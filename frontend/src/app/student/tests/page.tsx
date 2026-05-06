@@ -3,7 +3,7 @@ import ToolBottomBar from '@/components/ToolBottomBar';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
-import { Award, FileText, Calendar, CheckCircle, TrendingUp, Clock, AlertCircle, PlayCircle, Eye } from 'lucide-react';
+import { Award, FileText, Calendar, CheckCircle, TrendingUp, Clock, AlertCircle, PlayCircle, Eye, BookOpen, Target } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
@@ -65,154 +65,112 @@ export default function StudentTestsPage() {
                         </div>
                     ) :  (
                     <>
-                        {/* Tab Switcher */}
-                        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', background: 'var(--bg-secondary)', padding: '6px', borderRadius: '12px', width: 'fit-content', border: '1px solid var(--border-primary)' }}>
-                            <button 
-                                onClick={() => setActiveTab('ongoing')}
-                                className={`btn ${activeTab === 'ongoing' ? 'btn-primary' : 'btn-ghost'}`}
-                                style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '8px' }}
-                            >
-                                Ongoing {tests.ongoing.length > 0 && <span style={{ marginLeft: '6px', opacity: 0.8 }}>({tests.ongoing.length})</span>}
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('upcoming')}
-                                className={`btn ${activeTab === 'upcoming' ? 'btn-primary' : 'btn-ghost'}`}
-                                style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '8px' }}
-                            >
-                                Upcoming {tests.upcoming.length > 0 && <span style={{ marginLeft: '6px', opacity: 0.8 }}>({tests.upcoming.length})</span>}
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('completed')}
-                                className={`btn ${activeTab === 'completed' ? 'btn-primary' : 'btn-ghost'}`}
-                                style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '8px' }}
-                            >
-                                Past Records
-                            </button>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                            {(() => {
+                                const allTestsRaw = [...(tests.ongoing || []), ...(tests.upcoming || []), ...(tests.completed || [])];
+                                const uniqueTests = Array.from(new Map(allTestsRaw.map(t => [t.id || t._id, t])).values());
+                                
+                                if (uniqueTests.length === 0) {
+                                    return (
+                                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px' }}>
+                                            <div style={{ width: '64px', height: '64px', background: '#F8F9FD', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                                <AlertCircle size={32} color="#CBD5E1" />
+                                            </div>
+                                            <h3 style={{ fontSize: '18px', color: '#1A1D3B', marginBottom: '8px', fontWeight: 800 }}>No Tests Found</h3>
+                                            <p style={{ fontSize: '14px', color: '#8F92A1', fontWeight: 500 }}>There are currently no tests scheduled or completed for your batch.</p>
+                                        </div>
+                                    );
+                                }
+                                
+                                return uniqueTests.map((test: any, idx: number) => {
+                                    const result = data?.recent_tests?.find((tr: any) => (tr.test_id === test.id) || (tr.test_id === test._id));
+                                    const isCompleted = tests.completed?.some((t: any) => t.id === test.id || t._id === test._id);
+                                    
+                                    return (
+                                        <div key={test.id || test._id || idx} className="animate-fade-in glass-card" style={{ animationDelay: `${idx * 40}ms` }}>
+                                            <div style={{ padding: '20px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                                    <div style={{ padding: '6px 14px', borderRadius: '50px', fontSize: '11px', fontWeight: 900, background: 'rgba(229, 57, 53, 0.08)', color: '#E53935', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                                                        {test.test_type?.replace('_', ' ') || 'TEST'}
+                                                    </div>
+                                                    
+                                                    {isCompleted ? (
+                                                        <div style={{ padding: '6px 14px', borderRadius: '50px', fontSize: '11px', fontWeight: 900, background: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }} />
+                                                            COMPLETED
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{ padding: '6px 14px', borderRadius: '50px', fontSize: '11px', fontWeight: 900, background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor', animation: 'pulse 2s infinite' }} />
+                                                            SCHEDULED
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {test.images && test.images.length > 0 && (
+                                                    <div style={{ marginBottom: '16px', borderRadius: '12px', overflow: 'hidden', height: '120px' }}>
+                                                        <img src={test.images[0]} alt="Test Syllabus" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    </div>
+                                                )}
+
+                                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.01em', marginBottom: '6px' }}>
+                                                    {test.test_name}
+                                                </h3>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+                                                    <span style={{ fontSize: '14px', color: '#5E6278', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <BookOpen size={14} /> {test.subject}
+                                                    </span>
+                                                </div>
+
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
+                                                    <div style={{ background: '#F8FAFC', padding: '10px', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px' }}>
+                                                            <Calendar size={12} /> Date
+                                                        </div>
+                                                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#1A1D3B' }}>{new Date(test.test_date).toLocaleDateString()}</div>
+                                                    </div>
+                                                    <div style={{ background: '#F8FAFC', padding: '10px', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px' }}>
+                                                            <Target size={12} /> Marks
+                                                        </div>
+                                                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#1A1D3B' }}>{test.total_marks}</div>
+                                                    </div>
+                                                    <div style={{ background: '#F8FAFC', padding: '10px', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px' }}>
+                                                            <Clock size={12} /> Dur.
+                                                        </div>
+                                                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#1A1D3B' }}>{test.duration_minutes}m</div>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    onClick={() => window.location.href = `/student/tests/${test.id || test._id}`}
+                                                    style={{ 
+                                                        width: '100%', padding: '12px', borderRadius: '12px', 
+                                                        background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', 
+                                                        color: 'white', border: 'none',
+                                                        fontWeight: 800, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                                        boxShadow: '0 8px 16px rgba(26,29,59,0.1)'
+                                                    }}
+                                                    onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                                    onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                                                >
+                                                    <Eye size={16} /> View Details
+                                                </button>
+                                                
+                                                {result && (
+                                                    <div style={{ marginTop: '12px', padding: '10px', background: result.pass_fail === 'pass' ? '#ECFDF5' : '#FEF2F2', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid ${result.pass_fail === 'pass' ? '#A7F3D0' : '#FECACA'}` }}>
+                                                        <div style={{ fontSize: '12px', fontWeight: 700, color: result.pass_fail === 'pass' ? '#065F46' : '#991B1B' }}>YOUR SCORE</div>
+                                                        <div style={{ fontSize: '14px', fontWeight: 800, color: result.pass_fail === 'pass' ? '#059669' : '#DC2626' }}>{result.marks_obtained}/{result.total_marks}</div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            })()}
                         </div>
-
-                        {/* Ongoing Tests Section */}
-                        {activeTab === 'ongoing' && (
-                            <div className="card">
-                                <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <AlertCircle size={20} color="var(--success)" /> Ongoing Tests
-                                </h3>
-                                {tests.ongoing.length > 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        {tests.ongoing.map((test: any, i: number) => (
-                                            <div key={test.id || test._id || i} style={{
-                                                padding: '20px', borderRadius: '16px', border: '1px solid var(--success)',
-                                                background: '#F0FDF4', position: 'relative', overflow: 'hidden'
-                                            }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                    <div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                                            {getStatusBadge('ongoing')}
-                                                            <span className="badge badge-info">{test.subject}</span>
-                                                        </div>
-                                                        <h4 style={{ fontSize: '20px', fontWeight: 800, color: '#064E3B' }}>{test.test_name}</h4>
-                                                        <div style={{ display: 'flex', gap: '16px', marginTop: '12px', fontSize: '13px', color: '#065F46' }}>
-                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Clock size={14} /> {test.duration_minutes} Mins</span>
-                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Award size={14} /> {test.total_marks} Marks</span>
-                                                        </div>
-                                                    </div>
-                                                    <Link href={`/student/tests/${test.id || test._id}`}>
-                                                        <button className="btn btn-primary" style={{ boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}>
-                                                            <PlayCircle size={18} /> Attempt Now
-                                                        </button>
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div style={{ textAlign: 'center', padding: '40px' }}>
-                                        <CheckCircle size={40} color="var(--text-tertiary)" style={{ opacity: 0.4 }} />
-                                        <p style={{ marginTop: '12px', color: 'var(--text-tertiary)' }}>No tests are active at the moment.</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Upcoming Tests Section */}
-                        {activeTab === 'upcoming' && (
-                            <div className="card">
-                                <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Calendar size={20} color="var(--primary)" /> Upcoming Schedule
-                                </h3>
-                                {tests.upcoming.length > 0 ? (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                                        {tests.upcoming.map((test: any, i: number) => (
-                                            <div key={test.id || test._id || i} style={{
-                                                padding: '20px', borderRadius: '12px', border: '1px solid var(--border-primary)',
-                                                background: 'var(--bg-secondary)', borderLeft: '4px solid var(--primary)'
-                                            }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                                    <span className="badge badge-info">{test.subject}</span>
-                                                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>{test.test_date}</span>
-                                                </div>
-                                                <h4 style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>{test.test_name}</h4>
-                                                <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
-                                                    <span><Clock size={12} /> {test.duration_minutes}m</span>
-                                                    <span><Award size={12} /> {test.total_marks}m</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>No tests scheduled for the future.</p>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Past Tests Section */}
-                        {activeTab === 'completed' && (
-                            <div className="card">
-                                <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <TrendingUp size={20} color="var(--primary)" /> Past Performance
-                                </h3>
-                                {tests.completed.length > 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        {tests.completed.map((test: any) => {
-                                            const result = data?.recent_tests?.find((tr: any) => (tr.test_id === test.id) || (tr.test_id === test._id));
-                                            return (
-                                                <div key={test.id || test._id} style={{
-                                                    padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-primary)',
-                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                    background: result ? 'white' : 'var(--bg-secondary)',
-                                                    opacity: result ? 1 : 0.8
-                                                }}>
-                                                    <div>
-                                                        <h4 style={{ fontWeight: 700, fontSize: '15px' }}>{test.test_name}</h4>
-                                                        <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px' }}>{test.subject} • {test.test_date}</p>
-                                                    </div>
-                                                    <div style={{ textAlign: 'right' }}>
-                                                        {result ? (
-                                                            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                                                                <div>
-                                                                    <p style={{ fontSize: '10px', color: 'var(--text-tertiary)', fontWeight: 600 }}>SCORE</p>
-                                                                    <p style={{ fontSize: '18px', fontWeight: 800, color: result.pass_fail === 'pass' ? 'var(--success)' : 'var(--error)' }}>
-                                                                        {result.marks_obtained}/{result.total_marks}
-                                                                    </p>
-                                                                </div>
-                                                                <div className="avatar" style={{ width: '32px', height: '32px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}>
-                                                                    <span style={{ fontSize: '12px', fontWeight: 700 }}>{result.grade}</span>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <div>
-                                                                <span className="badge badge-neutral" style={{ opacity: 0.6 }}>Result Awaited</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <p style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>No historical test data available.</p>
-                                )}
-                            </div>
-                        )}
                     </>
                 )}
             </div>

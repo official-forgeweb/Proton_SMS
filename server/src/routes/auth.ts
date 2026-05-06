@@ -78,8 +78,6 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     } else if (user.role === 'teacher') {
       const t = await prisma.teacher.findUnique({ where: { user_id: user.id } });
       profile = t ? { ...t, permissions: t.permissions || [] } : {};
-    } else if (user.role === 'parent') {
-      profile = await prisma.parent.findUnique({ where: { user_id: user.id } }) || {};
     } else if (user.role === 'admin') {
       profile = { first_name: 'Admin', last_name: 'User', email: user.email };
     }
@@ -129,8 +127,6 @@ router.get('/me', authenticateToken, async (req: Request, res: Response): Promis
     } else if (user.role === 'teacher') {
       const t = await prisma.teacher.findUnique({ where: { user_id: user.id } });
       profile = t ? { ...t, permissions: t.permissions || [] } : {};
-    } else if (user.role === 'parent') {
-      profile = await prisma.parent.findUnique({ where: { user_id: user.id } }) || {};
     } else if (user.role === 'admin') {
       profile = { first_name: 'Admin', last_name: 'User', email: user.email };
     }

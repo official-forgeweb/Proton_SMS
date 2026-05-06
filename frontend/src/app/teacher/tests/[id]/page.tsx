@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle, Save, Users, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Save, Users, AlertCircle, Info } from 'lucide-react';
 
 export default function EvaluateTestPage() {
     const params = useParams();
@@ -169,6 +169,38 @@ export default function EvaluateTestPage() {
             )}
 
             <div className="page-body">
+                {(testData?.description || (testData?.images && testData.images.length > 0)) && (
+                    <div className="card" style={{ marginBottom: '24px' }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Info size={20} color="var(--primary)" /> Test Information & Syllabus
+                        </h3>
+                        
+                        {testData.description && (
+                            <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '12px', marginBottom: testData.images?.length > 0 ? '24px' : '0', border: '1px solid var(--border-primary)' }}>
+                                <p style={{ fontSize: '15px', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', lineHeight: 1.6, margin: 0 }}>
+                                    {testData.description}
+                                </p>
+                            </div>
+                        )}
+
+                        {testData.images && testData.images.length > 0 && (
+                            <div>
+                                <h4 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '16px' }}>Attached Documents</h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
+                                    {testData.images.map((img: string, idx: number) => (
+                                        <a key={idx} href={img} target="_blank" rel="noopener noreferrer" style={{ display: 'block', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--border-primary)', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                                            <img src={img} alt={`Attachment ${idx + 1}`} style={{ width: '100%', height: 'auto', objectFit: 'cover', display: 'block' }} />
+                                            <div style={{ padding: '8px', background: 'white', fontSize: '12px', fontWeight: 600, color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--border-primary)' }}>
+                                                View full image
+                                            </div>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {isLoading ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
                             {[1, 2, 3, 4, 5, 6].map(i => (
