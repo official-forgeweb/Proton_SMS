@@ -28,7 +28,7 @@ export default function TestProfilePage() {
                     <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 600, fontFamily: 'monospace' }}>{test.test_code}</span>
                     <h1 style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px' }}>{test.test_name}</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-                        {test.class_name} • {test.subject} • {new Date(test.test_date).toLocaleDateString()}
+                        {test.class_name} • {test.subject} • {new Date(test.test_date).toLocaleDateString()} • {test.start_time || 'N/A'}
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
@@ -119,9 +119,15 @@ export default function TestProfilePage() {
                                             <td>{r.marks_obtained} / {test.total_marks}</td>
                                             <td>{r.percentage}%</td>
                                             <td>
-                                                <span className={`badge ${r.pass_fail === 'pass' ? 'badge-success' : 'badge-error'}`}>
-                                                    {r.pass_fail.toUpperCase()}
-                                                </span>
+                                                {r.was_present === false ? (
+                                                    <span className="badge badge-error" style={{ background: '#FFEBEE', color: '#B71C1C' }}>
+                                                        ABSENT
+                                                    </span>
+                                                ) : (
+                                                    <span className={`badge ${r.pass_fail === 'pass' ? 'badge-success' : 'badge-error'}`}>
+                                                        {r.pass_fail.toUpperCase()}
+                                                    </span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

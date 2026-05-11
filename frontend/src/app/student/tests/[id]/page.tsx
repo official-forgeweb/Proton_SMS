@@ -154,53 +154,95 @@ export default function AttemptTestPage() {
                     </h3>
 
                     {result ? (
-                        <div style={{ 
-                            background: result.pass_fail === 'pass' ? '#F0FDF4' : '#FEF2F2', 
-                            border: `1px solid ${result.pass_fail === 'pass' ? '#BBF7D0' : '#FECACA'}`,
-                            borderRadius: '16px', padding: '24px', display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center', justifyContent: 'space-between'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <div style={{ 
-                                    width: '64px', height: '64px', borderRadius: '50%', 
-                                    background: result.pass_fail === 'pass' ? '#DCFCE7' : '#FEE2E2',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: result.pass_fail === 'pass' ? '#16A34A' : '#DC2626'
-                                }}>
-                                    {result.pass_fail === 'pass' ? <CheckCircle size={32} /> : <AlertCircle size={32} />}
-                                </div>
-                                <div>
-                                    <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>Marks Obtained</p>
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                        <span style={{ fontSize: '32px', fontWeight: 800, color: result.pass_fail === 'pass' ? '#16A34A' : '#DC2626' }}>{result.marks_obtained}</span>
-                                        <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-tertiary)' }}>/ {test?.total_marks}</span>
+                        result.was_present === false ? (
+                            /* Absent Card */
+                            <div style={{ 
+                                background: '#FFFBEB', 
+                                border: '1px solid #FDE68A',
+                                borderRadius: '16px', padding: '24px', display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center', justifyContent: 'space-between'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <div style={{ 
+                                        width: '64px', height: '64px', borderRadius: '50%', 
+                                        background: '#FEF3C7',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: '#D97706'
+                                    }}>
+                                        <AlertCircle size={32} />
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>Attendance Status</p>
+                                        <span style={{ fontSize: '28px', fontWeight: 800, color: '#D97706' }}>ABSENT</span>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
-                                <div>
-                                    <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '4px' }}>Percentage</p>
-                                    <p style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{result.percentage}%</p>
+                                
+                                <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+                                    <div>
+                                        <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '4px' }}>Score</p>
+                                        <p style={{ fontSize: '20px', fontWeight: 800, color: '#D97706' }}>0 / {test?.total_marks}</p>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '4px' }}>Status</p>
+                                        <p style={{ fontSize: '20px', fontWeight: 800, color: '#D97706' }}>Not Present</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '4px' }}>Grade</p>
-                                    <p style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{result.grade}</p>
-                                </div>
-                                <div>
-                                    <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '4px' }}>Status</p>
-                                    <p style={{ fontSize: '20px', fontWeight: 800, color: result.pass_fail === 'pass' ? '#16A34A' : '#DC2626', textTransform: 'capitalize' }}>
-                                        {result.pass_fail}
+
+                                <div style={{ width: '100%', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid #FDE68A' }}>
+                                    <p style={{ fontSize: '14px', color: '#92400E', fontWeight: 500 }}>
+                                        You were marked as absent for this test. If you believe this is an error, please contact your teacher.
                                     </p>
                                 </div>
                             </div>
-
-                            {result.remarks && (
-                                <div style={{ width: '100%', marginTop: '8px', paddingTop: '16px', borderTop: `1px solid ${result.pass_fail === 'pass' ? '#BBF7D0' : '#FECACA'}` }}>
-                                    <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '8px' }}>Teacher Remarks</p>
-                                    <p style={{ fontSize: '15px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>"{result.remarks}"</p>
+                        ) : (
+                            /* Present — Normal Result Card */
+                            <div style={{ 
+                                background: result.pass_fail === 'pass' ? '#F0FDF4' : '#FEF2F2', 
+                                border: `1px solid ${result.pass_fail === 'pass' ? '#BBF7D0' : '#FECACA'}`,
+                                borderRadius: '16px', padding: '24px', display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center', justifyContent: 'space-between'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <div style={{ 
+                                        width: '64px', height: '64px', borderRadius: '50%', 
+                                        background: result.pass_fail === 'pass' ? '#DCFCE7' : '#FEE2E2',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: result.pass_fail === 'pass' ? '#16A34A' : '#DC2626'
+                                    }}>
+                                        {result.pass_fail === 'pass' ? <CheckCircle size={32} /> : <AlertCircle size={32} />}
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>Marks Obtained</p>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                            <span style={{ fontSize: '32px', fontWeight: 800, color: result.pass_fail === 'pass' ? '#16A34A' : '#DC2626' }}>{result.marks_obtained}</span>
+                                            <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-tertiary)' }}>/ {test?.total_marks}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+                                
+                                <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+                                    <div>
+                                        <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '4px' }}>Percentage</p>
+                                        <p style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{result.percentage}%</p>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '4px' }}>Grade</p>
+                                        <p style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{result.grade}</p>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '4px' }}>Status</p>
+                                        <p style={{ fontSize: '20px', fontWeight: 800, color: result.pass_fail === 'pass' ? '#16A34A' : '#DC2626', textTransform: 'capitalize' }}>
+                                            {result.pass_fail}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {result.remarks && (
+                                    <div style={{ width: '100%', marginTop: '8px', paddingTop: '16px', borderTop: `1px solid ${result.pass_fail === 'pass' ? '#BBF7D0' : '#FECACA'}` }}>
+                                        <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '8px' }}>Teacher Remarks</p>
+                                        <p style={{ fontSize: '15px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>"{result.remarks}"</p>
+                                    </div>
+                                )}
+                            </div>
+                        )
                     ) : (
                         <div style={{ 
                             background: 'var(--bg-secondary)', border: '1px dashed var(--border-primary)', 

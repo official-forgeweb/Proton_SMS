@@ -150,15 +150,23 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
       if (teacher) createdBy = teacher.id;
     }
 
-    const { description, images, ...restBody } = req.body;
+    const { test_name, class_id, subject, test_type, test_date, start_time, duration_minutes, total_marks, passing_marks, description, images, status } = req.body;
 
     const test = await prisma.test.create({
       data: {
         test_code: generateTestCode(),
-        ...restBody,
+        test_name,
+        class_id,
+        subject,
+        test_type,
+        test_date,
+        start_time: start_time || '09:00',
+        duration_minutes: Number(duration_minutes),
+        total_marks: Number(total_marks),
+        passing_marks: Number(passing_marks),
         description: description || null,
         images: images || [],
-        status: restBody.status || 'scheduled',
+        status: status || 'scheduled',
         results_published: false,
         students_appeared: 0,
         created_by: createdBy,
@@ -227,21 +235,32 @@ router.post('/:id/results', authenticateToken, authorize('admin', 'teacher'), as
       return;
     }
 
-    const sortedResults = [...results].sort((a: any, b: any) => b.marks_obtained - a.marks_obtained);
+    // Get all students enrolled in this class to handle absentees
+    const enrollments = await prisma.studentClassEnrollment.findMany({
+      where: { class_id: test.class_id, enrollment_status: 'active' },
+      select: { student_id: true }
+    });
+    const allStudentIds = enrollments.map(e => e.student_id);
+    const submittedStudentIds = results.map((r: any) => r.student_id);
+
+    const sortedResults = [...results].sort((a: any, b: any) => (b.marks_obtained || 0) - (a.marks_obtained || 0));
 
     await prisma.testResult.deleteMany({ where: { test_id: test.id } });
 
     const savedResults: any[] = [];
+    
+    // Save submitted results
     for (let i = 0; i < sortedResults.length; i++) {
       const r = sortedResults[i];
-      const percentage = (r.marks_obtained / (test.total_marks || 1)) * 100;
+      const marks = r.marks_obtained || 0;
+      const percentage = (marks / (test.total_marks || 1)) * 100;
       const grade = percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B+' : percentage >= 60 ? 'B' : percentage >= 50 ? 'C' : 'D';
 
       const newResult = await prisma.testResult.create({
         data: {
           test_id: test.id,
           student_id: r.student_id,
-          marks_obtained: r.marks_obtained,
+          marks_obtained: marks,
           total_marks: test.total_marks,
           percentage: parseFloat(percentage.toFixed(1)),
           grade,
@@ -250,14 +269,34 @@ router.post('/:id/results', authenticateToken, authorize('admin', 'teacher'), as
           was_present: r.was_present !== false,
         },
       });
-
       savedResults.push({ ...newResult, id: newResult.id });
     }
+
+    // Handle missing students (Mark as Absent)
+    const missingStudentIds = allStudentIds.filter(id => !submittedStudentIds.includes(id));
+    for (const sid of missingStudentIds) {
+      const absenteeResult = await prisma.testResult.create({
+        data: {
+          test_id: test.id,
+          student_id: sid,
+          marks_obtained: 0,
+          total_marks: test.total_marks,
+          percentage: 0,
+          grade: 'F',
+          pass_fail: 'fail',
+          rank_in_class: savedResults.length + 1,
+          was_present: false,
+        },
+      });
+      savedResults.push({ ...absenteeResult, id: absenteeResult.id });
+    }
+
+    const presentCount = savedResults.filter((r: any) => r.was_present !== false).length;
 
     await prisma.test.update({
       where: { id: test.id },
       data: {
-        students_appeared: savedResults.length,
+        students_appeared: presentCount,
         results_published: true,
         status: 'completed',
       },

@@ -15,6 +15,7 @@ export default function CreateTestPage() {
     const [formData, setFormData] = useState({
         test_name: '', class_id: '', subject: '', test_type: 'weekly_test',
         test_date: new Date().toISOString().split('T')[0],
+        start_time: '09:00',
         duration_minutes: 60, total_marks: 100, passing_marks: 33,
         description: '', images: [] as string[]
     });
@@ -123,10 +124,14 @@ export default function CreateTestPage() {
 
                 <div className="form-section" style={{ border: 'none', background: 'rgba(26,29,59,0.02)', padding: '28px', borderRadius: '24px' }}>
                     <div className="form-section-title">Schedule & Scoring Parameters</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '20px' }}>
                         <div>
                             <label className="form-label">Exam Date *</label>
                             <DatePicker showMonthDropdown showYearDropdown scrollableYearDropdown dropdownMode="select" required selected={formData.test_date ? new Date(formData.test_date) : null} onChange={(date: Date | null) => setFormData({ ...formData, test_date: date ? date.toISOString().split('T')[0] : '' })} dateFormat="MMMM d, yyyy" placeholderText="Set Date" />
+                        </div>
+                        <div>
+                            <label className="form-label">Start Time *</label>
+                            <input type="time" required className="form-input" value={(formData as any).start_time || '09:00'} onChange={e => setFormData({ ...formData, start_time: e.target.value } as any)} />
                         </div>
                         <div>
                             <label className="form-label">Duration (Min) *</label>

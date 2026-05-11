@@ -2,82 +2,132 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import PermissionGuard from '@/components/PermissionGuard';
-import { UserCheck, Search, Users } from 'lucide-react';
+import { UserCheck, Clock, BookOpen, Calendar, ChevronRight } from 'lucide-react';
 import api from '@/lib/api';
 import ToolBottomBar from '@/components/ToolBottomBar';
+import { useRouter } from 'next/navigation';
 
 export default function TeacherAttendancePage() {
-    const [data, setData] = useState<any>(null);
+    const router = useRouter();
+    const [sessions, setSessions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
-        api.get('/dashboard/teacher').then(res => setData(res.data.data)).catch(console.error).finally(() => setIsLoading(false));
-    }, []);
+        fetchSessions();
+    }, [selectedDate]);
+
+    const fetchSessions = async () => {
+        setIsLoading(true);
+        try {
+            // Use the timetable API which already handles teacher sessions
+            const res = await api.get('/timetable', { params: { date: selectedDate } });
+            setSessions(res.data.data.filter((i: any) => i.type === 'class'));
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <PermissionGuard permissionKey="attendance">
             <DashboardLayout requiredRole="teacher">
-                <div className="page-header">
-                <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Mark Attendance</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '2px' }}>
-                        Select a class from your schedule to mark daily attendance.
-                    </p>
-                </div>
-            </div>
-
-            <div className="page-body">
-                {isLoading ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
-                            {[1, 2, 3, 4, 5, 6].map(i => (
-                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
-                            ))}
+                <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+                    <div className="page-header" style={{ marginBottom: '32px' }}>
+                        <div>
+                            <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#1E293B' }}>Class Register</h1>
+                            <p style={{ color: '#64748B', fontSize: '16px', marginTop: '4px' }}>
+                                Mark and manage attendance for your scheduled classes.
+                            </p>
                         </div>
-                    ) :  (
-                    <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: 600 }}>Available Classes Today</h3>
+                        <div style={{ background: 'white', padding: '8px 16px', borderRadius: '12px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Calendar size={18} color="#6366F1" />
+                            <input 
+                                type="date" 
+                                value={selectedDate} 
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                style={{ border: 'none', outline: 'none', fontWeight: 700, color: '#1E293B', fontSize: '15px' }}
+                            />
                         </div>
+                    </div>
 
-                        {data?.classes?.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {data.classes.map((cls: any) => (
-                                    <div key={cls.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderRadius: '8px', border: '1px solid var(--border-primary)', background: cls.attendance_marked ? 'var(--bg-tertiary)' : 'var(--bg-secondary)' }}>
+                    <div className="page-body">
+                        {isLoading ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} style={{ height: '200px', borderRadius: '24px', background: 'white', border: '1px solid #E2E8F0', animation: 'pulse 2s infinite' }} />
+                                ))}
+                            </div>
+                        ) : sessions.length > 0 ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
+                                {sessions.map((session) => (
+                                    <div 
+                                        key={session.id} 
+                                        className="card" 
+                                        style={{ 
+                                            padding: '24px', 
+                                            borderRadius: '24px', 
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            border: '1px solid #E2E8F0',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            justifyContent: 'space-between'
+                                        }}
+                                        onClick={() => router.push(`/teacher/attendance/${session.id}`)}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-4px)';
+                                            e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.06)';
+                                            e.currentTarget.style.borderColor = '#6366F1';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                            e.currentTarget.style.borderColor = '#E2E8F0';
+                                        }}
+                                    >
                                         <div>
-                                            <p style={{ fontWeight: 600, fontSize: '15px' }}>{cls.class_name}</p>
-                                            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                                                {cls.class_time_start} - {cls.student_count || 0} students
-                                            </p>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                                <div style={{ padding: '8px', background: '#EEF2FF', borderRadius: '12px' }}>
+                                                    <BookOpen size={24} color="#6366F1" />
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#6366F1', background: 'rgba(99,102,241,0.1)', padding: '4px 8px', borderRadius: '6px' }}>
+                                                        {session.class_ref.class_code}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1E293B', marginBottom: '8px' }}>{session.subject}</h3>
+                                            <p style={{ color: '#64748B', fontSize: '15px', fontWeight: 500 }}>{session.class_ref.class_name}</p>
                                         </div>
 
-                                        {cls.attendance_marked ? (
-                                            <span className="badge badge-success" style={{ padding: '8px 12px' }}>
-                                                <UserCheck size={14} style={{ marginRight: '6px' }} /> Marked Complete
-                                            </span>
-                                        ) : (
-                                            <button
-                                                className="btn btn-primary"
-                                                style={{ padding: '8px 20px' }}
-                                                onClick={() => window.location.href = `/teacher/attendance/${cls.id}`}
-                                            >
-                                                Start Marking
-                                            </button>
-                                        )}
+                                        <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#64748B', fontWeight: 600 }}>
+                                                    <Clock size={16} /> {session.start_time} - {session.end_time || 'N/A'}
+                                                </div>
+                                            </div>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
+                                                <ChevronRight size={20} color="#6366F1" />
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="empty-state">
-                                <UserCheck size={48} />
-                                <h3>No Classes Assigned</h3>
-                                <p>You have no classes assigned to mark attendance.</p>
+                            <div style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '24px', border: '1px dashed #CBD5E1' }}>
+                                <div style={{ width: '80px', height: '80px', background: '#F1F5F9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                    <Calendar size={40} color="#94A3B8" />
+                                </div>
+                                <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#1E293B' }}>No Classes Scheduled</h3>
+                                <p style={{ color: '#64748B', marginTop: '8px' }}>There are no classes scheduled for you on this date.</p>
                             </div>
                         )}
                     </div>
-                )}
-            </div>
-            <ToolBottomBar />
-        </DashboardLayout>
+                </div>
+                <ToolBottomBar />
+            </DashboardLayout>
         </PermissionGuard>
     );
 }

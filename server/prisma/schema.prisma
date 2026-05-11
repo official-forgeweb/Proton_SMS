@@ -204,6 +204,7 @@ model Timetable {
   // Relations
   class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
   teacher     Teacher? @relation("TimetableTeacher", fields: [teacher_id], references: [id])
+  attendance  Attendance[]
 
   @@index([class_id, date])
   @@index([teacher_id, date])
@@ -356,6 +357,8 @@ model Attendance {
   id              String           @id @default(uuid())
   student_id      String
   class_id        String
+  timetable_id    String?          // Link to specific session
+  subject         String?          // Explicit subject
   attendance_date String
   status          AttendanceStatus
   marked_by       String?
@@ -363,12 +366,14 @@ model Attendance {
   updated_at      DateTime         @updatedAt
 
   // Relations
-  student Student @relation(fields: [student_id], references: [id])
-  class   Class   @relation(fields: [class_id], references: [id])
-  user    User?   @relation(fields: [marked_by], references: [id])
+  student   Student    @relation(fields: [student_id], references: [id])
+  class     Class      @relation(fields: [class_id], references: [id])
+  timetable Timetable? @relation(fields: [timetable_id], references: [id])
+  user      User?      @relation(fields: [marked_by], references: [id])
 
   @@index([student_id, attendance_date])
   @@index([class_id, attendance_date])
+  @@index([timetable_id])
   @@map("attendance")
 }
 
@@ -380,6 +385,7 @@ model Test {
   subject           String?
   test_type         String?
   test_date         String?
+  start_time        String?
   duration_minutes  Int?
   total_marks       Float?
   passing_marks     Float?

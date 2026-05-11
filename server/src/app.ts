@@ -28,6 +28,7 @@ import videoLectureRoutes from './routes/videoLectures';
 import studyMaterialRoutes from './routes/studyMaterials';
 import settingsRoutes from './routes/settings';
 import notificationRoutes from './routes/notifications';
+import attendanceRoutes from './routes/attendance';
 
 const app = express();
 
@@ -75,6 +76,7 @@ app.use('/api/video-lectures', videoLectureRoutes);
 app.use('/api/study-materials', studyMaterialRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 // Health check
 app.get('/api/health', dbHealthCheck, (req, res) => {

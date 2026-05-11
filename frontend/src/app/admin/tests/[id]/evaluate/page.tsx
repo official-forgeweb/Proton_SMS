@@ -102,12 +102,17 @@ export default function EvaluateTestPage() {
         setIsSaving(true);
         setNotification(null);
         try {
+            // Students with empty marks and present=true are auto-marked absent
             const payload = {
-                results: students.map(s => ({
-                    student_id: s.id,
-                    marks_obtained: results[s.id]?.present ? Number(results[s.id]?.marks || 0) : 0,
-                    was_present: results[s.id]?.present
-                }))
+                results: students.map(s => {
+                    const r = results[s.id];
+                    const isPresent = r?.present && r?.marks !== '';
+                    return {
+                        student_id: s.id,
+                        marks_obtained: isPresent ? Number(r?.marks || 0) : 0,
+                        was_present: isPresent
+                    };
+                })
             };
 
             await api.post(`/tests/${params.id}/results`, payload);

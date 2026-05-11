@@ -326,6 +326,15 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
   try {
     const { first_name, last_name, date_of_birth, gender, email, phone, school_name, class_id, admission_type } = req.body;
 
+    // Check if email already exists
+    if (email) {
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+        res.status(400).json({ success: false, message: 'An account with this email already exists.' });
+        return;
+      }
+    }
+
     const salt = await bcrypt.genSalt(10);
     let password = `Proton@${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -339,9 +348,16 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
       }
     }
 
-    const fName = (first_name || 'student').toLowerCase();
-    const lName = (last_name || '').toLowerCase();
+    const fName = (first_name || 'student').toLowerCase().replace(/\s+/g, '');
+    const lName = (last_name || '').toLowerCase().replace(/\s+/g, '');
     const userEmail = email || `${fName}.${lName}.${Math.floor(Math.random() * 10000)}@proton.com`;
+
+    // Final check for generated email too
+    const existingGenerated = await prisma.user.findUnique({ where: { email: userEmail } });
+    if (existingGenerated) {
+        res.status(400).json({ success: false, message: 'Generated email collision. Please try again or provide a manual email.' });
+        return;
+    }
 
     const user = await prisma.user.create({
       data: {
@@ -351,7 +367,20 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
       },
     });
 
-    const proId = generateProId();
+    // Generate a unique PRO_ID
+    let proId = generateProId();
+    let isUnique = false;
+    let attempts = 0;
+    while (!isUnique && attempts < 10) {
+      const existing = await prisma.student.findUnique({ where: { PRO_ID: proId } });
+      if (existing) {
+        proId = generateProId();
+        attempts++;
+      } else {
+        isUnique = true;
+      }
+    }
+
     const student = await prisma.student.create({
       data: {
         user_id: user.id,

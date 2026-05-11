@@ -91,7 +91,61 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
       }
     });
 
-    res.json({ success: true, data: timetable });
+    // Fetch Tests to include in the schedule
+    let testWhere: any = {};
+    if (date) testWhere.test_date = date;
+    if (start_date && end_date) {
+        testWhere.test_date = { gte: start_date, lte: end_date };
+    }
+    
+    if (req.user!.role === 'student') {
+        const student = await prisma.student.findUnique({
+            where: { user_id: req.user!.id },
+            select: { class_enrollments: { select: { class_id: true } } }
+        });
+        if (student) {
+            const classIds = student.class_enrollments.map(e => e.class_id);
+            testWhere.class_id = { in: classIds };
+        }
+    } else if (req.user!.role === 'teacher') {
+        const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
+        if (teacher) {
+            testWhere.OR = [
+                { created_by: teacher.id },
+                { class: { primary_teacher_id: teacher.id } }
+            ];
+        }
+    } else if (class_id) {
+        testWhere.class_id = class_id;
+    }
+
+    const tests = await prisma.test.findMany({
+        where: testWhere,
+        include: { class: { select: { class_name: true, class_code: true } } }
+    });
+
+    const mappedTests = tests.map(t => ({
+        id: t.id,
+        class_id: t.class_id,
+        subject: `TEST: ${t.test_name} (${t.subject})`,
+        teacher_id: t.created_by,
+        date: t.test_date,
+        start_time: t.start_time || '00:00',
+        end_time: '', // Tests usually have duration instead of end_time
+        room: 'Examination Hall',
+        notes: t.description,
+        status: t.status,
+        type: 'test',
+        class_ref: t.class,
+        teacher: null // Could fetch teacher info if needed
+    }));
+
+    const combinedData = [...timetable.map(i => ({ ...i, type: 'class' })), ...mappedTests].sort((a: any, b: any) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.start_time.localeCompare(b.start_time);
+    });
+
+    res.json({ success: true, data: combinedData });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -127,21 +181,30 @@ router.post('/generate', authenticateToken, authorize('admin'), async (req: Requ
     const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     let createdCount = 0;
 
+    console.log(`Starting generation from ${startDate.toISOString()} to ${endDate.toISOString()} for class_id: ${class_id || 'all'}`);
+
     for (const c of classes) {
-        if (!c.schedule || c.schedule.length === 0) continue;
+        if (!c.schedule || c.schedule.length === 0) {
+            console.log(`Class ${c.class_name} has no schedule template. Skipping.`);
+            continue;
+        }
 
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
             const dayOfWeek = daysMap[d.getDay()];
             const dateStr = d.toISOString().split('T')[0];
 
             for (const sched of c.schedule) {
-                if (sched.days && sched.days.includes(dayOfWeek)) {
+                // Case-insensitive check for days
+                const normalizedDays = (sched.days || []).map(day => day.toLowerCase());
+                
+                if (normalizedDays.includes(dayOfWeek)) {
                     // Check if entry already exists to avoid duplicates
                     const existing = await prisma.timetable.findFirst({
                         where: {
                             class_id: c.id,
                             subject: sched.subject || '',
                             date: dateStr,
+                            start_time: sched.time_start || '09:00'
                         }
                     });
 

@@ -3,268 +3,179 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useParams, useRouter } from 'next/navigation';
-import { Users, CheckCircle, XCircle, Clock, ArrowLeft, Save, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { Users, CheckCircle, XCircle, Clock, ArrowLeft, Save, AlertCircle, UserCheck, UserX } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-export default function TeacherClassAttendancePage() {
+export default function TeacherSessionAttendancePage() {
     const params = useParams();
     const router = useRouter();
-    const [classData, setClassData] = useState<any>(null);
-    const [attendanceData, setAttendanceData] = useState<any[]>([]);
-    const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
+    const [sessionData, setSessionData] = useState<any>(null);
+    const [students, setStudents] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
     useEffect(() => {
         if (params.id) {
-            fetchAttendance();
-            // Fetch class details for header info
-            api.get(`/classes/${params.id}`).then(res => setClassData(res.data.data)).catch(console.error);
+            fetchSessionData();
         }
-    }, [params.id, attendanceDate]);
+    }, [params.id]);
 
-    const fetchAttendance = () => {
+    const fetchSessionData = async () => {
         setIsLoading(true);
-        api.get(`/classes/${params.id}/attendance?date=${attendanceDate}`)
-            .then(res => {
-                // Initialize default 'present' status if no existing record found for the day
-                const initializedData = res.data.data.students.map((s: any) => ({
-                    ...s,
-                    current_status: s.attendance_status || 'present'
-                }));
-                setAttendanceData(initializedData);
-            })
-            .catch(console.error)
-            .finally(() => setIsLoading(false));
+        try {
+            const res = await api.get(`/attendance/session/${params.id}`);
+            setSessionData(res.data.data.session);
+            // Default status to 'present' if 'unmarked'
+            setStudents(res.data.data.students.map((s: any) => ({
+                ...s,
+                status: s.status === 'unmarked' ? 'present' : s.status
+            })));
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to load session data');
+            router.push('/teacher/attendance');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleStatusChange = (studentId: string, status: string) => {
-        setAttendanceData(prev => prev.map(s => s.id === studentId ? { ...s, current_status: status } : s));
+    const handleStatusChange = (studentId: string, newStatus: string) => {
+        setStudents(prev => prev.map(s => s.id === studentId ? { ...s, status: newStatus } : s));
     };
 
-    const markAllAs = (status: string) => {
-        setAttendanceData(prev => prev.map(s => ({ ...s, current_status: status })));
+    const markAll = (status: string) => {
+        setStudents(prev => prev.map(s => ({ ...s, status })));
     };
 
     const submitAttendance = async () => {
         setIsSaving(true);
-        setNotification(null);
         try {
             const payload = {
-                date: attendanceDate,
-                records: attendanceData.map(s => ({
+                timetable_id: params.id,
+                date: sessionData.date,
+                records: students.map(s => ({
                     student_id: s.id,
-                    status: s.current_status
+                    status: s.status
                 }))
             };
 
-            await api.post(`/classes/${params.id}/attendance`, payload);
-            setNotification({ type: 'success', message: 'Attendance recorded successfully!' });
-
-            // Clear notification after 3s
-            setTimeout(() => setNotification(null), 3000);
-        } catch (error: any) {
-            console.error(error);
-            setNotification({ type: 'error', message: error.response?.data?.message || 'Failed to save attendance' });
+            await api.post('/attendance/mark', payload);
+            toast.success('Attendance recorded successfully!');
+            setTimeout(() => router.push('/teacher/attendance'), 1500);
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to save attendance');
         } finally {
             setIsSaving(false);
         }
     };
 
+    if (isLoading) return <DashboardLayout requiredRole="teacher"><div className="spinner" style={{ margin: '100px auto' }} /></DashboardLayout>;
+
     return (
         <DashboardLayout requiredRole="teacher">
-            <div className="page-header">
-                <div>
-                    <button onClick={() => router.back()} className="btn btn-secondary btn-sm" style={{ marginBottom: '12px', padding: '6px 12px' }}>
-                        <ArrowLeft size={14} /> Back
-                    </button>
-                    <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Record Attendance</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-                        {classData ? `${classData.class_name} • ${classData.batch_type?.toUpperCase() || 'REGULAR'} BATCH` : 'Loading class details...'}
-                    </p>
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <div style={{ background: 'var(--bg-secondary)', padding: '4px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)' }}>
-                        <DatePicker
-                            showMonthDropdown
-                            showYearDropdown
-                            scrollableYearDropdown
-                            dropdownMode="select"
-                            selected={attendanceDate ? new Date(attendanceDate) : null}
-                            onChange={(date: Date | null) => setAttendanceDate(date ? date.toISOString().split('T')[0] : '')}
-                            maxDate={new Date()}
-                            dateFormat="MMMM d, yyyy"
-                            className="input-field"
-                        />
+            <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+                    <div>
+                        <button 
+                            onClick={() => router.back()}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: '#64748B', fontWeight: 600, fontSize: '14px', marginBottom: '16px' }}
+                        >
+                            <ArrowLeft size={16} /> Back to Sessions
+                        </button>
+                        <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1E293B' }}>{sessionData?.subject}</h1>
+                        <div style={{ display: 'flex', gap: '16px', color: '#64748B', fontSize: '14px', marginTop: '8px', fontWeight: 500 }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Users size={16} color="#6366F1" /> {sessionData?.class_ref?.class_name}
+                            </span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Clock size={16} color="#6366F1" /> {sessionData?.start_time} - {sessionData?.end_time || 'N/A'}
+                            </span>
+                        </div>
                     </div>
-                    <button
+                    <button 
                         className="btn btn-primary"
                         onClick={submitAttendance}
-                        disabled={isSaving || attendanceData.length === 0}
+                        disabled={isSaving}
+                        style={{ padding: '12px 28px', borderRadius: '14px', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}
                     >
-                        {isSaving ? 'Saving...' : <><Save size={16} /> Save Register</>}
+                        {isSaving ? 'Saving...' : <><Save size={18} /> Save Attendance</>}
                     </button>
                 </div>
-            </div>
 
-            {notification && (
-                <div style={{
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    marginBottom: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: notification.type === 'success' ? 'var(--success-light)' : 'var(--error-light)',
-                    color: notification.type === 'success' ? 'var(--success-dark)' : 'var(--error-dark)',
-                    border: `1px solid ${notification.type === 'success' ? 'var(--success)' : 'var(--error)'}`,
-                    animation: 'fadeInDown 0.3s ease'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}>
-                        {notification.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-                        {notification.message}
+                {/* Bulk Actions */}
+                <div style={{ background: '#F8FAFC', padding: '16px 24px', borderRadius: '16px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #E2E8F0' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748B' }}>Quick Mark:</span>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <button onClick={() => markAll('present')} style={{ padding: '8px 16px', borderRadius: '10px', border: 'none', background: '#DCFCE7', color: '#16A34A', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>Mark All Present</button>
+                        <button onClick={() => markAll('absent')} style={{ padding: '8px 16px', borderRadius: '10px', border: 'none', background: '#FEE2E2', color: '#DC2626', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>Mark All Absent</button>
                     </div>
                 </div>
-            )}
 
-            <div className="page-body">
-                {isLoading ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
-                            {[1, 2, 3, 4, 5, 6].map(i => (
-                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                {/* Student List */}
+                <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: '24px' }}>
+                    <table className="data-table">
+                        <thead style={{ background: '#F8FAFC' }}>
+                            <tr>
+                                <th style={{ padding: '20px 24px', width: '120px' }}>PRO ID</th>
+                                <th>Student Name</th>
+                                <th style={{ textAlign: 'right', paddingRight: '24px' }}>Attendance Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {students.map((s) => (
+                                <tr key={s.id} style={{ transition: 'background 0.2s' }}>
+                                    <td style={{ padding: '16px 24px', fontFamily: 'monospace', fontWeight: 600, color: '#64748B' }}>{s.PRO_ID}</td>
+                                    <td style={{ fontWeight: 700, color: '#1E293B' }}>{s.first_name} {s.last_name}</td>
+                                    <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                                        <div style={{ display: 'inline-flex', background: '#F1F5F9', padding: '4px', borderRadius: '12px', gap: '4px' }}>
+                                            <button 
+                                                onClick={() => handleStatusChange(s.id, 'present')}
+                                                style={{ 
+                                                    padding: '8px 16px', borderRadius: '8px', border: 'none', 
+                                                    background: s.status === 'present' ? '#10B981' : 'transparent',
+                                                    color: s.status === 'present' ? 'white' : '#64748B',
+                                                    fontWeight: 700, fontSize: '12px', cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <UserCheck size={14} /> Present
+                                            </button>
+                                            <button 
+                                                onClick={() => handleStatusChange(s.id, 'absent')}
+                                                style={{ 
+                                                    padding: '8px 16px', borderRadius: '8px', border: 'none', 
+                                                    background: s.status === 'absent' ? '#EF4444' : 'transparent',
+                                                    color: s.status === 'absent' ? 'white' : '#64748B',
+                                                    fontWeight: 700, fontSize: '12px', cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <UserX size={14} /> Absent
+                                            </button>
+                                            <button 
+                                                onClick={() => handleStatusChange(s.id, 'late')}
+                                                style={{ 
+                                                    padding: '8px 16px', borderRadius: '8px', border: 'none', 
+                                                    background: s.status === 'late' ? '#F59E0B' : 'transparent',
+                                                    color: s.status === 'late' ? 'white' : '#64748B',
+                                                    fontWeight: 700, fontSize: '12px', cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <Clock size={14} /> Late
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
                             ))}
-                        </div>
-                    ) :  attendanceData.length === 0 ? (
-                    <div className="card empty-state">
-                        <Users size={48} />
-                        <h3>No Students Found</h3>
-                        <p>There are no active students enrolled in this class to mark attendance for.</p>
-                    </div>
-                ) : (
-                    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                        <div style={{
-                            padding: '16px 20px',
-                            borderBottom: '1px solid var(--border-primary)',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            background: 'var(--bg-tertiary)'
-                        }}>
-                            <h3 style={{ fontSize: '15px', fontWeight: 600 }}>Student Roster ({attendanceData.length})</h3>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginRight: '8px', alignSelf: 'center' }}>Mark All:</span>
-                                <button className="btn btn-sm" style={{ background: 'var(--success-light)', color: 'var(--success-dark)' }} onClick={() => markAllAs('present')}>Present</button>
-                                <button className="btn btn-sm" style={{ background: 'var(--error-light)', color: 'var(--error-dark)' }} onClick={() => markAllAs('absent')}>Absent</button>
-                            </div>
-                        </div>
-
-                        <div className="table-container">
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th style={{ width: '80px' }}>PRO ID</th>
-                                        <th>Student</th>
-                                        <th style={{ textAlign: 'center', width: '300px' }}>Attendance Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {attendanceData.map((student) => (
-                                        <tr key={student.id}>
-                                            <td>
-                                                <span style={{ fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                                                    {student.PRO_ID}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <div className="avatar" style={{ width: '32px', height: '32px', fontSize: '14px' }}>
-                                                        {student.first_name?.[0] || 'S'}
-                                                    </div>
-                                                    <span style={{ fontWeight: 500 }}>{student.first_name} {student.last_name}</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div style={{
-                                                    display: 'flex',
-                                                    gap: '8px',
-                                                    justifyContent: 'center',
-                                                    background: 'var(--bg-secondary)',
-                                                    padding: '4px',
-                                                    borderRadius: 'var(--radius-md)'
-                                                }}>
-                                                    <label style={{
-                                                        flex: 1,
-                                                        textAlign: 'center',
-                                                        padding: '8px',
-                                                        borderRadius: '6px',
-                                                        cursor: 'pointer',
-                                                        background: student.current_status === 'present' ? 'var(--success)' : 'transparent',
-                                                        color: student.current_status === 'present' ? 'white' : 'var(--text-secondary)',
-                                                        fontWeight: student.current_status === 'present' ? 600 : 400,
-                                                        transition: 'all 0.2s'
-                                                    }}>
-                                                        <input
-                                                            type="radio"
-                                                            name={`status-${student.id}`}
-                                                            checked={student.current_status === 'present'}
-                                                            onChange={() => handleStatusChange(student.id, 'present')}
-                                                            style={{ display: 'none' }}
-                                                        />
-                                                        Present
-                                                    </label>
-                                                    <label style={{
-                                                        flex: 1,
-                                                        textAlign: 'center',
-                                                        padding: '8px',
-                                                        borderRadius: '6px',
-                                                        cursor: 'pointer',
-                                                        background: student.current_status === 'absent' ? 'var(--error)' : 'transparent',
-                                                        color: student.current_status === 'absent' ? 'white' : 'var(--text-secondary)',
-                                                        fontWeight: student.current_status === 'absent' ? 600 : 400,
-                                                        transition: 'all 0.2s'
-                                                    }}>
-                                                        <input
-                                                            type="radio"
-                                                            name={`status-${student.id}`}
-                                                            checked={student.current_status === 'absent'}
-                                                            onChange={() => handleStatusChange(student.id, 'absent')}
-                                                            style={{ display: 'none' }}
-                                                        />
-                                                        Absent
-                                                    </label>
-                                                    <label style={{
-                                                        flex: 1,
-                                                        textAlign: 'center',
-                                                        padding: '8px',
-                                                        borderRadius: '6px',
-                                                        cursor: 'pointer',
-                                                        background: student.current_status === 'late' ? 'var(--warning)' : 'transparent',
-                                                        color: student.current_status === 'late' ? '#92400e' : 'var(--text-secondary)', // dark amber
-                                                        fontWeight: student.current_status === 'late' ? 600 : 400,
-                                                        transition: 'all 0.2s'
-                                                    }}>
-                                                        <input
-                                                            type="radio"
-                                                            name={`status-${student.id}`}
-                                                            checked={student.current_status === 'late'}
-                                                            onChange={() => handleStatusChange(student.id, 'late')}
-                                                            style={{ display: 'none' }}
-                                                        />
-                                                        Late
-                                                    </label>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </DashboardLayout>
     );

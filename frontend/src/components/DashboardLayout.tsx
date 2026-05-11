@@ -93,7 +93,9 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
 
     if (isLoading) {
         return (
-            <div style={{
+            <div 
+                suppressHydrationWarning
+                style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 minHeight: '100vh', background: '#F8F9FD', flexDirection: 'column',
                 position: 'relative', overflow: 'hidden', zIndex: 9999
@@ -182,7 +184,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                     }
                 `}} />
                 
-                <div className="premium-backdrop" />
+                <div className="premium-backdrop" suppressHydrationWarning />
 
                 <div className="loader-logo-container">
                     <div className="loader-ring" />
@@ -299,7 +301,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
     const avatarImgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=E53935&color=fff`;
 
     return (
-        <div className="bg-mesh" style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+        <div className="bg-mesh" suppressHydrationWarning style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
             <Sidebar />
             <main style={{
                 marginLeft: '260px',

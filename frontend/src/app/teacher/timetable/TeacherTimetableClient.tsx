@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -64,6 +65,7 @@ function formatTime12(time24: string) {
 }
 
 export default function TeacherTimetableClient({ initialTimetable, initialClasses, initialFilters, teacherProfile }: Props) {
+    const router = useRouter();
     const [timetable, setTimetable] = useState<any[]>(initialTimetable);
     const [classes, setClasses] = useState<any[]>(initialClasses);
     const [isLoading, setIsLoading] = useState(false);
@@ -265,7 +267,7 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                         <button onClick={() => setWeekOffset(w => w - 1)} style={{ background: '#F1F5F9', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer' }}>
                             <ChevronLeft size={18} color="#64748B" />
                         </button>
-                        <span style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B', minWidth: '180px', textAlign: 'center' }}>
+                        <span suppressHydrationWarning style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B', minWidth: '180px', textAlign: 'center' }}>
                             {weekDates[0].toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – {weekDates[6].toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
                         <button onClick={() => setWeekOffset(w => w + 1)} style={{ background: '#F1F5F9', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer' }}>
@@ -308,7 +310,7 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                                 return (
                                     <div key={i} onClick={() => { setSelectedDayIdx(i); setViewMode('day'); }} style={{ padding: '16px 8px', textAlign: 'center', cursor: 'pointer', borderRight: i < 6 ? '1px solid #F1F5F9' : 'none', background: isToday ? '#EEF2FF' : 'transparent', transition: 'background 0.2s' }}>
                                         <p style={{ fontSize: '12px', fontWeight: 700, color: isToday ? '#4F46E5' : '#94A3B8', textTransform: 'uppercase', margin: 0 }}>{DAY_LABELS[i]}</p>
-                                        <p style={{ fontSize: '20px', fontWeight: 800, color: isToday ? 'white' : '#1A1D3B', margin: '4px auto 0', width: '36px', height: '36px', lineHeight: '36px', borderRadius: '10px', background: isToday ? '#4F46E5' : 'transparent' }}>{d.getDate()}</p>
+                                        <p suppressHydrationWarning style={{ fontSize: '20px', fontWeight: 800, color: isToday ? 'white' : '#1A1D3B', margin: '4px auto 0', width: '36px', height: '36px', lineHeight: '36px', borderRadius: '10px', background: isToday ? '#4F46E5' : 'transparent' }}>{d.getDate()}</p>
                                     </div>
                                 );
                             })}
@@ -322,10 +324,34 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                                     <div key={i} style={{ padding: '10px 8px', borderRight: i < 6 ? '1px solid #F1F5F9' : 'none', minHeight: '300px', background: isToday ? 'rgba(238,242,255,0.3)' : 'transparent', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {dayEntries.length === 0 && <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'center', paddingTop: '20px', opacity: 0.3, fontSize: '12px', color: '#94A3B8' }}>No classes</div>}
                                         {dayEntries.map((entry: any) => {
+                                            const isTest = entry.type === 'test';
                                             const palette = getSubjectPalette(entry.subject);
                                             return (
-                                                <div key={entry.id} onClick={(e) => { e.stopPropagation(); openModal(entry); }} style={{ background: palette.bg, border: `1.5px solid ${palette.border}`, borderRadius: '12px', padding: '10px 12px', borderLeft: `4px solid ${palette.dot}`, cursor: 'pointer', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-                                                    <p style={{ fontSize: '13px', fontWeight: 800, color: palette.text, margin: 0 }}>{entry.subject}</p>
+                                                <div 
+                                                    key={entry.id} 
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        if (isTest) {
+                                                            router.push(`/teacher/tests/${entry.id}`);
+                                                        } else {
+                                                            openModal(entry); 
+                                                        }
+                                                    }} 
+                                                    style={{ 
+                                                        background: isTest ? '#FFF1F2' : palette.bg, 
+                                                        border: `1.5px solid ${isTest ? '#FECDD3' : palette.border}`, 
+                                                        borderRadius: '12px', 
+                                                        padding: '10px 12px', 
+                                                        borderLeft: `4px solid ${isTest ? '#F43F5E' : palette.dot}`, 
+                                                        cursor: 'pointer', 
+                                                        transition: 'transform 0.2s',
+                                                        position: 'relative'
+                                                    }} 
+                                                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'} 
+                                                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                                >
+                                                    {isTest && <span style={{ position: 'absolute', top: '4px', right: '6px', fontSize: '9px', fontWeight: 800, color: '#F43F5E', textTransform: 'uppercase', background: 'white', padding: '1px 4px', borderRadius: '4px', border: '1px solid #FECDD3' }}>TEST</span>}
+                                                    <p style={{ fontSize: '13px', fontWeight: 800, color: isTest ? '#9F1239' : palette.text, margin: 0 }}>{entry.subject}</p>
                                                     <p style={{ fontSize: '11px', color: '#64748B', margin: '4px 0 0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={10} /> {formatTime12(entry.start_time)}</p>
                                                     <p style={{ fontSize: '10px', color: '#94A3B8', margin: '3px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.class_ref?.class_name}</p>
                                                 </div>
@@ -365,28 +391,58 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                                     <div style={{ position: 'absolute', left: '14px', top: '20px', bottom: '20px', width: '3px', background: 'linear-gradient(to bottom, #6366F1, #8B5CF6, #C7D2FE)', borderRadius: '2px' }} />
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                         {dayEntries.map((entry: any) => {
+                                            const isTest = entry.type === 'test';
                                             const palette = getSubjectPalette(entry.subject);
                                             return (
                                                 <div key={entry.id} style={{ position: 'relative', display: 'flex', gap: '20px', alignItems: 'stretch' }}>
-                                                    <div style={{ position: 'absolute', left: '-26px', top: '24px', width: '14px', height: '14px', borderRadius: '50%', background: palette.dot, border: '3px solid white', boxShadow: `0 0 0 2px ${palette.dot}40`, zIndex: 2 }} />
+                                                    <div style={{ position: 'absolute', left: '-26px', top: '24px', width: '14px', height: '14px', borderRadius: '50%', background: isTest ? '#F43F5E' : palette.dot, border: '3px solid white', boxShadow: `0 0 0 2px ${isTest ? '#F43F5E' : palette.dot}40`, zIndex: 2 }} />
                                                     <div style={{ minWidth: '80px', paddingTop: '16px', textAlign: 'right', flexShrink: 0 }}>
                                                         <p style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>{formatTime12(entry.start_time)}</p>
                                                         {entry.end_time && <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0', fontWeight: 600 }}>{formatTime12(entry.end_time)}</p>}
                                                     </div>
-                                                    <div style={{ flex: 1, background: 'white', borderRadius: '18px', border: `1.5px solid ${palette.border}`, borderLeft: `5px solid ${palette.dot}`, padding: '20px 24px', transition: 'transform 0.2s, box-shadow 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }} onMouseEnter={e => e.currentTarget.style.transform = 'translateX(4px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}>
+                                                    <div 
+                                                        style={{ 
+                                                            flex: 1, 
+                                                            background: isTest ? '#FFF1F2' : 'white', 
+                                                            borderRadius: '18px', 
+                                                            border: `1.5px solid ${isTest ? '#FECDD3' : palette.border}`, 
+                                                            borderLeft: `5px solid ${isTest ? '#F43F5E' : palette.dot}`, 
+                                                            padding: '20px 24px', 
+                                                            transition: 'transform 0.2s, box-shadow 0.2s', 
+                                                            display: 'flex', 
+                                                            justifyContent: 'space-between', 
+                                                            alignItems: 'flex-start' 
+                                                        }} 
+                                                        onMouseEnter={e => e.currentTarget.style.transform = 'translateX(4px)'} 
+                                                        onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
+                                                    >
                                                         <div>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>{entry.subject}</h3>
-                                                                <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', background: palette.bg, color: palette.text, border: `1px solid ${palette.border}` }}>{entry.class_ref?.class_name}</span>
+                                                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: isTest ? '#9F1239' : '#1A1D3B', margin: 0 }}>{entry.subject}</h3>
+                                                                <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', background: isTest ? 'white' : palette.bg, color: isTest ? '#F43F5E' : palette.text, border: `1px solid ${isTest ? '#FECDD3' : palette.border}` }}>
+                                                                    {isTest ? 'EXAMINATION' : entry.class_ref?.class_name}
+                                                                </span>
+                                                                {isTest && <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', background: '#F43F5E', color: 'white' }}>{entry.class_ref?.class_name}</span>}
                                                             </div>
                                                             <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
                                                                 {entry.room && <span style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}><MapPin size={14} color="#94A3B8" /> {entry.room}</span>}
                                                             </div>
-                                                            {entry.notes && <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '10px', fontStyle: 'italic' }}>📝 {entry.notes}</p>}
+                                                            {entry.notes && <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '10px', fontStyle: 'italic' }}>{isTest ? '📝 Instructions: ' : '📝 '} {entry.notes}</p>}
                                                         </div>
                                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                                            <button onClick={() => openModal(entry)} style={{ padding: '8px', borderRadius: '10px', background: '#F1F5F9', border: 'none', cursor: 'pointer', color: '#64748B' }}><Edit2 size={16} /></button>
-                                                            <button onClick={() => handleDelete(entry.id)} style={{ padding: '8px', borderRadius: '10px', background: '#FEF2F2', border: 'none', cursor: 'pointer', color: '#EF4444' }}><Trash2 size={16} /></button>
+                                                            {isTest ? (
+                                                                <button 
+                                                                    onClick={() => router.push(`/teacher/tests/${entry.id}`)} 
+                                                                    style={{ padding: '8px 16px', borderRadius: '10px', background: '#F43F5E', border: 'none', cursor: 'pointer', color: 'white', fontWeight: 700, fontSize: '12px' }}
+                                                                >
+                                                                    Manage Test
+                                                                </button>
+                                                            ) : (
+                                                                <>
+                                                                    <button onClick={() => openModal(entry)} style={{ padding: '8px', borderRadius: '10px', background: '#F1F5F9', border: 'none', cursor: 'pointer', color: '#64748B' }}><Edit2 size={16} /></button>
+                                                                    <button onClick={() => handleDelete(entry.id)} style={{ padding: '8px', borderRadius: '10px', background: '#FEF2F2', border: 'none', cursor: 'pointer', color: '#EF4444' }}><Trash2 size={16} /></button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
