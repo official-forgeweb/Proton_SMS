@@ -187,94 +187,54 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                 </div>
             </div>
 
-            {/* 8 Top Stat Cards */}
+            {/* 4 Essential Stat Cards */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                 gap: '24px',
                 marginBottom: '32px',
             }}>
                 <StatCard
-                    label="Total Students"
-                    value={formatShort(stats?.students?.total || 0)}
-                    subLabel="Students currently enrolled"
-                    change={`${((stats?.students?.active / (stats?.students?.total || 1)) * 100 || 0).toFixed(1)}%`}
+                    label="Total Revenue"
+                    value={`₹${formatShort(stats?.revenue?.total_collected || 0)}`}
+                    subLabel={`Pending Dues: ₹${formatShort(stats?.revenue?.pending || 0)}`}
+                    change="+12%"
                     positive={true}
-                    icon={GraduationCap}
+                    icon={DollarSign}
                     gradient="linear-gradient(135deg, #E53935 0%, #B71C1C 100%)"
                     delay={100}
                 />
                 <StatCard
-                    label="Total Teachers"
-                    value={formatShort(stats?.teachers?.total || 0)}
-                    subLabel="Active vs Total staff"
-                    change={`${((stats?.teachers?.active / (stats?.teachers?.total || 1)) * 100 || 0).toFixed(0)}%`}
+                    label="Active Students"
+                    value={formatShort(stats?.students?.active || 0)}
+                    subLabel={`Total Enrolled: ${formatShort(stats?.students?.total || 0)}`}
+                    change={`${((stats?.students?.active / (stats?.students?.total || 1)) * 100 || 0).toFixed(1)}%`}
                     positive={true}
-                    icon={Users}
+                    icon={GraduationCap}
                     iconBg="#FFF0F1"
                     iconColor="#E53935"
                     delay={150}
                 />
                 <StatCard
-                    label="Total Classes/Batches"
-                    value={formatShort(stats?.classes?.total || 0)}
-                    subLabel="Active ongoing classes"
-                    change={`${((stats?.classes?.active / (stats?.classes?.total || 1)) * 100 || 0).toFixed(0)}%`}
+                    label="Active Staff"
+                    value={formatShort(stats?.teachers?.active || 0)}
+                    subLabel={`Total Teachers: ${formatShort(stats?.teachers?.total || 0)}`}
+                    change={`${((stats?.teachers?.active / (stats?.teachers?.total || 1)) * 100 || 0).toFixed(0)}%`}
                     positive={true}
-                    icon={BookOpen}
+                    icon={Users}
                     iconBg="#FFF4E5"
                     iconColor="#F97316"
                     delay={200}
                 />
                 <StatCard
-                    label="Average Attendance"
-                    value={`${stats?.attendance?.avg_percentage || 0}%`}
-                    subLabel="Overall present percentage"
-                    positive={Number(stats?.attendance?.avg_percentage) > 75}
-                    icon={Activity}
+                    label="New Enquiries"
+                    value={formatShort(stats?.enquiries?.new || 0)}
+                    subLabel={`Total Leads: ${formatShort(stats?.enquiries?.total || 0)}`}
+                    positive={true}
+                    icon={TrendingUp}
                     iconBg="#ECFDF5"
                     iconColor="#10B981"
                     delay={250}
-                />
-                <StatCard
-                    label="Today Present"
-                    value={formatShort(stats?.attendance?.today_present || 0)}
-                    subLabel="Students marked present today"
-                    positive={true}
-                    icon={Users}
-                    iconBg="#F0FDF4"
-                    iconColor="#16A34A"
-                    delay={300}
-                />
-                <StatCard
-                    label="Today Absent"
-                    value={formatShort(stats?.attendance?.today_absent || 0)}
-                    subLabel="Students marked absent today"
-                    positive={false}
-                    icon={TrendingDown}
-                    iconBg="#FEF2F2"
-                    iconColor="#DC2626"
-                    delay={350}
-                />
-                <StatCard
-                    label="Upcoming Tests"
-                    value={formatShort(stats?.tests?.upcoming || 0)}
-                    subLabel="Tests scheduled in future"
-                    positive={true}
-                    icon={Clock}
-                    iconBg="#EFF6FF"
-                    iconColor="#2563EB"
-                    delay={400}
-                />
-                <StatCard
-                    label="Avg Test Performance"
-                    value={`${stats?.tests?.avg_performance || 0}%`}
-                    subLabel="Overall test scores average"
-                    positive={Number(stats?.tests?.avg_performance) > 60}
-                    icon={Target}
-                    iconBg="#F5F3FF"
-                    iconColor="#7C3AED"
-                    delay={450}
                 />
             </div>
 
