@@ -5,7 +5,7 @@ import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import {
     Search, Plus, Trash2, Edit2, ChevronLeft, ChevronRight,
-    GraduationCap, Users, Filter, BookOpen, ChevronDown, X, Eye, TrendingUp, Download, Upload
+    GraduationCap, Users, Filter, BookOpen, ChevronDown, X, Eye, TrendingUp, Download, Upload, LayoutGrid, List
 } from 'lucide-react';
 
 const INLINE_STYLES = (
@@ -115,6 +115,7 @@ export default function AdminStudentsClient({ initialData }: Props) {
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(initialData.totalCount);
     const [showFilters, setShowFilters] = useState(false);
+    const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
     const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
     const limit = 20;
 
@@ -233,6 +234,8 @@ export default function AdminStudentsClient({ initialData }: Props) {
         email: s.email || 'N/A',
         fee_status: s.fee_status || 'pending',
         attendance: s.attendance_percentage || 0,
+        avg_marks: s.avg_marks || 0,
+        join_date: s.join_date || s.created_at || new Date().toISOString(),
         academic_status: s.academic_status || 'active',
         gender: s.gender || 'N/A',
     })), [students]);
@@ -482,6 +485,35 @@ export default function AdminStudentsClient({ initialData }: Props) {
                                     )}
                                     <ChevronDown size={14} strokeWidth={2.5} style={{ transition: 'transform 0.2s', transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                                 </button>
+                                
+                                <div style={{ display: 'flex', background: '#F1F2F6', borderRadius: '12px', padding: '4px' }}>
+                                    <button
+                                        onClick={() => setViewMode('table')}
+                                        style={{
+                                            padding: '6px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600,
+                                            background: viewMode === 'table' ? '#FFFFFF' : 'transparent',
+                                            color: viewMode === 'table' ? '#1A1D3B' : '#8F92A1',
+                                            boxShadow: viewMode === 'table' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <List size={16} strokeWidth={2.5} /> Table
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('grid')}
+                                        style={{
+                                            padding: '6px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600,
+                                            background: viewMode === 'grid' ? '#FFFFFF' : 'transparent',
+                                            color: viewMode === 'grid' ? '#1A1D3B' : '#8F92A1',
+                                            boxShadow: viewMode === 'grid' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <LayoutGrid size={16} strokeWidth={2.5} /> Grid
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -631,8 +663,8 @@ export default function AdminStudentsClient({ initialData }: Props) {
                                 </button>
                             )}
                         </div>
-                    ) : (
-                        <div style={{ overflowX: 'auto', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', padding: '4px' }}>
+                    ) : viewMode === 'table' ? (
+                        <div className="animate-fade-in" style={{ overflowX: 'auto', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', padding: '4px', animationDelay: '200ms' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 3px', minWidth: '900px' }}>
                                 <thead>
                                     <tr>
@@ -644,7 +676,7 @@ export default function AdminStudentsClient({ initialData }: Props) {
                                                 style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#E53935' }}
                                             />
                                         </th>
-                                        {['Student', 'PRO ID', 'Batch', 'Subjects', 'Fee Status', 'Phone', 'Actions'].map(h => (
+                                        {['Student', 'PRO ID', 'Batch', 'Attendance', 'Avg Marks', 'Fee Status', 'Actions'].map(h => (
                                             <th key={h} style={{
                                                 padding: '14px 16px', textAlign: 'left',
                                                 color: '#A1A5B7', fontWeight: 700, fontSize: '11px',
@@ -710,18 +742,18 @@ export default function AdminStudentsClient({ initialData }: Props) {
                                                         {s.className}
                                                     </span>
                                                 </td>
-                                                <td style={{ padding: '12px 16px', maxWidth: '200px' }}>
-                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
-                                                        {s.subjects.length > 0 ? s.subjects.map((sub: string) => {
-                                                            const colors = subjectColors[sub] || { bg: '#F1F2F6', color: '#5E6278' };
-                                                            return (
-                                                                <span key={sub} className="subject-tag" style={{ background: colors.bg, color: colors.color }}>
-                                                                    {sub}
-                                                                </span>
-                                                            );
-                                                        }) : (
-                                                            <span style={{ fontSize: '12px', color: '#A1A5B7', fontStyle: 'italic' }}>No subjects</span>
-                                                        )}
+                                                <td style={{ padding: '12px 16px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ fontSize: '14px', fontWeight: 800, color: Number(s.attendance) > 75 ? '#059669' : Number(s.attendance) < 50 ? '#DC2626' : '#D97706' }}>
+                                                            {s.attendance}%
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '12px 16px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B' }}>
+                                                            {s.avg_marks}%
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '12px 16px' }}>
@@ -734,7 +766,6 @@ export default function AdminStudentsClient({ initialData }: Props) {
                                                         {feeStatus.text}
                                                     </span>
                                                 </td>
-                                                <td style={{ padding: '12px 16px', fontSize: '13px', color: '#1A1D3B', fontWeight: 600 }}>{s.phone}</td>
                                                 <td style={{ padding: '12px 16px' }}>
                                                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                                         <button
@@ -776,8 +807,93 @@ export default function AdminStudentsClient({ initialData }: Props) {
                                 </tbody>
                             </table>
                         </div>
-                    )}
+                    ) : (
+                        <div className="animate-fade-in" style={{ 
+                            display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', 
+                            animationDelay: '200ms' 
+                        }}>
+                            {displayStudents.map((s, i) => {
+                                const feeStatus = getFeeStatusColor(s.fee_status);
+                                return (
+                                    <div 
+                                        key={s.id || i}
+                                        className="table-row-hover"
+                                        onClick={() => router.push(`/admin/students/${s.id}`)}
+                                        style={{ 
+                                            background: '#FFFFFF', borderRadius: '20px', border: '1px solid #E2E8F0',
+                                            padding: '24px', cursor: 'pointer', position: 'relative',
+                                            display: 'flex', flexDirection: 'column', gap: '16px',
+                                            boxShadow: selectedStudentIds.includes(s.id) ? '0 0 0 2px #E53935' : '0 4px 12px rgba(0,0,0,0.02)'
+                                        }}
+                                    >
+                                        <div style={{ position: 'absolute', top: '16px', right: '16px' }} onClick={(e) => e.stopPropagation()}>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedStudentIds.includes(s.id)}
+                                                onChange={(e) => handleSelectStudent(s.id, e)}
+                                                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#E53935' }}
+                                            />
+                                        </div>
 
+                                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                            <img
+                                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=random&color=fff&size=56&bold=true`}
+                                                style={{ width: '56px', height: '56px', borderRadius: '16px', border: '3px solid #F8F9FD', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                                                alt={s.name}
+                                            />
+                                            <div>
+                                                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', marginBottom: '4px', lineHeight: 1.2 }}>{s.name}</h3>
+                                                <span style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, color: '#E53935', background: '#FFF0F1', padding: '2px 8px', borderRadius: '6px' }}>{s.roll}</span>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#F8F9FD', padding: '12px', borderRadius: '12px' }}>
+                                            <div>
+                                                <p style={{ fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', marginBottom: '4px' }}>Attendance</p>
+                                                <p style={{ fontSize: '15px', fontWeight: 800, color: Number(s.attendance) > 75 ? '#059669' : Number(s.attendance) < 50 ? '#DC2626' : '#D97706' }}>{s.attendance}%</p>
+                                            </div>
+                                            <div>
+                                                <p style={{ fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', marginBottom: '4px' }}>Avg Marks</p>
+                                                <p style={{ fontSize: '15px', fontWeight: 800, color: '#1A1D3B' }}>{s.avg_marks}%</p>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '4px' }}>
+                                            <span style={{
+                                                padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 800,
+                                                background: feeStatus.bg, color: feeStatus.color, letterSpacing: '0.04em'
+                                            }}>
+                                                {feeStatus.text}
+                                            </span>
+
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    title="View Profile"
+                                                    style={{
+                                                        background: '#F0F4FF', border: 'none', cursor: 'pointer', color: '#3B5998',
+                                                        width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}
+                                                    onClick={(e) => { e.stopPropagation(); router.push(`/admin/students/${s.id}`); }}
+                                                >
+                                                    <TrendingUp size={14} strokeWidth={2.5} />
+                                                </button>
+                                                <button
+                                                    title="Delete Student"
+                                                    style={{
+                                                        background: '#FEE2E2', border: 'none', cursor: 'pointer', color: '#EF4444',
+                                                        width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(s.id, s.name); }}
+                                                >
+                                                    <Trash2 size={14} strokeWidth={2.5} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                     {/* Pagination */}
                     {totalPages > 1 && (
                         <div style={{

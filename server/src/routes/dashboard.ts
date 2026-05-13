@@ -19,6 +19,13 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
       recentStudents, recentPayments, recentEnquiries,
       genderAgg,
       topStudents,
+      upcomingTestsCount,
+      todayPresent,
+      todayAbsent,
+      totalAttendanceCount,
+      totalPresentCount,
+      totalTestScore,
+      totalTestCount,
     ] = await Promise.all([
       prisma.student.count(),
       prisma.student.count({ where: { academic_status: 'active' } }),
@@ -54,6 +61,13 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
         take: 5,
         include: { student: { select: { first_name: true, last_name: true, PRO_ID: true } } },
       }),
+      prisma.test.count({ where: { test_date: { gt: new Date().toISOString().split('T')[0] } } }),
+      prisma.attendance.count({ where: { attendance_date: new Date().toISOString().split('T')[0], status: 'present' } }),
+      prisma.attendance.count({ where: { attendance_date: new Date().toISOString().split('T')[0], status: 'absent' } }),
+      prisma.attendance.count(),
+      prisma.attendance.count({ where: { status: 'present' } }),
+      prisma.testResult.aggregate({ _sum: { percentage: true } }),
+      prisma.testResult.count(),
     ]);
 
     // Monthly performance and attendance (use raw queries for month extraction)
@@ -112,6 +126,15 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
           enquiries: { total: totalEnquiries, new: newEnquiries },
           demos: { total: totalDemos, completed: completedDemos },
           revenue: { total: totalRevenue, pending: totalPending },
+          attendance: { 
+            today_present: todayPresent, 
+            today_absent: todayAbsent, 
+            avg_percentage: totalAttendanceCount > 0 ? ((totalPresentCount / totalAttendanceCount) * 100).toFixed(1) : 0 
+          },
+          tests: { 
+            upcoming: upcomingTestsCount, 
+            avg_performance: totalTestCount > 0 ? ((totalTestScore._sum.percentage || 0) / totalTestCount).toFixed(1) : 0 
+          }
         },
         funnel: {
           enquiries: totalEnquiries, contacted, demo_scheduled: demoScheduled, demo_completed: demoCompleted, enrolled,

@@ -23,6 +23,8 @@ export interface AdminDashboardStats {
   enquiries: { total: number; new: number };
   demos: { total: number; completed: number };
   revenue: { total: number; pending: number };
+  attendance: { today_present: number; today_absent: number; avg_percentage: number | string };
+  tests: { upcoming: number; avg_performance: number | string };
 }
 
 export interface AdminDashboardCharts {
@@ -37,10 +39,18 @@ export interface RecentActivity {
   time: string;
 }
 
+export interface AlertInsight {
+  type: 'danger' | 'warning' | 'info' | 'success';
+  title: string;
+  message: string;
+  action_link?: string;
+}
+
 export interface AdminDashboardData {
   stats: AdminDashboardStats;
   recent_activity: RecentActivity[];
   charts: AdminDashboardCharts;
+  alerts: AlertInsight[];
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
@@ -77,6 +87,13 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       recentStudents, recentPayments, recentEnquiries,
       genderAgg,
       topStudents,
+      upcomingTestsCount,
+      todayPresent,
+      todayAbsent,
+      totalAttendanceCount,
+      totalPresentCount,
+      totalTestScore,
+      totalTestCount,
     ] = await Promise.all([
       prisma.student.findMany({ orderBy: { created_at: 'desc' }, take: 5 }),
       prisma.feePayment.findMany({
@@ -91,6 +108,13 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         take: 5,
         include: { student: { select: { first_name: true, last_name: true, PRO_ID: true } } },
       }),
+      prisma.test.count({ where: { test_date: { gt: new Date().toISOString().split('T')[0] } } }),
+      prisma.attendance.count({ where: { attendance_date: new Date().toISOString().split('T')[0], status: 'present' } }),
+      prisma.attendance.count({ where: { attendance_date: new Date().toISOString().split('T')[0], status: 'absent' } }),
+      prisma.attendance.count(),
+      prisma.attendance.count({ where: { status: 'present' } }),
+      prisma.testResult.aggregate({ _sum: { percentage: true } }),
+      prisma.testResult.count(),
     ]);
 
     // Monthly performance and attendance (raw queries for month extraction)
@@ -163,6 +187,61 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       year: new Date(s.created_at).getFullYear(),
     }));
 
+    // Generate Smart Alerts
+    const alerts: AlertInsight[] = [];
+    
+    // Low attendance alert (using a simple threshold on today's data for now, 
+    // in a real system this would query 30-day avg per student)
+    if (totalAttendanceCount > 0 && (totalPresentCount / totalAttendanceCount) < 0.6) {
+        alerts.push({
+            type: 'danger',
+            title: 'Critical Attendance Drop',
+            message: `Overall institute attendance is below 60% today.`,
+            action_link: '/admin/attendance'
+        });
+    }
+
+    // Pending Demos alert
+    const pendingDemosCount = totalDemos - completedDemos;
+    if (pendingDemosCount > 0) {
+        alerts.push({
+            type: 'warning',
+            title: 'Pending Demo Classes',
+            message: `There are ${pendingDemosCount} demo classes scheduled that need attention.`,
+            action_link: '/admin/demos'
+        });
+    }
+
+    // Low performance alert
+    const failingResults = await prisma.testResult.count({
+        where: { percentage: { lt: 40 } }
+    });
+    if (failingResults > 0) {
+        alerts.push({
+            type: 'warning',
+            title: 'Academic Performance Alert',
+            message: `${failingResults} recent test results are below the 40% passing threshold.`,
+            action_link: '/admin/analytics/tests'
+        });
+    }
+
+    if (totalPending > 50000) {
+        alerts.push({
+            type: 'danger',
+            title: 'High Pending Dues',
+            message: `Total pending fee collection has exceeded ₹50,000.`,
+            action_link: '/admin/fees'
+        });
+    }
+
+    if (alerts.length === 0) {
+        alerts.push({
+            type: 'success',
+            title: 'All Systems Nominal',
+            message: 'No critical alerts or warnings at this time.'
+        });
+    }
+
     return {
       stats: {
         students: { total: totalStudents, active: activeStudents },
@@ -171,6 +250,15 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         enquiries: { total: totalEnquiries, new: newEnquiries },
         demos: { total: totalDemos, completed: completedDemos },
         revenue: { total: totalRevenue, pending: totalPending },
+        attendance: { 
+          today_present: todayPresent, 
+          today_absent: todayAbsent, 
+          avg_percentage: totalAttendanceCount > 0 ? ((totalPresentCount / totalAttendanceCount) * 100).toFixed(1) : 0 
+        },
+        tests: { 
+          upcoming: upcomingTestsCount, 
+          avg_performance: totalTestCount > 0 ? ((totalTestScore._sum.percentage || 0) / totalTestCount).toFixed(1) : 0 
+        }
       },
       recent_activity: recentActivity,
       charts: {
@@ -178,6 +266,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         gender: radialData,
         top_students: topStudentData,
       },
+      alerts,
     };
   });
 }
@@ -594,6 +683,10 @@ async function getStudentsList(where: any) {
           where: { status: 'active' },
           select: { subject: true, class_id: true, status: true },
         },
+        test_results: {
+          select: { percentage: true },
+        },
+        created_at: true,
       },
     });
 
@@ -610,6 +703,10 @@ async function getStudentsList(where: any) {
         subject: se.subject, class_id: se.class_id, status: se.status,
       })),
       attendance_percentage: s.class_enrollments[0]?.overall_attendance_percentage || 0,
+      avg_marks: s.test_results && s.test_results.length > 0 
+        ? Math.round(s.test_results.reduce((acc: number, r: any) => acc + (r.percentage || 0), 0) / s.test_results.length)
+        : 0,
+      join_date: s.created_at,
     }));
 
     return { data: enrichedStudents, total, page: 1, limit: 20 };

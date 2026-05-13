@@ -107,6 +107,10 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), cacheMiddlewar
             where: { status: 'active' },
             select: { subject: true, class_id: true, status: true },
           },
+          test_results: {
+            select: { percentage: true },
+          },
+          created_at: true,
         },
       }),
     ]);
@@ -124,6 +128,10 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), cacheMiddlewar
         subject: se.subject, class_id: se.class_id, status: se.status,
       })),
       attendance_percentage: s.class_enrollments[0]?.overall_attendance_percentage || 0,
+      avg_marks: s.test_results && s.test_results.length > 0 
+        ? Math.round(s.test_results.reduce((acc: number, r: any) => acc + (r.percentage || 0), 0) / s.test_results.length)
+        : 0,
+      join_date: s.created_at,
     }));
 
     if (fee_status) enrichedStudents = enrichedStudents.filter(s => s.fee_status === fee_status);

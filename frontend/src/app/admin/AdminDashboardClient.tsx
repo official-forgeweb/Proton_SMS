@@ -162,6 +162,7 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
     const finalRadialData = data?.charts?.gender || [];
     const finalStarStudents = data?.charts?.top_students || [];
     const recentActivity = data?.recent_activity || [];
+    const alerts = data?.alerts || [];
 
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -186,10 +187,10 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                 </div>
             </div>
 
-            {/* 4 Top Stat Cards */}
+            {/* 8 Top Stat Cards */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                 gap: '24px',
                 marginBottom: '32px',
             }}>
@@ -212,27 +213,68 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     icon={Users}
                     iconBg="#FFF0F1"
                     iconColor="#E53935"
+                    delay={150}
+                />
+                <StatCard
+                    label="Total Classes/Batches"
+                    value={formatShort(stats?.classes?.total || 0)}
+                    subLabel="Active ongoing classes"
+                    change={`${((stats?.classes?.active / (stats?.classes?.total || 1)) * 100 || 0).toFixed(0)}%`}
+                    positive={true}
+                    icon={BookOpen}
+                    iconBg="#FFF4E5"
+                    iconColor="#F97316"
                     delay={200}
                 />
                 <StatCard
-                    label="Total Parents"
-                    value={formatShort(stats?.parents?.total || 0)}
-                    subLabel="Verified parent accounts"
+                    label="Average Attendance"
+                    value={`${stats?.attendance?.avg_percentage || 0}%`}
+                    subLabel="Overall present percentage"
+                    positive={Number(stats?.attendance?.avg_percentage) > 75}
+                    icon={Activity}
+                    iconBg="#ECFDF5"
+                    iconColor="#10B981"
+                    delay={250}
+                />
+                <StatCard
+                    label="Today Present"
+                    value={formatShort(stats?.attendance?.today_present || 0)}
+                    subLabel="Students marked present today"
+                    positive={true}
                     icon={Users}
-                    iconBg="#FFF4E5"
-                    iconColor="#F97316"
+                    iconBg="#F0FDF4"
+                    iconColor="#16A34A"
                     delay={300}
                 />
                 <StatCard
-                    label="Total Earnings"
-                    value={`₹${formatShort(stats?.revenue?.total || 0)}`}
-                    subLabel={`Pending: ₹${formatShort(stats?.revenue?.pending || 0)}`}
-                    change={`${(((stats?.revenue?.total || 0) / (((stats?.revenue?.total || 0) + (stats?.revenue?.pending || 0)) || 1)) * 100 || 0).toFixed(1)}%`}
+                    label="Today Absent"
+                    value={formatShort(stats?.attendance?.today_absent || 0)}
+                    subLabel="Students marked absent today"
+                    positive={false}
+                    icon={TrendingDown}
+                    iconBg="#FEF2F2"
+                    iconColor="#DC2626"
+                    delay={350}
+                />
+                <StatCard
+                    label="Upcoming Tests"
+                    value={formatShort(stats?.tests?.upcoming || 0)}
+                    subLabel="Tests scheduled in future"
                     positive={true}
-                    icon={DollarSign}
-                    iconBg="#ECFDF5"
-                    iconColor="#10B981"
+                    icon={Clock}
+                    iconBg="#EFF6FF"
+                    iconColor="#2563EB"
                     delay={400}
+                />
+                <StatCard
+                    label="Avg Test Performance"
+                    value={`${stats?.tests?.avg_performance || 0}%`}
+                    subLabel="Overall test scores average"
+                    positive={Number(stats?.tests?.avg_performance) > 60}
+                    icon={Target}
+                    iconBg="#F5F3FF"
+                    iconColor="#7C3AED"
+                    delay={450}
                 />
             </div>
 
@@ -464,7 +506,7 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     </div>
                 </div>
 
-                {/* Recent Activity Timeline */}
+                {/* Smart Alerts */}
                 <div className="animate-fade-in glass-panel" style={{
                     borderRadius: '24px', padding: '32px',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.04)', border: '1px solid rgba(255,255,255,0.8)',
@@ -478,75 +520,58 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                             </div>
                             <div>
                                 <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
-                                    Live Feed
+                                    Smart Alerts
                                 </h3>
-                                <p style={{ fontSize: '13px', color: '#8F92A1', marginTop: '2px', fontWeight: 500 }}>System activity logs</p>
+                                <p style={{ fontSize: '13px', color: '#8F92A1', marginTop: '2px', fontWeight: 500 }}>System generated insights</p>
                             </div>
                         </div>
-                        {recentActivity.length > 4 && (
-                            <span style={{ fontSize: '12px', fontWeight: 700, color: '#E53935', background: '#FFF0F1', padding: '6px 12px', borderRadius: '20px' }}>
-                                +{recentActivity.length - 4} more
-                            </span>
-                        )}
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingLeft: '8px' }}>
-                        {recentActivity.length > 0 ? recentActivity.slice(0, 4).map((activity: any, i: number) => {
-                            const getActivityConfig = (type: string) => {
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+                        {alerts.length > 0 ? alerts.map((alert: any, i: number) => {
+                            const getAlertConfig = (type: string) => {
                                 switch (type) {
-                                    case 'enrollment': return { icon: GraduationCap, bg: '#FFF0F1', color: '#E53935', border: '#E53935' };
-                                    case 'payment': return { icon: DollarSign, bg: '#ECFDF5', color: '#10B981', border: '#10B981' };
-                                    case 'enquiry': return { icon: Users, bg: '#FFF4E5', color: '#F97316', border: '#F97316' };
-                                    default: return { icon: BookOpen, bg: '#F8F9FD', color: '#5E6278', border: '#A1A5B7' };
+                                    case 'danger': return { icon: TrendingDown, bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' };
+                                    case 'warning': return { icon: Activity, bg: '#FFFBEB', color: '#D97706', border: '#FDE68A' };
+                                    case 'success': return { icon: Target, bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0' };
+                                    default: return { icon: BookOpen, bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE' };
                                 }
                             };
-                            const config = getActivityConfig(activity.type);
+                            const config = getAlertConfig(alert.type);
                             const Icon = config.icon;
 
                             return (
-                                <div key={i} className="activity-timeline-item" style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', position: 'relative', paddingBottom: '20px' }}>
-                                    <div className="timeline-line" style={{
-                                        position: 'absolute', left: '19px', top: '40px', bottom: '-4px', width: '2px',
-                                        background: '#F0F0F5', zIndex: 0
-                                    }} />
-
+                                <div key={i} onClick={() => alert.action_link && router.push(alert.action_link)} style={{ 
+                                    display: 'flex', gap: '16px', alignItems: 'flex-start', 
+                                    padding: '16px', borderRadius: '16px', background: config.bg,
+                                    border: `1px solid ${config.border}`, cursor: alert.action_link ? 'pointer' : 'default',
+                                    transition: 'transform 0.2s',
+                                }} className="card-hover">
                                     <div style={{
-                                        width: '40px', height: '40px', borderRadius: '50%',
+                                        width: '40px', height: '40px', borderRadius: '12px',
                                         background: '#FFFFFF', display: 'flex', alignItems: 'center',
                                         justifyContent: 'center', color: config.color, flexShrink: 0,
                                         boxShadow: `0 4px 12px ${config.color}20`,
-                                        border: `2px solid ${config.bg}`, zIndex: 1
                                     }}>
-                                        <Icon size={18} strokeWidth={2.5} />
+                                        <Icon size={20} strokeWidth={2.5} />
                                     </div>
-                                    <div style={{ flex: 1, paddingTop: '0px', cursor: 'pointer' }} className="activity-item-content">
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                            <h4 style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B', textTransform: 'capitalize', letterSpacing: '0.01em' }}>
-                                                {activity.type}
-                                            </h4>
-                                            <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 600, background: '#F8F9FD', padding: '3px 8px', borderRadius: '20px' }}>
-                                                {new Date(activity.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        </div>
-                                        <p style={{ fontSize: '13px', color: '#5E6278', lineHeight: 1.5, fontWeight: 500 }}>{activity.message}</p>
+                                    <div style={{ flex: 1 }}>
+                                        <h4 style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B', marginBottom: '4px' }}>
+                                            {alert.title}
+                                        </h4>
+                                        <p style={{ fontSize: '13px', color: '#5E6278', lineHeight: 1.4, fontWeight: 500, margin: 0 }}>
+                                            {alert.message}
+                                        </p>
                                     </div>
                                 </div>
                             );
                         }) : (
                             <div style={{ textAlign: 'center', padding: '40px 20px', background: '#F8F9FD', borderRadius: '16px' }}>
                                 <Activity size={32} color="#A1A5B7" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-                                <p style={{ color: '#8F92A1', fontSize: '14px', fontWeight: 600 }}>No live activity logged yet.</p>
+                                <p style={{ color: '#8F92A1', fontSize: '14px', fontWeight: 600 }}>No critical alerts at this time.</p>
                             </div>
                         )}
                     </div>
-
-                    <button
-                        onClick={() => router.push('/admin/activity')}
-                        className="btn-primary"
-                        style={{ width: '100%', padding: '14px', marginTop: '8px' }}
-                    >
-                        Explore All Activities <ChevronRight size={18} />
-                    </button>
                 </div>
             </div>
 
