@@ -189,39 +189,39 @@ router.post('/generate', authenticateToken, authorize('admin'), async (req: Requ
             continue;
         }
 
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            const dayOfWeek = daysMap[d.getDay()];
+        // Use UTC to avoid timezone boundary issues
+        const startUTC = new Date(startDate.toISOString().split('T')[0] + 'T00:00:00Z');
+        const endUTC = new Date(endDate.toISOString().split('T')[0] + 'T00:00:00Z');
+
+        for (let d = new Date(startUTC); d <= endUTC; d.setUTCDate(d.getUTCDate() + 1)) {
+            const dayOfWeek = daysMap[d.getUTCDay()];
             const dateStr = d.toISOString().split('T')[0];
 
             for (const sched of c.schedule) {
-                // Case-insensitive check for days
-                const normalizedDays = (sched.days || []).map(day => day.toLowerCase());
-                
-                if (normalizedDays.includes(dayOfWeek)) {
-                    // Check if entry already exists to avoid duplicates
-                    const existing = await prisma.timetable.findFirst({
-                        where: {
+                // The user explicitly requested to generate timetable for all days including Saturday and Sunday
+                // Check if entry already exists to avoid duplicates
+                const existing = await prisma.timetable.findFirst({
+                    where: {
+                        class_id: c.id,
+                        subject: sched.subject || '',
+                        date: dateStr,
+                        start_time: sched.time_start || '09:00'
+                    }
+                });
+
+                if (!existing) {
+                    await prisma.timetable.create({
+                        data: {
                             class_id: c.id,
                             subject: sched.subject || '',
+                            teacher_id: sched.teacher_id,
                             date: dateStr,
-                            start_time: sched.time_start || '09:00'
+                            start_time: sched.time_start || '09:00',
+                            end_time: sched.time_end || '10:00',
+                            status: 'scheduled'
                         }
                     });
-
-                    if (!existing) {
-                        await prisma.timetable.create({
-                            data: {
-                                class_id: c.id,
-                                subject: sched.subject || '',
-                                teacher_id: sched.teacher_id,
-                                date: dateStr,
-                                start_time: sched.time_start || '09:00',
-                                end_time: sched.time_end || '10:00',
-                                status: 'scheduled'
-                            }
-                        });
-                        createdCount++;
-                    }
+                    createdCount++;
                 }
             }
         }

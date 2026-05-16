@@ -71,6 +71,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
     const [showModal, setShowModal] = useState(false);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [generateSuccessMsg, setGenerateSuccessMsg] = useState('');
     const [editingEntry, setEditingEntry] = useState<any>(null);
 
     const [generateData, setGenerateData] = useState({
@@ -145,8 +146,8 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
         setIsGenerating(true);
         try {
             const res = await api.post('/timetable/generate', generateData);
-            alert(res.data.message);
             setShowGenerateModal(false);
+            setGenerateSuccessMsg(res.data.message);
             fetchTimetable();
         } catch (error: any) {
             alert(error.response?.data?.message || 'Failed to generate timetable');
@@ -741,6 +742,21 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', marginRight: '4px' }}>
                             <BookOpen size={13} style={{ verticalAlign: '-2px', marginRight: '4px' }} />Subjects
                         </span>
+                        {filterSubject && (
+                            <span
+                                onClick={() => setFilterSubject('')}
+                                style={{
+                                    fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '8px',
+                                    background: '#F1F5F9', color: '#475569',
+                                    border: '1px solid #CBD5E1', cursor: 'pointer',
+                                    transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '4px'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = '#E2E8F0'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = '#F1F5F9'; }}
+                            >
+                                <X size={12} /> All Subjects
+                            </span>
+                        )}
                         {subjects.map(s => {
                             const p = getSubjectPalette(s);
                             return (
@@ -954,6 +970,26 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                                 {isGenerating ? 'Generating...' : <><Calendar size={18} /> Generate Schedule</>}
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Success Modal */}
+            {generateSuccessMsg && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+                    <div className="animate-fade-in" style={{ background: '#FFFFFF', width: '100%', maxWidth: '400px', borderRadius: '24px', padding: '32px', textAlign: 'center', position: 'relative', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
+                        <div style={{ width: '64px', height: '64px', background: '#DCFCE7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                            <CheckCircle size={32} color="#16A34A" />
+                        </div>
+                        <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#1A1D3B', margin: '0 0 8px 0' }}>
+                            Success!
+                        </h2>
+                        <p style={{ color: '#5E6278', fontSize: '15px', marginBottom: '24px', lineHeight: 1.5 }}>
+                            {generateSuccessMsg}
+                        </p>
+                        <button onClick={() => setGenerateSuccessMsg('')} className="btn-primary" style={{ width: '100%', padding: '12px', background: '#16A34A', border: 'none', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.2)' }}>
+                            Done
+                        </button>
                     </div>
                 </div>
             )}
