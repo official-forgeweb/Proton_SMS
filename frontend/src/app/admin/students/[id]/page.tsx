@@ -7,7 +7,7 @@ import {
     FileText, Plus, CheckCircle, ArrowLeft, ClipboardList, Edit2, MapPin,
     TrendingUp, TrendingDown, BookOpen, Target, Award, AlertCircle,
     Calendar, Clock, BarChart3, PieChart, Zap, ArrowUpRight, Minus, Check, X,
-    Search, Filter, AlertTriangle
+    Search, Filter, AlertTriangle, ArrowUpDown, CreditCard, Landmark, Coins, ShieldCheck, Trophy
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 
@@ -28,6 +28,12 @@ export default function StudentProfilePage() {
     const [attSubjFilter, setAttSubjFilter] = useState('all');
     const [attStatusFilter, setAttStatusFilter] = useState('all');
     const [attSearch, setAttSearch] = useState('');
+
+    // Test filter and sort states
+    const [testSearch, setTestSearch] = useState('');
+    const [testSubjectFilter, setTestSubjectFilter] = useState('all');
+    const [testStatusFilter, setTestStatusFilter] = useState('all');
+    const [testSortOrder, setTestSortOrder] = useState('latest');
 
     useEffect(() => {
         if (params.id) {
@@ -134,6 +140,14 @@ export default function StudentProfilePage() {
     const hwCount = Array.isArray(homeworkHistory) ? homeworkHistory.length : 0;
     const subjectAnalytics = performance?.subjectAnalytics || [];
     const trend = performance?.trend || [];
+
+    const getSubjectStats = (subj: string) => {
+        const results = (testStats?.results || []).filter((r: any) => (r.test?.subject || '').toLowerCase() === subj.toLowerCase());
+        const total = results.length;
+        const highest = total > 0 ? Math.max(...results.map((r: any) => parseFloat(r.percentage || 0))) : 0;
+        const lowest = total > 0 ? Math.min(...results.map((r: any) => parseFloat(r.percentage || 0))) : 0;
+        return { total, highest, lowest };
+    };
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <BarChart3 size={16} /> },
@@ -470,7 +484,7 @@ export default function StudentProfilePage() {
                                     <BarChart3 size={18} color="#7C3AED" /> Subject-wise Performance
                                 </h3>
                                 {subjectAnalytics.length > 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
                                         {subjectAnalytics.map((sa: any, i: number) => {
                                             const subjectColors: Record<string, string> = {
                                                 'Mathematics': '#7C3AED', 'Maths': '#7C3AED',
@@ -478,39 +492,77 @@ export default function StudentProfilePage() {
                                                 'Biology': '#059669', 'English': '#EC4899',
                                             };
                                             const color = subjectColors[sa.subject] || '#6366F1';
+                                            const stats = getSubjectStats(sa.subject);
+                                            const rating = sa.average >= 80 ? { text: 'Excellent', color: '#10B981', bg: '#ECFDF5' }
+                                                         : sa.average >= 60 ? { text: 'Good', color: '#F59E0B', bg: '#FFFBEB' }
+                                                         : sa.average >= 40 ? { text: 'Average', color: '#EA580C', bg: '#FFF7ED' }
+                                                         : { text: 'Needs Work', color: '#EF4444', bg: '#FFF1F2' };
+
                                             return (
-                                                <div key={i}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                            <div style={{
-                                                                width: '32px', height: '32px', borderRadius: '10px',
-                                                                background: `${color}15`, color: color,
-                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                fontWeight: 800, fontSize: '13px'
-                                                            }}>
-                                                                {sa.subject.charAt(0)}
+                                                <div 
+                                                    key={i} 
+                                                    style={{ 
+                                                        background: '#FAFBFF', 
+                                                        border: '1px solid #E2E8F0', 
+                                                        borderRadius: '18px', 
+                                                        padding: '16px',
+                                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.01)',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        justifyContent: 'space-between',
+                                                    }}
+                                                    onMouseEnter={e => {
+                                                        e.currentTarget.style.transform = 'translateY(-4px)';
+                                                        e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.05)';
+                                                        e.currentTarget.style.borderColor = color;
+                                                    }}
+                                                    onMouseLeave={e => {
+                                                        e.currentTarget.style.transform = 'none';
+                                                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.01)';
+                                                        e.currentTarget.style.borderColor = '#E2E8F0';
+                                                    }}
+                                                >
+                                                    <div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <div style={{
+                                                                    width: '32px', height: '32px', borderRadius: '10px',
+                                                                    background: `${color}15`, color: color,
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                    fontWeight: 800, fontSize: '13px'
+                                                                }}>
+                                                                    {sa.subject.charAt(0)}
+                                                                </div>
+                                                                <div>
+                                                                    <span style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B', display: 'block' }}>{sa.subject}</span>
+                                                                    <span style={{ fontSize: '10px', fontWeight: 700, color: rating.color, background: rating.bg, padding: '2px 6px', borderRadius: '6px', marginTop: '2px', display: 'inline-block' }}>{rating.text}</span>
+                                                                </div>
                                                             </div>
-                                                            <span style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B' }}>{sa.subject}</span>
+                                                            <div style={{ textAlign: 'right' }}>
+                                                                <span style={{ fontSize: '16px', fontWeight: 900, color: '#1A1D3B', display: 'block' }}>{sa.average}%</span>
+                                                                <span style={{ fontSize: '10px', fontWeight: 800, color: '#8F92A1', textTransform: 'uppercase' }}>Grade {getGradeLabel(sa.average)}</span>
+                                                            </div>
                                                         </div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <span style={{
-                                                                fontSize: '13px', fontWeight: 800,
-                                                                padding: '4px 10px', borderRadius: '8px',
-                                                                background: getScoreBg(sa.average), color: getScoreColor(sa.average)
-                                                            }}>
-                                                                {sa.average}%
-                                                            </span>
-                                                            <span style={{
-                                                                fontSize: '11px', fontWeight: 800,
-                                                                padding: '3px 8px', borderRadius: '6px',
-                                                                background: '#F1F2F6', color: '#5E6278'
-                                                            }}>
-                                                                {getGradeLabel(sa.average)}
-                                                            </span>
+
+                                                        <div className="progress-bar" style={{ height: '6px', borderRadius: '3px', background: '#E2E8F0', marginBottom: '14px', overflow: 'hidden' }}>
+                                                            <div className="progress-fill" style={{ width: `${sa.average}%`, height: '100%', borderRadius: '3px', background: `linear-gradient(90deg, ${color}, ${color}dd)`, boxShadow: `0 0 8px ${color}50` }} />
                                                         </div>
                                                     </div>
-                                                    <div className="progress-bar">
-                                                        <div className="progress-fill" style={{ width: `${sa.average}%`, background: `linear-gradient(90deg, ${color}, ${color}aa)` }} />
+
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', paddingTop: '12px', borderTop: '1px solid #EEF2F6', marginTop: '4px' }}>
+                                                        <div style={{ textAlign: 'center' }}>
+                                                            <span style={{ display: 'block', fontSize: '9px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Tests</span>
+                                                            <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1A1D3B', marginTop: '2px', display: 'block' }}>{stats.total}</span>
+                                                        </div>
+                                                        <div style={{ textAlign: 'center', borderLeft: '1px solid #EEF2F6', borderRight: '1px solid #EEF2F6' }}>
+                                                            <span style={{ display: 'block', fontSize: '9px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Highest</span>
+                                                            <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#10B981', marginTop: '2px', display: 'block' }}>{stats.highest}%</span>
+                                                        </div>
+                                                        <div style={{ textAlign: 'center' }}>
+                                                            <span style={{ display: 'block', fontSize: '9px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Lowest</span>
+                                                            <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#EF4444', marginTop: '2px', display: 'block' }}>{stats.lowest}%</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );
@@ -709,69 +761,295 @@ export default function StudentProfilePage() {
                 )}
 
                 {/* ACADEMICS TAB */}
-                {activeTab === 'academics' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        {/* All Test Results */}
-                        <div className="data-card">
-                            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <FileText size={18} color="#7C3AED" /> All Test Results
-                            </h3>
-                            {testStats?.results?.length > 0 ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    {/* Header row */}
-                                    <div style={{ display: 'flex', padding: '8px 16px', gap: '16px' }}>
-                                        <span style={{ flex: 2, fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Test Name</span>
-                                        <span style={{ flex: 1, fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subject</span>
-                                        <span style={{ flex: 1, fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score</span>
-                                        <span style={{ width: '60px', fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Grade</span>
-                                        <span style={{ width: '60px', fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Rank</span>
-                                        <span style={{ width: '70px', fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Status</span>
-                                    </div>
-                                    {testStats.results.map((tr: any, idx: number) => (
-                                        <div key={tr.id || idx} className="test-row">
-                                            <div style={{ flex: 2 }}>
-                                                <p style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B' }}>{tr.test?.test_name}</p>
-                                                <p style={{ fontSize: '11px', color: '#8F92A1', marginTop: '2px' }}>
-                                                    {tr.test?.test_date ? new Date(tr.test.test_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}
-                                                    {' • '}{tr.test?.test_type || 'Regular'}
-                                                </p>
-                                            </div>
-                                            <span style={{ flex: 1, fontSize: '13px', color: '#5E6278', fontWeight: 600 }}>{tr.test?.subject}</span>
-                                            <div style={{ flex: 1 }}>
-                                                <span style={{ fontSize: '15px', fontWeight: 800, color: getScoreColor(tr.percentage) }}>
-                                                    {tr.marks_obtained}/{tr.total_marks}
-                                                </span>
-                                                <span style={{ fontSize: '12px', color: '#8F92A1', marginLeft: '4px' }}>({tr.percentage}%)</span>
-                                            </div>
-                                            <span style={{
-                                                width: '60px', textAlign: 'center',
-                                                fontSize: '13px', fontWeight: 800,
-                                                padding: '4px 0', borderRadius: '8px',
-                                                background: getScoreBg(tr.percentage), color: getScoreColor(tr.percentage)
-                                            }}>
-                                                {tr.grade}
-                                            </span>
-                                            <span style={{ width: '60px', textAlign: 'center', fontSize: '14px', fontWeight: 700, color: '#1A1D3B' }}>
-                                                #{tr.rank_in_class || 'N/A'}
-                                            </span>
-                                            <span style={{
-                                                width: '70px', textAlign: 'center',
-                                                padding: '4px 0', borderRadius: '50px', fontSize: '11px', fontWeight: 800,
-                                                background: tr.pass_fail === 'pass' ? '#ECFDF5' : '#FEF2F2',
-                                                color: tr.pass_fail === 'pass' ? '#059669' : '#DC2626'
-                                            }}>
-                                                {tr.pass_fail?.toUpperCase()}
-                                            </span>
+                {activeTab === 'academics' && (() => {
+                    const uniqueTestSubjects = Array.from(new Set(
+                        (testStats?.results || [])
+                            .map((r: any) => r.test?.subject)
+                            .filter(Boolean)
+                    )) as string[];
+
+                    const filteredTestResults = (testStats?.results || []).filter((r: any) => {
+                        if (testSubjectFilter !== 'all' && (r.test?.subject || '').toLowerCase() !== testSubjectFilter.toLowerCase()) return false;
+                        if (testStatusFilter !== 'all' && (r.pass_fail || '').toLowerCase() !== testStatusFilter.toLowerCase()) return false;
+                        if (testSearch) {
+                            const query = testSearch.toLowerCase();
+                            const testName = (r.test?.test_name || '').toLowerCase();
+                            const testType = (r.test?.test_type || '').toLowerCase();
+                            const subject = (r.test?.subject || '').toLowerCase();
+                            const grade = (r.grade || '').toLowerCase();
+                            return testName.includes(query) || testType.includes(query) || subject.includes(query) || grade.includes(query);
+                        }
+                        return true;
+                    });
+
+                    const sortedTestResults = [...filteredTestResults].sort((a: any, b: any) => {
+                        if (testSortOrder === 'latest') {
+                            return new Date(b.test?.test_date || 0).getTime() - new Date(a.test?.test_date || 0).getTime();
+                        }
+                        if (testSortOrder === 'oldest') {
+                            return new Date(a.test?.test_date || 0).getTime() - new Date(b.test?.test_date || 0).getTime();
+                        }
+                        if (testSortOrder === 'highest_score') {
+                            return parseFloat(b.percentage || 0) - parseFloat(a.percentage || 0);
+                        }
+                        if (testSortOrder === 'lowest_score') {
+                            return parseFloat(a.percentage || 0) - parseFloat(b.percentage || 0);
+                        }
+                        if (testSortOrder === 'rank') {
+                            const rA = parseInt(a.rank_in_class) || 9999;
+                            const rB = parseInt(b.rank_in_class) || 9999;
+                            return rA - rB;
+                        }
+                        return 0;
+                    });
+
+                    const totalFiltered = sortedTestResults.length;
+                    const passedFiltered = sortedTestResults.filter((r: any) => (r.pass_fail || '').toLowerCase() === 'pass').length;
+                    const passRateFiltered = totalFiltered > 0 ? ((passedFiltered / totalFiltered) * 100).toFixed(0) : '0';
+                    const avgScoreFiltered = totalFiltered > 0 ? (sortedTestResults.reduce((acc: number, cur: any) => acc + parseFloat(cur.percentage || 0), 0) / totalFiltered).toFixed(1) : '0';
+                    const maxScoreFiltered = totalFiltered > 0 ? Math.max(...sortedTestResults.map((r: any) => parseFloat(r.percentage || 0))) : 0;
+
+                    const getRankBadge = (rankVal: any) => {
+                        const rank = parseInt(rankVal);
+                        if (isNaN(rank)) return <span style={{ fontSize: '13px', fontWeight: 600, color: '#A1A5B7' }}>N/A</span>;
+                        if (rank === 1) {
+                            return (
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                    background: '#FEF3C7', color: '#D97706', border: '1px solid #FDE68A',
+                                    padding: '4px 8px', borderRadius: '8px', fontSize: '12px', fontWeight: 800
+                                }}>
+                                    <Trophy size={12} fill="#D97706" /> 1st
+                                </span>
+                            );
+                        }
+                        if (rank === 2) {
+                            return (
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                    background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0',
+                                    padding: '4px 8px', borderRadius: '8px', fontSize: '12px', fontWeight: 800
+                                }}>
+                                    <Trophy size={12} fill="#64748B" /> 2nd
+                                </span>
+                            );
+                        }
+                        if (rank === 3) {
+                            return (
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                    background: '#FFF7ED', color: '#C2410C', border: '1px solid #FFEDD5',
+                                    padding: '4px 8px', borderRadius: '8px', fontSize: '12px', fontWeight: 800
+                                }}>
+                                    <Trophy size={12} fill="#C2410C" /> 3rd
+                                </span>
+                            );
+                        }
+                        return (
+                            <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1A1D3B' }}>
+                                #{rank}
+                            </span>
+                        );
+                    };
+
+                    const hasFilters = testSearch !== '' || testSubjectFilter !== 'all' || testStatusFilter !== 'all' || testSortOrder !== 'latest';
+
+                    return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            {/* Academic Performance Insights */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                                <div className="stat-card" style={{ padding: '14px 18px', background: '#FAFBFF' }}>
+                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Tests Found</span>
+                                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#1A1D3B', margin: '4px 0 0 0' }}>{totalFiltered} <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>Assessments</span></h4>
+                                </div>
+                                <div className="stat-card" style={{ padding: '14px 18px', background: '#FAFBFF' }}>
+                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Pass Rate</span>
+                                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#10B981', margin: '4px 0 0 0' }}>{passRateFiltered}% <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>({passedFiltered}/{totalFiltered})</span></h4>
+                                </div>
+                                <div className="stat-card" style={{ padding: '14px 18px', background: '#FAFBFF' }}>
+                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Average Score</span>
+                                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#7C3AED', margin: '4px 0 0 0' }}>{avgScoreFiltered}% <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>Average</span></h4>
+                                </div>
+                                <div className="stat-card" style={{ padding: '14px 18px', background: '#FAFBFF' }}>
+                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Highest Score</span>
+                                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#0EA5E9', margin: '4px 0 0 0' }}>{maxScoreFiltered}% <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>Peak</span></h4>
+                                </div>
+                            </div>
+
+                            {/* All Test Results */}
+                            <div className="data-card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                                        <FileText size={18} color="#7C3AED" /> All Test Results
+                                    </h3>
+
+                                    {/* Filters Controls Row */}
+                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        {/* Search */}
+                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                            <Search size={14} color="#8F92A1" style={{ position: 'absolute', left: '12px' }} />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search tests..." 
+                                                value={testSearch}
+                                                onChange={e => setTestSearch(e.target.value)}
+                                                className="filter-input"
+                                                style={{ paddingLeft: '34px', width: '160px' }}
+                                            />
                                         </div>
-                                    ))}
+
+                                        {/* Subject Filter */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <Filter size={12} color="#8F92A1" />
+                                            <select 
+                                                value={testSubjectFilter}
+                                                onChange={e => setTestSubjectFilter(e.target.value)}
+                                                className="filter-select"
+                                            >
+                                                <option value="all">All Subjects</option>
+                                                {uniqueTestSubjects.map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Status Filter */}
+                                        <select 
+                                            value={testStatusFilter}
+                                            onChange={e => setTestStatusFilter(e.target.value)}
+                                            className="filter-select"
+                                        >
+                                            <option value="all">All Status</option>
+                                            <option value="pass">Passed</option>
+                                            <option value="fail">Failed</option>
+                                        </select>
+
+                                        {/* Sorting order */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <ArrowUpDown size={12} color="#8F92A1" />
+                                            <select 
+                                                value={testSortOrder}
+                                                onChange={e => setTestSortOrder(e.target.value)}
+                                                className="filter-select"
+                                            >
+                                                <option value="latest">Latest First</option>
+                                                <option value="oldest">Oldest First</option>
+                                                <option value="highest_score">Highest Score</option>
+                                                <option value="lowest_score">Lowest Score</option>
+                                                <option value="rank">Class Rank</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Clear */}
+                                        {hasFilters && (
+                                            <button 
+                                                onClick={() => {
+                                                    setTestSearch('');
+                                                    setTestSubjectFilter('all');
+                                                    setTestStatusFilter('all');
+                                                    setTestSortOrder('latest');
+                                                }}
+                                                style={{
+                                                    background: '#F1F2F6', border: 'none', color: '#1A1D3B',
+                                                    padding: '10px 14px', borderRadius: '12px', fontSize: '13px',
+                                                    fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.background = '#E4E6EF'}
+                                                onMouseLeave={e => e.currentTarget.style.background = '#F1F2F6'}
+                                            >
+                                                Clear
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            ) : (
-                                <div style={{ textAlign: 'center', padding: '60px', background: '#F8F9FD', borderRadius: '12px' }}>
-                                    <FileText size={48} color="#D1D5DB" style={{ marginBottom: '12px' }} />
-                                    <p style={{ color: '#8F92A1', fontWeight: 500 }}>No test results available yet.</p>
-                                </div>
-                            )}
-                        </div>
+
+                                {sortedTestResults.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        {/* Header row */}
+                                        <div style={{ display: 'flex', padding: '8px 16px', gap: '16px', borderBottom: '1px solid #F1F4F9', marginBottom: '8px' }}>
+                                            <span style={{ flex: 2, fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Test Name</span>
+                                            <span style={{ flex: 1, fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subject</span>
+                                            <span style={{ flex: 1, fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score</span>
+                                            <span style={{ width: '60px', fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Grade</span>
+                                            <span style={{ width: '80px', fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Standing</span>
+                                            <span style={{ width: '80px', fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Status</span>
+                                        </div>
+                                        {sortedTestResults.map((tr: any, idx: number) => {
+                                            const subj = tr.test?.subject || 'Other';
+                                            const subjColors: Record<string, { bg: string; text: string; border: string }> = {
+                                                'Mathematics': { bg: '#F5F3FF', text: '#7C3AED', border: '#DDD6FE' },
+                                                'Maths': { bg: '#F5F3FF', text: '#7C3AED', border: '#DDD6FE' },
+                                                'Physics': { bg: '#F0F9FF', text: '#0EA5E9', border: '#BAE6FD' },
+                                                'Chemistry': { bg: '#FFF7ED', text: '#EA580C', border: '#FED7AA' },
+                                                'Biology': { bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' },
+                                                'English': { bg: '#FDF2F8', text: '#EC4899', border: '#FBCFE8' },
+                                            };
+                                            const sc = subjColors[subj] || { bg: '#F8F9FD', text: '#6366F1', border: '#E2E8F0' };
+
+                                            return (
+                                                <div key={tr.id || idx} className="test-row" style={{ borderBottom: '1px solid #FAFBFD' }}>
+                                                    <div style={{ flex: 2 }}>
+                                                        <p style={{ fontWeight: 800, fontSize: '14.5px', color: '#1A1D3B', margin: 0 }}>{tr.test?.test_name}</p>
+                                                        <p style={{ fontSize: '11px', color: '#8F92A1', marginTop: '3px', margin: 0, fontWeight: 600 }}>
+                                                            {tr.test?.test_date ? new Date(tr.test.test_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                                                            {' • '}{tr.test?.test_type || 'Regular'}
+                                                        </p>
+                                                    </div>
+                                                    <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                                                        <span style={{
+                                                            fontSize: '11px', fontWeight: 800,
+                                                            padding: '3px 8px', borderRadius: '6px',
+                                                            background: sc.bg, color: sc.text, border: `1px solid ${sc.border}`,
+                                                        }}>
+                                                            {subj}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                                                        <div>
+                                                            <span style={{ fontSize: '15px', fontWeight: 850, color: getScoreColor(tr.percentage) }}>
+                                                                {tr.marks_obtained}/{tr.total_marks}
+                                                            </span>
+                                                            <span style={{ fontSize: '11.5px', color: '#8F92A1', marginLeft: '4px', fontWeight: 600 }}>({tr.percentage}%)</span>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ width: '60px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                        <span style={{
+                                                            width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            fontSize: '13px', fontWeight: 900, borderRadius: '8px',
+                                                            background: getScoreBg(tr.percentage), color: getScoreColor(tr.percentage),
+                                                            border: `1px solid ${getScoreColor(tr.percentage)}20`
+                                                        }}>
+                                                            {tr.grade || 'F'}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ width: '80px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                        {getRankBadge(tr.rank_in_class)}
+                                                    </div>
+                                                    <div style={{ width: '80px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                        <span style={{
+                                                            width: '100%', textAlign: 'center',
+                                                            padding: '5px 0', borderRadius: '50px', fontSize: '10px', fontWeight: 900,
+                                                            letterSpacing: '0.5px', border: tr.pass_fail === 'pass' ? '1.5px solid #A7F3D0' : '1.5px solid #FCA5A5',
+                                                            background: tr.pass_fail === 'pass' ? '#ECFDF5' : '#FEF2F2',
+                                                            color: tr.pass_fail === 'pass' ? '#059669' : '#DC2626',
+                                                            textTransform: 'uppercase'
+                                                        }}>
+                                                            {tr.pass_fail || 'FAIL'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '60px', background: '#F8F9FD', borderRadius: '16px', border: '1px dashed #E2E8F0' }}>
+                                        <FileText size={48} color="#D1D5DB" style={{ marginBottom: '12px' }} />
+                                        <h5 style={{ fontSize: '15px', fontWeight: 800, color: '#1A1D3B', margin: '0 0 6px 0' }}>No matching results</h5>
+                                        <p style={{ color: '#8F92A1', fontSize: '13px', fontWeight: 600, margin: 0 }}>Try clearing your filters or altering the search query.</p>
+                                    </div>
+                                )}
+                            </div>
 
                         {/* Homework History */}
                         <div className="data-card">
@@ -816,7 +1094,8 @@ export default function StudentProfilePage() {
                             )}
                         </div>
                     </div>
-                )}
+                    );
+                })()}
 
                 {/* ATTENDANCE TAB */}
                 {activeTab === 'attendance' && (() => {
@@ -1231,72 +1510,261 @@ export default function StudentProfilePage() {
                 })()}
 
                 {/* FEES TAB */}
-                {activeTab === 'fees' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        {/* Fee Assignment */}
-                        <div className="data-card">
-                            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <DollarSign size={18} color="#059669" /> Fee Assignment
-                            </h3>
-                            {feeInfo?.assignment ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {[
-                                        { label: 'Total Fee', value: `₹${(feeInfo.assignment.final_fee || feeInfo.assignment.total_fee || 0).toLocaleString()}` },
-                                        { label: 'Total Paid', value: `₹${(feeInfo.assignment.total_paid || 0).toLocaleString()}`, color: '#059669' },
-                                        { label: 'Pending', value: `₹${(feeInfo.assignment.total_pending || 0).toLocaleString()}`, color: '#DC2626' },
-                                        { label: 'Discount', value: feeInfo.assignment.discount_percentage ? `${feeInfo.assignment.discount_percentage}%` : 'None' },
-                                        { label: 'Status', value: (feeInfo.assignment.payment_status || 'N/A').toUpperCase() },
-                                    ].map((item, i) => (
-                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #F1F2F6' }}>
-                                            <span style={{ fontSize: '13px', color: '#8F92A1', fontWeight: 600 }}>{item.label}</span>
-                                            <span style={{ fontSize: '14px', fontWeight: 800, color: item.color || '#1A1D3B' }}>{item.value}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div style={{ textAlign: 'center', padding: '40px', background: '#F8F9FD', borderRadius: '12px' }}>
-                                    <DollarSign size={36} color="#D1D5DB" style={{ marginBottom: '12px' }} />
-                                    <p style={{ color: '#8F92A1', fontWeight: 500 }}>No fee assignment found.</p>
-                                </div>
-                            )}
-                        </div>
+                {activeTab === 'fees' && (() => {
+                    const total = feeInfo?.assignment ? (feeInfo.assignment.final_fee || feeInfo.assignment.total_fee || 0) : 0;
+                    const paid = feeInfo?.assignment ? (feeInfo.assignment.total_paid || 0) : 0;
+                    const pending = feeInfo?.assignment ? (feeInfo.assignment.total_pending || 0) : 0;
+                    const percent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+                    const discount = feeInfo?.assignment?.discount_percentage || 0;
+                    const status = feeInfo?.assignment?.payment_status || 'Unpaid';
 
-                        {/* Payment History */}
-                        <div className="data-card">
-                            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <ClipboardList size={18} color="#0EA5E9" /> Payment History
-                            </h3>
-                            {feeInfo?.payments?.length > 0 ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    {feeInfo.payments.map((p: any, i: number) => (
-                                        <div key={i} style={{
-                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                            padding: '12px 14px', borderRadius: '12px', border: '1px solid #F1F2F6',
-                                            background: '#FAFBFF'
-                                        }}>
-                                            <div>
-                                                <p style={{ fontWeight: 700, fontSize: '14px', color: '#059669' }}>₹{(p.amount_paid || 0).toLocaleString()}</p>
-                                                <p style={{ fontSize: '11px', color: '#8F92A1', marginTop: '3px' }}>
-                                                    {p.payment_date ? new Date(p.payment_date).toLocaleDateString('en-IN') : 'N/A'} • {p.payment_method || 'Cash'}
-                                                </p>
-                                            </div>
-                                            <span style={{
-                                                fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '8px',
-                                                background: '#ECFDF5', color: '#059669'
-                                            }}>
-                                                {p.receipt_number || `#${i + 1}`}
-                                            </span>
+                    const getStatusStyle = (statusStr: string) => {
+                        const s = statusStr.toLowerCase();
+                        if (s === 'paid') return { bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' };
+                        if (s === 'partially paid' || s === 'partial') return { bg: '#FEF3C7', text: '#D97706', border: '#FDE68A' };
+                        return { bg: '#FEF2F2', text: '#DC2626', border: '#FCA5A5' };
+                    };
+
+                    return (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
+                            {/* Fee Assignment */}
+                            <div className="data-card" style={{ 
+                                padding: '28px', 
+                                background: '#FFFFFF', 
+                                borderRadius: '20px', 
+                                boxShadow: '0 10px 30px -10px rgba(0,0,0,0.04)', 
+                                border: '1px solid #E2E8F0',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                    <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#1A1D3B', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(5, 150, 105, 0.08)' }}>
+                                            <DollarSign size={20} color="#059669" />
                                         </div>
-                                    ))}
+                                        Fee Assignment
+                                    </h3>
+                                    {feeInfo?.assignment && (() => {
+                                        const statStyle = getStatusStyle(status);
+                                        return (
+                                            <span style={{
+                                                fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                                padding: '6px 14px', borderRadius: '12px',
+                                                background: statStyle.bg, color: statStyle.text, border: `1.5px solid ${statStyle.border}`,
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                            }}>
+                                                {status}
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
-                            ) : (
-                                <div style={{ textAlign: 'center', padding: '40px', background: '#F8F9FD', borderRadius: '12px' }}>
-                                    <p style={{ color: '#8F92A1', fontWeight: 500 }}>No payment history found.</p>
-                                </div>
-                            )}
+
+                                {feeInfo?.assignment ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                        {/* Dual-Color Clearance Progress Bar */}
+                                        <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '16px', border: '1px solid #F1F5F9' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Fee Clearance Progress</span>
+                                                <span style={{ fontSize: '15px', fontWeight: 900, color: '#059669' }}>{percent}%</span>
+                                            </div>
+                                            <div style={{ width: '100%', height: '10px', background: '#E2E8F0', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+                                                <div style={{ 
+                                                    width: `${percent}%`, 
+                                                    height: '100%', 
+                                                    background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)', 
+                                                    borderRadius: '10px',
+                                                    transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
+                                                }} />
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+                                                <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>Cleared: ₹{paid.toLocaleString()}</span>
+                                                <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>Remaining: ₹{pending.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* 3-Column Mini Stat Cards Grid */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                            {/* Assigned */}
+                                            <div style={{ 
+                                                padding: '16px 12px', 
+                                                background: '#FFFBEB', 
+                                                border: '1px solid #FEF3C7', 
+                                                borderRadius: '14px', 
+                                                textAlign: 'center',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <Landmark size={18} color="#D97706" style={{ marginBottom: '8px' }} />
+                                                <span style={{ fontSize: '11px', color: '#D97706', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Assigned</span>
+                                                <span style={{ fontSize: '15px', fontWeight: 900, color: '#78350F', marginTop: '4px', whiteSpace: 'nowrap' }}>₹{total.toLocaleString()}</span>
+                                            </div>
+
+                                            {/* Paid */}
+                                            <div style={{ 
+                                                padding: '16px 12px', 
+                                                background: '#ECFDF5', 
+                                                border: '1px solid #A7F3D0', 
+                                                borderRadius: '14px', 
+                                                textAlign: 'center',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <CheckCircle size={18} color="#059669" style={{ marginBottom: '8px' }} />
+                                                <span style={{ fontSize: '11px', color: '#059669', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Paid</span>
+                                                <span style={{ fontSize: '15px', fontWeight: 900, color: '#064E3B', marginTop: '4px', whiteSpace: 'nowrap' }}>₹{paid.toLocaleString()}</span>
+                                            </div>
+
+                                            {/* Pending */}
+                                            <div style={{ 
+                                                padding: '16px 12px', 
+                                                background: pending > 0 ? '#FEF2F2' : '#F0FDFA', 
+                                                border: pending > 0 ? '1px solid #FCA5A5' : '1px solid #CCFBF1', 
+                                                borderRadius: '14px', 
+                                                textAlign: 'center',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                position: 'relative'
+                                            }}>
+                                                {pending > 0 && (
+                                                    <span style={{
+                                                        position: 'absolute', top: '6px', right: '6px',
+                                                        width: '6px', height: '6px', borderRadius: '50%',
+                                                        background: '#EF4444', display: 'block',
+                                                        boxShadow: '0 0 0 2px #FFF, 0 0 0 4px rgba(239, 68, 68, 0.3)'
+                                                    }} />
+                                                )}
+                                                <AlertCircle size={18} color={pending > 0 ? '#DC2626' : '#0D9488'} style={{ marginBottom: '8px' }} />
+                                                <span style={{ fontSize: '11px', color: pending > 0 ? '#DC2626' : '#0D9488', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Pending</span>
+                                                <span style={{ fontSize: '15px', fontWeight: 900, color: pending > 0 ? '#7F1D1D' : '#115E59', marginTop: '4px', whiteSpace: 'nowrap' }}>₹{pending.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Discount & Terms Row */}
+                                        {discount > 0 && (
+                                            <div style={{ 
+                                                display: 'flex', alignItems: 'center', gap: '10px', 
+                                                padding: '12px 16px', borderRadius: '12px', 
+                                                background: 'linear-gradient(90deg, rgba(234, 179, 8, 0.05) 0%, rgba(234, 179, 8, 0.01) 100%)', 
+                                                border: '1px solid rgba(234, 179, 8, 0.15)'
+                                            }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '6px', background: '#FEF08A' }}>
+                                                    <Award size={14} color="#854D0E" />
+                                                </div>
+                                                <span style={{ fontSize: '12.5px', color: '#71717A', fontWeight: 600 }}>
+                                                    A custom scholarship discount of <strong style={{ color: '#854D0E', fontWeight: 800 }}>{discount}%</strong> has been applied to this student's account.
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '60px 40px', background: '#F8F9FD', borderRadius: '16px', border: '1px dashed #E2E8F0' }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: '#F1F5F9', marginBottom: '16px' }}>
+                                            <DollarSign size={28} color="#94A3B8" />
+                                        </div>
+                                        <h5 style={{ fontSize: '15px', fontWeight: 800, color: '#1A1D3B', margin: '0 0 6px 0' }}>No Fee Assigned</h5>
+                                        <p style={{ color: '#8F92A1', fontSize: '13px', fontWeight: 600, margin: 0 }}>This student does not have an active fee structure assigned yet.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Payment History */}
+                            <div className="data-card" style={{ 
+                                padding: '28px', 
+                                background: '#FFFFFF', 
+                                borderRadius: '20px', 
+                                boxShadow: '0 10px 30px -10px rgba(0,0,0,0.04)', 
+                                border: '1px solid #E2E8F0',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                            }}>
+                                <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#1A1D3B', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(14, 165, 233, 0.08)' }}>
+                                        <ClipboardList size={20} color="#0EA5E9" />
+                                    </div>
+                                    Payment History
+                                </h3>
+                                {feeInfo?.payments?.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {feeInfo.payments.map((p: any, i: number) => {
+                                            // Pick method icon
+                                            const method = (p.payment_method || 'cash').toLowerCase();
+                                            let methodIcon = <Coins size={14} color="#64748B" />;
+                                            if (method.includes('card') || method.includes('online')) {
+                                                methodIcon = <CreditCard size={14} color="#0EA5E9" />;
+                                            } else if (method.includes('bank') || method.includes('neft') || method.includes('upi')) {
+                                                methodIcon = <Landmark size={14} color="#8B5CF6" />;
+                                            }
+
+                                            return (
+                                                <div key={i} style={{
+                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                    padding: '16px 20px', borderRadius: '16px', border: '1px solid #E2E8F0',
+                                                    background: '#FCFDFE',
+                                                    transition: 'transform 0.2s ease, border-color 0.2s ease',
+                                                    cursor: 'default'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                                    e.currentTarget.style.borderColor = '#CBD5E1';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.transform = 'none';
+                                                    e.currentTarget.style.borderColor = '#E2E8F0';
+                                                }}
+                                                >
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '12px', background: '#ECFDF5', border: '1px solid #A7F3D0' }}>
+                                                            <ShieldCheck size={20} color="#059669" />
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <span style={{ fontWeight: 800, fontSize: '16px', color: '#1E293B' }}>₹{(p.amount_paid || 0).toLocaleString()}</span>
+                                                                <span style={{ 
+                                                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                                    fontSize: '11px', color: '#64748B', background: '#F1F5F9', 
+                                                                    padding: '3px 8px', borderRadius: '6px', fontWeight: 700,
+                                                                    textTransform: 'uppercase'
+                                                                }}>
+                                                                    {methodIcon}
+                                                                    {p.payment_method || 'Cash'}
+                                                                </span>
+                                                            </div>
+                                                            <span style={{ fontSize: '11.5px', color: '#8F92A1', marginTop: '4px', display: 'block', fontWeight: 600 }}>
+                                                                {p.payment_date ? new Date(p.payment_date).toLocaleDateString('en-IN', {
+                                                                    day: '2-digit', month: 'short', year: 'numeric',
+                                                                    hour: '2-digit', minute: '2-digit', hour12: true
+                                                                }) : 'N/A'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <span style={{
+                                                        fontSize: '11px', fontWeight: 800, padding: '6px 12px', borderRadius: '10px',
+                                                        background: 'rgba(5, 150, 105, 0.06)', color: '#059669', border: '1px solid rgba(5, 150, 105, 0.15)',
+                                                        fontFamily: 'monospace', letterSpacing: '0.02em'
+                                                    }}>
+                                                        {p.receipt_number || `#REC-PAY-${i + 1}`}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '60px 40px', background: '#F8F9FD', borderRadius: '16px', border: '1px dashed #E2E8F0' }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: '#F1F5F9', marginBottom: '16px' }}>
+                                            <ClipboardList size={28} color="#94A3B8" />
+                                        </div>
+                                        <h5 style={{ fontSize: '15px', fontWeight: 800, color: '#1A1D3B', margin: '0 0 6px 0' }}>No Payments Found</h5>
+                                        <p style={{ color: '#8F92A1', fontSize: '13px', fontWeight: 600, margin: 0 }}>There are no transaction records logged for this student.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    );
+                })()}
             </div>
         </DashboardLayout>
     );

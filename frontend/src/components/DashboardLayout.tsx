@@ -35,7 +35,12 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
             setNotifications(listRes.data.data || []);
             setUnreadCount(countRes.data.data?.count || 0);
         } catch (error) {
-            console.error('Failed to fetch notifications');
+            // Gracefully degrade: set default state and avoid logging console.error
+            setNotifications([]);
+            setUnreadCount(0);
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn('Notifications endpoint not fully initialized or authenticated yet.');
+            }
         }
     }, [isAuthenticated]);
 
@@ -53,7 +58,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
             await api.put(`/notifications/${id}/read`);
             fetchNotifications();
         } catch (error) {
-            console.error(error);
+            console.warn('Failed to mark notification as read:', error);
         }
     };
 
@@ -62,7 +67,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
             await api.put('/notifications/read-all');
             fetchNotifications();
         } catch (error) {
-            console.error(error);
+            console.warn('Failed to mark all notifications as read:', error);
         }
     };
 
