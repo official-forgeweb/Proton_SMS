@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-    Users, GraduationCap, DollarSign, TrendingUp, TrendingDown, BookOpen, Clock, Activity, Target, Zap, ChevronRight, Award
+    Users, GraduationCap, DollarSign, TrendingUp, TrendingDown, BookOpen, Clock, Activity, Target, Zap, ChevronRight, Award, AlertTriangle, CheckCircle, Bell
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -196,7 +196,7 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
             }}>
                 <StatCard
                     label="Total Revenue"
-                    value={`₹${formatShort(stats?.revenue?.total_collected || 0)}`}
+                    value={`₹${formatShort(stats?.revenue?.total || 0)}`}
                     subLabel={`Pending Dues: ₹${formatShort(stats?.revenue?.pending || 0)}`}
                     change="+12%"
                     positive={true}
@@ -466,13 +466,46 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     </div>
                 </div>
 
-                {/* Smart Alerts */}
+                {/* Smart Alerts & Insights Panel */}
                 <div className="animate-fade-in glass-panel" style={{
                     borderRadius: '24px', padding: '32px',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.04)', border: '1px solid rgba(255,255,255,0.8)',
                     display: 'flex', flexDirection: 'column',
-                    gridColumn: 'span 4', animationDelay: '800ms'
+                    gridColumn: 'span 4', animationDelay: '800ms',
+                    position: 'relative', overflow: 'hidden'
                 }}>
+                    <style dangerouslySetInnerHTML={{__html: `
+                        .custom-scrollbar::-webkit-scrollbar {
+                            width: 5px;
+                        }
+                        .custom-scrollbar::-webkit-scrollbar-track {
+                            background: transparent;
+                        }
+                        .custom-scrollbar::-webkit-scrollbar-thumb {
+                            background: rgba(161, 165, 183, 0.2);
+                            border-radius: 10px;
+                        }
+                        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                            background: rgba(161, 165, 183, 0.4);
+                        }
+                        @keyframes pulse-ring {
+                            0% { transform: scale(0.95); opacity: 0.3; }
+                            50% { transform: scale(1.08); opacity: 0.6; }
+                            100% { transform: scale(0.95); opacity: 0.3; }
+                        }
+                        .pulse-danger-ring {
+                            position: absolute;
+                            top: -4px;
+                            left: -4px;
+                            right: -4px;
+                            bottom: -4px;
+                            border-radius: 50%;
+                            border: 3px solid #EF4444;
+                            animation: pulse-ring 2s infinite ease-in-out;
+                            pointer-events: none;
+                        }
+                    `}} />
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{ background: '#FFF0F1', padding: '10px', borderRadius: '12px', color: '#E53935' }}>
@@ -480,55 +513,142 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                             </div>
                             <div>
                                 <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>
-                                    Smart Alerts
+                                    Smart Alerts & Insights
                                 </h3>
-                                <p style={{ fontSize: '13px', color: '#8F92A1', marginTop: '2px', fontWeight: 500 }}>System generated insights</p>
+                                <p style={{ fontSize: '13px', color: '#8F92A1', marginTop: '2px', fontWeight: 500 }}>System identified critical student signals</p>
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-                        {alerts.length > 0 ? alerts.map((alert: any, i: number) => {
-                            const getAlertConfig = (type: string) => {
-                                switch (type) {
-                                    case 'danger': return { icon: TrendingDown, bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' };
-                                    case 'warning': return { icon: Activity, bg: '#FFFBEB', color: '#D97706', border: '#FDE68A' };
-                                    case 'success': return { icon: Target, bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0' };
-                                    default: return { icon: BookOpen, bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE' };
-                                }
-                            };
-                            const config = getAlertConfig(alert.type);
-                            const Icon = config.icon;
+                    <div 
+                        className="custom-scrollbar" 
+                        style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: '14px', 
+                            maxHeight: '480px', 
+                            overflowY: 'auto', 
+                            paddingRight: '4px',
+                            flex: 1 
+                        }}
+                    >
+                        {alerts.length > 0 ? (() => {
+                            const sortedAlerts = [...alerts].sort((a: any, b: any) => {
+                                const weight = { danger: 3, warning: 2, success: 1, info: 0 } as any;
+                                return (weight[b.type] || 0) - (weight[a.type] || 0);
+                            });
 
-                            return (
-                                <div key={i} onClick={() => alert.action_link && router.push(alert.action_link)} style={{ 
-                                    display: 'flex', gap: '16px', alignItems: 'flex-start', 
-                                    padding: '16px', borderRadius: '16px', background: config.bg,
-                                    border: `1px solid ${config.border}`, cursor: alert.action_link ? 'pointer' : 'default',
-                                    transition: 'transform 0.2s',
-                                }} className="card-hover">
-                                    <div style={{
-                                        width: '40px', height: '40px', borderRadius: '12px',
-                                        background: '#FFFFFF', display: 'flex', alignItems: 'center',
-                                        justifyContent: 'center', color: config.color, flexShrink: 0,
-                                        boxShadow: `0 4px 12px ${config.color}20`,
-                                    }}>
-                                        <Icon size={20} strokeWidth={2.5} />
+                            return sortedAlerts.map((alert: any, i: number) => {
+                                const isStudentAlert = alert.action_link && alert.action_link.includes('/admin/students/');
+                                
+                                const getAlertConfig = (type: string) => {
+                                    switch (type) {
+                                        case 'danger': return { icon: AlertTriangle, bg: 'linear-gradient(135deg, rgba(254, 242, 242, 0.95) 0%, rgba(254, 226, 226, 0.9) 100%)', color: '#DC2626', border: '#FECACA' };
+                                        case 'warning': return { icon: Activity, bg: 'linear-gradient(135deg, rgba(255, 251, 235, 0.95) 0%, rgba(254, 243, 199, 0.9) 100%)', color: '#D97706', border: '#FDE68A' };
+                                        case 'success': return { icon: CheckCircle, bg: 'linear-gradient(135deg, rgba(240, 253, 244, 0.95) 0%, rgba(220, 252, 231, 0.9) 100%)', color: '#16A34A', border: '#BBF7D0' };
+                                        default: return { icon: Bell, bg: 'linear-gradient(135deg, rgba(239, 246, 255, 0.95) 0%, rgba(219, 234, 254, 0.9) 100%)', color: '#2563EB', border: '#BFDBFE' };
+                                    }
+                                };
+                                const config = getAlertConfig(alert.type);
+                                const Icon = config.icon;
+
+                                // Parse student initials dynamically
+                                let initials = 'AI';
+                                let studentId = 'default';
+                                if (isStudentAlert) {
+                                    studentId = alert.action_link.split('/students/')[1] || 'default';
+                                    const rawName = alert.message.split(' (')[0] || '';
+                                    const nameParts = rawName.split(' ');
+                                    if (nameParts.length >= 2) {
+                                        initials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+                                    } else if (nameParts.length === 1 && nameParts[0]) {
+                                        initials = nameParts[0].substring(0, 2).toUpperCase();
+                                    }
+                                }
+
+                                const getAvatarBg = (sId: string) => {
+                                    const colors = ['#EEF2FF', '#FDF2F8', '#ECFDF5', '#FFFBEB', '#F5F3FF'];
+                                    const textColors = ['#4F46E5', '#DB2777', '#059669', '#D97706', '#7C3AED'];
+                                    const idx = sId.charCodeAt(0) % colors.length;
+                                    return { bg: colors[idx], text: textColors[idx] };
+                                };
+                                const avatarTheme = getAvatarBg(studentId);
+
+                                return (
+                                    <div 
+                                        key={i} 
+                                        onClick={() => alert.action_link && router.push(alert.action_link)} 
+                                        style={{ 
+                                            display: 'flex', gap: '16px', alignItems: 'center', 
+                                            padding: '16px', borderRadius: '18px', background: config.bg,
+                                            border: `1px solid ${config.border}`, cursor: alert.action_link ? 'pointer' : 'default',
+                                            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.01)',
+                                        }} 
+                                        className="card-hover alert-card-transition"
+                                    >
+                                        {/* Styled Left Avatar Component */}
+                                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                                            {isStudentAlert ? (
+                                                <div style={{
+                                                    width: '42px', height: '42px', borderRadius: '12px',
+                                                    background: avatarTheme.bg, color: avatarTheme.text,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontWeight: 800, fontSize: '13px',
+                                                    border: '1.5px solid rgba(255,255,255,0.8)',
+                                                    boxShadow: '0 4px 10px rgba(0,0,0,0.04)',
+                                                    fontFamily: 'Poppins, sans-serif'
+                                                }}>
+                                                    {initials}
+                                                </div>
+                                            ) : (
+                                                <div style={{
+                                                    width: '42px', height: '42px', borderRadius: '12px',
+                                                    background: '#FFFFFF', display: 'flex', alignItems: 'center',
+                                                    justifyContent: 'center', color: config.color,
+                                                    border: '1.5px solid rgba(255,255,255,0.8)',
+                                                    boxShadow: `0 4px 10px ${config.color}15`,
+                                                }}>
+                                                    <Icon size={20} strokeWidth={2.5} />
+                                                </div>
+                                            )}
+
+                                            {/* Pulse Indicator overlay for student warning */}
+                                            {alert.type === 'danger' && <div className="pulse-danger-ring" />}
+
+                                            {/* Tiny overlay icon in corners */}
+                                            {isStudentAlert && (
+                                                <div style={{
+                                                    position: 'absolute', bottom: '-4px', right: '-4px',
+                                                    width: '18px', height: '18px', borderRadius: '50%',
+                                                    background: config.color, color: 'white',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                                    border: '1.5px solid white'
+                                                }}>
+                                                    <Icon size={9} strokeWidth={3} />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                                <h4 style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B', marginBottom: '2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                                    {alert.title}
+                                                </h4>
+                                            </div>
+                                            <p style={{ fontSize: '12.5px', color: '#4B5563', lineHeight: 1.45, fontWeight: 500, margin: 0 }}>
+                                                {alert.message}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div style={{ flex: 1 }}>
-                                        <h4 style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B', marginBottom: '4px' }}>
-                                            {alert.title}
-                                        </h4>
-                                        <p style={{ fontSize: '13px', color: '#5E6278', lineHeight: 1.4, fontWeight: 500, margin: 0 }}>
-                                            {alert.message}
-                                        </p>
-                                    </div>
-                                </div>
-                            );
-                        }) : (
-                            <div style={{ textAlign: 'center', padding: '40px 20px', background: '#F8F9FD', borderRadius: '16px' }}>
-                                <Activity size={32} color="#A1A5B7" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-                                <p style={{ color: '#8F92A1', fontSize: '14px', fontWeight: 600 }}>No critical alerts at this time.</p>
+                                );
+                            });
+                        })() : (
+                            <div style={{ textAlign: 'center', padding: '60px 20px', background: '#F8F9FD', borderRadius: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                <CheckCircle size={32} color="#10B981" style={{ marginBottom: '12px', opacity: 0.8 }} />
+                                <p style={{ color: '#1A1D3B', fontSize: '15px', fontWeight: 700, margin: 0 }}>All Systems Nominal</p>
+                                <p style={{ color: '#8F92A1', fontSize: '13px', fontWeight: 500, marginTop: '4px', margin: 0 }}>No critical warnings at this time.</p>
                             </div>
                         )}
                     </div>

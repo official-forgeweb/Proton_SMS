@@ -40,7 +40,7 @@ export default function EditTeacherPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const submitData = { ...formData };
+            const submitData: any = { ...formData };
             if (!submitData.password) delete submitData.password;
             await api.put(`/teachers/${params.id}`, submitData);
             router.push(`/admin/teachers/${params.id}`);

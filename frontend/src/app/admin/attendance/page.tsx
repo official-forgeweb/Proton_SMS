@@ -57,11 +57,18 @@ export default function AdminAttendancePage() {
     return (
         <DashboardLayout requiredRole="admin">
             <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-                <div className="page-header" style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div className="page-header" style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
                         <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#1E293B' }}>Attendance Management</h1>
                         <p style={{ color: '#64748B', fontSize: '16px', marginTop: '4px' }}>Monitor and manage attendance across all batches and subjects.</p>
                     </div>
+                    <button 
+                        onClick={() => router.push('/admin/attendance/register')}
+                        className="btn btn-primary"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '12px', fontWeight: 700, boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)' }}
+                    >
+                        <Users size={16} /> View Attendance Register
+                    </button>
                 </div>
 
                 {/* Filters Bar */}

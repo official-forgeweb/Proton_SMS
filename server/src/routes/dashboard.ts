@@ -116,6 +116,216 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
       fill: g.gender === 'male' ? '#E53935' : '#F97316',
     }));
 
+    // Generate Smart Alerts
+    const alerts: any[] = [];
+    
+    // 1. Critical Student Attendance Alert (< 60% overall attendance)
+    const lowAttendanceEnrollments = await prisma.studentClassEnrollment.findMany({
+        where: {
+            enrollment_status: 'active',
+            overall_attendance_percentage: { lt: 60, gt: 0 }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        },
+        orderBy: { overall_attendance_percentage: 'asc' },
+        take: 3
+    });
+
+    lowAttendanceEnrollments.forEach(e => {
+        if (e.student) {
+            alerts.push({
+                type: 'danger',
+                title: 'Critical Student Attendance',
+                message: `${e.student.first_name} ${e.student.last_name || ''} (${e.student.PRO_ID}) has an attendance of ${e.overall_attendance_percentage.toFixed(1)}% in Class ${e.class.class_name || e.class.class_code}.`,
+                action_link: `/admin/students/${e.student_id}`
+            });
+        }
+    });
+
+    // 2. Academic Failure Alert (Average score < 40%)
+    const lowAverageEnrollments = await prisma.studentClassEnrollment.findMany({
+        where: {
+            enrollment_status: 'active',
+            average_marks: { lt: 40, gt: 0 }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        },
+        orderBy: { average_marks: 'asc' },
+        take: 3
+    });
+
+    lowAverageEnrollments.forEach(e => {
+        if (e.student) {
+            alerts.push({
+                type: 'danger',
+                title: 'Academic Failure Alert',
+                message: `${e.student.first_name} ${e.student.last_name || ''} (${e.student.PRO_ID}) is failing with an average score of ${e.average_marks.toFixed(1)}% in Class ${e.class.class_name || e.class.class_code}.`,
+                action_link: `/admin/students/${e.student_id}`
+            });
+        }
+    });
+
+    // 3. Consecutive Absences Warning (Absent for 3+ sessions)
+    const recentAttendances = await prisma.attendance.findMany({
+        orderBy: { attendance_date: 'desc' },
+        take: 1000,
+        select: {
+            student_id: true,
+            status: true,
+            attendance_date: true,
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        }
+    });
+
+    const attendancesByStudent: Record<string, any[]> = {};
+    recentAttendances.forEach(att => {
+        if (!attendancesByStudent[att.student_id]) {
+            attendancesByStudent[att.student_id] = [];
+        }
+        attendancesByStudent[att.student_id].push(att);
+    });
+
+    let consecutiveAbsenceCount = 0;
+    for (const studentId in attendancesByStudent) {
+        const records = attendancesByStudent[studentId];
+        records.sort((a, b) => b.attendance_date.localeCompare(a.attendance_date));
+        
+        let consecutiveAbsences = 0;
+        for (const r of records) {
+            if (r.status === 'absent') {
+                consecutiveAbsences++;
+            } else {
+                break;
+            }
+        }
+
+        if (consecutiveAbsences >= 3 && consecutiveAbsenceCount < 3) {
+            const student = records[0].student;
+            const cls = records[0].class;
+            if (student) {
+                alerts.push({
+                    type: 'danger',
+                    title: 'Consecutive Absences Warning',
+                    message: `${student.first_name} ${student.last_name || ''} (${student.PRO_ID}) has been absent for ${consecutiveAbsences} consecutive class sessions in Class ${cls.class_name || cls.class_code}.`,
+                    action_link: `/admin/students/${studentId}`
+                });
+                consecutiveAbsenceCount++;
+            }
+        }
+    }
+
+    // 4. Sudden Performance Drop (Drop of >= 20% in latest exam compared to prior)
+    const recentResults = await prisma.testResult.findMany({
+        orderBy: { created_at: 'desc' },
+        take: 500,
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            test: { select: { test_name: true, subject: true, class: { select: { class_name: true, class_code: true } } } }
+        }
+    });
+
+    const resultsByStudent: Record<string, any[]> = {};
+    recentResults.forEach(r => {
+        if (!resultsByStudent[r.student_id]) {
+            resultsByStudent[r.student_id] = [];
+        }
+        resultsByStudent[r.student_id].push(r);
+    });
+
+    let performanceDropCount = 0;
+    for (const studentId in resultsByStudent) {
+        const studentResults = resultsByStudent[studentId];
+        studentResults.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        if (studentResults.length >= 2 && performanceDropCount < 3) {
+            const latest = studentResults[0];
+            const previous = studentResults[1];
+            
+            if (latest.percentage !== null && previous.percentage !== null) {
+                const drop = previous.percentage - latest.percentage;
+                if (drop >= 20) {
+                    const student = latest.student;
+                    if (student) {
+                        alerts.push({
+                            type: 'warning',
+                            title: 'Sudden Performance Drop',
+                            message: `${student.first_name} ${student.last_name || ''} (${student.PRO_ID}) had a sudden drop of ${drop.toFixed(0)}% in their latest exam "${latest.test.test_name || 'Test'}" compared to prior.`,
+                            action_link: `/admin/students/${studentId}`
+                        });
+                        performanceDropCount++;
+                    }
+                }
+            }
+        }
+    }
+
+    // 5. Academic Star Performer (Average score >= 90%)
+    const topPerformers = await prisma.studentClassEnrollment.findMany({
+        where: {
+            enrollment_status: 'active',
+            average_marks: { gte: 90 }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        },
+        orderBy: { average_marks: 'desc' },
+        take: 3
+    });
+
+    topPerformers.forEach(e => {
+        if (e.student) {
+            alerts.push({
+                type: 'success',
+                title: 'Academic Star Performer',
+                message: `${e.student.first_name} ${e.student.last_name || ''} (${e.student.PRO_ID}) is excelling with an average score of ${e.average_marks.toFixed(1)}% in Class ${e.class.class_name || e.class.class_code}.`,
+                action_link: `/admin/students/${e.student_id}`
+            });
+        }
+    });
+
+    // 6. Institutional Stats Alerts
+    if (totalAttendanceCount > 0 && (totalPresentCount / totalAttendanceCount) < 0.6) {
+        alerts.push({
+            type: 'danger',
+            title: 'Critical Attendance Drop',
+            message: `Overall institute attendance is below 60% today.`,
+            action_link: '/admin/attendance'
+        });
+    }
+
+    const pendingDemosCount = totalDemos - completedDemos;
+    if (pendingDemosCount > 0) {
+        alerts.push({
+            type: 'warning',
+            title: 'Pending Demo Classes',
+            message: `There are ${pendingDemosCount} demo classes scheduled that need attention.`,
+            action_link: '/admin/demos'
+        });
+    }
+
+    if (totalPending > 50000) {
+        alerts.push({
+            type: 'danger',
+            title: 'High Pending Dues',
+            message: `Total pending fee collection has exceeded ₹50,000.`,
+            action_link: '/admin/fees'
+        });
+    }
+
+    if (alerts.length === 0) {
+        alerts.push({
+            type: 'success',
+            title: 'All Systems Nominal',
+            message: 'No critical alerts or warnings at this time.'
+        });
+    }
+
     res.json({
       success: true,
       data: {
@@ -141,6 +351,7 @@ router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30),
           conversion_rate: totalEnquiries > 0 ? ((enrolled / totalEnquiries) * 100).toFixed(1) : 0,
         },
         recent_activity: recentActivity,
+        alerts: alerts,
         charts: {
           performance: chartData,
           gender: radialData,

@@ -306,7 +306,7 @@ export default function AdminVideoLecturesPage() {
                                             {(() => {
                                                 const videoId = getYouTubeId(lecture.video_url);
                                                 return (
-                                                    <a href={lecture.video_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', group: 'true' }}>
+                                                    <a href={lecture.video_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                         <div style={{ position: 'relative', width: '100px', aspectRatio: '16/9', background: '#F1F1F4', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #E2E8F0' }}>
                                                             {videoId ? (
                                                                 <img src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} alt="thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

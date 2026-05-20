@@ -55,23 +55,22 @@ export interface AdminDashboardData {
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   return withRetry(async () => {
-    // Split into two batches to prevent Prisma connection pool timeouts
-    const [
-      totalStudents, activeStudents,
-      totalTeachers, activeTeachers,
-      totalClasses, activeClasses,
-      totalEnquiries, newEnquiries,
-      totalDemos, completedDemos,
-      revenueAgg, pendingAgg,
-    ] = await Promise.all([
+    // Split into smaller batches of 4 to prevent Prisma connection pool timeouts
+    const [totalStudents, activeStudents, totalTeachers, activeTeachers] = await Promise.all([
       prisma.student.count(),
       prisma.student.count({ where: { academic_status: 'active' } }),
       prisma.teacher.count(),
       prisma.teacher.count({ where: { employment_status: 'active' } }),
+    ]);
+
+    const [totalClasses, activeClasses, totalEnquiries, newEnquiries] = await Promise.all([
       prisma.class.count(),
       prisma.class.count({ where: { status: 'ongoing' } }),
       prisma.enquiry.count(),
       prisma.enquiry.count({ where: { status: 'new' } }),
+    ]);
+
+    const [totalDemos, completedDemos, revenueAgg, pendingAgg] = await Promise.all([
       prisma.demoClass.count(),
       prisma.demoClass.count({ where: { status: 'completed' } }),
       prisma.feePayment.aggregate({
@@ -83,18 +82,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       }),
     ]);
 
-    const [
-      recentStudents, recentPayments, recentEnquiries,
-      genderAgg,
-      topStudents,
-      upcomingTestsCount,
-      todayPresent,
-      todayAbsent,
-      totalAttendanceCount,
-      totalPresentCount,
-      totalTestScore,
-      totalTestCount,
-    ] = await Promise.all([
+    const [recentStudents, recentPayments, recentEnquiries, genderAgg] = await Promise.all([
       prisma.student.findMany({ orderBy: { created_at: 'desc' }, take: 5 }),
       prisma.feePayment.findMany({
         orderBy: { created_at: 'desc' },
@@ -103,6 +91,9 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       }),
       prisma.enquiry.findMany({ orderBy: { created_at: 'desc' }, take: 5 }),
       prisma.student.groupBy({ by: ['gender'], _count: true }),
+    ]);
+
+    const [topStudents, upcomingTestsCount, todayPresent, todayAbsent] = await Promise.all([
       prisma.testResult.findMany({
         orderBy: { percentage: 'desc' },
         take: 5,
@@ -111,6 +102,9 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       prisma.test.count({ where: { test_date: { gt: new Date().toISOString().split('T')[0] } } }),
       prisma.attendance.count({ where: { attendance_date: new Date().toISOString().split('T')[0], status: 'present' } }),
       prisma.attendance.count({ where: { attendance_date: new Date().toISOString().split('T')[0], status: 'absent' } }),
+    ]);
+
+    const [totalAttendanceCount, totalPresentCount, totalTestScore, totalTestCount] = await Promise.all([
       prisma.attendance.count(),
       prisma.attendance.count({ where: { status: 'present' } }),
       prisma.testResult.aggregate({ _sum: { percentage: true } }),
@@ -190,8 +184,167 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     // Generate Smart Alerts
     const alerts: AlertInsight[] = [];
     
-    // Low attendance alert (using a simple threshold on today's data for now, 
-    // in a real system this would query 30-day avg per student)
+    // 1. Critical Student Attendance Alert (< 60% overall attendance)
+    const lowAttendanceEnrollments = await prisma.studentClassEnrollment.findMany({
+        where: {
+            enrollment_status: 'active',
+            overall_attendance_percentage: { lt: 60, gt: 0 }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        },
+        orderBy: { overall_attendance_percentage: 'asc' },
+        take: 3
+    });
+
+    lowAttendanceEnrollments.forEach(e => {
+        alerts.push({
+            type: 'danger',
+            title: 'Critical Student Attendance',
+            message: `${e.student.first_name} ${e.student.last_name || ''} (${e.student.PRO_ID}) has an attendance of ${e.overall_attendance_percentage.toFixed(1)}% in Class ${e.class.class_name || e.class.class_code}.`,
+            action_link: `/admin/students/${e.student_id}`
+        });
+    });
+
+    // 2. Academic Failure Alert (Average score < 40%)
+    const lowAverageEnrollments = await prisma.studentClassEnrollment.findMany({
+        where: {
+            enrollment_status: 'active',
+            average_marks: { lt: 40, gt: 0 }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        },
+        orderBy: { average_marks: 'asc' },
+        take: 3
+    });
+
+    lowAverageEnrollments.forEach(e => {
+        alerts.push({
+            type: 'danger',
+            title: 'Academic Failure Alert',
+            message: `${e.student.first_name} ${e.student.last_name || ''} (${e.student.PRO_ID}) is failing with an average score of ${e.average_marks.toFixed(1)}% in Class ${e.class.class_name || e.class.class_code}.`,
+            action_link: `/admin/students/${e.student_id}`
+        });
+    });
+
+    // 3. Consecutive Absences Warning (Absent for 3+ sessions)
+    const recentAttendances = await prisma.attendance.findMany({
+        orderBy: { attendance_date: 'desc' },
+        take: 1000,
+        select: {
+            student_id: true,
+            status: true,
+            attendance_date: true,
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        }
+    });
+
+    const attendancesByStudent: Record<string, typeof recentAttendances> = {};
+    recentAttendances.forEach(att => {
+        if (!attendancesByStudent[att.student_id]) {
+            attendancesByStudent[att.student_id] = [];
+        }
+        attendancesByStudent[att.student_id].push(att);
+    });
+
+    let consecutiveAbsenceCount = 0;
+    for (const studentId in attendancesByStudent) {
+        const records = attendancesByStudent[studentId];
+        records.sort((a, b) => b.attendance_date.localeCompare(a.attendance_date));
+        
+        let consecutiveAbsences = 0;
+        for (const r of records) {
+            if (r.status === 'absent') {
+                consecutiveAbsences++;
+            } else {
+                break;
+            }
+        }
+
+        if (consecutiveAbsences >= 3 && consecutiveAbsenceCount < 3) {
+            const student = records[0].student;
+            const cls = records[0].class;
+            alerts.push({
+                type: 'danger',
+                title: 'Consecutive Absences Warning',
+                message: `${student.first_name} ${student.last_name || ''} (${student.PRO_ID}) has been absent for ${consecutiveAbsences} consecutive class sessions in Class ${cls.class_name || cls.class_code}.`,
+                action_link: `/admin/students/${studentId}`
+            });
+            consecutiveAbsenceCount++;
+        }
+    }
+
+    // 4. Sudden Performance Drop (Drop of >= 20% in latest exam compared to prior)
+    const recentResults = await prisma.testResult.findMany({
+        orderBy: { created_at: 'desc' },
+        take: 500,
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            test: { select: { test_name: true, subject: true, class: { select: { class_name: true, class_code: true } } } }
+        }
+    });
+
+    const resultsByStudent: Record<string, typeof recentResults> = {};
+    recentResults.forEach(r => {
+        if (!resultsByStudent[r.student_id]) {
+            resultsByStudent[r.student_id] = [];
+        }
+        resultsByStudent[r.student_id].push(r);
+    });
+
+    let performanceDropCount = 0;
+    for (const studentId in resultsByStudent) {
+        const studentResults = resultsByStudent[studentId];
+        studentResults.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        if (studentResults.length >= 2 && performanceDropCount < 3) {
+            const latest = studentResults[0];
+            const previous = studentResults[1];
+            
+            if (latest.percentage !== null && previous.percentage !== null) {
+                const drop = previous.percentage - latest.percentage;
+                if (drop >= 20) {
+                    const student = latest.student;
+                    alerts.push({
+                        type: 'warning',
+                        title: 'Sudden Performance Drop',
+                        message: `${student.first_name} ${student.last_name || ''} (${student.PRO_ID}) had a sudden drop of ${drop.toFixed(0)}% in their latest exam "${latest.test.test_name || 'Test'}" compared to prior.`,
+                        action_link: `/admin/students/${studentId}`
+                    });
+                    performanceDropCount++;
+                }
+            }
+        }
+    }
+
+    // 5. Academic Star Performer (Average score >= 90%)
+    const topPerformers = await prisma.studentClassEnrollment.findMany({
+        where: {
+            enrollment_status: 'active',
+            average_marks: { gte: 90 }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        },
+        orderBy: { average_marks: 'desc' },
+        take: 3
+    });
+
+    topPerformers.forEach(e => {
+        alerts.push({
+            type: 'success',
+            title: 'Academic Star Performer',
+            message: `${e.student.first_name} ${e.student.last_name || ''} (${e.student.PRO_ID}) is excelling with an average score of ${e.average_marks.toFixed(1)}% in Class ${e.class.class_name || e.class.class_code}.`,
+            action_link: `/admin/students/${e.student_id}`
+        });
+    });
+
+    // 6. Institutional Stats Alerts
     if (totalAttendanceCount > 0 && (totalPresentCount / totalAttendanceCount) < 0.6) {
         alerts.push({
             type: 'danger',
@@ -201,7 +354,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         });
     }
 
-    // Pending Demos alert
     const pendingDemosCount = totalDemos - completedDemos;
     if (pendingDemosCount > 0) {
         alerts.push({
@@ -209,19 +361,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
             title: 'Pending Demo Classes',
             message: `There are ${pendingDemosCount} demo classes scheduled that need attention.`,
             action_link: '/admin/demos'
-        });
-    }
-
-    // Low performance alert
-    const failingResults = await prisma.testResult.count({
-        where: { percentage: { lt: 40 } }
-    });
-    if (failingResults > 0) {
-        alerts.push({
-            type: 'warning',
-            title: 'Academic Performance Alert',
-            message: `${failingResults} recent test results are below the 40% passing threshold.`,
-            action_link: '/admin/analytics/tests'
         });
     }
 
@@ -308,7 +447,7 @@ export async function getTeacherDashboardData(userId: string): Promise<TeacherDa
 
     const classIds = myClasses.map(c => c.id);
 
-    const [todayTimetable, todaysAttendance, studentCountsAgg, pendingEvaluations, myEnquiries, pendingDemos, assignedEnquiriesCount, pendingDemosCount] = await Promise.all([
+    const [todayTimetable, todaysAttendance, studentCountsAgg, pendingEvaluations] = await Promise.all([
       prisma.timetable.findMany({
           where: { teacher_id: teacher.id, date: today },
           include: { class_ref: true }
@@ -320,6 +459,9 @@ export async function getTeacherDashboardData(userId: string): Promise<TeacherDa
         _count: true,
       }),
       prisma.testResult.count(),
+    ]);
+
+    const [myEnquiries, pendingDemos, assignedEnquiriesCount, pendingDemosCount] = await Promise.all([
       prisma.enquiry.findMany({ where: { assigned_to: userId }, take: 5 }),
       prisma.demoClass.findMany({ where: { teacher_id: teacher.id, status: 'scheduled' }, take: 5 }),
       prisma.enquiry.count({ where: { assigned_to: userId } }),
@@ -342,7 +484,7 @@ export async function getTeacherDashboardData(userId: string): Promise<TeacherDa
       });
 
     // Merge date-specific timetable entries (override or add)
-    const todaysClasses = [...todaysClassesBase];
+    const todaysClasses: any[] = [...todaysClassesBase];
     todayTimetable.forEach(t => {
         const existingIdx = todaysClasses.findIndex(c => c.id === t.class_id);
         if (existingIdx !== -1) {
@@ -513,6 +655,23 @@ export interface ClassDetailData {
   class: any;
   students: any[];
   subject_counts: Record<string, number>;
+  stats: {
+    boysCount: number;
+    girlsCount: number;
+    averageAttendance: string;
+    averageMarks: string;
+    highestMarks: string;
+    lowestMarks: string;
+    attendanceInsights: {
+      present: number;
+      absent: number;
+      late: number;
+    };
+    topPerformers: Array<{ name: string; id: string; average: string }>;
+    weakPerformers: Array<{ name: string; id: string; average: string }>;
+    upcomingTestsCount: number;
+    recentActivity: Array<{ type: string; message: string; time: string }>;
+  };
 }
 
 export async function getClassDetailData(classId: string): Promise<ClassDetailData | null> {
@@ -555,6 +714,94 @@ export async function getClassDetailData(classId: string): Promise<ClassDetailDa
         };
       });
 
+    // 1. Gender Splits
+    const boysCount = students.filter(s => s.gender?.toLowerCase() === 'male' || s.gender?.toLowerCase() === 'boy').length;
+    const girlsCount = students.filter(s => s.gender?.toLowerCase() === 'female' || s.gender?.toLowerCase() === 'girl').length;
+
+    // 2. Attendance Stats
+    const attendanceRecords = await prisma.attendance.findMany({
+      where: { class_id: classId }
+    });
+
+    let presentCount = 0;
+    let absentCount = 0;
+    let lateCount = 0;
+    let averageAttendance = '100.0';
+
+    if (attendanceRecords.length > 0) {
+      presentCount = attendanceRecords.filter(a => a.status === 'present').length;
+      absentCount = attendanceRecords.filter(a => a.status === 'absent').length;
+      lateCount = attendanceRecords.filter(a => a.status === 'late').length;
+      averageAttendance = (((presentCount + lateCount) / attendanceRecords.length) * 100).toFixed(1);
+    }
+
+    // 3. Test & Performance Analytics
+    const tests = await prisma.test.findMany({
+      where: { class_id: classId }
+    });
+
+    let averageMarks = '0.0';
+    let highestMarks = '0.0';
+    let lowestMarks = '0.0';
+    let topPerformers: Array<{ name: string; id: string; average: string }> = [];
+    let weakPerformers: Array<{ name: string; id: string; average: string }> = [];
+    const todayStr = new Date().toISOString().split('T')[0];
+    const upcomingTestsCount = tests.filter(t => t.test_date && t.test_date >= todayStr).length;
+
+    const testIds = tests.map(t => t.id);
+    const testResults = testIds.length > 0 
+      ? await prisma.testResult.findMany({ where: { test_id: { in: testIds } } })
+      : [];
+
+    if (testResults.length > 0) {
+      const percentages = testResults
+        .filter(r => r.marks_obtained !== null && r.total_marks)
+        .map(r => (r.marks_obtained! / r.total_marks!) * 100);
+
+      if (percentages.length > 0) {
+        averageMarks = (percentages.reduce((a, b) => a + b, 0) / percentages.length).toFixed(1);
+        highestMarks = Math.max(...percentages).toFixed(1);
+        lowestMarks = Math.min(...percentages).toFixed(1);
+      }
+
+      // Calculate individual student averages for rankings
+      const studentAverages = students.map(s => {
+        const sResults = testResults.filter(r => r.student_id === s.id && r.marks_obtained !== null && r.total_marks);
+        if (sResults.length === 0) return { name: `${s.first_name || 'Student'} ${s.last_name || ''}`, id: s.id, average: null };
+        const avg = sResults.reduce((sum, r) => sum + (r.marks_obtained! / r.total_marks!) * 100, 0) / sResults.length;
+        return { name: `${s.first_name || 'Student'} ${s.last_name || ''}`, id: s.id, average: avg };
+      }).filter(item => item.average !== null);
+
+      const sortedAverages = [...studentAverages].sort((a, b) => b.average! - a.average!);
+      topPerformers = sortedAverages.slice(0, 5).map(item => ({ name: item.name, id: item.id, average: item.average!.toFixed(1) }));
+      weakPerformers = [...sortedAverages].reverse().slice(0, 5).map(item => ({ name: item.name, id: item.id, average: item.average!.toFixed(1) }));
+    }
+
+    // 4. Compile Recent Activities
+    const recentTests = tests.slice(-3);
+    const recentAttendance = await prisma.attendance.findMany({
+      where: { class_id: classId },
+      take: 5,
+      orderBy: { created_at: 'desc' },
+      include: { student: true }
+    });
+
+    const recentActivity: any[] = [];
+    recentTests.forEach(t => {
+      recentActivity.push({
+        type: 'test',
+        message: `Test "${t.test_name || t.test_code}" (${t.subject}) scheduled.`,
+        time: t.test_date || 'Recent',
+      });
+    });
+    recentAttendance.forEach(a => {
+      recentActivity.push({
+        type: 'attendance',
+        message: `Attendance marked ${a.status} for ${a.student?.first_name || 'Student'}.`,
+        time: a.attendance_date,
+      });
+    });
+
     const teacher = cls.primary_teacher;
     return {
       class: {
@@ -570,6 +817,78 @@ export async function getClassDetailData(classId: string): Promise<ClassDetailDa
       },
       students,
       subject_counts: subjectCounts,
+      stats: {
+        boysCount,
+        girlsCount,
+        averageAttendance,
+        averageMarks,
+        highestMarks,
+        lowestMarks,
+        attendanceInsights: {
+          present: presentCount,
+          absent: absentCount,
+          late: lateCount,
+        },
+        topPerformers,
+        weakPerformers,
+        upcomingTestsCount,
+        recentActivity: recentActivity.slice(0, 6),
+      }
+    };
+  });
+}
+
+export interface AttendanceRegisterData {
+  class: any;
+  students: any[];
+  attendance: any[];
+  sessions: any[];
+}
+
+export async function getAttendanceRegisterData(classId: string, yearMonth: string): Promise<AttendanceRegisterData | null> {
+  return withRetry(async () => {
+    const cls = await prisma.class.findUnique({
+      where: { id: classId }
+    });
+
+    if (!cls) return null;
+
+    const enrollments = await prisma.studentClassEnrollment.findMany({
+      where: { class_id: classId, enrollment_status: 'active' },
+      include: { student: true }
+    });
+
+    const students = enrollments.map(e => e.student).filter(Boolean);
+
+    const [attendance, sessions] = await Promise.all([
+      prisma.attendance.findMany({
+        where: {
+          class_id: classId,
+          attendance_date: { startsWith: yearMonth }
+        },
+        include: {
+          user: {
+            select: {
+              email: true,
+              role: true
+            }
+          }
+        }
+      }),
+      prisma.timetable.findMany({
+        where: {
+          class_id: classId,
+          date: { startsWith: yearMonth }
+        },
+        orderBy: { date: 'asc' }
+      })
+    ]);
+
+    return {
+      class: cls,
+      students,
+      attendance,
+      sessions
     };
   });
 }

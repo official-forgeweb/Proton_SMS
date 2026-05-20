@@ -62,7 +62,7 @@ export default function SettingsPage() {
     };
 
     const handleChange = (field: string, value: any) => {
-        setSettings(prev => ({ ...prev, [field]: value }));
+        setSettings((prev: any) => ({ ...prev, [field]: value }));
     };
 
     const inputStyle: React.CSSProperties = {

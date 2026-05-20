@@ -55,7 +55,7 @@ export default function TeacherStudyMaterialsPage() {
     };
 
     const handleDelete = async (id: string, title: string, uploaderId: string) => {
-        if (user?.userId !== uploaderId) {
+        if (user?.id !== uploaderId) {
             await customAlert('You can only delete materials that you have uploaded.', 'Access Denied');
             return;
         }
@@ -252,7 +252,7 @@ export default function TeacherStudyMaterialsPage() {
                                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                 <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1D3B' }}>
                                                     {item.uploader?.email?.split('@')[0] || 'Unknown'}
-                                                    {user?.userId === item.uploaded_by && " (You)"}
+                                                    {user?.id === item.uploaded_by && " (You)"}
                                                 </span>
                                                 <span style={{ fontSize: '12px', color: '#A1A5B7', fontWeight: 500, textTransform: 'capitalize' }}>{item.uploader?.role}</span>
                                             </div>
@@ -268,7 +268,7 @@ export default function TeacherStudyMaterialsPage() {
                                                 <a href={item.pdf_url} download title="Download PDF" style={{ display: 'flex', padding: '10px', borderRadius: '10px', background: '#F8F9FD', border: '1px solid #E2E8F0', cursor: 'pointer', color: '#4F60FF' }}>
                                                     <Download size={18} />
                                                 </a>
-                                                {user?.userId === item.uploaded_by && (
+                                                {user?.id === item.uploaded_by && (
                                                     <button onClick={() => handleDelete(item.id, item.title, item.uploaded_by)} title="Delete Matrix" style={{ display: 'flex', padding: '10px', borderRadius: '10px', background: '#FFF5F5', border: '1px solid #FEE2E2', cursor: 'pointer', color: '#E53935' }}>
                                                         <Trash2 size={18} />
                                                     </button>

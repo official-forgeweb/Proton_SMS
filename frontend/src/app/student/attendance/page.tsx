@@ -217,7 +217,7 @@ export default function StudentAttendancePage() {
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             {cell.items.map((item, iIdx) => {
                                                 const isClass = item.type === 'class';
-                                                const styles = isClass ? getClassStyles(item.status) : getTestStyles(item.status);
+                                                const styles: any = isClass ? getClassStyles(item.status) : getTestStyles(item.status);
                                                 
                                                 return (
                                                     <div key={iIdx} style={{ 

@@ -41,7 +41,7 @@ export default function CustomDialog({ title, message, onResolve, isConfirm }: C
                     }}>
                         {isConfirm ? <AlertCircle size={28} /> : <Info size={28} />}
                     </div>
-                    <div style={{ flex: 1, pt: '4px' }}>
+                    <div style={{ flex: 1, paddingTop: '4px' }}>
                         <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 800, color: '#1A1D3B' }}>{title}</h2>
                         <p style={{ margin: 0, fontSize: '14px', color: '#5E6278', lineHeight: 1.5, fontWeight: 500 }}>
                             {message}
