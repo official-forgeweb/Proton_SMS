@@ -91,6 +91,7 @@ model Student {
   fee_assignments         StudentFeeAssignment[]
   fee_payments            FeePayment[]
   queries                 StudentQuery[]
+  remarks                 StudentRemark[]
 
   @@index([academic_status])
   @@index([phone])
@@ -130,6 +131,8 @@ model Teacher {
   tests_created     Test[]
   homework_created  Homework[]
   queries_targeted  StudentQuery[]    @relation("QueryTargetTeacher")
+  remarks           StudentRemark[]
+  activity_logs     TeacherActivityLog[]
 
   @@index([employment_status])
   @@map("teachers")
@@ -196,6 +199,7 @@ model Timetable {
   start_time  String                // e.g. "17:00"
   end_time    String?               // e.g. "18:00"
   room        String?
+  online_link String?
   notes       String?
   status      String   @default("scheduled")  // scheduled | completed | cancelled
   created_at  DateTime @default(now())
@@ -693,4 +697,45 @@ model SystemSetting {
   updated_at                 DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+// ──────────────────────────────────────────────
+// Teacher Activity Logs & Remarks
+// ──────────────────────────────────────────────
+
+model StudentRemark {
+  id          String   @id @default(uuid())
+  student_id  String
+  teacher_id  String
+  remark      String   @db.Text
+  remark_type String   @default("general") // general, performance, improvement
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  student Student @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  teacher Teacher @relation(fields: [teacher_id], references: [id], onDelete: Cascade)
+
+  @@index([student_id])
+  @@index([teacher_id])
+  @@map("student_remarks")
+}
+
+model TeacherActivityLog {
+  id              String   @id @default(uuid())
+  teacher_id      String?
+  teacher_name    String
+  action_type     String   // e.g., "schedule_create", "schedule_update", "schedule_delete", "attendance_mark", "marks_upload", "remarks_add", "login"
+  previous_value  String?  @db.Text
+  new_value       String?  @db.Text
+  affected_entity String?  // e.g., "Class 12 Physics", "Student Rahul (PRO-102)"
+  ip_address      String?
+  device          String?
+  created_at      DateTime @default(now())
+
+  teacher         Teacher? @relation(fields: [teacher_id], references: [id], onDelete: SetNull)
+
+  @@index([teacher_id])
+  @@index([action_type])
+  @@index([created_at])
+  @@map("teacher_activity_logs")
 }

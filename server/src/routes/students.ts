@@ -982,5 +982,108 @@ router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request
   }
 });
 
+// GET /api/students/:id/remarks
+router.get('/:id/remarks', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = paramId(req);
+    const student = isUUID(id)
+      ? await prisma.student.findFirst({ where: { OR: [{ id }, { user_id: id }] } })
+      : await prisma.student.findUnique({ where: { PRO_ID: id } });
+
+    if (!student) {
+      res.status(404).json({ success: false, message: 'Student not found' });
+      return;
+    }
+
+    const remarks = await prisma.studentRemark.findMany({
+      where: { student_id: student.id },
+      orderBy: { created_at: 'desc' },
+      include: {
+        teacher: {
+          select: { first_name: true, last_name: true }
+        }
+      }
+    });
+
+    res.json({ success: true, data: remarks });
+  } catch (error) {
+    console.error('[Remarks GET] error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/students/:id/remarks
+router.post('/:id/remarks', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = paramId(req);
+    const student = isUUID(id)
+      ? await prisma.student.findFirst({ where: { OR: [{ id }, { user_id: id }] } })
+      : await prisma.student.findUnique({ where: { PRO_ID: id } });
+
+    if (!student) {
+      res.status(404).json({ success: false, message: 'Student not found' });
+      return;
+    }
+
+    const { remark, remark_type } = req.body;
+    if (!remark || !remark.trim()) {
+      res.status(400).json({ success: false, message: 'Remark text is required' });
+      return;
+    }
+
+    // Resolve teacher profile for current user
+    let teacherId: string;
+    if (req.user!.role === 'teacher') {
+      const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
+      if (!teacher) {
+        res.status(403).json({ success: false, message: 'Teacher profile not found' });
+        return;
+      }
+      teacherId = teacher.id;
+    } else {
+      // If admin, we can default to any teacher, or look for the first teacher in class
+      const classEnrollment = await prisma.studentClassEnrollment.findFirst({
+        where: { student_id: student.id },
+        include: { class: true }
+      });
+      const t = await prisma.teacher.findFirst(); // Fallback to any teacher record for relation constraint
+      if (!t) {
+        res.status(400).json({ success: false, message: 'No teacher profile exists in the system' });
+        return;
+      }
+      teacherId = classEnrollment?.class?.primary_teacher_id || t.id;
+    }
+
+    const newRemark = await prisma.studentRemark.create({
+      data: {
+        student_id: student.id,
+        teacher_id: teacherId,
+        remark: remark.trim(),
+        remark_type: remark_type || 'general'
+      },
+      include: {
+        teacher: { select: { first_name: true, last_name: true } }
+      }
+    });
+
+    if (req.user!.role === 'teacher') {
+      const { logTeacherActivity } = require('../utils/activityLogger');
+      await logTeacherActivity(
+        req.user!.id,
+        'remarks_add',
+        null,
+        remark.trim(),
+        `Remarks for student ${student.first_name} ${student.last_name} (${student.PRO_ID})`,
+        req
+      );
+    }
+
+    res.status(201).json({ success: true, data: newRemark, message: 'Remark added successfully' });
+  } catch (error) {
+    console.error('[Remarks POST] error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 export default router;
 

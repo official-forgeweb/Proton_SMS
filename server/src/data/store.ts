@@ -64,24 +64,6 @@ export const seedData = async (): Promise<void> => {
         },
       });
 
-      // 4. Create Parent
-      const parentUser = await prisma.user.create({
-        data: {
-          email: 'parent.sharma@email.com',
-          password_hash: await bcrypt.hash('Parent@123', salt),
-          role: 'parent',
-          is_active: true,
-          is_verified: true,
-        },
-      });
-      await prisma.parent.create({
-        data: {
-          user_id: parentUser.id,
-          first_name: 'Mr.',
-          last_name: 'Sharma',
-          phone: '+91-9876543213',
-        },
-      });
 
       console.log('✅ Demo Credentials Seeded Successfully!');
     } else {

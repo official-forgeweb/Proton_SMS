@@ -61,20 +61,23 @@ export default function ToolBottomBar() {
             left: 'calc(50vw + 130px)', // Account for 260px sidebar
             transform: 'translateX(-50%)',
             zIndex: 40,
-            background: '#FFFFFF',
-            border: '1px solid #F1F4F9',
-            padding: '12px 24px',
+            background: 'rgba(255, 255, 255, 0.88)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(229, 57, 53, 0.12)',
+            padding: '10px 20px',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: '10px',
             overflowX: 'auto',
             borderRadius: '100px', // Pill shape
-            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            boxShadow: '0 10px 30px rgba(229, 57, 53, 0.06), 0 1px 3px rgba(0,0,0,0.02)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }} className="hide-scrollbar">
-            <span style={{ fontSize: '12px', fontWeight: 800, color: '#A1A5B7', marginRight: '8px', whiteSpace: 'nowrap', letterSpacing: '0.05em' }}>JUMP TO:</span>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', marginRight: '6px', whiteSpace: 'nowrap', letterSpacing: '0.08em' }}>JUMP TO:</span>
             {tools.map((tool) => {
                 const Icon = tool.icon;
-                const isActive = pathname === tool.href;
+                const isActive = pathname === tool.href || (tool.href !== '/teacher' && pathname.startsWith(tool.href));
                 return (
                     <Link
                         key={tool.href}
@@ -82,20 +85,41 @@ export default function ToolBottomBar() {
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
-                            padding: '10px 16px',
-                            background: isActive ? '#EEF0FF' : '#F8F9FD',
-                            color: isActive ? '#4F60FF' : '#5E6278',
-                            borderRadius: '12px',
+                            gap: '6px',
+                            padding: '8px 14px',
+                            background: isActive ? 'rgba(229, 57, 53, 0.08)' : 'rgba(248, 249, 253, 0.65)',
+                            color: isActive ? '#E53935' : '#475569',
+                            borderRadius: '50px',
                             textDecoration: 'none',
                             fontWeight: isActive ? 700 : 600,
-                            fontSize: '13px',
+                            fontSize: '12px',
                             whiteSpace: 'nowrap',
-                            transition: 'all 0.2s',
-                            boxShadow: isActive ? 'inset 0 0 0 1px rgba(79, 96, 255, 0.4)' : 'none'
+                            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                            border: isActive ? '1px solid rgba(229, 57, 53, 0.25)' : '1px solid rgba(226, 232, 240, 0.5)',
+                            boxShadow: isActive ? '0 4px 12px rgba(229, 57, 53, 0.08)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!isActive) {
+                                e.currentTarget.style.background = 'rgba(241, 245, 249, 0.95)';
+                                e.currentTarget.style.borderColor = 'rgba(203, 213, 225, 0.8)';
+                                e.currentTarget.style.transform = 'translateY(-1px) scale(1.02)';
+                            } else {
+                                e.currentTarget.style.transform = 'translateY(-1px) scale(1.02)';
+                                e.currentTarget.style.background = 'rgba(229, 57, 53, 0.12)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!isActive) {
+                                e.currentTarget.style.background = 'rgba(248, 249, 253, 0.65)';
+                                e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 0.5)';
+                                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                            } else {
+                                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                e.currentTarget.style.background = 'rgba(229, 57, 53, 0.08)';
+                            }
                         }}
                     >
-                        <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                        <Icon size={14} strokeWidth={isActive ? 2.5 : 2} />
                         {tool.label}
                     </Link>
                 );

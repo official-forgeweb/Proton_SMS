@@ -154,7 +154,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // Delete Study Material
 router.delete('/:id', authenticateToken, authorize('admin', 'teacher'), async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params as { id: string };
         await prisma.studyMaterial.delete({ where: { id } });
         res.json({ success: true, message: 'Study material deleted successfully' });
     } catch (error) {

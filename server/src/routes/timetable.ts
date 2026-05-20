@@ -237,7 +237,7 @@ router.post('/generate', authenticateToken, authorize('admin'), async (req: Requ
 // POST /api/timetable (Admin or Teacher)
 router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { class_id, subject, teacher_id, date, start_time, end_time, room, notes } = req.body;
+    const { class_id, subject, teacher_id, date, start_time, end_time, room, online_link, notes } = req.body;
 
     let finalTeacherId = teacher_id;
     if (req.user!.role === 'teacher') {
@@ -258,10 +258,26 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
         start_time,
         end_time,
         room,
+        online_link,
         notes,
         status: 'scheduled'
+      },
+      include: {
+        class_ref: { select: { class_name: true } }
       }
     });
+
+    if (req.user!.role === 'teacher') {
+      const { logTeacherActivity } = require('../utils/activityLogger');
+      await logTeacherActivity(
+        req.user!.id,
+        'schedule_create',
+        null,
+        JSON.stringify({ subject, date, start_time, room, online_link }),
+        `Class session for ${entry.class_ref.class_name}: ${subject}`,
+        req
+      );
+    }
 
     res.status(201).json({ success: true, data: entry });
   } catch (error) {
@@ -274,7 +290,16 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
 router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const updateData = { ...req.body };
+    const { class_id, subject, teacher_id, date, start_time, end_time, room, online_link, notes, status } = req.body;
+
+    const existing = await prisma.timetable.findUnique({ 
+      where: { id },
+      include: { class_ref: { select: { class_name: true } } }
+    });
+    if (!existing) {
+        res.status(404).json({ success: false, message: 'Entry not found' });
+        return;
+    }
 
     if (req.user!.role === 'teacher') {
         const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
@@ -282,18 +307,58 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
             res.status(403).json({ success: false, message: 'Teacher profile not found' });
             return;
         }
-        const existing = await prisma.timetable.findUnique({ where: { id } });
-        if (!existing || existing.teacher_id !== teacher.id) {
+        if (existing.teacher_id !== teacher.id) {
             res.status(403).json({ success: false, message: 'Not authorized to update this entry' });
             return;
         }
-        updateData.teacher_id = teacher.id; // Override to prevent changing
     }
 
     const entry = await prisma.timetable.update({
       where: { id },
-      data: updateData
+      data: {
+        class_id,
+        subject,
+        teacher_id: req.user!.role === 'teacher' ? existing.teacher_id : teacher_id,
+        date,
+        start_time,
+        end_time,
+        room,
+        online_link,
+        notes,
+        status
+      },
+      include: {
+        class_ref: { select: { class_name: true } }
+      }
     });
+
+    if (req.user!.role === 'teacher') {
+      const { logTeacherActivity } = require('../utils/activityLogger');
+      const prevVal = {
+        subject: existing.subject,
+        date: existing.date,
+        start_time: existing.start_time,
+        room: existing.room,
+        online_link: existing.online_link,
+        status: existing.status
+      };
+      const newVal = {
+        subject: entry.subject,
+        date: entry.date,
+        start_time: entry.start_time,
+        room: entry.room,
+        online_link: entry.online_link,
+        status: entry.status
+      };
+      await logTeacherActivity(
+        req.user!.id,
+        'schedule_update',
+        JSON.stringify(prevVal),
+        JSON.stringify(newVal),
+        `Class session for ${entry.class_ref.class_name}: ${entry.subject}`,
+        req
+      );
+    }
 
     res.json({ success: true, data: entry });
   } catch (error: any) {
@@ -301,6 +366,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
         res.status(404).json({ success: false, message: 'Entry not found' });
         return;
     }
+    console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -310,26 +376,54 @@ router.delete('/:id', authenticateToken, authorize('admin', 'teacher'), async (r
   try {
     const id = req.params.id as string;
 
+    const existing = await prisma.timetable.findUnique({ 
+      where: { id },
+      include: { class_ref: { select: { class_name: true } } }
+    });
+    if (!existing) {
+        res.status(404).json({ success: false, message: 'Entry not found' });
+        return;
+    }
+
     if (req.user!.role === 'teacher') {
         const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
         if (!teacher) {
             res.status(403).json({ success: false, message: 'Teacher profile not found' });
             return;
         }
-        const existing = await prisma.timetable.findUnique({ where: { id } });
-        if (!existing || existing.teacher_id !== teacher.id) {
+        if (existing.teacher_id !== teacher.id) {
             res.status(403).json({ success: false, message: 'Not authorized to delete this entry' });
             return;
         }
     }
 
     await prisma.timetable.delete({ where: { id } });
+
+    if (req.user!.role === 'teacher') {
+      const { logTeacherActivity } = require('../utils/activityLogger');
+      await logTeacherActivity(
+        req.user!.id,
+        'schedule_delete',
+        JSON.stringify({
+          subject: existing.subject,
+          date: existing.date,
+          start_time: existing.start_time,
+          room: existing.room,
+          online_link: existing.online_link
+        }),
+        null,
+        `Class session for ${existing.class_ref.class_name}: ${existing.subject}`,
+        req
+      );
+    }
+
     res.json({ success: true, message: 'Entry deleted' });
   } catch (error: any) {
     if (error.code === 'P2025') {
         res.status(404).json({ success: false, message: 'Entry not found' });
         return;
     }
+    console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

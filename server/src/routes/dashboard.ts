@@ -597,5 +597,68 @@ router.get('/student', authenticateToken, authorize('student'), cacheMiddleware(
   }
 });
 
+// GET /api/dashboard/admin/teacher-activities
+router.get('/admin/teacher-activities', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { teacher_id, action_type, search, page = '1', limit = '20' } = req.query as Record<string, string>;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 20;
+    const skip = (pageNum - 1) * limitNum;
+
+    let where: any = {};
+
+    if (teacher_id) {
+      where.teacher_id = teacher_id;
+    }
+
+    if (action_type) {
+      where.action_type = action_type;
+    }
+
+    if (search) {
+      where.OR = [
+        { teacher_name: { contains: search, mode: 'insensitive' } },
+        { affected_entity: { contains: search, mode: 'insensitive' } },
+        { new_value: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    const [logs, total] = await Promise.all([
+      prisma.teacherActivityLog.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limitNum,
+        include: {
+          teacher: {
+            select: {
+              first_name: true,
+              last_name: true,
+              email: true,
+              phone: true
+            }
+          }
+        }
+      }),
+      prisma.teacherActivityLog.count({ where })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        logs,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          pages: Math.ceil(total / limitNum)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching teacher activities:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching teacher activities' });
+  }
+});
 
 export default router;

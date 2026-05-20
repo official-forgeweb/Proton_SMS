@@ -5,9 +5,12 @@ import api from '@/lib/api';
 import {
     User, Phone, Mail, GraduationCap, Activity, ArrowLeft,
     TrendingUp, BookOpen, Target, Award, Calendar, BarChart3,
-    Clock, Check, X, Minus
+    Clock, Check, X, AlertCircle, MessageSquare, Send, Sparkles, Info
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
 
 export default function TeacherStudentProfilePage() {
     const params = useParams();
@@ -21,6 +24,12 @@ export default function TeacherStudentProfilePage() {
     const [performance, setPerformance] = useState<any>(null);
     const [homeworkHistory, setHomeworkHistory] = useState<any>(null);
 
+    // Remarks state
+    const [remarks, setRemarks] = useState<any[]>([]);
+    const [newRemark, setNewRemark] = useState('');
+    const [remarkType, setRemarkType] = useState('general');
+    const [isSubmittingRemark, setIsSubmittingRemark] = useState(false);
+
     useEffect(() => {
         if (params.id) {
             fetchData();
@@ -28,6 +37,7 @@ export default function TeacherStudentProfilePage() {
     }, [params.id]);
 
     const fetchData = async () => {
+        setIsLoading(true);
         try {
             const res = await api.get(`/students/${params.id}`);
             setStudent(res.data.data);
@@ -37,36 +47,64 @@ export default function TeacherStudentProfilePage() {
             setIsLoading(false);
         }
 
-        // Fetch reports in parallel
-        const [attRes, testRes, perfRes, hwRes] = await Promise.allSettled([
+        // Fetch reports and remarks in parallel
+        const [attRes, testRes, perfRes, hwRes, remarksRes] = await Promise.allSettled([
             api.get(`/students/${params.id}/attendance`),
             api.get(`/students/${params.id}/tests`),
             api.get(`/students/${params.id}/performance`),
-            api.get(`/students/${params.id}/homework-history`)
+            api.get(`/students/${params.id}/homework-history`),
+            api.get(`/students/${params.id}/remarks`)
         ]);
+        
         if (attRes.status === 'fulfilled') setAttendance(attRes.value.data.data);
         if (testRes.status === 'fulfilled') setTestStats(testRes.value.data.data);
         if (perfRes.status === 'fulfilled') setPerformance(perfRes.value.data.data);
         if (hwRes.status === 'fulfilled') setHomeworkHistory(hwRes.value.data.data);
+        if (remarksRes.status === 'fulfilled') setRemarks(remarksRes.value.data.data);
+    };
+
+    const handleAddRemark = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newRemark.trim()) return;
+        setIsSubmittingRemark(true);
+        try {
+            const res = await api.post(`/students/${params.id}/remarks`, {
+                remark: newRemark.trim(),
+                remark_type: remarkType
+            });
+            if (res.data.success) {
+                setRemarks([res.data.data, ...remarks]);
+                setNewRemark('');
+                setRemarkType('general');
+            }
+        } catch (error) {
+            console.error('Error adding remark:', error);
+        } finally {
+            setIsSubmittingRemark(false);
+        }
     };
 
     const getScoreColor = (pct: number) => {
-        if (pct >= 80) return '#059669';
-        if (pct >= 60) return '#D97706';
-        if (pct >= 40) return '#EA580C';
-        return '#DC2626';
+        if (pct >= 85) return 'var(--success)';
+        if (pct >= 70) return 'var(--info)';
+        if (pct >= 50) return 'var(--warning)';
+        return 'var(--primary)';
     };
 
     const getScoreBg = (pct: number) => {
-        if (pct >= 80) return '#ECFDF5';
-        if (pct >= 60) return '#FEF3C7';
-        if (pct >= 40) return '#FFF7ED';
-        return '#FEF2F2';
+        if (pct >= 85) return 'var(--success-light)';
+        if (pct >= 70) return 'var(--info-light)';
+        if (pct >= 50) return 'var(--warning-light)';
+        return 'var(--primary-light)';
     };
 
     const getGradeLabel = (pct: number) => {
-        if (pct >= 90) return 'A+'; if (pct >= 80) return 'A'; if (pct >= 70) return 'B+';
-        if (pct >= 60) return 'B'; if (pct >= 50) return 'C'; return 'D';
+        if (pct >= 90) return 'A+'; 
+        if (pct >= 80) return 'A'; 
+        if (pct >= 70) return 'B+';
+        if (pct >= 60) return 'B'; 
+        if (pct >= 50) return 'C'; 
+        return 'D';
     };
 
     if (isLoading) {
@@ -74,14 +112,14 @@ export default function TeacherStudentProfilePage() {
             <DashboardLayout requiredRole="teacher">
                 <style dangerouslySetInnerHTML={{__html: `
                     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-                    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; }
+                    .skeleton-pulse { background: linear-gradient(90deg, #f0f0f5 25%, #e8e8f0 50%, #f0f0f5 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 16px; }
                 `}} />
                 <div style={{ padding: '32px' }}>
-                    <div className="skeleton" style={{ height: '120px', marginBottom: '24px', borderRadius: '24px' }} />
+                    <div className="skeleton-pulse" style={{ height: '140px', marginBottom: '24px', borderRadius: '24px' }} />
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-                        {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: '90px' }} />)}
+                        {[1,2,3,4].map(i => <div key={i} className="skeleton-pulse" style={{ height: '100px' }} />)}
                     </div>
-                    <div className="skeleton" style={{ height: '400px' }} />
+                    <div className="skeleton-pulse" style={{ height: '400px', borderRadius: '24px' }} />
                 </div>
             </DashboardLayout>
         );
@@ -90,13 +128,21 @@ export default function TeacherStudentProfilePage() {
     if (!student) {
         return (
             <DashboardLayout requiredRole="teacher">
-                <div style={{ padding: '100px 0', textAlign: 'center' }}>
-                    <GraduationCap size={64} color="#D1D5DB" />
-                    <h3 style={{ marginTop: '20px', fontSize: '18px', fontWeight: 700, color: '#1A1D3B' }}>Student not found</h3>
-                    <button onClick={() => router.push('/teacher/students')} style={{
-                        marginTop: '20px', background: '#E53935', color: 'white', border: 'none',
-                        padding: '12px 24px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer'
-                    }}>Back to Students</button>
+                <div className="bg-mesh min-h-screen" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                    <div className="glass-panel" style={{ padding: '48px', borderRadius: '24px', textAlign: 'center', maxWidth: '480px', border: '1px solid rgba(229,57,53,0.1)' }}>
+                        <GraduationCap size={64} color="var(--primary)" style={{ margin: '0 auto 20px auto', opacity: 0.8 }} />
+                        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>Student Profile Not Found</h3>
+                        <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '14px', lineHeight: 1.6 }}>
+                            The student profile you are trying to view could not be retrieved. It may have been relocated or the ID is incorrect.
+                        </p>
+                        <button 
+                            onClick={() => router.push('/teacher/students')} 
+                            className="btn btn-primary"
+                            style={{ marginTop: '24px', width: '100%', padding: '12px 24px' }}
+                        >
+                            <ArrowLeft size={16} /> Back to Student List
+                        </button>
+                    </div>
                 </div>
             </DashboardLayout>
         );
@@ -114,320 +160,594 @@ export default function TeacherStudentProfilePage() {
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <BarChart3 size={16} /> },
         { id: 'academics', label: 'Academics', icon: <BookOpen size={16} /> },
-        { id: 'attendance', label: 'Attendance', icon: <Calendar size={16} /> },
+        { id: 'attendance', label: 'Attendance Grid', icon: <Calendar size={16} /> },
+        { id: 'remarks', label: 'Remarks Console', icon: <MessageSquare size={16} /> },
     ];
+
+    // Helper to group attendance records by month
+    const getGroupedAttendanceByMonth = () => {
+        if (!attendance?.records || attendance.records.length === 0) return [];
+        
+        const monthsMap: Record<string, any[]> = {};
+        attendance.records.forEach((r: any) => {
+            const date = new Date(r.attendance_date);
+            const key = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+            if (!monthsMap[key]) {
+                monthsMap[key] = [];
+            }
+            monthsMap[key].push(r);
+        });
+
+        return Object.entries(monthsMap).map(([monthYear, records]) => ({
+            monthYear,
+            records: records.sort((a, b) => new Date(a.attendance_date).getTime() - new Date(b.attendance_date).getTime())
+        }));
+    };
+
+    const groupedAttendance = getGroupedAttendanceByMonth();
 
     return (
         <DashboardLayout requiredRole="teacher">
             <style dangerouslySetInnerHTML={{__html: `
-                @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-                .animate-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
-                .stat-card {
-                    background: white; border-radius: 20px; padding: 18px; border: 1px solid #F1F4F9;
-                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                    position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+                .animate-in { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+                
+                .student-stat-card {
+                    background: white; border-radius: 20px; padding: 20px; border: 1px solid rgba(229, 57, 53, 0.06);
+                    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                    position: relative; overflow: hidden; box-shadow: var(--shadow-sm);
                 }
-                .stat-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(0,0,0,0.06); }
-                .stat-card-icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
-                .stat-card:hover .stat-card-icon { transform: scale(1.1) rotate(5deg); }
-                .progress-bar-glow { height: 8px; border-radius: 8px; background: #F1F2F6; overflow: hidden; position: relative; }
-                .progress-bar-fill { height: 100%; border-radius: 8px; transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1); position: relative; }
-                .progress-bar-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 2s infinite linear; }
-                .tab-btn { padding: 10px 20px; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.25s; background: transparent; color: #8F92A1; }
-                .tab-btn:hover { background: #F8F9FD; color: #1A1D3B; }
-                .tab-btn.active { background: linear-gradient(135deg, #E53935 0%, #B71C1C 100%); color: white; box-shadow: 0 4px 12px rgba(229,57,53,0.3); }
-                .data-card { background: white; border-radius: 20px; padding: 24px; border: 1px solid #F1F2F6; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-                .test-row { display: flex; align-items: center; padding: 14px 16px; border-radius: 12px; transition: all 0.2s; gap: 16px; }
-                .test-row:hover { background: #F8F9FD; }
+                .student-stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: rgba(229, 57, 53, 0.15); }
+                .student-stat-card-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+                .student-stat-card:hover .student-stat-card-icon { transform: scale(1.1) rotate(4deg); }
+                
+                .progress-bar-container { height: 6px; border-radius: 6px; background: #F1F2F6; overflow: hidden; position: relative; }
+                .progress-bar-fill { height: 100%; border-radius: 6px; transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
+                
+                .tab-btn { 
+                    padding: 12px 24px; border: none; border-radius: 14px; font-size: 14px; font-weight: 700; 
+                    cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.25s; 
+                    background: transparent; color: var(--text-secondary); 
+                }
+                .tab-btn:hover { background: rgba(255, 255, 255, 0.5); color: var(--text-primary); }
+                .tab-btn.active { 
+                    background: var(--gradient-primary); color: white; 
+                    box-shadow: 0 4px 14px rgba(229,57,53,0.3); 
+                }
+                
+                .student-grid-day {
+                    width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center;
+                    justify-content: center; font-size: 11px; font-weight: 700; transition: all 0.2s;
+                    position: relative;
+                }
+                .student-grid-day:hover { transform: scale(1.15); z-index: 2; box-shadow: var(--shadow-sm); }
+                
+                .remark-timeline-card {
+                    position: relative; padding-left: 28px; border-left: 2px solid var(--border-secondary);
+                    margin-bottom: 24px;
+                }
+                .remark-timeline-card::before {
+                    content: ''; position: absolute; left: -7px; top: 4px; width: 12px; height: 12px;
+                    border-radius: 50%; background: var(--primary); border: 2px solid white;
+                    box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.15);
+                }
+                .remark-timeline-card.performance::before { background: var(--info); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+                .remark-timeline-card.improvement::before { background: var(--warning); box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15); }
             `}} />
 
-            {/* Hero Header */}
-            <div className="animate-in" style={{
-                background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 60%, #1a0a2e 100%)',
-                borderRadius: '24px', padding: '28px 36px', marginBottom: '24px', color: 'white',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.15)', position: 'relative', overflow: 'hidden',
-            }}>
-                <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(229,57,53,0.08)' }} />
-                <div style={{ position: 'absolute', bottom: '-50px', right: '150px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(124,58,237,0.06)' }} />
+            <div className="bg-mesh min-h-screen" style={{ padding: '0 8px 32px 8px' }}>
+                {/* Hero profile header */}
+                <div className="animate-in" style={{
+                    background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 70%, #200C0C 100%)',
+                    borderRadius: '24px', padding: '32px', marginBottom: '28px', color: 'white',
+                    boxShadow: 'var(--shadow-xl)', position: 'relative', overflow: 'hidden',
+                }}>
+                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(229, 57, 53, 0.08)', filter: 'blur(20px)' }} />
+                    <div style={{ position: 'absolute', bottom: '-40px', right: '180px', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.05)', filter: 'blur(15px)' }} />
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', position: 'relative', zIndex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                        <div style={{
-                            width: '72px', height: '72px', borderRadius: '20px',
-                            background: 'linear-gradient(135deg, rgba(229,57,53,0.2), rgba(124,58,237,0.2))',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'white', fontWeight: 800, fontSize: '26px', backdropFilter: 'blur(10px)',
-                        }}>
-                            {student.first_name?.[0]}{student.last_name?.[0]}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', position: 'relative', zIndex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+                            <div style={{
+                                width: '80px', height: '80px', borderRadius: '24px',
+                                background: 'linear-gradient(135deg, rgba(229,57,53,0.25), rgba(249,115,22,0.25))',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: 'white', fontWeight: 800, fontSize: '30px', fontFamily: 'Poppins, sans-serif',
+                                backdropFilter: 'blur(8px)', boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+                            }}>
+                                {student.first_name?.[0]}{student.last_name?.[0]}
+                            </div>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                    <h1 style={{ fontSize: '26px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px', fontFamily: 'Poppins, sans-serif' }}>
+                                        {student.first_name} {student.last_name}
+                                    </h1>
+                                    <span style={{ fontSize: '11px', fontWeight: 800, background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '30px', letterSpacing: '0.5px' }}>
+                                        {student.PRO_ID}
+                                    </span>
+                                    <span style={{
+                                        fontSize: '11px', fontWeight: 700,
+                                        background: student.academic_status === 'active' ? 'rgba(16,185,129,0.18)' : 'rgba(239,68,68,0.18)',
+                                        color: student.academic_status === 'active' ? 'var(--success)' : 'var(--error)',
+                                        border: `1px solid ${student.academic_status === 'active' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                                        padding: '4px 12px', borderRadius: '30px', textTransform: 'uppercase'
+                                    }}>
+                                        {student.academic_status || 'active'}
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '20px', marginTop: '10px', flexWrap: 'wrap' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13.5px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 500 }}>
+                                        <Mail size={14} color="var(--primary)" /> {student.email || 'No Email'}
+                                    </span>
+                                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13.5px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 500 }}>
+                                        <Phone size={14} color="var(--primary)" /> {student.phone || 'No Phone'}
+                                    </span>
+                                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13.5px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 500 }}>
+                                        <GraduationCap size={14} color="var(--primary)" /> {student.classes?.map((c: any) => c.class_name).join(', ') || 'No Batch Assigned'}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                         <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                                <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
-                                    {student.first_name} {student.last_name}
-                                </h1>
-                                <span style={{ fontSize: '11px', fontWeight: 800, background: '#E53935', color: 'white', padding: '4px 10px', borderRadius: '50px', letterSpacing: '0.5px' }}>
-                                    {student.PRO_ID}
-                                </span>
-                                <span style={{
-                                    fontSize: '11px', fontWeight: 700,
-                                    background: student.academic_status === 'active' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
-                                    color: student.academic_status === 'active' ? '#10B981' : '#EF4444',
-                                    padding: '4px 10px', borderRadius: '50px'
-                                }}>
-                                    {(student.academic_status || 'active').toUpperCase()}
-                                </span>
-                            </div>
-                            <div style={{ display: 'flex', gap: '20px', marginTop: '6px', flexWrap: 'wrap' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <Mail size={13} /> {student.email || 'No email'}
-                                </span>
-                                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <Phone size={13} /> {student.phone || 'No phone'}
-                                </span>
-                                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <GraduationCap size={13} /> {student.classes?.map((c: any) => c.class_name).join(', ') || 'No Batch'}
-                                </span>
-                            </div>
+                            <button
+                                onClick={() => router.push('/teacher/students')}
+                                className="hover-lift"
+                                style={{
+                                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                                    color: 'white', padding: '12px 20px', borderRadius: '14px', fontWeight: 700,
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px',
+                                    transition: 'all 0.2s', backdropFilter: 'blur(4px)'
+                                }}
+                            >
+                                <ArrowLeft size={16} /> View Student List
+                            </button>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <button
-                            onClick={() => router.push('/teacher/students')}
-                            style={{
-                                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                                color: 'white', padding: '10px 18px', borderRadius: '12px', fontWeight: 700,
-                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px',
-                                transition: 'all 0.2s', backdropFilter: 'blur(4px)'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                        >
-                            <ArrowLeft size={16} /> All Students
-                        </button>
-                    </div>
                 </div>
-            </div>
 
-            {/* Quick Stats */}
-            <div className="animate-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px', animationDelay: '100ms' }}>
-                <div className="stat-card" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <div className="stat-card-icon" style={{ background: '#FFF0F1', color: '#E53935', flexShrink: 0 }}>
-                        <Activity size={22} strokeWidth={2.5} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Attendance</span>
-                            <span style={{ fontSize: '9px', fontWeight: 800, color: attPct >= 75 ? '#10B981' : '#F43F5E', background: attPct >= 75 ? '#ECFDF5' : '#FFF1F2', padding: '2px 6px', borderRadius: '4px' }}>
-                                {attPct >= 75 ? 'GOOD' : 'LOW'}
+                {/* Premium Metrics Grid */}
+                <div className="animate-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '28px', animationDelay: '100ms' }}>
+                    <div className="student-stat-card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-teriority)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Attendance Performance</span>
+                            <span style={{ 
+                                fontSize: '10px', fontWeight: 800, 
+                                color: attPct >= 80 ? 'var(--success)' : attPct >= 65 ? 'var(--warning)' : 'var(--primary)', 
+                                background: attPct >= 80 ? 'var(--success-light)' : attPct >= 65 ? 'var(--warning-light)' : 'var(--primary-light)', 
+                                padding: '3px 8px', borderRadius: '6px', textTransform: 'uppercase' 
+                            }}>
+                                {attPct >= 80 ? 'Excellent' : attPct >= 65 ? 'Good' : 'Critical'}
                             </span>
                         </div>
-                        <h3 style={{ fontSize: '24px', fontWeight: 850, color: '#1A1D3B', margin: 0 }}>{attPct}%</h3>
-                        <div className="progress-bar-glow" style={{ height: '4px', margin: '8px 0' }}>
-                            <div className="progress-bar-fill" style={{ width: `${attPct}%`, background: '#E53935' }} />
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                            <h3 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif' }}>{attPct}%</h3>
+                            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', paddingBottom: '4px', fontWeight: 600 }}>Compliance Rate</span>
+                        </div>
+                        <div className="progress-bar-container" style={{ marginTop: '12px' }}>
+                            <div className="progress-bar-fill" style={{ width: `${attPct}%`, background: attPct >= 80 ? 'var(--success)' : attPct >= 65 ? 'var(--warning)' : 'var(--primary)' }} />
                         </div>
                     </div>
-                </div>
 
-                <div className="stat-card" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <div className="stat-card-icon" style={{ background: '#F5F3FF', color: '#7C3AED', flexShrink: 0 }}>
-                        <Target size={22} strokeWidth={2.5} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Avg Score</span>
-                        <h3 style={{ fontSize: '24px', fontWeight: 850, color: '#1A1D3B', margin: 0 }}>{avgScore}%</h3>
-                        <div className="progress-bar-glow" style={{ height: '4px', margin: '8px 0' }}>
-                            <div className="progress-bar-fill" style={{ width: `${avgScore}%`, background: '#7C3AED' }} />
+                    <div className="student-stat-card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-teriority)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Academic Benchmark</span>
+                            <div className="student-stat-card-icon" style={{ width: '20px', height: '20px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '5px' }}>
+                                <TrendingUp size={12} />
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                            <h3 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif' }}>{avgScore}%</h3>
+                            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', paddingBottom: '4px', fontWeight: 600 }}>Average Score</span>
+                        </div>
+                        <div className="progress-bar-container" style={{ marginTop: '12px' }}>
+                            <div className="progress-bar-fill" style={{ width: `${avgScore}%`, background: 'var(--primary)' }} />
                         </div>
                     </div>
-                </div>
 
-                <div className="stat-card" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <div className="stat-card-icon" style={{ background: '#E8F5E9', color: '#2E7D32', flexShrink: 0 }}>
-                        <Award size={22} strokeWidth={2.5} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Tests</span>
-                        <h3 style={{ fontSize: '24px', fontWeight: 850, color: '#1A1D3B', margin: 0 }}>{totalTests}</h3>
-                        <p style={{ fontSize: '11px', color: '#5E6278', fontWeight: 600, margin: '4px 0 0' }}>
-                            <span style={{ color: '#2E7D32', fontWeight: 800 }}>{passedTests}</span> Pass • <span style={{ color: '#DC2626', fontWeight: 800 }}>{failedTests}</span> Fail
+                    <div className="student-stat-card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-teriority)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Evaluation Logs</span>
+                            <div className="student-stat-card-icon" style={{ width: '20px', height: '20px', background: 'var(--success-light)', color: 'var(--success)', borderRadius: '5px' }}>
+                                <Award size={12} />
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                            <h3 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif' }}>{totalTests}</h3>
+                            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', paddingBottom: '4px', fontWeight: 600 }}>Total Tests</span>
+                        </div>
+                        <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600, margin: '8px 0 0 0' }}>
+                            <span style={{ color: 'var(--success)', fontWeight: 700 }}>{passedTests}</span> Passed • <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{failedTests}</span> Failed
                         </p>
                     </div>
-                </div>
 
-                <div className="stat-card" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <div className="stat-card-icon" style={{ background: '#E3F2FD', color: '#1565C0', flexShrink: 0 }}>
-                        <BookOpen size={22} strokeWidth={2.5} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Homework</span>
-                        <h3 style={{ fontSize: '24px', fontWeight: 850, color: '#1A1D3B', margin: 0 }}>{hwCount}</h3>
-                        <p style={{ fontSize: '11px', color: '#5E6278', fontWeight: 600, margin: '4px 0 0' }}>Submissions</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="animate-in" style={{ display: 'flex', gap: '6px', marginBottom: '24px', background: '#F8F9FD', padding: '6px', borderRadius: '16px', animationDelay: '200ms' }}>
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveTab(tab.id)}
-                    >
-                        {tab.icon} {tab.label}
-                    </button>
-                ))}
-            </div>
-
-            {/* Tab Content */}
-            {activeTab === 'overview' && (
-                <div className="animate-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', animationDelay: '250ms' }}>
-                    {/* Personal Info */}
-                    <div className="data-card">
-                        <h3 style={{ fontWeight: 800, fontSize: '16px', color: '#1A1D3B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <User size={18} color="#E53935" /> Personal Information
-                        </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                            {[
-                                { label: 'Name', value: `${student.first_name} ${student.last_name}` },
-                                { label: 'Gender', value: student.gender || 'N/A' },
-                                { label: 'DOB', value: student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : 'N/A' },
-                                { label: 'PRO ID', value: student.PRO_ID },
-                                { label: 'Phone', value: student.phone || 'N/A' },
-                                { label: 'Email', value: student.email || 'N/A' },
-                                { label: 'School', value: student.school_name || 'N/A' },
-                                { label: 'Status', value: (student.academic_status || 'active').toUpperCase() },
-                            ].map(item => (
-                                <div key={item.label}>
-                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase' }}>{item.label}</span>
-                                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1D3B', margin: '4px 0 0', wordBreak: 'break-all' }}>{item.value}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Subject Performance */}
-                    <div className="data-card">
-                        <h3 style={{ fontWeight: 800, fontSize: '16px', color: '#1A1D3B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <BarChart3 size={18} color="#7C3AED" /> Subject Performance
-                        </h3>
-                        {subjectAnalytics.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '40px', color: '#A1A5B7' }}>
-                                <BarChart3 size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
-                                <p style={{ fontWeight: 600, fontSize: '14px' }}>No performance data yet</p>
+                    <div className="student-stat-card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-teriority)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Homework Ratio</span>
+                            <div className="student-stat-card-icon" style={{ width: '20px', height: '20px', background: 'var(--info-light)', color: 'var(--info)', borderRadius: '5px' }}>
+                                <BookOpen size={12} />
                             </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                                {subjectAnalytics.map((sub: any) => (
-                                    <div key={sub.subject}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B' }}>{sub.subject}</span>
-                                            <span style={{ fontSize: '13px', fontWeight: 800, color: getScoreColor(sub.average) }}>{Math.round(sub.average)}%</span>
-                                        </div>
-                                        <div className="progress-bar-glow" style={{ height: '6px' }}>
-                                            <div className="progress-bar-fill" style={{ width: `${sub.average}%`, background: getScoreColor(sub.average) }} />
-                                        </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                            <h3 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif' }}>{hwCount}</h3>
+                            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', paddingBottom: '4px', fontWeight: 600 }}>Submissions</span>
+                        </div>
+                        <p style={{ fontSize: '11.5px', color: 'var(--text-tertiary)', fontWeight: 600, margin: '8px 0 0 0' }}>Syllabus & Material Tasks</p>
+                    </div>
+                </div>
+
+                {/* Styled Interactive Tab Bar */}
+                <div className="animate-in" style={{ display: 'flex', gap: '8px', marginBottom: '28px', background: 'rgba(255, 255, 255, 0.6)', padding: '6px', borderRadius: '18px', border: '1px solid rgba(229,57,53,0.05)', width: 'fit-content', animationDelay: '180ms' }}>
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                            onClick={() => setActiveTab(tab.id)}
+                        >
+                            {tab.icon} {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tab content containers */}
+                {activeTab === 'overview' && (
+                    <div className="animate-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', animationDelay: '220ms' }}>
+                        {/* Personal info panel */}
+                        <div className="glass-panel" style={{ padding: '28px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)' }}>
+                            <h3 style={{ fontWeight: 800, fontSize: '18px', color: '#1A1D3B', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Poppins, sans-serif' }}>
+                                <User size={20} color="var(--primary)" /> Profile Information
+                            </h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+                                {[
+                                    { label: 'Full Name', value: `${student.first_name} ${student.last_name}` },
+                                    { label: 'Academic Status', value: (student.academic_status || 'Active').toUpperCase() },
+                                    { label: 'Gender Type', value: student.gender || 'Not Specified' },
+                                    { label: 'PRO ID Number', value: student.PRO_ID },
+                                    { label: 'Date of Birth', value: student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Not Provided' },
+                                    { label: 'Contact Phone', value: student.phone || 'N/A' },
+                                    { label: 'Email Address', value: student.email || 'N/A' },
+                                    { label: 'Previous Institution', value: student.school_name || 'N/A' },
+                                ].map(item => (
+                                    <div key={item.label} style={{ borderBottom: '1px dashed var(--border-primary)', paddingBottom: '10px' }}>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{item.label}</span>
+                                        <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1D3B', margin: '4px 0 0', wordBreak: 'break-all' }}>{item.value}</p>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Subject performance bars */}
+                        <div className="glass-panel" style={{ padding: '28px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)', display: 'flex', flexDirection: 'column' }}>
+                            <h3 style={{ fontWeight: 800, fontSize: '18px', color: '#1A1D3B', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Poppins, sans-serif' }}>
+                                <BarChart3 size={20} color="var(--primary)" /> Subject Average Performance
+                            </h3>
+                            
+                            {subjectAnalytics.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-tertiary)', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                    <BarChart3 size={40} style={{ opacity: 0.25, marginBottom: '14px' }} />
+                                    <p style={{ fontWeight: 750, fontSize: '14px' }}>No Evaluation Metrics Found</p>
+                                    <p style={{ fontSize: '12px', marginTop: '4px' }}>No academic averages recorded for this student.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', flex: 1 }}>
+                                    {subjectAnalytics.map((sub: any) => (
+                                        <div key={sub.subject}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1A1D3B' }}>{sub.subject}</span>
+                                                <span style={{ fontSize: '13px', fontWeight: 800, color: getScoreColor(sub.average), background: getScoreBg(sub.average), padding: '2px 8px', borderRadius: '6px' }}>
+                                                    {Math.round(sub.average)}%
+                                                </span>
+                                            </div>
+                                            <div className="progress-bar-container" style={{ height: '8px' }}>
+                                                <div className="progress-bar-fill" style={{ width: `${sub.average}%`, background: getScoreColor(sub.average) }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {trend && trend.length > 0 && (
+                                <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-primary)', paddingTop: '20px' }}>
+                                    <h4 style={{ fontWeight: 750, fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Progress Trend</h4>
+                                    <div style={{ height: '90px', width: '100%' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={trend} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
+                                                <defs>
+                                                    <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.2} />
+                                                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F5" />
+                                                <XAxis dataKey="name" hide />
+                                                <YAxis domain={[0, 100]} hide />
+                                                <Tooltip contentStyle={{ borderRadius: '10px', fontSize: '12px' }} />
+                                                <Area type="monotone" dataKey="value" stroke="var(--primary)" fill="url(#trendGrad)" strokeWidth={2.5} />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'academics' && (
+                    <div className="animate-in glass-panel" style={{ padding: '28px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)', animationDelay: '220ms' }}>
+                        <h3 style={{ fontWeight: 800, fontSize: '18px', color: '#1A1D3B', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Poppins, sans-serif' }}>
+                            <BookOpen size={20} color="var(--primary)" /> Evaluation Record & Test Marks
+                        </h3>
+                        {!testStats?.tests || testStats.tests.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-tertiary)' }}>
+                                <Award size={48} style={{ opacity: 0.25, marginBottom: '16px', color: 'var(--primary)' }} />
+                                <h4 style={{ fontWeight: 800, fontSize: '16px', color: '#1A1D3B' }}>No Test Records Submitted</h4>
+                                <p style={{ fontSize: '13px', marginTop: '4px', maxWidth: '320px', margin: '4px auto 0' }}>This student has not yet participated in or completed any evaluations.</p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {testStats.tests.map((t: any) => {
+                                    const pct = t.percentage || 0;
+                                    return (
+                                        <div 
+                                            key={t.id} 
+                                            className="table-row-hover"
+                                            style={{ 
+                                                display: 'flex', alignItems: 'center', padding: '16px 20px', 
+                                                borderRadius: '16px', border: '1px solid var(--border-primary)', 
+                                                background: '#FFFFFF', gap: '20px', flexWrap: 'wrap'
+                                            }}
+                                        >
+                                            <div style={{ 
+                                                width: '46px', height: '46px', borderRadius: '12px', 
+                                                background: getScoreBg(pct), display: 'flex', alignItems: 'center', 
+                                                justifyContent: 'center', fontWeight: 800, fontSize: '14px', 
+                                                color: getScoreColor(pct), flexShrink: 0 
+                                            }}>
+                                                {getGradeLabel(pct)}
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: '200px' }}>
+                                                <span style={{ fontWeight: 800, fontSize: '15px', color: '#1A1D3B', display: 'block' }}>{t.test?.test_name || 'Evaluation Test'}</span>
+                                                <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+                                                    <Clock size={12} /> {t.test?.subject} • {t.test?.date ? new Date(t.test.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <span style={{ fontWeight: 850, fontSize: '17px', color: '#1A1D3B' }}>{t.marks_obtained}</span>
+                                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '13px', fontWeight: 600 }}> / {t.total_marks} Marks</span>
+                                                </div>
+                                                <span style={{ 
+                                                    fontSize: '13px', fontWeight: 800, color: getScoreColor(pct),
+                                                    background: getScoreBg(pct), padding: '6px 12px', borderRadius: '10px'
+                                                }}>
+                                                    {Math.round(pct)}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
-                </div>
-            )}
+                )}
 
-            {activeTab === 'academics' && (
-                <div className="animate-in data-card" style={{ animationDelay: '250ms' }}>
-                    <h3 style={{ fontWeight: 800, fontSize: '16px', color: '#1A1D3B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <BookOpen size={18} color="#E53935" /> Recent Test Results
-                    </h3>
-                    {!testStats?.tests || testStats.tests.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '60px', color: '#A1A5B7' }}>
-                            <Award size={48} style={{ opacity: 0.3, marginBottom: '12px' }} />
-                            <p style={{ fontWeight: 600, fontSize: '14px' }}>No tests submitted yet</p>
-                        </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            {testStats.tests.map((t: any) => {
-                                const pct = t.percentage || 0;
-                                return (
-                                    <div key={t.id} className="test-row">
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: getScoreBg(pct), display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', color: getScoreColor(pct), flexShrink: 0 }}>
-                                            {getGradeLabel(pct)}
-                                        </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <span style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B', display: 'block' }}>{t.test?.test_name || 'Test'}</span>
-                                            <span style={{ fontSize: '12px', color: '#8F92A1' }}>{t.test?.subject} • {t.test?.date ? new Date(t.test.date).toLocaleDateString() : ''}</span>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontWeight: 800, fontSize: '16px', color: getScoreColor(pct) }}>{t.marks_obtained}/{t.total_marks}</span>
-                                            <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: getScoreColor(pct) }}>{Math.round(pct)}%</span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {activeTab === 'attendance' && (
-                <div className="animate-in data-card" style={{ animationDelay: '250ms' }}>
-                    <h3 style={{ fontWeight: 800, fontSize: '16px', color: '#1A1D3B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Calendar size={18} color="#E53935" /> Attendance Record
-                    </h3>
-                    {!attendance?.records || attendance.records.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '60px', color: '#A1A5B7' }}>
-                            <Calendar size={48} style={{ opacity: 0.3, marginBottom: '12px' }} />
-                            <p style={{ fontWeight: 600, fontSize: '14px' }}>No attendance records yet</p>
-                        </div>
-                    ) : (
-                        <>
-                            <div style={{ display: 'flex', gap: '24px', marginBottom: '24px', padding: '16px', background: '#F8F9FD', borderRadius: '16px' }}>
+                {activeTab === 'attendance' && (
+                    <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', animationDelay: '220ms' }}>
+                        {/* Attendance Summary Widgets */}
+                        <div className="glass-panel" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)' }}>
+                            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
                                 {[
-                                    { label: 'Present', count: attendance.summary?.present || 0, color: '#059669', bg: '#ECFDF5', icon: <Check size={16} /> },
-                                    { label: 'Absent', count: attendance.summary?.absent || 0, color: '#DC2626', bg: '#FEF2F2', icon: <X size={16} /> },
-                                    { label: 'Total', count: attendance.summary?.total || 0, color: '#1565C0', bg: '#E3F2FD', icon: <Calendar size={16} /> },
+                                    { label: 'Present Count', count: attendance.summary?.present || 0, color: 'var(--success)', bg: 'var(--success-light)', icon: <Check size={16} /> },
+                                    { label: 'Absent Count', count: attendance.summary?.absent || 0, color: 'var(--primary)', bg: 'var(--primary-light)', icon: <X size={16} /> },
+                                    { label: 'Late Registry', count: attendance.summary?.late || 0, color: 'var(--warning)', bg: 'var(--warning-light)', icon: <Clock size={16} /> },
+                                    { label: 'Total Tracked', count: attendance.summary?.total || 0, color: 'var(--info)', bg: 'var(--info-light)', icon: <Calendar size={16} /> },
                                 ].map(s => (
-                                    <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div key={s.label} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: '160px', padding: '16px', background: '#FFFFFF', border: '1px solid var(--border-primary)', borderRadius: '16px' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             {s.icon}
                                         </div>
                                         <div>
-                                            <span style={{ fontWeight: 800, fontSize: '18px', color: '#1A1D3B' }}>{s.count}</span>
-                                            <span style={{ fontSize: '12px', color: '#8F92A1', fontWeight: 600, display: 'block' }}>{s.label}</span>
+                                            <span style={{ fontWeight: 850, fontSize: '20px', color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>{s.count}</span>
+                                            <span style={{ fontSize: '11.5px', color: 'var(--text-tertiary)', fontWeight: 700, display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '2px' }}>{s.label}</span>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '400px', overflow: 'auto' }}>
-                                {attendance.records.slice(0, 30).map((r: any, idx: number) => (
-                                    <div key={r.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: '12px', background: idx % 2 === 0 ? '#FAFBFE' : 'white' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B' }}>
-                                                {new Date(r.attendance_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                            </span>
-                                            {r.class_name && (
-                                                <span style={{ fontSize: '11px', fontWeight: 700, background: '#E3F2FD', color: '#1565C0', padding: '2px 8px', borderRadius: '6px' }}>
-                                                    {r.class_name}
+                        </div>
+
+                        {/* Monthly visual attendance grid */}
+                        <div className="glass-panel" style={{ padding: '28px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)' }}>
+                            <h3 style={{ fontWeight: 800, fontSize: '18px', color: '#1A1D3B', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Poppins, sans-serif' }}>
+                                <Calendar size={20} color="var(--primary)" /> Month-Wise Historical Pattern Grid
+                            </h3>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '24px', fontWeight: 500 }}>
+                                Visual representation of the student's daily attendance records. Green blocks represent presence, red blocks indicate absence, and orange reflects late entries.
+                            </p>
+
+                            {groupedAttendance.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-tertiary)' }}>
+                                    <Info size={32} style={{ opacity: 0.3, marginBottom: '10px' }} />
+                                    <p style={{ fontWeight: 700 }}>No attendance calendar logs recorded.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+                                    {groupedAttendance.map((group: any) => (
+                                        <div key={group.monthYear} style={{ background: '#FAFBFD', borderRadius: '18px', padding: '20px', border: '1px solid rgba(229,57,53,0.02)' }}>
+                                            <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', marginBottom: '16px', fontFamily: 'Poppins, sans-serif', borderBottom: '1px solid var(--border-primary)', paddingBottom: '8px' }}>
+                                                {group.monthYear}
+                                            </h4>
+                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                {group.records.map((r: any) => {
+                                                    const dateObj = new Date(r.attendance_date);
+                                                    const dayNum = dateObj.getDate();
+                                                    
+                                                    let bg = 'var(--success-light)';
+                                                    let color = '#065F46';
+                                                    let label = 'Present';
+                                                    if (r.status === 'absent') {
+                                                        bg = 'var(--primary-light)';
+                                                        color = 'var(--primary)';
+                                                        label = 'Absent';
+                                                    } else if (r.status === 'late') {
+                                                        bg = 'var(--warning-light)';
+                                                        color = 'var(--warning)';
+                                                        label = 'Late';
+                                                    }
+
+                                                    return (
+                                                        <div 
+                                                            key={r.id} 
+                                                            className="student-grid-day"
+                                                            style={{ background: bg, color: color }}
+                                                            title={`Date: ${dateObj.toLocaleDateString()} | Status: ${label}`}
+                                                        >
+                                                            {dayNum}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Detailed roll logs */}
+                        <div className="glass-panel" style={{ padding: '28px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)' }}>
+                            <h3 style={{ fontWeight: 800, fontSize: '18px', color: '#1A1D3B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Poppins, sans-serif' }}>
+                                <Clock size={20} color="var(--primary)" /> Complete Register Log
+                            </h3>
+                            {!attendance?.records || attendance.records.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-tertiary)' }}>
+                                    <p style={{ fontWeight: 700 }}>No register entries recorded.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '8px' }}>
+                                    {attendance.records.map((r: any, idx: number) => (
+                                        <div key={r.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderRadius: '14px', background: idx % 2 === 0 ? '#FAFBFD' : 'white', border: '1px solid rgba(229,57,53,0.02)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1D3B' }}>
+                                                    {new Date(r.attendance_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                                                 </span>
-                                            )}
+                                                {r.class_name && (
+                                                    <span style={{ fontSize: '11px', fontWeight: 800, background: 'var(--info-light)', color: 'var(--info)', padding: '3px 10px', borderRadius: '6px' }}>
+                                                        {r.class_name}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span style={{
+                                                fontSize: '11px', fontWeight: 800, padding: '4px 14px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.5px',
+                                                background: r.status === 'present' ? 'var(--success-light)' : r.status === 'absent' ? 'var(--primary-light)' : 'var(--warning-light)',
+                                                color: r.status === 'present' ? '#065F46' : r.status === 'absent' ? 'var(--primary)' : 'var(--warning)',
+                                            }}>
+                                                {r.status}
+                                            </span>
                                         </div>
-                                        <span style={{
-                                            fontSize: '11px', fontWeight: 800, padding: '4px 12px', borderRadius: '8px', textTransform: 'uppercase',
-                                            background: r.status === 'present' ? '#ECFDF5' : r.status === 'absent' ? '#FEF2F2' : '#FEF3C7',
-                                            color: r.status === 'present' ? '#059669' : r.status === 'absent' ? '#DC2626' : '#D97706',
-                                        }}>
-                                            {r.status}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'remarks' && (
+                    <div className="animate-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', animationDelay: '220ms' }}>
+                        {/* Chronological Timeline */}
+                        <div className="glass-panel" style={{ padding: '28px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)' }}>
+                            <h3 style={{ fontWeight: 800, fontSize: '18px', color: '#1A1D3B', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Poppins, sans-serif' }}>
+                                <MessageSquare size={20} color="var(--primary)" /> Academic & Behavioral Timeline
+                            </h3>
+                            
+                            {remarks.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-tertiary)' }}>
+                                    <Sparkles size={40} style={{ opacity: 0.25, marginBottom: '14px', color: 'var(--primary)' }} />
+                                    <h4 style={{ fontWeight: 800, fontSize: '15px', color: '#1A1D3B' }}>Clean Behavioral Timeline</h4>
+                                    <p style={{ fontSize: '12px', marginTop: '4px', maxWidth: '300px', margin: '4px auto 0' }}>No teacher remarks or notices have been filed for this student.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: '8px', maxHeight: '550px', overflowY: 'auto', paddingRight: '8px' }}>
+                                    {remarks.map((r: any) => (
+                                        <div key={r.id} className={`remark-timeline-card ${r.remark_type || 'general'}`}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                                                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px',
+                                                    background: r.remark_type === 'performance' ? 'var(--info-light)' : r.remark_type === 'improvement' ? 'var(--warning-light)' : 'var(--primary-light)',
+                                                    color: r.remark_type === 'performance' ? 'var(--info)' : r.remark_type === 'improvement' ? 'var(--warning)' : 'var(--primary)'
+                                                }}>
+                                                    {r.remark_type || 'General'}
+                                                </span>
+                                                <span style={{ fontSize: '11.5px', color: 'var(--text-tertiary)', fontWeight: 500 }}>
+                                                    {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, background: '#FAFBFD', padding: '12px 16px', borderRadius: '12px', margin: '6px 0', border: '1px solid rgba(229,57,53,0.02)' }}>
+                                                {r.remark}
+                                            </p>
+                                            <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 700, display: 'block', textAlign: 'right' }}>
+                                                — By {r.teacher ? `${r.teacher.first_name} ${r.teacher.last_name}` : 'Supervising Instructor'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Remark console addition form */}
+                        <div className="glass-panel" style={{ padding: '28px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)', height: 'fit-content' }}>
+                            <h3 style={{ fontWeight: 800, fontSize: '18px', color: '#1A1D3B', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Poppins, sans-serif' }}>
+                                <Sparkles size={20} color="var(--primary)" /> Remarks Console
+                            </h3>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '24px', fontWeight: 500 }}>
+                                File an official behavioral or performance remark. Remarks are filed securely in audit logs and visible to administrators.
+                            </p>
+
+                            <form onSubmit={handleAddRemark} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                                <div className="input-group">
+                                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>Remark Classification</label>
+                                    <select
+                                        value={remarkType}
+                                        onChange={(e) => setRemarkType(e.target.value)}
+                                        style={{
+                                            padding: '12px', borderRadius: '12px', border: '1px solid var(--border-secondary)',
+                                            background: '#FAFAFC', color: '#1A1D3B', fontSize: '13.5px', fontWeight: 600, outline: 'none'
+                                        }}
+                                    >
+                                        <option value="general">General Notice</option>
+                                        <option value="performance">Academic Performance</option>
+                                        <option value="improvement">Improvement Required</option>
+                                    </select>
+                                </div>
+
+                                <div className="input-group">
+                                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>Log Details</label>
+                                    <textarea
+                                        rows={4}
+                                        placeholder="Type observations about class participation, exam results, or behavioral records..."
+                                        value={newRemark}
+                                        onChange={(e) => setNewRemark(e.target.value)}
+                                        style={{
+                                            padding: '14px', borderRadius: '12px', border: '1px solid var(--border-secondary)',
+                                            background: '#FAFAFC', color: '#1A1D3B', fontSize: '13.5px', fontWeight: 500, outline: 'none',
+                                            resize: 'none', lineHeight: 1.5
+                                        }}
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={isSubmittingRemark || !newRemark.trim()}
+                                    style={{
+                                        width: '100%', padding: '12px 20px', display: 'flex', alignItems: 'center',
+                                        justifyContent: 'center', gap: '8px', cursor: 'pointer'
+                                    }}
+                                >
+                                    <Send size={15} /> 
+                                    {isSubmittingRemark ? 'Filing Remark Log...' : 'File Remark Entry'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </div>
         </DashboardLayout>
     );
 }

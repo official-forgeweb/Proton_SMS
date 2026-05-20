@@ -315,6 +315,28 @@ router.post('/:id/results', authenticateToken, authorize('admin', 'teacher'), as
       );
     }
 
+    if (req.user!.role === 'teacher') {
+      const classInfo = await prisma.class.findUnique({
+        where: { id: test.class_id },
+        select: { class_name: true }
+      });
+      const { logTeacherActivity } = require('../utils/activityLogger');
+      await logTeacherActivity(
+        req.user!.id,
+        'marks_upload',
+        null,
+        JSON.stringify({
+          test_id: test.id,
+          test_name: test.test_name,
+          subject: test.subject,
+          total_students: savedResults.length,
+          present_students: presentCount
+        }),
+        `Uploaded marks for ${test.test_name} (${test.subject || 'N/A'}) - ${classInfo?.class_name || 'Class'}`,
+        req
+      );
+    }
+
     res.json({ success: true, data: savedResults, message: 'Results saved successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });

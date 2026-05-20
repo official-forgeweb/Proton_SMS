@@ -113,7 +113,7 @@ router.get('/stats', authenticateToken, authorize('admin', 'teacher'), async (re
 router.get('/:id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const query = await prisma.studentQuery.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         student: {
           select: {
@@ -122,10 +122,6 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
             class_enrollments: {
               where: { enrollment_status: 'active' },
               select: { class: { select: { class_name: true } } }
-            },
-            parent_mappings: {
-              include: { parent: { select: { first_name: true, last_name: true, phone: true } } },
-              take: 1
             }
           }
         },
@@ -216,7 +212,7 @@ router.post('/', authenticateToken, authorize('admin', 'teacher', 'student'), as
 router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { status, resolution_note } = req.body;
-    const id = req.params.id;
+    const id = req.params.id as string;
 
     const existing = await prisma.studentQuery.findUnique({ where: { id } });
     if (!existing) {
@@ -258,7 +254,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
 // DELETE /api/queries/:id — delete query (admin only)
 router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
-    await prisma.studentQuery.delete({ where: { id: req.params.id } });
+    await prisma.studentQuery.delete({ where: { id: req.params.id as string } });
     res.json({ success: true, message: 'Query deleted' });
   } catch (error: any) {
     if (error.code === 'P2025') {

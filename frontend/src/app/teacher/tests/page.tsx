@@ -86,7 +86,7 @@ export default function TestsPage() {
         <DashboardLayout requiredRole="teacher">
             <style dangerouslySetInnerHTML={{__html: customStyles}} />
             
-            <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: 'calc(100vh - 40px)', borderRadius: '24px' }}>
+            <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: 'calc(100vh - 40px)', borderRadius: '24px', paddingBottom: '120px' }}>
 
                 {/* Header Section */}
                 <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '36px', animationDelay: '0ms' }}>

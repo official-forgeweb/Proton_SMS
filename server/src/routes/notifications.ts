@@ -122,7 +122,7 @@ router.get('/unread-count', authenticateToken, async (req: Request, res: Respons
 router.put('/:id/read', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     await prisma.notification.updateMany({
-      where: { id: req.params.id, recipient_id: req.user!.id },
+      where: { id: req.params.id as string, recipient_id: req.user!.id },
       data: { is_read: true },
     });
     res.json({ success: true, message: 'Notification marked as read' });
@@ -192,7 +192,7 @@ router.post('/send', authenticateToken, authorize('admin', 'teacher'), async (re
 router.delete('/:id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     await prisma.notification.deleteMany({
-      where: { id: req.params.id, recipient_id: req.user!.id },
+      where: { id: req.params.id as string, recipient_id: req.user!.id },
     });
     res.json({ success: true, message: 'Notification deleted' });
   } catch (error) {

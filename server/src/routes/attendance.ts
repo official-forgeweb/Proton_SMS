@@ -162,7 +162,7 @@ router.get('/calendar', authenticateToken, async (req: Request, res: Response): 
 router.get('/stats', authenticateToken, async (req: Request, res: Response): Promise<void> => {
     try {
         const { student_id } = req.query as Record<string, string>;
-        let targetStudentId = student_id;
+        let targetStudentId: string | undefined = student_id;
 
         if (req.user!.role === 'student') {
             const student = await prisma.student.findUnique({ where: { user_id: req.user!.id } });
@@ -326,6 +326,38 @@ router.post('/mark', authenticateToken, authorize('admin', 'teacher'), async (re
             }
         }
 
+        if (req.user!.role === 'teacher') {
+            let presentCount = 0;
+            let absentCount = 0;
+            let lateCount = 0;
+            for (const rec of records) {
+                if (rec.status === 'present') presentCount++;
+                else if (rec.status === 'absent') absentCount++;
+                else if (rec.status === 'late') lateCount++;
+            }
+
+            const classInfo = await prisma.class.findUnique({
+                where: { id: session.class_id },
+                select: { class_name: true }
+            });
+
+            const { logTeacherActivity } = require('../utils/activityLogger');
+            await logTeacherActivity(
+                req.user!.id,
+                'attendance_mark',
+                null,
+                JSON.stringify({
+                    timetable_id,
+                    present: presentCount,
+                    absent: absentCount,
+                    late: lateCount,
+                    total: records.length
+                }),
+                `Attendance for ${classInfo?.class_name || 'Class'} on ${date || session.date} (Subject: ${session.subject})`,
+                req
+            );
+        }
+ 
         res.json({ success: true, message: `Attendance marked for ${savedRecords.length} students`, data: savedRecords });
     } catch (error) {
         console.error(error);
@@ -337,7 +369,7 @@ router.post('/mark', authenticateToken, authorize('admin', 'teacher'), async (re
 // Fetches students and their attendance status for a specific session, filtered by subject enrollment
 router.get('/session/:timetable_id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
     try {
-        const { timetable_id } = req.params;
+        const { timetable_id } = req.params as { timetable_id: string };
         const session = await prisma.timetable.findUnique({
             where: { id: timetable_id },
             include: { class_ref: true }

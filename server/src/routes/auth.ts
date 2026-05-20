@@ -69,6 +69,11 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       data: { failed_login_attempts: 0, locked_until: null, last_login: new Date() },
     });
 
+    if (user.role === 'teacher') {
+      const { logTeacherActivity } = require('../utils/activityLogger');
+      await logTeacherActivity(user.id, 'login', null, null, 'Teacher Portal Login', req);
+    }
+
     const accessToken = generateAccessToken(user.id, user.role);
     const refreshToken = generateRefreshToken(user.id);
 
