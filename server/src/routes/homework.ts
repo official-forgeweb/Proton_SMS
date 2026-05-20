@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { sendNotification, getStudentUserIdsForClass } from './notifications';
 
 const router = Router();
 
@@ -129,6 +130,19 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
           status: 'pending',
         })),
       });
+
+      // Send notifications to all enrolled students
+      const studentUserIds = await getStudentUserIdsForClass(hw.class_id);
+      if (studentUserIds.length > 0) {
+        await sendNotification(
+          studentUserIds,
+          req.user!.id,
+          'general',
+          'New Homework Assigned',
+          `A new homework assignment "${hw.title || 'Untitled'}" has been published. Due date: ${hw.due_date || 'N/A'}.`,
+          hw.id
+        );
+      }
     }
 
     res.status(201).json({ success: true, data: { ...hw, id: hw.id } });
@@ -223,6 +237,20 @@ router.post('/:id/evaluate', authenticateToken, authorize('admin', 'teacher'), a
       where: { id: submission.id },
       data: { marks_obtained, feedback, status: 'evaluated' },
     });
+
+    // Notify the student about evaluated homework
+    const student = await prisma.student.findUnique({ where: { id: student_id }, select: { user_id: true } });
+    const hwObj = await prisma.homework.findUnique({ where: { id }, select: { title: true } });
+    if (student && student.user_id) {
+      await sendNotification(
+        [student.user_id],
+        req.user!.id,
+        'general',
+        'Homework Evaluated',
+        `Your homework "${hwObj?.title || 'Untitled'}" has been evaluated. Marks: ${marks_obtained}. Feedback: ${feedback || 'None'}.`,
+        id
+      );
+    }
 
     res.json({ success: true, data: { ...updated, id: updated.id } });
   } catch (error) {

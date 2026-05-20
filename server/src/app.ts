@@ -29,6 +29,8 @@ import studyMaterialRoutes from './routes/studyMaterials';
 import settingsRoutes from './routes/settings';
 import notificationRoutes from './routes/notifications';
 import attendanceRoutes from './routes/attendance';
+import messageRoutes from './routes/messages';
+import searchRoutes from './routes/search';
 
 const app = express();
 
@@ -77,6 +79,8 @@ app.use('/api/study-materials', studyMaterialRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/search', searchRoutes);
 
 // Health check
 app.get('/api/health', dbHealthCheck, (req, res) => {

@@ -1,10 +1,11 @@
 'use client';
-import { useEffect, useState, useCallback, ReactNode } from 'react';
+import { useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import Sidebar from '@/components/Sidebar';
-import { Search, Bell, MessageSquare, WifiOff, RefreshCw, X, Check } from 'lucide-react';
+import { Search, Bell, MessageSquare, WifiOff, RefreshCw, X, Check, GraduationCap, UserCheck, BookOpen, FileText, HelpCircle, Award, User } from 'lucide-react';
 import api from '@/lib/api';
+import ChatDrawer from '@/components/ChatDrawer';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -20,6 +21,88 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
+
+    // Chat Drawer & Search States
+    const [showChatDrawer, setShowChatDrawer] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+    const searchContainerRef = useRef<HTMLDivElement>(null);
+
+    // Click outside search dropdown listener
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+                setShowSearchDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Search query debouncer
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            setShowSearchDropdown(false);
+            return;
+        }
+        const handler = setTimeout(async () => {
+            try {
+                const res = await api.get(`/search?q=${encodeURIComponent(searchQuery)}`);
+                setSearchResults(res.data.data || []);
+                setShowSearchDropdown(true);
+            } catch (error) {
+                setSearchResults([]);
+            }
+        }, 300);
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
+
+    const getSearchIcon = (type: string) => {
+        switch (type) {
+            case 'student': return GraduationCap;
+            case 'teacher': return UserCheck;
+            case 'class': return BookOpen;
+            case 'enquiry': return FileText;
+            case 'query': return HelpCircle;
+            case 'homework': return FileText;
+            case 'test': return Award;
+            case 'material': return BookOpen;
+            default: return User;
+        }
+    };
+
+    const getSearchIconBg = (type: string) => {
+        switch (type) {
+            case 'student': return 'rgba(16, 185, 129, 0.08)';
+            case 'teacher': return 'rgba(59, 130, 246, 0.08)';
+            case 'class': return 'rgba(139, 92, 246, 0.08)';
+            case 'enquiry': return 'rgba(245, 158, 11, 0.08)';
+            case 'query': return 'rgba(239, 68, 68, 0.08)';
+            case 'homework': return 'rgba(236, 72, 153, 0.08)';
+            case 'test': return 'rgba(244, 63, 94, 0.08)';
+            case 'material': return 'rgba(20, 184, 166, 0.08)';
+            default: return 'rgba(161, 165, 183, 0.08)';
+        }
+    };
+
+    const getSearchIconColor = (type: string) => {
+        switch (type) {
+            case 'student': return '#10B981';
+            case 'teacher': return '#3B82F6';
+            case 'class': return '#8B5CF6';
+            case 'enquiry': return '#F59E0B';
+            case 'query': return '#EF4444';
+            case 'homework': return '#EC4899';
+            case 'test': return '#F43F5E';
+            case 'material': return '#20B2AA';
+            default: return '#A1A5B7';
+        }
+    };
+
+    const getSearchBadgeBg = (type: string) => getSearchIconBg(type);
+    const getSearchBadgeColor = (type: string) => getSearchIconColor(type);
 
     useEffect(() => {
         checkAuth();
@@ -307,6 +390,22 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
 
     return (
         <div className="bg-mesh" suppressHydrationWarning style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+            <style dangerouslySetInnerHTML={{__html: `
+                .search-result-item:hover {
+                    background-color: #F8F9FD !important;
+                }
+                .header-action-btn {
+                    transition: all 0.2s ease-in-out !important;
+                }
+                .header-action-btn:hover {
+                    border-color: #E53935 !important;
+                    background-color: #FFF5F5 !important;
+                    box-shadow: 0 4px 12px rgba(229, 57, 53, 0.08) !important;
+                }
+                .header-action-btn:hover .icon-default {
+                    color: #E53935 !important;
+                }
+            `}} />
             <Sidebar />
             <main style={{
                 marginLeft: '260px',
@@ -353,20 +452,131 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                     borderBottom: '1px solid #EEEEF5',
                 }}>
                     {/* Search Bar */}
-                    <div style={{
-                        display: 'flex', alignItems: 'center', background: '#FFFFFF',
-                        borderRadius: '50px', padding: '10px 20px', width: '340px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid #EEEEF5',
-                        gap: '10px',
-                    }}>
-                        <Search size={16} color="#A1A5B7" strokeWidth={2.5} />
-                        <input
-                            placeholder="Search here..."
-                            style={{
-                                border: 'none', background: 'transparent', outline: 'none',
-                                flex: 1, fontSize: '14px', color: '#1A1D3B',
-                            }}
-                        />
+                    <div style={{ position: 'relative', width: '340px' }} ref={searchContainerRef}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: '#FFFFFF',
+                            borderRadius: '50px',
+                            padding: '10px 20px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                            border: searchQuery && showSearchDropdown ? '1px solid #E53935' : '1px solid #EEEEF5',
+                            gap: '10px',
+                            transition: 'border-color 0.2s',
+                        }}>
+                            <Search size={16} color="#A1A5B7" strokeWidth={2.5} />
+                            <input
+                                placeholder="Search here..."
+                                value={searchQuery}
+                                onChange={e => {
+                                    setSearchQuery(e.target.value);
+                                    setShowSearchDropdown(true);
+                                }}
+                                onFocus={() => {
+                                    if (searchQuery.trim()) {
+                                        setShowSearchDropdown(true);
+                                    }
+                                }}
+                                style={{
+                                    border: 'none', background: 'transparent', outline: 'none',
+                                    flex: 1, fontSize: '14px', color: '#1A1D3B',
+                                }}
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        setSearchResults([]);
+                                        setShowSearchDropdown(false);
+                                    }}
+                                    style={{
+                                        background: 'none', border: 'none', cursor: 'pointer',
+                                        padding: '4px', color: '#A1A5B7', display: 'flex', alignItems: 'center'
+                                    }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Search Results Dropdown */}
+                        {showSearchDropdown && searchQuery.trim() && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                marginTop: '8px',
+                                background: 'rgba(255, 255, 255, 0.95)',
+                                backdropFilter: 'blur(20px)',
+                                borderRadius: '16px',
+                                border: '1px solid rgba(238, 238, 245, 0.9)',
+                                boxShadow: '0 12px 32px rgba(26, 29, 59, 0.12)',
+                                zIndex: 100,
+                                overflow: 'hidden',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                maxHeight: '350px',
+                            }}>
+                                <div style={{ overflowY: 'auto', padding: '8px 0' }}>
+                                    {searchResults.length > 0 ? (
+                                        searchResults.map((result, idx) => {
+                                            const Icon = getSearchIcon(result.type);
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    onClick={() => {
+                                                        router.push(result.href);
+                                                        setShowSearchDropdown(false);
+                                                        setSearchQuery('');
+                                                    }}
+                                                    style={{
+                                                        padding: '12px 16px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '12px',
+                                                        cursor: 'pointer',
+                                                        transition: 'background-color 0.2s',
+                                                        borderBottom: idx === searchResults.length - 1 ? 'none' : '1px solid #F8F9FD'
+                                                    }}
+                                                    className="search-result-item"
+                                                >
+                                                    <div style={{
+                                                        width: '32px', height: '32px', borderRadius: '50%',
+                                                        background: getSearchIconBg(result.type),
+                                                        color: getSearchIconColor(result.type),
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        <Icon size={16} />
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                                                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {result.title}
+                                                        </span>
+                                                        <span style={{ fontSize: '11px', color: '#A1A5B7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {result.subtitle}
+                                                        </span>
+                                                    </div>
+                                                    <span style={{
+                                                        fontSize: '9px', textTransform: 'uppercase', fontWeight: 800,
+                                                        color: getSearchBadgeColor(result.type),
+                                                        background: getSearchBadgeBg(result.type),
+                                                        padding: '2px 8px', borderRadius: '12px', flexShrink: 0
+                                                    }}>
+                                                        {result.type}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div style={{ padding: '24px 16px', textAlign: 'center', color: '#A1A5B7' }}>
+                                            <p style={{ margin: 0, fontSize: '13px' }}>No matches found for "{searchQuery}"</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Side Actions */}
@@ -473,13 +683,17 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                         </div>
 
                         {/* Message */}
-                        <button className="header-action-btn" style={{
-                            background: '#FFFFFF', border: '1px solid #EEEEF5', cursor: 'pointer',
-                            width: '40px', height: '40px', borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                            transition: 'all 0.2s',
-                        }}>
+                        <button 
+                            className="header-action-btn" 
+                            onClick={() => setShowChatDrawer(true)}
+                            style={{
+                                background: '#FFFFFF', border: '1px solid #EEEEF5', cursor: 'pointer',
+                                width: '40px', height: '40px', borderRadius: '50%',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                transition: 'all 0.2s',
+                            }}
+                        >
                             <MessageSquare size={18} className="icon-default" />
                         </button>
 
@@ -513,6 +727,12 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                     {children}
                 </div>
             </main>
+
+            <ChatDrawer
+                isOpen={showChatDrawer}
+                onClose={() => setShowChatDrawer(false)}
+                currentUserId={user.id}
+            />
         </div>
     );
 }

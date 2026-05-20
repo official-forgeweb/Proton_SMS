@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { sendNotification } from './notifications';
 
 const router = Router();
 
@@ -201,6 +202,20 @@ router.post('/', authenticateToken, authorize('admin', 'teacher', 'student'), as
       }
     });
 
+    if (target_teacher_id) {
+      const teacher = await prisma.teacher.findUnique({ where: { id: target_teacher_id }, select: { user_id: true } });
+      if (teacher && teacher.user_id) {
+        await sendNotification(
+          [teacher.user_id],
+          req.user!.id,
+          'general',
+          'New Student Query',
+          `${query.student.first_name || ''} ${query.student.last_name || ''}`.trim() + ` raised a query: ${query_type}`,
+          query.id
+        );
+      }
+    }
+
     res.status(201).json({ success: true, data: query });
   } catch (error) {
     console.error(error);
@@ -235,10 +250,21 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
       where: { id },
       data: updateData,
       include: {
-        student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+        student: { select: { first_name: true, last_name: true, PRO_ID: true, user_id: true } },
         target_teacher: { select: { first_name: true, last_name: true } }
       }
     });
+
+    if (query.student && query.student.user_id) {
+      await sendNotification(
+        [query.student.user_id],
+        req.user!.id,
+        'general',
+        'Query Status Updated',
+        `Your query ${query.query_number} status has been updated to: ${query.status}`,
+        query.id
+      );
+    }
 
     res.json({ success: true, data: query });
   } catch (error: any) {

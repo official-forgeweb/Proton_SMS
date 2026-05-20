@@ -55,6 +55,8 @@ model User {
   study_materials_uploaded StudyMaterial[] @relation("UploaderMaterial")
   notifications_received Notification[] @relation("NotificationRecipient")
   notifications_sent     Notification[] @relation("NotificationSender")
+  messages_sent          Message[]      @relation("SentMessages")
+  messages_received      Message[]      @relation("ReceivedMessages")
 
   @@map("users")
 }
@@ -739,3 +741,25 @@ model TeacherActivityLog {
   @@index([created_at])
   @@map("teacher_activity_logs")
 }
+
+// ──────────────────────────────────────────────
+// Chat Messages
+// ──────────────────────────────────────────────
+
+model Message {
+  id           String   @id @default(uuid())
+  sender_id    String
+  recipient_id String
+  content      String   @db.Text
+  is_read      Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  sender    User @relation("SentMessages", fields: [sender_id], references: [id], onDelete: Cascade)
+  recipient User @relation("ReceivedMessages", fields: [recipient_id], references: [id], onDelete: Cascade)
+
+  @@index([sender_id])
+  @@index([recipient_id])
+  @@index([created_at])
+  @@map("messages")
+}
+

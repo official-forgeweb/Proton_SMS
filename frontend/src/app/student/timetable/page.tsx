@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { Calendar, Clock, MapPin, User, ChevronLeft, ChevronRight, BookOpen, Layers } from 'lucide-react';
+import ToolBottomBar from '@/components/ToolBottomBar';
 
 const SUBJECT_PALETTES: Record<string, { bg: string; border: string; text: string; dot: string }> = {
     'Physics':     { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF', dot: '#3B82F6' },
@@ -175,442 +176,466 @@ export default function StudentTimetablePage() {
 
     return (
         <DashboardLayout requiredRole="student">
-            <div className="page-header">
-                <div>
-                    <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#1A1D3B' }}>My Class Schedule</h1>
-                    <p style={{ color: '#64748B', fontSize: '14px', marginTop: '4px' }}>
-                        Your weekly classes at a glance. Never miss a session.
-                    </p>
+            <div style={{ paddingBottom: '120px' }}>
+                <div className="page-header" style={{ marginBottom: '32px' }}>
+                    <div>
+                        <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', letterSpacing: '-0.02em', margin: 0 }}>
+                            My Class Schedule
+                        </h1>
+                        <p style={{ color: '#64748B', fontSize: '15px', marginTop: '6px', fontWeight: 500 }}>
+                            Your weekly classes at a glance. Never miss a session.
+                        </p>
+                    </div>
                 </div>
-            </div>
 
-            <div className="page-body">
-                {/* ── Top Bar: View Toggle + Nav + Filter ── */}
-                <div style={{
-                    display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center',
-                    justifyContent: 'space-between', marginBottom: '24px',
-                    padding: '14px 20px', background: 'white', borderRadius: '16px',
-                    border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                }}>
-                    {/* View Mode Toggle */}
-                    <div style={{ display: 'flex', background: '#F1F5F9', borderRadius: '10px', padding: '3px' }}>
-                        <button
-                            onClick={() => setViewMode('week')}
-                            style={{
-                                padding: '7px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                                fontWeight: 700, fontSize: '13px',
-                                background: viewMode === 'week' ? 'white' : 'transparent',
-                                color: viewMode === 'week' ? '#1A1D3B' : '#94A3B8',
-                                boxShadow: viewMode === 'week' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                                transition: 'all 0.2s',
-                            }}
-                        >
-                            <Layers size={14} style={{ marginRight: '6px', verticalAlign: '-2px' }} />Week
-                        </button>
-                        <button
-                            onClick={() => setViewMode('day')}
-                            style={{
-                                padding: '7px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                                fontWeight: 700, fontSize: '13px',
-                                background: viewMode === 'day' ? 'white' : 'transparent',
-                                color: viewMode === 'day' ? '#1A1D3B' : '#94A3B8',
-                                boxShadow: viewMode === 'day' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                                transition: 'all 0.2s',
-                            }}
-                        >
-                            <Calendar size={14} style={{ marginRight: '6px', verticalAlign: '-2px' }} />Day
-                        </button>
-                    </div>
-
-                    {/* Week Navigation */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <button onClick={() => setWeekOffset(w => w - 1)} style={{ background: '#F1F5F9', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                            <ChevronLeft size={18} color="#64748B" />
-                        </button>
-                        <span style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B', minWidth: '180px', textAlign: 'center' }}>
-                            {weekDates[0].toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – {weekDates[6].toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </span>
-                        <button onClick={() => setWeekOffset(w => w + 1)} style={{ background: '#F1F5F9', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                            <ChevronRight size={18} color="#64748B" />
-                        </button>
-                        {weekOffset !== 0 && (
-                            <button onClick={() => setWeekOffset(0)} style={{ background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '8px', padding: '6px 14px', cursor: 'pointer', color: '#4F46E5', fontWeight: 700, fontSize: '12px' }}>
-                                Today
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Filters */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <select
-                            value={filterSubject}
-                            onChange={e => setFilterSubject(e.target.value)}
-                            style={{
-                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
-                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
-                                background: filterSubject ? '#EEF2FF' : 'white', color: '#1A1D3B',
-                            }}
-                        >
-                            <option value="">All Subjects</option>
-                            {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                        <select
-                            value={filterStatus}
-                            onChange={e => setFilterStatus(e.target.value)}
-                            style={{
-                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
-                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
-                                background: filterStatus ? '#EEF2FF' : 'white', color: '#1A1D3B',
-                            }}
-                        >
-                            <option value="">All Status</option>
-                            <option value="scheduled">Scheduled</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                        <select
-                            value={filterTeacher}
-                            onChange={e => setFilterTeacher(e.target.value)}
-                            style={{
-                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
-                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
-                                background: filterTeacher ? '#EEF2FF' : 'white', color: '#1A1D3B',
-                            }}
-                        >
-                            <option value="">All Teachers</option>
-                            {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                        </select>
-                        {hasActiveFilters && (
+                <div className="page-body">
+                    {/* ── Top Bar: View Toggle + Nav + Filter ── */}
+                    <div style={{
+                        display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center',
+                        justifyContent: 'space-between', marginBottom: '32px',
+                        padding: '16px 24px', background: 'rgba(255, 255, 255, 0.9)', borderRadius: '24px',
+                        border: '1px solid rgba(226, 232, 240, 0.8)', backdropFilter: 'blur(16px)',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.03)',
+                    }}>
+                        {/* View Mode Toggle */}
+                        <div style={{ display: 'flex', background: '#F1F5F9', borderRadius: '12px', padding: '4px' }}>
                             <button
-                                onClick={() => { setFilterSubject(''); setFilterStatus(''); setFilterTeacher(''); }}
+                                onClick={() => setViewMode('week')}
                                 style={{
-                                    padding: '8px 14px', borderRadius: '10px', border: '1px solid #FCA5A5',
-                                    fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                    background: '#FEF2F2', color: '#DC2626',
+                                    padding: '8px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                                    fontWeight: 700, fontSize: '13px',
+                                    background: viewMode === 'week' ? 'white' : 'transparent',
+                                    color: viewMode === 'week' ? '#E53935' : '#94A3B8',
+                                    boxShadow: viewMode === 'week' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                 }}
                             >
-                                ✕ Clear
+                                <Layers size={14} style={{ marginRight: '6px', verticalAlign: '-2px' }} />Week
                             </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* ── Quick Stats ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '14px', marginBottom: '24px' }}>
-                    <div style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
-                        <p style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Today</p>
-                        <p style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0 0' }}>{rawTodayEntries.length}</p>
-                        <p style={{ fontSize: '12px', opacity: 0.75 }}>classes</p>
-                    </div>
-                    <div style={{ background: 'linear-gradient(135deg, #0EA5E9, #06B6D4)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
-                        <p style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>This Week</p>
-                        <p style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0 0' }}>{weekEntries.length}</p>
-                        <p style={{ fontSize: '12px', opacity: 0.75 }}>classes</p>
-                    </div>
-                    <div style={{ background: 'linear-gradient(135deg, #F59E0B, #EF4444)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
-                        <p style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Subjects</p>
-                        <p style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0 0' }}>{subjects.length}</p>
-                        <p style={{ fontSize: '12px', opacity: 0.75 }}>enrolled</p>
-                    </div>
-                    {nextClass ? (
-                        <div style={{ background: 'white', borderRadius: '16px', padding: '18px 20px', border: '1px solid #E2E8F0' }}>
-                            <p style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Next Class</p>
-                            <p style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: '4px 0 0' }}>{nextClass.subject}</p>
-                            <p style={{ fontSize: '12px', color: '#64748B' }}>{formatTime12(nextClass.start_time)}</p>
-                        </div>
-                    ) : rawTodayEntries.length > 0 ? (
-                        <div style={{ background: 'linear-gradient(135deg, #10B981, #059669)', borderRadius: '16px', padding: '18px 20px', color: 'white' }}>
-                            <p style={{ fontSize: '11px', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</p>
-                            <p style={{ fontSize: '16px', fontWeight: 800, margin: '4px 0 0' }}>All Done ✓</p>
-                            <p style={{ fontSize: '12px', opacity: 0.75 }}>for today</p>
-                        </div>
-                    ) : null}
-                </div>
-
-                {isLoading ? (
-                    <div style={{ display: 'grid', gap: '16px' }}>
-                        {[1, 2, 3].map(i => <div key={i} className="animate-fade-in" style={{ height: '120px', borderRadius: '16px', background: '#F8F9FD', border: '1px solid #E2E8F0', animationDelay: `${i * 100}ms` }} />)}
-                    </div>
-                ) : viewMode === 'week' ? (
-                    /* ── WEEK GRID VIEW ── */
-                    <div style={{
-                        background: 'white', borderRadius: '20px', overflow: 'hidden',
-                        border: '1px solid #E2E8F0', boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
-                    }}>
-                        {/* Day headers */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #F1F5F9', background: '#FAFBFC' }}>
-                            {weekDates.map((d, i) => {
-                                const isToday = formatDateStr(d) === todayStr;
-                                return (
-                                    <div
-                                        key={i}
-                                        onClick={() => { setSelectedDayIdx(i); setViewMode('day'); }}
-                                        style={{
-                                            padding: '16px 8px', textAlign: 'center', cursor: 'pointer',
-                                            borderRight: i < 6 ? '1px solid #F1F5F9' : 'none',
-                                            background: isToday ? 'linear-gradient(135deg, #EEF2FF, #E0E7FF)' : 'transparent',
-                                            transition: 'background 0.2s',
-                                        }}
-                                    >
-                                        <p style={{ fontSize: '12px', fontWeight: 700, color: isToday ? '#4F46E5' : '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-                                            {DAY_LABELS[i]}
-                                        </p>
-                                        <p style={{
-                                            fontSize: '20px', fontWeight: 800,
-                                            color: isToday ? '#4F46E5' : '#1A1D3B',
-                                            margin: '2px 0 0',
-                                            width: '36px', height: '36px', lineHeight: '36px',
-                                            borderRadius: '10px', marginLeft: 'auto', marginRight: 'auto',
-                                            background: isToday ? '#4F46E5' : 'transparent',
-                                            ...(isToday ? { color: 'white' } : {}),
-                                        }}>
-                                            {d.getDate()}
-                                        </p>
-                                    </div>
-                                );
-                            })}
+                            <button
+                                onClick={() => setViewMode('day')}
+                                style={{
+                                    padding: '8px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                                    fontWeight: 700, fontSize: '13px',
+                                    background: viewMode === 'day' ? 'white' : 'transparent',
+                                    color: viewMode === 'day' ? '#E53935' : '#94A3B8',
+                                    boxShadow: viewMode === 'day' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                }}
+                            >
+                                <Calendar size={14} style={{ marginRight: '6px', verticalAlign: '-2px' }} />Day
+                            </button>
                         </div>
 
-                        {/* Grid body */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', minHeight: '340px' }}>
-                            {weekDates.map((d, i) => {
-                                const dateStr = formatDateStr(d);
-                                const dayEntries = entriesByDate[dateStr] || [];
-                                const isToday = dateStr === todayStr;
-                                return (
-                                    <div key={i} style={{
-                                        padding: '10px 8px', borderRight: i < 6 ? '1px solid #F1F5F9' : 'none',
-                                        minHeight: '300px', background: isToday ? 'rgba(238,242,255,0.3)' : 'transparent',
-                                        display: 'flex', flexDirection: 'column', gap: '8px',
-                                    }}>
-                                        {dayEntries.length === 0 && (
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.3, fontSize: '12px', color: '#94A3B8' }}>
-                                                No class
-                                            </div>
-                                        )}
-                                        {dayEntries.map((entry: any) => {
-                                            const palette = getSubjectPalette(entry.subject);
-                                            const statusColor = entry.status === 'completed' ? '#10B981' : entry.status === 'cancelled' ? '#EF4444' : palette.dot;
-                                            return (
-                                                <div key={entry.id} style={{
-                                                    background: entry.status === 'cancelled' ? '#FEF2F2' : palette.bg,
-                                                    border: `1.5px solid ${entry.status === 'cancelled' ? '#FECACA' : palette.border}`,
-                                                    borderRadius: '12px', padding: '10px 12px',
-                                                    borderLeft: `4px solid ${statusColor}`,
-                                                    opacity: entry.status === 'cancelled' ? 0.65 : 1,
-                                                    transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'default',
-                                                }}
-                                                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; }}
-                                                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
-                                                >
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                        <p style={{ fontSize: '13px', fontWeight: 800, color: palette.text, margin: 0, lineHeight: 1.2 }}>
-                                                            {entry.subject}
-                                                        </p>
-                                                        {entry.status !== 'scheduled' && (
-                                                            <span style={{ fontSize: '8px', fontWeight: 800, padding: '2px 5px', borderRadius: '4px', background: entry.status === 'completed' ? '#D1FAE5' : '#FEE2E2', color: entry.status === 'completed' ? '#065F46' : '#991B1B', textTransform: 'uppercase', letterSpacing: '0.3px', lineHeight: 1 }}>
-                                                                {entry.status === 'completed' ? '✓' : '✕'}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <p style={{ fontSize: '11px', color: '#64748B', margin: '4px 0 0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                        <Clock size={10} /> {formatTime12(entry.start_time)}
-                                                        {entry.end_time ? ` – ${formatTime12(entry.end_time)}` : ''}
-                                                    </p>
-                                                    {entry.teacher && (
-                                                        <p style={{ fontSize: '10px', color: '#64748B', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                                            <User size={9} /> {entry.teacher.first_name} {entry.teacher.last_name}
-                                                        </p>
-                                                    )}
-                                                    {entry.room && (
-                                                        <p style={{ fontSize: '10px', color: '#94A3B8', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                                            <MapPin size={9} /> {entry.room}
-                                                        </p>
-                                                    )}
-                                                    <p style={{ fontSize: '10px', color: '#94A3B8', margin: '3px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {entry.class_ref?.class_name}
-                                                    </p>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                );
-                            })}
+                        {/* Week Navigation */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <button onClick={() => setWeekOffset(w => w - 1)} style={{ background: '#F1F5F9', border: 'none', borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#E2E8F0'} onMouseLeave={e => e.currentTarget.style.background = '#F1F5F9'}>
+                                <ChevronLeft size={18} color="#64748B" />
+                            </button>
+                            <span style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B', minWidth: '180px', textAlign: 'center' }}>
+                                {weekDates[0].toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – {weekDates[6].toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                            <button onClick={() => setWeekOffset(w => w + 1)} style={{ background: '#F1F5F9', border: 'none', borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#E2E8F0'} onMouseLeave={e => e.currentTarget.style.background = '#F1F5F9'}>
+                                <ChevronRight size={18} color="#64748B" />
+                            </button>
+                            {weekOffset !== 0 && (
+                                <button onClick={() => setWeekOffset(0)} style={{ background: 'rgba(229, 57, 53, 0.06)', border: '1px solid rgba(229, 57, 53, 0.2)', borderRadius: '10px', padding: '8px 16px', cursor: 'pointer', color: '#E53935', fontWeight: 800, fontSize: '12px', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(229, 57, 53, 0.1)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(229, 57, 53, 0.06)'}>
+                                    Today
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Filters */}
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <select
+                                value={filterSubject}
+                                onChange={e => setFilterSubject(e.target.value)}
+                                style={{
+                                    padding: '10px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0',
+                                    fontSize: '13px', fontWeight: 700, cursor: 'pointer', outline: 'none',
+                                    background: filterSubject ? 'rgba(229, 57, 53, 0.06)' : 'white', color: '#1A1D3B',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                <option value="">All Subjects</option>
+                                {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            <select
+                                value={filterStatus}
+                                onChange={e => setFilterStatus(e.target.value)}
+                                style={{
+                                    padding: '10px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0',
+                                    fontSize: '13px', fontWeight: 700, cursor: 'pointer', outline: 'none',
+                                    background: filterStatus ? 'rgba(229, 57, 53, 0.06)' : 'white', color: '#1A1D3B',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                <option value="">All Status</option>
+                                <option value="scheduled">Scheduled</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                            <select
+                                value={filterTeacher}
+                                onChange={e => setFilterTeacher(e.target.value)}
+                                style={{
+                                    padding: '10px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0',
+                                    fontSize: '13px', fontWeight: 700, cursor: 'pointer', outline: 'none',
+                                    background: filterTeacher ? 'rgba(229, 57, 53, 0.06)' : 'white', color: '#1A1D3B',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                <option value="">All Teachers</option>
+                                {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
+                            {hasActiveFilters && (
+                                <button
+                                    onClick={() => { setFilterSubject(''); setFilterStatus(''); setFilterTeacher(''); }}
+                                    style={{
+                                        padding: '10px 16px', borderRadius: '12px', border: '1px solid #FECACA',
+                                        fontSize: '12px', fontWeight: 800, cursor: 'pointer',
+                                        background: '#FEF2F2', color: '#EF4444', transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = '#FEE2E2'}
+                                    onMouseLeave={e => e.currentTarget.style.background = '#FEF2F2'}
+                                >
+                                    ✕ Clear
+                                </button>
+                            )}
                         </div>
                     </div>
-                ) : (
-                    /* ── DAY VIEW ── */
-                    <div>
-                        {/* Day selector tabs */}
+
+                    {/* ── Quick Stats ── */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+                        <div style={{ background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', borderRadius: '20px', padding: '20px 24px', color: 'white', boxShadow: '0 8px 32px rgba(26,29,59,0.15)' }}>
+                            <p style={{ fontSize: '11px', fontWeight: 800, opacity: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Today</p>
+                            <p style={{ fontSize: '32px', fontWeight: 900, margin: '6px 0' }}>{rawTodayEntries.length}</p>
+                            <p style={{ fontSize: '12px', opacity: 0.8 }}>classes scheduled</p>
+                        </div>
+                        <div style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', borderRadius: '20px', padding: '20px 24px', color: 'white', boxShadow: '0 8px 32px rgba(229,57,53,0.2)' }}>
+                            <p style={{ fontSize: '11px', fontWeight: 800, opacity: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>This Week</p>
+                            <p style={{ fontSize: '32px', fontWeight: 900, margin: '6px 0' }}>{weekEntries.length}</p>
+                            <p style={{ fontSize: '12px', opacity: 0.8 }}>classes total</p>
+                        </div>
+                        <div style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(226, 232, 240, 0.8)', backdropFilter: 'blur(16px)', borderRadius: '20px', padding: '20px 24px', color: '#1A1D3B', boxShadow: '0 8px 32px rgba(0,0,0,0.03)' }}>
+                            <p style={{ fontSize: '11px', fontWeight: 800, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subjects</p>
+                            <p style={{ fontSize: '32px', fontWeight: 900, color: '#1A1D3B', margin: '6px 0' }}>{subjects.length}</p>
+                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>enrolled courses</p>
+                        </div>
+                        {nextClass ? (
+                            <div style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(226, 232, 240, 0.8)', backdropFilter: 'blur(16px)', borderRadius: '20px', padding: '20px 24px', color: '#1A1D3B', boxShadow: '0 8px 32px rgba(0,0,0,0.03)' }}>
+                                <p style={{ fontSize: '11px', fontWeight: 800, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Next Class</p>
+                                <p style={{ fontSize: '18px', fontWeight: 900, color: '#E53935', margin: '8px 0 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextClass.subject}</p>
+                                <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {formatTime12(nextClass.start_time)}</p>
+                            </div>
+                        ) : rawTodayEntries.length > 0 ? (
+                            <div style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', borderRadius: '20px', padding: '20px 24px', color: 'white', boxShadow: '0 8px 32px rgba(16,185,129,0.2)' }}>
+                                <p style={{ fontSize: '11px', fontWeight: 800, opacity: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</p>
+                                <p style={{ fontSize: '20px', fontWeight: 900, margin: '8px 0 4px' }}>All Done ✓</p>
+                                <p style={{ fontSize: '12px', opacity: 0.8 }}>No more classes today</p>
+                            </div>
+                        ) : null}
+                    </div>
+
+                    {isLoading ? (
+                        <div style={{ display: 'grid', gap: '16px' }}>
+                            {[1, 2, 3].map(i => <div key={i} className="animate-fade-in" style={{ height: '140px', borderRadius: '24px', background: 'rgba(255, 255, 255, 0.7)', border: '1px solid rgba(226, 232, 240, 0.8)', backdropFilter: 'blur(8px)', animationDelay: `${i * 100}ms` }} />)}
+                        </div>
+                    ) : viewMode === 'week' ? (
+                        /* ── WEEK GRID VIEW ── */
                         <div style={{
-                            display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto',
-                            padding: '4px', background: '#F8FAFC', borderRadius: '14px',
+                            background: 'rgba(255, 255, 255, 0.9)', borderRadius: '24px', overflow: 'hidden',
+                            border: '1px solid rgba(226, 232, 240, 0.8)', backdropFilter: 'blur(16px)',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.03)',
                         }}>
-                            {weekDates.map((d, i) => {
-                                const dateStr = formatDateStr(d);
-                                const isToday = dateStr === todayStr;
-                                const isSelected = i === selectedDayIdx;
-                                const count = (entriesByDate[dateStr] || []).length;
-                                return (
-                                    <button
-                                        key={i}
-                                        onClick={() => setSelectedDayIdx(i)}
-                                        style={{
-                                            flex: 1, padding: '14px 10px', borderRadius: '12px',
-                                            border: 'none', cursor: 'pointer', textAlign: 'center',
-                                            background: isSelected ? (isToday ? 'linear-gradient(135deg, #6366F1, #8B5CF6)' : 'white') : 'transparent',
-                                            color: isSelected ? (isToday ? 'white' : '#1A1D3B') : '#94A3B8',
-                                            boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                                            transition: 'all 0.2s', minWidth: '80px',
-                                        }}
-                                    >
-                                        <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', margin: 0, opacity: 0.85 }}>{DAY_LABELS[i]}</p>
-                                        <p style={{ fontSize: '22px', fontWeight: 800, margin: '2px 0 0' }}>{d.getDate()}</p>
-                                        {count > 0 && (
-                                            <span style={{
-                                                fontSize: '10px', fontWeight: 700,
-                                                background: isSelected && isToday ? 'rgba(255,255,255,0.25)' : '#EEF2FF',
-                                                color: isSelected && isToday ? 'white' : '#6366F1',
-                                                padding: '2px 8px', borderRadius: '6px', display: 'inline-block', marginTop: '4px',
+                            {/* Day headers */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #F1F5F9', background: '#FAFBFC' }}>
+                                {weekDates.map((d, i) => {
+                                    const isToday = formatDateStr(d) === todayStr;
+                                    return (
+                                        <div
+                                            key={i}
+                                            onClick={() => { setSelectedDayIdx(i); setViewMode('day'); }}
+                                            style={{
+                                                padding: '20px 8px', textAlign: 'center', cursor: 'pointer',
+                                                borderRight: i < 6 ? '1px solid #F1F5F9' : 'none',
+                                                background: isToday ? 'linear-gradient(135deg, rgba(229, 57, 53, 0.04) 0%, rgba(198, 40, 40, 0.04) 100%)' : 'transparent',
+                                                transition: 'background 0.2s',
+                                            }}
+                                        >
+                                            <p style={{ fontSize: '11px', fontWeight: 800, color: isToday ? '#E53935' : '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                                                {DAY_LABELS[i]}
+                                            </p>
+                                            <p style={{
+                                                fontSize: '18px', fontWeight: 900,
+                                                color: isToday ? '#E53935' : '#1A1D3B',
+                                                margin: '6px 0 0',
+                                                width: '32px', height: '32px', lineHeight: '32px',
+                                                borderRadius: '50%', marginLeft: 'auto', marginRight: 'auto',
+                                                background: isToday ? '#E53935' : 'transparent',
+                                                ...(isToday ? { color: 'white' } : {}),
                                             }}>
-                                                {count} class{count > 1 ? 'es' : ''}
-                                            </span>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
+                                                {d.getDate()}
+                                            </p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
 
-                        {/* Day entries - timeline style */}
-                        {(() => {
-                            const dateStr = formatDateStr(weekDates[selectedDayIdx]);
-                            const dayEntries = entriesByDate[dateStr] || [];
-
-                            if (dayEntries.length === 0) {
-                                return (
-                                    <div style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
-                                        <Calendar size={48} color="#CBD5E1" />
-                                        <h3 style={{ fontSize: '18px', fontWeight: 700, marginTop: '16px', color: '#1A1D3B' }}>No Classes</h3>
-                                        <p style={{ color: '#64748B', fontSize: '14px', marginTop: '6px' }}>
-                                            You have no classes scheduled for {FULL_DAY_LABELS[selectedDayIdx]}, {weekDates[selectedDayIdx].toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}.
-                                        </p>
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <div style={{ position: 'relative', paddingLeft: '32px' }}>
-                                    {/* Vertical timeline line */}
-                                    <div style={{ position: 'absolute', left: '14px', top: '20px', bottom: '20px', width: '3px', background: 'linear-gradient(to bottom, #6366F1, #8B5CF6, #C7D2FE)', borderRadius: '2px' }} />
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        {dayEntries.map((entry: any, idx: number) => {
-                                            const palette = getSubjectPalette(entry.subject);
-                                            return (
-                                                <div key={entry.id} style={{ position: 'relative', display: 'flex', gap: '20px', alignItems: 'stretch' }}>
-                                                    {/* Timeline dot */}
-                                                    <div style={{
-                                                        position: 'absolute', left: '-26px', top: '24px',
-                                                        width: '14px', height: '14px', borderRadius: '50%',
-                                                        background: palette.dot, border: '3px solid white',
-                                                        boxShadow: '0 0 0 2px ' + palette.dot + '40', zIndex: 2,
-                                                    }} />
-
-                                                    {/* Time column */}
-                                                    <div style={{ minWidth: '80px', paddingTop: '16px', textAlign: 'right', flexShrink: 0 }}>
-                                                        <p style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>{formatTime12(entry.start_time)}</p>
-                                                        {entry.end_time && <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0', fontWeight: 600 }}>{formatTime12(entry.end_time)}</p>}
-                                                    </div>
-
-                                                    {/* Card */}
-                                                    <div style={{
-                                                        flex: 1, background: 'white', borderRadius: '18px',
-                                                        border: `1.5px solid ${palette.border}`,
-                                                        borderLeft: `5px solid ${palette.dot}`,
-                                                        padding: '20px 24px',
-                                                        transition: 'transform 0.2s, box-shadow 0.2s',
+                            {/* Grid body */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', minHeight: '380px' }}>
+                                {weekDates.map((d, i) => {
+                                    const dateStr = formatDateStr(d);
+                                    const dayEntries = entriesByDate[dateStr] || [];
+                                    const isToday = dateStr === todayStr;
+                                    return (
+                                        <div key={i} style={{
+                                            padding: '12px 10px', borderRight: i < 6 ? '1px solid #F1F5F9' : 'none',
+                                            minHeight: '340px', background: isToday ? 'rgba(229, 57, 53, 0.01)' : 'transparent',
+                                            display: 'flex', flexDirection: 'column', gap: '10px',
+                                        }}>
+                                            {dayEntries.length === 0 && (
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.35, fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>
+                                                    No class
+                                                </div>
+                                            )}
+                                            {dayEntries.map((entry: any) => {
+                                                const palette = getSubjectPalette(entry.subject);
+                                                const statusColor = entry.status === 'completed' ? '#10B981' : entry.status === 'cancelled' ? '#EF4444' : palette.dot;
+                                                return (
+                                                    <div key={entry.id} style={{
+                                                        background: entry.status === 'cancelled' ? '#FEF2F2' : palette.bg,
+                                                        border: `1.5px solid ${entry.status === 'cancelled' ? '#FECACA' : palette.border}`,
+                                                        borderRadius: '16px', padding: '12px',
+                                                        borderLeft: `4px solid ${statusColor}`,
+                                                        opacity: entry.status === 'cancelled' ? 0.65 : 1,
+                                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', cursor: 'default',
                                                     }}
-                                                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateX(4px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${palette.dot}15`; }}
-                                                        onMouseLeave={e => { e.currentTarget.style.transform = 'translateX(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.06)'; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                                                     >
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-                                                            <div>
-                                                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>{entry.subject}</h3>
-                                                                <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 0', fontWeight: 500 }}>
-                                                                    {entry.class_ref?.class_name}
-                                                                </p>
-                                                            </div>
-                                                            <span style={{
-                                                                fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '8px',
-                                                                background: palette.bg, color: palette.text, border: `1px solid ${palette.border}`,
-                                                            }}>
-                                                                {entry.status === 'completed' ? '✓ Done' : entry.status === 'cancelled' ? '✕ Cancelled' : 'Scheduled'}
-                                                            </span>
-                                                        </div>
-
-                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '14px' }}>
-                                                            {entry.teacher && (
-                                                                <span style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-                                                                    <User size={14} color="#94A3B8" /> {entry.teacher.first_name} {entry.teacher.last_name}
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                            <p style={{ fontSize: '13px', fontWeight: 800, color: palette.text, margin: 0, lineHeight: 1.3 }}>
+                                                                {entry.subject}
+                                                            </p>
+                                                            {entry.status !== 'scheduled' && (
+                                                                <span style={{ fontSize: '8px', fontWeight: 900, padding: '2px 5px', borderRadius: '4px', background: entry.status === 'completed' ? '#D1FAE5' : '#FEE2E2', color: entry.status === 'completed' ? '#065F46' : '#991B1B', textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1 }}>
+                                                                    {entry.status === 'completed' ? '✓' : '✕'}
                                                                 </span>
                                                             )}
-                                                            {entry.room && (
-                                                                <span style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-                                                                    <MapPin size={14} color="#94A3B8" /> {entry.room}
-                                                                </span>
-                                                            )}
-                                                            <span style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-                                                                <Clock size={14} color="#94A3B8" /> {formatTime12(entry.start_time)}{entry.end_time ? ` – ${formatTime12(entry.end_time)}` : ''}
-                                                            </span>
                                                         </div>
-
-                                                        {entry.notes && (
-                                                            <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '10px', fontStyle: 'italic' }}>
-                                                                📝 {entry.notes}
+                                                        <p style={{ fontSize: '11px', color: '#64748B', margin: '6px 0 0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <Clock size={11} color="#8F92A1" /> {formatTime12(entry.start_time)}
+                                                            {entry.end_time ? ` - ${formatTime12(entry.end_time)}` : ''}
+                                                        </p>
+                                                        {entry.teacher && (
+                                                            <p style={{ fontSize: '10px', color: '#64748B', margin: '4px 0 0', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                <User size={10} color="#8F92A1" /> {entry.teacher.first_name} {entry.teacher.last_name}
+                                                            </p>
+                                                        )}
+                                                        {entry.room && (
+                                                            <p style={{ fontSize: '10px', color: '#94A3B8', margin: '4px 0 0', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                <MapPin size={10} color="#A1A5B7" /> {entry.room}
                                                             </p>
                                                         )}
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            );
-                        })()}
-                    </div>
-                )}
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        /* ── DAY VIEW ── */
+                        <div>
+                            {/* Day selector tabs */}
+                            <div style={{
+                                display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto',
+                                padding: '6px', background: 'rgba(255, 255, 255, 0.8)', borderRadius: '18px',
+                                border: '1px solid rgba(226, 232, 240, 0.8)',
+                            }}>
+                                {weekDates.map((d, i) => {
+                                    const dateStr = formatDateStr(d);
+                                    const isToday = dateStr === todayStr;
+                                    const isSelected = i === selectedDayIdx;
+                                    const count = (entriesByDate[dateStr] || []).length;
+                                    return (
+                                        <button
+                                            key={i}
+                                            onClick={() => setSelectedDayIdx(i)}
+                                            style={{
+                                                flex: 1, padding: '14px 10px', borderRadius: '14px',
+                                                border: 'none', cursor: 'pointer', textAlign: 'center',
+                                                background: isSelected ? (isToday ? 'linear-gradient(135deg, #E53935 0%, #C62828 100%)' : 'rgba(229, 57, 53, 0.08)') : 'transparent',
+                                                color: isSelected ? (isToday ? 'white' : '#E53935') : '#94A3B8',
+                                                boxShadow: isSelected ? '0 4px 12px rgba(229, 57, 53, 0.1)' : 'none',
+                                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', minWidth: '80px',
+                                            }}
+                                        >
+                                            <p style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', margin: 0, opacity: 0.85 }}>{DAY_LABELS[i]}</p>
+                                            <p style={{ fontSize: '20px', fontWeight: 900, margin: '4px 0 0' }}>{d.getDate()}</p>
+                                            {count > 0 && (
+                                                <span style={{
+                                                    fontSize: '10px', fontWeight: 800,
+                                                    background: isSelected && isToday ? 'rgba(255,255,255,0.2)' : 'rgba(229, 57, 53, 0.08)',
+                                                    color: isSelected && isToday ? 'white' : '#E53935',
+                                                    padding: '2px 8px', borderRadius: '6px', display: 'inline-block', marginTop: '6px',
+                                                }}>
+                                                    {count} class{count > 1 ? 'es' : ''}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
 
-                {/* Subject Legend */}
-                {subjects.length > 0 && (
-                    <div style={{
-                        marginTop: '24px', padding: '16px 20px', background: 'white',
-                        borderRadius: '14px', border: '1px solid #E2E8F0',
-                        display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center',
-                    }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', marginRight: '4px' }}>
-                            <BookOpen size={13} style={{ verticalAlign: '-2px', marginRight: '4px' }} />Subjects
-                        </span>
-                        {subjects.map(s => {
-                            const p = getSubjectPalette(s);
-                            return (
-                                <span
-                                    key={s}
-                                    onClick={() => setFilterSubject(filterSubject.toLowerCase() === s.toLowerCase() ? '' : s)}
-                                    style={{
-                                        fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '8px',
-                                        background: filterSubject.toLowerCase() === s.toLowerCase() ? p.dot : p.bg,
-                                        color: filterSubject.toLowerCase() === s.toLowerCase() ? 'white' : p.text,
-                                        border: `1px solid ${p.border}`, cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                    }}
-                                >
-                                    {s}
-                                </span>
-                            );
-                        })}
-                    </div>
-                )}
+                            {/* Day entries - timeline style */}
+                            {(() => {
+                                const dateStr = formatDateStr(weekDates[selectedDayIdx]);
+                                const dayEntries = entriesByDate[dateStr] || [];
+
+                                if (dayEntries.length === 0) {
+                                    return (
+                                        <div style={{ 
+                                            textAlign: 'center', 
+                                            padding: '80px 20px', 
+                                            background: 'rgba(255, 255, 255, 0.9)', 
+                                            borderRadius: '24px', 
+                                            border: '1px solid rgba(226, 232, 240, 0.8)',
+                                            backdropFilter: 'blur(16px)',
+                                            boxShadow: '0 8px 32px rgba(0,0,0,0.03)'
+                                        }}>
+                                            <Calendar size={48} color="#E53935" style={{ opacity: 0.8, marginBottom: '16px' }} />
+                                            <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1D3B' }}>No Classes</h3>
+                                            <p style={{ color: '#64748B', fontSize: '15px', marginTop: '6px', fontWeight: 500 }}>
+                                                You have no classes scheduled for {FULL_DAY_LABELS[selectedDayIdx]}, {weekDates[selectedDayIdx].toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}.
+                                            </p>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div style={{ position: 'relative', paddingLeft: '36px' }}>
+                                        {/* Vertical timeline line */}
+                                        <div style={{ position: 'absolute', left: '14px', top: '24px', bottom: '24px', width: '3px', background: 'linear-gradient(to bottom, #E53935, #C62828, rgba(229, 57, 53, 0.1))', borderRadius: '4px' }} />
+
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                            {dayEntries.map((entry: any, idx: number) => {
+                                                const palette = getSubjectPalette(entry.subject);
+                                                return (
+                                                    <div key={entry.id} style={{ position: 'relative', display: 'flex', gap: '24px', alignItems: 'stretch' }}>
+                                                        {/* Timeline dot */}
+                                                        <div style={{
+                                                            position: 'absolute', left: '-30px', top: '24px',
+                                                            width: '14px', height: '14px', borderRadius: '50%',
+                                                            background: palette.dot, border: '3px solid white',
+                                                            boxShadow: '0 0 0 3px ' + palette.dot + '30', zIndex: 2,
+                                                        }} />
+
+                                                        {/* Time column */}
+                                                        <div style={{ minWidth: '84px', paddingTop: '18px', textAlign: 'right', flexShrink: 0 }}>
+                                                            <p style={{ fontSize: '16px', fontWeight: 900, color: '#1A1D3B', margin: 0 }}>{formatTime12(entry.start_time)}</p>
+                                                            {entry.end_time && <p style={{ fontSize: '12px', color: '#8F92A1', margin: '4px 0 0', fontWeight: 700 }}>{formatTime12(entry.end_time)}</p>}
+                                                        </div>
+
+                                                        {/* Card */}
+                                                        <div style={{
+                                                            flex: 1, background: 'rgba(255, 255, 255, 0.9)', borderRadius: '24px',
+                                                            border: `1.5px solid ${palette.border}`,
+                                                            borderLeft: `5px solid ${palette.dot}`,
+                                                            padding: '24px', backdropFilter: 'blur(16px)',
+                                                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.02)',
+                                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                        }}
+                                                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateX(6px)'; e.currentTarget.style.boxShadow = `0 12px 24px ${palette.dot}10`; }}
+                                                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateX(0)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.02)'; }}
+                                                        >
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                                                                <div>
+                                                                    <h3 style={{ fontSize: '19px', fontWeight: 850, color: '#1A1D3B', margin: 0 }}>{entry.subject}</h3>
+                                                                    <p style={{ fontSize: '13px', color: '#64748B', margin: '6px 0 0', fontWeight: 600 }}>
+                                                                        {entry.class_ref?.class_name}
+                                                                    </p>
+                                                                </div>
+                                                                <span style={{
+                                                                    fontSize: '11px', fontWeight: 800, padding: '6px 14px', borderRadius: '50px',
+                                                                    background: palette.bg, color: palette.text, border: `1px solid ${palette.border}`,
+                                                                    textTransform: 'uppercase', letterSpacing: '0.04em'
+                                                                }}>
+                                                                    {entry.status === 'completed' ? '✓ Completed' : entry.status === 'cancelled' ? '✕ Cancelled' : 'Scheduled'}
+                                                                </span>
+                                                            </div>
+
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginTop: '20px', borderTop: '1px solid #F1F5F9', paddingTop: '16px' }}>
+                                                                {entry.teacher && (
+                                                                    <span style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                                                                        <User size={14} color="#8F92A1" /> {entry.teacher.first_name} {entry.teacher.last_name}
+                                                                    </span>
+                                                                )}
+                                                                {entry.room && (
+                                                                    <span style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                                                                        <MapPin size={14} color="#8F92A1" /> Room {entry.room}
+                                                                    </span>
+                                                                )}
+                                                                <span style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                                                                    <Clock size={14} color="#8F92A1" /> {formatTime12(entry.start_time)}{entry.end_time ? ` - ${formatTime12(entry.end_time)}` : ''}
+                                                                </span>
+                                                            </div>
+
+                                                            {entry.notes && (
+                                                                <div style={{ marginTop: '16px', padding: '12px 16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #F1F5F9', fontSize: '12px', color: '#64748B', fontWeight: 500, fontStyle: 'italic' }}>
+                                                                    📝 Notes: {entry.notes}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    )}
+
+                    {/* Subject Legend */}
+                    {subjects.length > 0 && (
+                        <div style={{
+                            marginTop: '32px', padding: '20px 24px', background: 'rgba(255, 255, 255, 0.9)',
+                            borderRadius: '24px', border: '1px solid rgba(226, 232, 240, 0.8)',
+                            backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(0,0,0,0.03)',
+                            display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center',
+                        }}>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <BookOpen size={14} color="#E53935" /> Course Index:
+                            </span>
+                            {subjects.map(s => {
+                                const p = getSubjectPalette(s);
+                                const isFilterActive = filterSubject.toLowerCase() === s.toLowerCase();
+                                return (
+                                    <span
+                                        key={s}
+                                        onClick={() => setFilterSubject(isFilterActive ? '' : s)}
+                                        style={{
+                                            fontSize: '12px', fontWeight: 750, padding: '6px 14px', borderRadius: '10px',
+                                            background: isFilterActive ? '#E53935' : p.bg,
+                                            color: isFilterActive ? 'white' : p.text,
+                                            border: `1px solid ${isFilterActive ? '#E53935' : p.border}`, cursor: 'pointer',
+                                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        }}
+                                        onMouseEnter={e => { if(!isFilterActive) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                        onMouseLeave={e => { if(!isFilterActive) e.currentTarget.style.transform = 'translateY(0)'; }}
+                                    >
+                                        {s}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
+            <ToolBottomBar />
         </DashboardLayout>
     );
 }
