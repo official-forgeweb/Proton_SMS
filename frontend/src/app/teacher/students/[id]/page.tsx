@@ -8,6 +8,7 @@ import {
     Clock, Check, X, AlertCircle, MessageSquare, Send, Sparkles, Info
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import StudentAttendanceCalendar from '@/components/StudentAttendanceCalendar';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -23,6 +24,7 @@ export default function TeacherStudentProfilePage() {
     const [testStats, setTestStats] = useState<any>(null);
     const [performance, setPerformance] = useState<any>(null);
     const [homeworkHistory, setHomeworkHistory] = useState<any>(null);
+    const [queries, setQueries] = useState<any[]>([]);
 
     // Remarks state
     const [remarks, setRemarks] = useState<any[]>([]);
@@ -48,18 +50,20 @@ export default function TeacherStudentProfilePage() {
         }
 
         // Fetch reports and remarks in parallel
-        const [attRes, testRes, perfRes, hwRes, remarksRes] = await Promise.allSettled([
+        const [attRes, testRes, perfRes, hwRes, remarksRes, queriesRes] = await Promise.allSettled([
             api.get(`/students/${params.id}/attendance`),
             api.get(`/students/${params.id}/tests`),
             api.get(`/students/${params.id}/performance`),
             api.get(`/students/${params.id}/homework-history`),
-            api.get(`/students/${params.id}/remarks`)
+            api.get(`/students/${params.id}/remarks`),
+            api.get(`/queries`, { params: { student_id: params.id } })
         ]);
         
         if (attRes.status === 'fulfilled') setAttendance(attRes.value.data.data);
         if (testRes.status === 'fulfilled') setTestStats(testRes.value.data.data);
         if (perfRes.status === 'fulfilled') setPerformance(perfRes.value.data.data);
         if (hwRes.status === 'fulfilled') setHomeworkHistory(hwRes.value.data.data);
+        if (queriesRes && queriesRes.status === 'fulfilled') setQueries(queriesRes.value.data.data || []);
         if (remarksRes.status === 'fulfilled') setRemarks(remarksRes.value.data.data);
     };
 
@@ -532,123 +536,9 @@ export default function TeacherStudentProfilePage() {
 
                 {activeTab === 'attendance' && (
                     <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', animationDelay: '220ms' }}>
-                        {/* Attendance Summary Widgets */}
-                        <div className="glass-panel" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)' }}>
-                            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                                {[
-                                    { label: 'Present Count', count: attendance.summary?.present || 0, color: 'var(--success)', bg: 'var(--success-light)', icon: <Check size={16} /> },
-                                    { label: 'Absent Count', count: attendance.summary?.absent || 0, color: 'var(--primary)', bg: 'var(--primary-light)', icon: <X size={16} /> },
-                                    { label: 'Late Registry', count: attendance.summary?.late || 0, color: 'var(--warning)', bg: 'var(--warning-light)', icon: <Clock size={16} /> },
-                                    { label: 'Total Tracked', count: attendance.summary?.total || 0, color: 'var(--info)', bg: 'var(--info-light)', icon: <Calendar size={16} /> },
-                                ].map(s => (
-                                    <div key={s.label} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: '160px', padding: '16px', background: '#FFFFFF', border: '1px solid var(--border-primary)', borderRadius: '16px' }}>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            {s.icon}
-                                        </div>
-                                        <div>
-                                            <span style={{ fontWeight: 850, fontSize: '20px', color: '#1A1D3B', fontFamily: 'Poppins, sans-serif' }}>{s.count}</span>
-                                            <span style={{ fontSize: '11.5px', color: 'var(--text-tertiary)', fontWeight: 700, display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '2px' }}>{s.label}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Monthly visual attendance grid */}
-                        <div className="glass-panel" style={{ padding: '28px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)' }}>
-                            <h3 style={{ fontWeight: 800, fontSize: '18px', color: '#1A1D3B', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Poppins, sans-serif' }}>
-                                <Calendar size={20} color="var(--primary)" /> Month-Wise Historical Pattern Grid
-                            </h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '24px', fontWeight: 500 }}>
-                                Visual representation of the student's daily attendance records. Green blocks represent presence, red blocks indicate absence, and orange reflects late entries.
-                            </p>
-
-                            {groupedAttendance.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-tertiary)' }}>
-                                    <Info size={32} style={{ opacity: 0.3, marginBottom: '10px' }} />
-                                    <p style={{ fontWeight: 700 }}>No attendance calendar logs recorded.</p>
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-                                    {groupedAttendance.map((group: any) => (
-                                        <div key={group.monthYear} style={{ background: '#FAFBFD', borderRadius: '18px', padding: '20px', border: '1px solid rgba(229,57,53,0.02)' }}>
-                                            <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', marginBottom: '16px', fontFamily: 'Poppins, sans-serif', borderBottom: '1px solid var(--border-primary)', paddingBottom: '8px' }}>
-                                                {group.monthYear}
-                                            </h4>
-                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                                {group.records.map((r: any) => {
-                                                    const dateObj = new Date(r.attendance_date);
-                                                    const dayNum = dateObj.getDate();
-                                                    
-                                                    let bg = 'var(--success-light)';
-                                                    let color = '#065F46';
-                                                    let label = 'Present';
-                                                    if (r.status === 'absent') {
-                                                        bg = 'var(--primary-light)';
-                                                        color = 'var(--primary)';
-                                                        label = 'Absent';
-                                                    } else if (r.status === 'late') {
-                                                        bg = 'var(--warning-light)';
-                                                        color = 'var(--warning)';
-                                                        label = 'Late';
-                                                    }
-
-                                                    return (
-                                                        <div 
-                                                            key={r.id} 
-                                                            className="student-grid-day"
-                                                            style={{ background: bg, color: color }}
-                                                            title={`Date: ${dateObj.toLocaleDateString()} | Status: ${label}`}
-                                                        >
-                                                            {dayNum}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Detailed roll logs */}
-                        <div className="glass-panel" style={{ padding: '28px', borderRadius: '24px', border: '1px solid rgba(229,57,53,0.06)' }}>
-                            <h3 style={{ fontWeight: 800, fontSize: '18px', color: '#1A1D3B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Poppins, sans-serif' }}>
-                                <Clock size={20} color="var(--primary)" /> Complete Register Log
-                            </h3>
-                            {!attendance?.records || attendance.records.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-tertiary)' }}>
-                                    <p style={{ fontWeight: 700 }}>No register entries recorded.</p>
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '8px' }}>
-                                    {attendance.records.map((r: any, idx: number) => (
-                                        <div key={r.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderRadius: '14px', background: idx % 2 === 0 ? '#FAFBFD' : 'white', border: '1px solid rgba(229,57,53,0.02)' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1D3B' }}>
-                                                    {new Date(r.attendance_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                                </span>
-                                                {r.class_name && (
-                                                    <span style={{ fontSize: '11px', fontWeight: 800, background: 'var(--info-light)', color: 'var(--info)', padding: '3px 10px', borderRadius: '6px' }}>
-                                                        {r.class_name}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <span style={{
-                                                fontSize: '11px', fontWeight: 800, padding: '4px 14px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.5px',
-                                                background: r.status === 'present' ? 'var(--success-light)' : r.status === 'absent' ? 'var(--primary-light)' : 'var(--warning-light)',
-                                                color: r.status === 'present' ? '#065F46' : r.status === 'absent' ? 'var(--primary)' : 'var(--warning)',
-                                            }}>
-                                                {r.status}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        <StudentAttendanceCalendar studentId={params.id as string} />
                     </div>
                 )}
-
                 {activeTab === 'remarks' && (
                     <div className="animate-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', animationDelay: '220ms' }}>
                         {/* Chronological Timeline */}
