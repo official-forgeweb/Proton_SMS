@@ -52,6 +52,9 @@ model User {
   fee_payments_received FeePayment[]
   queries_created    StudentQuery[]   @relation("QueryCreatedBy")
   queries_resolved   StudentQuery[]   @relation("QueryResolvedBy")
+  query_replies        QueryReply[]
+  query_internal_notes QueryInternalNote[]
+  query_audit_logs     QueryAuditLog[]
   study_materials_uploaded StudyMaterial[] @relation("UploaderMaterial")
   notifications_received Notification[] @relation("NotificationRecipient")
   notifications_sent     Notification[] @relation("NotificationSender")
@@ -592,6 +595,10 @@ model StudentQuery {
   target_teacher  Teacher?  @relation("QueryTargetTeacher", fields: [target_teacher_id], references: [id])
   created_by_user User?     @relation("QueryCreatedBy", fields: [created_by_user_id], references: [id])
   resolved_by_user User?    @relation("QueryResolvedBy", fields: [resolved_by_user_id], references: [id])
+  replies        QueryReply[]
+  internal_notes QueryInternalNote[]
+  attachments    QueryAttachment[]
+  audit_logs     QueryAuditLog[]
 
   @@index([student_id])
   @@index([status])
@@ -761,5 +768,67 @@ model Message {
   @@index([recipient_id])
   @@index([created_at])
   @@map("messages")
+}
+
+// ──────────────────────────────────────────────
+// Enquiry Management Additions
+// ──────────────────────────────────────────────
+
+model QueryReply {
+  id         String       @id @default(uuid())
+  query_id   String
+  user_id    String
+  message    String       @db.Text
+  created_at DateTime     @default(now())
+
+  query      StudentQuery @relation(fields: [query_id], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([query_id])
+  @@map("query_replies")
+}
+
+model QueryInternalNote {
+  id         String       @id @default(uuid())
+  query_id   String
+  user_id    String
+  note       String       @db.Text
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+
+  query      StudentQuery @relation(fields: [query_id], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([query_id])
+  @@map("query_internal_notes")
+}
+
+model QueryAttachment {
+  id         String       @id @default(uuid())
+  query_id   String
+  file_name  String
+  file_url   String
+  file_size  Int?
+  created_at DateTime     @default(now())
+
+  query      StudentQuery @relation(fields: [query_id], references: [id], onDelete: Cascade)
+
+  @@index([query_id])
+  @@map("query_attachments")
+}
+
+model QueryAuditLog {
+  id         String       @id @default(uuid())
+  query_id   String
+  user_id    String
+  action     String
+  details    String       @db.Text
+  created_at DateTime     @default(now())
+
+  query      StudentQuery @relation(fields: [query_id], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([query_id])
+  @@map("query_audit_logs")
 }
 

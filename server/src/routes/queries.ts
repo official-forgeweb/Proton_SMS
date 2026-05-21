@@ -29,10 +29,51 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
       }
       where.student_id = student.id;
     } else if (req.user!.role === 'teacher') {
-      // Teachers see all queries (they manage student queries)
-      if (student_id) where.student_id = student_id;
+      const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
+      if (!teacher) {
+        res.json({ success: true, data: [], pagination: { total: 0, page: 1, limit: limitNum, pages: 0 } });
+        return;
+      }
+      
+      const assignedClasses = await prisma.class.findMany({
+        where: { primary_teacher_id: teacher.id },
+        select: { id: true }
+      });
+      const assignedClassIds = assignedClasses.map(c => c.id);
+      const enrollments = await prisma.studentClassEnrollment.findMany({
+        where: { class_id: { in: assignedClassIds }, enrollment_status: 'active' },
+        select: { student_id: true }
+      });
+      const assignedStudentIds = enrollments.map(e => e.student_id);
+
+      const teacherCondition = {
+        OR: [
+          { student_id: { in: assignedStudentIds } },
+          { target_teacher_id: teacher.id }
+        ]
+      };
+
+      if (student_id) {
+        const isAssigned = assignedStudentIds.includes(student_id);
+        const hasTargeted = await prisma.studentQuery.count({
+          where: { student_id, target_teacher_id: teacher.id }
+        }) > 0;
+        
+        if (isAssigned || hasTargeted) {
+          where.student_id = student_id;
+          if (!isAssigned) {
+            where.target_teacher_id = teacher.id;
+          }
+        } else {
+          res.json({ success: true, data: [], pagination: { total: 0, page: 1, limit: limitNum, pages: 0 } });
+          return;
+        }
+      } else {
+        where.AND = [
+          teacherCondition
+        ];
+      }
     } else if (req.user!.role === 'admin') {
-      // Admin sees everything
       if (student_id) where.student_id = student_id;
     }
 
@@ -142,6 +183,26 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
       const student = await prisma.student.findUnique({ where: { user_id: req.user!.id } });
       if (!student || query.student_id !== student.id) {
         res.status(403).json({ success: false, message: 'Not authorized' });
+        return;
+      }
+    } else if (req.user!.role === 'teacher') {
+      const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
+      if (!teacher) {
+        res.status(403).json({ success: false, message: 'Not authorized' });
+        return;
+      }
+      const assignedClasses = await prisma.class.findMany({
+        where: { primary_teacher_id: teacher.id },
+        select: { id: true }
+      });
+      const assignedClassIds = assignedClasses.map(c => c.id);
+      const isEnrolled = await prisma.studentClassEnrollment.count({
+        where: { student_id: query.student_id, class_id: { in: assignedClassIds }, enrollment_status: 'active' }
+      }) > 0;
+      
+      const isTargeted = query.target_teacher_id === teacher.id;
+      if (!isEnrolled && !isTargeted) {
+        res.status(403).json({ success: false, message: 'Not authorized to view this query' });
         return;
       }
     }
@@ -287,6 +348,512 @@ router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request
       res.status(404).json({ success: false, message: 'Query not found' });
       return;
     }
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// GET /api/queries/:id/details — CRM query detailed view
+router.get('/:id/details', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const query = await prisma.studentQuery.findUnique({
+      where: { id },
+      include: {
+        student: {
+          select: {
+            id: true, PRO_ID: true, first_name: true, last_name: true,
+            phone: true, email: true,
+            class_enrollments: {
+              where: { enrollment_status: 'active' },
+              select: { class: { select: { class_name: true } } }
+            }
+          }
+        },
+        target_teacher: { select: { id: true, first_name: true, last_name: true } },
+        created_by_user: { select: { id: true, email: true, role: true } },
+        resolved_by_user: { select: { id: true, email: true, role: true } }
+      }
+    });
+
+    if (!query) {
+      res.status(404).json({ success: false, message: 'Query not found' });
+      return;
+    }
+
+    // Role-based auth check
+    if (req.user!.role === 'student') {
+      const student = await prisma.student.findUnique({ where: { user_id: req.user!.id } });
+      if (!student || query.student_id !== student.id) {
+        res.status(403).json({ success: false, message: 'Not authorized' });
+        return;
+      }
+    } else if (req.user!.role === 'teacher') {
+      const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
+      if (!teacher) {
+        res.status(403).json({ success: false, message: 'Not authorized' });
+        return;
+      }
+      const assignedClasses = await prisma.class.findMany({
+        where: { primary_teacher_id: teacher.id },
+        select: { id: true }
+      });
+      const assignedClassIds = assignedClasses.map(c => c.id);
+      const isEnrolled = await prisma.studentClassEnrollment.count({
+        where: { student_id: query.student_id, class_id: { in: assignedClassIds }, enrollment_status: 'active' }
+      }) > 0;
+      const isTargeted = query.target_teacher_id === teacher.id;
+      if (!isEnrolled && !isTargeted) {
+        res.status(403).json({ success: false, message: 'Not authorized' });
+        return;
+      }
+    }
+
+    // Fetch replies
+    const replies = await prisma.queryReply.findMany({
+      where: { query_id: id },
+      orderBy: { created_at: 'asc' },
+      include: {
+        user: { 
+          select: { 
+            id: true, 
+            email: true, 
+            role: true, 
+            teacher: { select: { first_name: true, last_name: true } }, 
+            student: { select: { first_name: true, last_name: true } } 
+          } 
+        }
+      }
+    });
+
+    // Fetch attachments
+    const attachments = await prisma.queryAttachment.findMany({
+      where: { query_id: id },
+      orderBy: { created_at: 'asc' }
+    });
+
+    // Fetch audit logs
+    const auditLogs = await prisma.queryAuditLog.findMany({
+      where: { query_id: id },
+      orderBy: { created_at: 'desc' },
+      include: {
+        user: { select: { id: true, email: true, role: true } }
+      }
+    });
+
+    // Fetch internal notes (only for admin and teacher)
+    let internalNotes: any[] = [];
+    if (req.user!.role === 'admin' || req.user!.role === 'teacher') {
+      internalNotes = await prisma.queryInternalNote.findMany({
+        where: { query_id: id },
+        orderBy: { created_at: 'desc' },
+        include: {
+          user: { 
+            select: { 
+              id: true, 
+              email: true, 
+              role: true, 
+              teacher: { select: { first_name: true, last_name: true } } 
+            } 
+          }
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...query,
+        replies,
+        attachments,
+        audit_logs: auditLogs,
+        internal_notes: internalNotes
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/queries/:id/replies — Add reply to ticket
+router.post('/:id/replies', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (!message || !message.trim()) {
+      res.status(400).json({ success: false, message: 'Message is required' });
+      return;
+    }
+
+    const query = await prisma.studentQuery.findUnique({
+      where: { id },
+      include: {
+        student: { select: { id: true, user_id: true } }
+      }
+    });
+
+    if (!query) {
+      res.status(404).json({ success: false, message: 'Query not found' });
+      return;
+    }
+
+    // Auth check
+    if (req.user!.role === 'student') {
+      const student = await prisma.student.findUnique({ where: { user_id: req.user!.id } });
+      if (!student || query.student_id !== student.id) {
+        res.status(403).json({ success: false, message: 'Not authorized' });
+        return;
+      }
+    }
+
+    const reply = await prisma.queryReply.create({
+      data: {
+        query_id: id,
+        user_id: req.user!.id,
+        message: message.trim()
+      },
+      include: {
+        user: { 
+          select: { 
+            id: true, 
+            email: true, 
+            role: true, 
+            teacher: { select: { first_name: true, last_name: true } }, 
+            student: { select: { first_name: true, last_name: true } } 
+          } 
+        }
+      }
+    });
+
+    // Create Audit Log
+    await prisma.queryAuditLog.create({
+      data: {
+        query_id: id,
+        user_id: req.user!.id,
+        action: 'reply_added',
+        details: `${req.user!.role.toUpperCase()} added a reply.`
+      }
+    });
+
+    // Send notifications
+    if (req.user!.role === 'student') {
+      const notifyUserIds: string[] = [];
+      if (query.target_teacher_id) {
+        const teacher = await prisma.teacher.findUnique({ where: { id: query.target_teacher_id }, select: { user_id: true } });
+        if (teacher && teacher.user_id) notifyUserIds.push(teacher.user_id);
+      }
+      const admins = await prisma.user.findMany({ where: { role: 'admin', is_active: true }, select: { id: true } });
+      admins.forEach(a => notifyUserIds.push(a.id));
+
+      if (notifyUserIds.length > 0) {
+        await sendNotification(
+          notifyUserIds,
+          req.user!.id,
+          'general',
+          'New Reply from Student',
+          `Student replied to query ${query.query_number}`,
+          query.id
+        );
+      }
+    } else {
+      if (query.student && query.student.user_id) {
+        await sendNotification(
+          [query.student.user_id],
+          req.user!.id,
+          'general',
+          'New Reply to your Query',
+          `Support team replied to query ${query.query_number}`,
+          query.id
+        );
+      }
+    }
+
+    res.status(201).json({ success: true, data: reply });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/queries/:id/notes — Add internal note
+router.post('/:id/notes', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { note } = req.body;
+
+    if (!note || !note.trim()) {
+      res.status(400).json({ success: false, message: 'Note content is required' });
+      return;
+    }
+
+    const query = await prisma.studentQuery.findUnique({ where: { id } });
+    if (!query) {
+      res.status(404).json({ success: false, message: 'Query not found' });
+      return;
+    }
+
+    const internalNote = await prisma.queryInternalNote.create({
+      data: {
+        query_id: id,
+        user_id: req.user!.id,
+        note: note.trim()
+      },
+      include: {
+        user: { 
+          select: { 
+            id: true, 
+            email: true, 
+            role: true, 
+            teacher: { select: { first_name: true, last_name: true } } 
+          } 
+        }
+      }
+    });
+
+    // Create Audit Log
+    await prisma.queryAuditLog.create({
+      data: {
+        query_id: id,
+        user_id: req.user!.id,
+        action: 'note_added',
+        details: `Internal note added by ${req.user!.role.toUpperCase()}.`
+      }
+    });
+
+    res.status(201).json({ success: true, data: internalNote });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// PUT /api/queries/:id/notes/:noteId — Edit internal note (admin only)
+router.put('/:id/notes/:noteId', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { noteId } = req.params;
+    const { note } = req.body;
+
+    if (!note || !note.trim()) {
+      res.status(400).json({ success: false, message: 'Note content is required' });
+      return;
+    }
+
+    const existingNote = await prisma.queryInternalNote.findUnique({ where: { id: noteId } });
+    if (!existingNote) {
+      res.status(404).json({ success: false, message: 'Note not found' });
+      return;
+    }
+
+    const updatedNote = await prisma.queryInternalNote.update({
+      where: { id: noteId },
+      data: { note: note.trim() },
+      include: {
+        user: { 
+          select: { 
+            id: true, 
+            email: true, 
+            role: true, 
+            teacher: { select: { first_name: true, last_name: true } } 
+          } 
+        }
+      }
+    });
+
+    // Create Audit Log
+    await prisma.queryAuditLog.create({
+      data: {
+        query_id: existingNote.query_id,
+        user_id: req.user!.id,
+        action: 'note_edited',
+        details: `Internal note edited.`
+      }
+    });
+
+    res.json({ success: true, data: updatedNote });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// DELETE /api/queries/:id/notes/:noteId — Delete internal note (admin only)
+router.delete('/:id/notes/:noteId', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { noteId } = req.params;
+
+    const existingNote = await prisma.queryInternalNote.findUnique({ where: { id: noteId } });
+    if (!existingNote) {
+      res.status(404).json({ success: false, message: 'Note not found' });
+      return;
+    }
+
+    await prisma.queryInternalNote.delete({ where: { id: noteId } });
+
+    // Create Audit Log
+    await prisma.queryAuditLog.create({
+      data: {
+        query_id: existingNote.query_id,
+        user_id: req.user!.id,
+        action: 'note_deleted',
+        details: `Internal note deleted.`
+      }
+    });
+
+    res.json({ success: true, message: 'Note deleted' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// PUT /api/queries/:id/crm — CRM updates for admin/teachers (status, priority, teacher reassignment)
+router.put('/:id/crm', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { status, priority, target_teacher_id, resolution_note } = req.body;
+
+    const query = await prisma.studentQuery.findUnique({
+      where: { id },
+      include: {
+        student: { select: { user_id: true } }
+      }
+    });
+    if (!query) {
+      res.status(404).json({ success: false, message: 'Query not found' });
+      return;
+    }
+
+    if (req.user!.role === 'teacher') {
+      if (target_teacher_id && target_teacher_id !== query.target_teacher_id) {
+        res.status(403).json({ success: false, message: 'Teachers cannot reassign queries' });
+        return;
+      }
+    }
+
+    const updateData: any = {};
+    const auditLogsData: any[] = [];
+
+    if (status && status !== query.status) {
+      updateData.status = status;
+      auditLogsData.push({
+        action: 'status_changed',
+        details: `Status updated from '${query.status}' to '${status}'.`
+      });
+
+      if (status === 'resolved' || status === 'unresolved') {
+        updateData.resolved_by_user_id = req.user!.id;
+        updateData.resolved_at = new Date();
+        if (resolution_note) {
+          updateData.resolution_note = resolution_note;
+        }
+      }
+    }
+
+    if (priority && priority !== query.priority) {
+      updateData.priority = priority;
+      auditLogsData.push({
+        action: 'priority_changed',
+        details: `Priority updated from '${query.priority}' to '${priority}'.`
+      });
+    }
+
+    if (target_teacher_id !== undefined && target_teacher_id !== query.target_teacher_id) {
+      updateData.target_teacher_id = target_teacher_id || null;
+      let teacherName = 'Unassigned';
+      if (target_teacher_id) {
+        const teacher = await prisma.teacher.findUnique({ where: { id: target_teacher_id } });
+        if (teacher) {
+          teacherName = `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim();
+        }
+      }
+      auditLogsData.push({
+        action: 'query_reassigned',
+        details: `Query reassigned to: ${teacherName}`
+      });
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      res.json({ success: true, data: query });
+      return;
+    }
+
+    const updatedQuery = await prisma.studentQuery.update({
+      where: { id },
+      data: updateData,
+      include: {
+        student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+        target_teacher: { select: { id: true, first_name: true, last_name: true } }
+      }
+    });
+
+    for (const log of auditLogsData) {
+      await prisma.queryAuditLog.create({
+        data: {
+          query_id: id,
+          user_id: req.user!.id,
+          action: log.action,
+          details: log.details
+        }
+      });
+    }
+
+    if (status && query.student && query.student.user_id) {
+      await sendNotification(
+        [query.student.user_id],
+        req.user!.id,
+        'general',
+        'Query Updated',
+        `Your query ${query.query_number} has been updated: ${auditLogsData.map(l => l.details).join(', ')}`,
+        id
+      );
+    }
+
+    res.json({ success: true, data: updatedQuery });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/queries/:id/attachments — Add mock attachment details
+router.post('/:id/attachments', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { file_name, file_url, file_size } = req.body;
+
+    if (!file_name || !file_url) {
+      res.status(400).json({ success: false, message: 'file_name and file_url are required' });
+      return;
+    }
+
+    const query = await prisma.studentQuery.findUnique({ where: { id } });
+    if (!query) {
+      res.status(404).json({ success: false, message: 'Query not found' });
+      return;
+    }
+
+    const attachment = await prisma.queryAttachment.create({
+      data: {
+        query_id: id,
+        file_name,
+        file_url,
+        file_size: file_size || null
+      }
+    });
+
+    await prisma.queryAuditLog.create({
+      data: {
+        query_id: id,
+        user_id: req.user!.id,
+        action: 'attachment_added',
+        details: `Attachment added: ${file_name}`
+      }
+    });
+
+    res.status(201).json({ success: true, data: attachment });
+  } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
