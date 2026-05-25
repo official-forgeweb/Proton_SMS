@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import StudentAttendanceCalendar from '@/components/StudentAttendanceCalendar';
+import StudentProfileEnquiries from '@/components/StudentProfileEnquiries';
 
 export default function StudentProfilePage() {
     const params = useParams();
@@ -1364,6 +1365,11 @@ export default function StudentProfilePage() {
                         </div>
                     );
                 })()}
+
+                {/* ENQUIRIES TAB */}
+                {activeTab === 'enquiries' && (
+                    <StudentProfileEnquiries studentId={params.id as string} role="admin" />
+                )}
             </div>
         </DashboardLayout>
     );

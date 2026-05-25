@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import StudentAttendanceCalendar from '@/components/StudentAttendanceCalendar';
+import StudentProfileEnquiries from '@/components/StudentProfileEnquiries';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -165,7 +166,8 @@ export default function TeacherStudentProfilePage() {
         { id: 'overview', label: 'Overview', icon: <BarChart3 size={16} /> },
         { id: 'academics', label: 'Academics', icon: <BookOpen size={16} /> },
         { id: 'attendance', label: 'Attendance Grid', icon: <Calendar size={16} /> },
-        { id: 'remarks', label: 'Remarks Console', icon: <MessageSquare size={16} /> },
+        { id: 'remarks', label: 'Remarks Console', icon: <Sparkles size={16} /> },
+        { id: 'enquiries', label: 'Enquiries', icon: <MessageSquare size={16} /> },
     ];
 
     // Helper to group attendance records by month
@@ -636,6 +638,11 @@ export default function TeacherStudentProfilePage() {
                             </form>
                         </div>
                     </div>
+                )}
+
+                {/* ENQUIRIES TAB */}
+                {activeTab === 'enquiries' && (
+                    <StudentProfileEnquiries studentId={params.id as string} role="teacher" />
                 )}
             </div>
         </DashboardLayout>

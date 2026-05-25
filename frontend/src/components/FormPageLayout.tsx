@@ -258,7 +258,7 @@ export default function FormPageLayout({
                                 marginTop: '16px', maxWidth: '540px', margin: '16px auto 0',
                                 lineHeight: 1.6
                             }}>
-                                {subtitle}
+                                 {subtitle}
                             </p>
                         )}
                     </div>
