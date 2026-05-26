@@ -1,11 +1,13 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/authStore';
 import { CreditCard, Search, Plus, DollarSign, Download, Clock, CheckCircle, Wallet, AlertCircle, TrendingUp, Filter, IndianRupee, User, Calendar, ReceiptText } from 'lucide-react';
 import type { FeesPageData } from '@/services/dataAccess';
 
 export default function AdminFeesClient({ initialData }: { initialData: FeesPageData }) {
     const router = useRouter();
+    const { user } = useAuthStore();
     const [searchTerm, setSearchTerm] = useState('');
 
     const stats = initialData.stats;
@@ -84,7 +86,7 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
                     >
                         <Download size={16} strokeWidth={2.5} /> Export Report
                     </button>
-                    <button onClick={() => router.push('/admin/fees/assign')} style={{
+                    <button onClick={() => router.push(`/${user?.role || 'admin'}/fees/assign`)} style={{
                          background: '#FFFFFF', color: '#3B82F6', border: '1px solid #DBEAFE',
                          borderRadius: '14px', padding: '12px 20px', fontSize: '14px',
                          fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
@@ -96,7 +98,7 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
                         <Plus size={18} strokeWidth={2.5} /> Assign Fee
                     </button>
                     <button
-                        onClick={() => router.push('/admin/fees/pay')}
+                        onClick={() => router.push(`/${user?.role || 'admin'}/fees/pay`)}
                         style={{
                             background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)',
                             color: 'white', border: 'none',
@@ -255,7 +257,7 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
                                         <td style={{ padding: '16px 20px', textAlign: 'right' }}>
                                             {(a.total_pending || 0) > 0 ? (
                                                 <button 
-                                                    onClick={() => router.push('/admin/fees/pay')}
+                                                    onClick={() => router.push(`/${user?.role || 'admin'}/fees/pay`)}
                                                     style={{ 
                                                         background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', 
                                                         color: 'white', border: 'none', borderRadius: '10px', 

@@ -326,7 +326,7 @@ router.post('/mark', authenticateToken, authorize('admin', 'teacher'), async (re
             }
         }
 
-        if (req.user!.role === 'teacher') {
+        if (req.user!.role === 'teacher' || req.user!.role === 'coordinator') {
             let presentCount = 0;
             let absentCount = 0;
             let lateCount = 0;

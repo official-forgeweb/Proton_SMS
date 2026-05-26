@@ -69,9 +69,9 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       data: { failed_login_attempts: 0, locked_until: null, last_login: new Date() },
     });
 
-    if (user.role === 'teacher') {
+    if (user.role === 'teacher' || user.role === 'coordinator') {
       const { logTeacherActivity } = require('../utils/activityLogger');
-      await logTeacherActivity(user.id, 'login', null, null, 'Teacher Portal Login', req);
+      await logTeacherActivity(user.id, 'login', null, null, `${user.role === 'coordinator' ? 'Coordinator' : 'Teacher'} Portal Login`, req);
     }
 
     const accessToken = generateAccessToken(user.id, user.role);
@@ -83,6 +83,9 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     } else if (user.role === 'teacher') {
       const t = await prisma.teacher.findUnique({ where: { user_id: user.id } });
       profile = t ? { ...t, permissions: t.permissions || [] } : {};
+    } else if (user.role === 'coordinator') {
+      const c = await prisma.coordinator.findUnique({ where: { user_id: user.id } });
+      profile = c ? { first_name: c.full_name?.split(' ')[0] || '', last_name: c.full_name?.split(' ').slice(1).join(' ') || '', full_name: c.full_name, email: c.email, phone: c.phone, coordinator_id: c.coordinator_id, gender: c.gender, profile_image: c.profile_image } : {};
     } else if (user.role === 'admin') {
       profile = { first_name: 'Admin', last_name: 'User', email: user.email };
     }
@@ -132,6 +135,9 @@ router.get('/me', authenticateToken, async (req: Request, res: Response): Promis
     } else if (user.role === 'teacher') {
       const t = await prisma.teacher.findUnique({ where: { user_id: user.id } });
       profile = t ? { ...t, permissions: t.permissions || [] } : {};
+    } else if (user.role === 'coordinator') {
+      const c = await prisma.coordinator.findUnique({ where: { user_id: user.id } });
+      profile = c ? { first_name: c.full_name?.split(' ')[0] || '', last_name: c.full_name?.split(' ').slice(1).join(' ') || '', full_name: c.full_name, email: c.email, phone: c.phone, coordinator_id: c.coordinator_id, gender: c.gender, profile_image: c.profile_image } : {};
     } else if (user.role === 'admin') {
       profile = { first_name: 'Admin', last_name: 'User', email: user.email };
     }

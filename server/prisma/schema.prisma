@@ -16,6 +16,7 @@ datasource db {
 
 enum UserRole {
   admin
+  coordinator
   teacher
   student
 }
@@ -46,6 +47,7 @@ model User {
   // Relations
   student              Student?
   teacher              Teacher?
+  coordinator          Coordinator?
   enquiries_assigned   Enquiry[]        @relation("AssignedTo")
   enquiry_remarks      EnquiryRemark[]
   attendance_marked    Attendance[]
@@ -831,4 +833,29 @@ model QueryAuditLog {
   @@index([query_id])
   @@map("query_audit_logs")
 }
+
+// ──────────────────────────────────────────────
+// Coordinator
+// ──────────────────────────────────────────────
+
+model Coordinator {
+  id             String   @id @default(uuid())
+  user_id        String   @unique
+  coordinator_id String?  @unique // e.g. COORD2026001
+  full_name      String?
+  email          String?
+  phone          String?
+  gender         String?
+  profile_image  String?
+  status         String   @default("active")
+  created_by     String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("coordinators")
+}
+
 

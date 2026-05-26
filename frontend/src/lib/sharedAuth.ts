@@ -64,11 +64,12 @@ export async function getServerSession(): Promise<ServerSession | null> {
  * Require a specific role. Returns the session if authorized,
  * or null if the user doesn't have the required role.
  */
-export async function requireRole(requiredRole: UserRole): Promise<ServerSession | null> {
+export async function requireRole(requiredRole: UserRole | UserRole[]): Promise<ServerSession | null> {
   const session = await getServerSession();
 
   if (!session) return null;
-  if (session.role !== requiredRole) return null;
+  const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+  if (!allowedRoles.includes(session.role)) return null;
 
   return session;
 }

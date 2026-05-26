@@ -6,7 +6,7 @@ import { cacheMiddleware } from '../middleware/cache';
 const router = Router();
 
 // GET /api/dashboard/admin
-router.get('/admin', authenticateToken, authorize('admin'), cacheMiddleware(30), async (req: Request, res: Response): Promise<void> => {
+router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cacheMiddleware(30), async (req: Request, res: Response): Promise<void> => {
   try {
     const [
       totalStudents, activeStudents,

@@ -308,7 +308,7 @@ export default function AdminStudentsClient({ initialData }: Props) {
     };
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={['admin', 'coordinator']}>
             {INLINE_STYLES}
 
             <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: '100%', borderRadius: '24px' }}>

@@ -103,7 +103,7 @@ export default function StudentProfilePage() {
 
     if (isLoading) {
         return (
-            <DashboardLayout requiredRole="admin">
+            <DashboardLayout requiredRole={['admin', 'coordinator']}>
                 <style dangerouslySetInnerHTML={{__html: `
                     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
                     .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; }
@@ -121,7 +121,7 @@ export default function StudentProfilePage() {
 
     if (!student) {
         return (
-            <DashboardLayout requiredRole="admin">
+            <DashboardLayout requiredRole={['admin', 'coordinator']}>
                 <div style={{ padding: '100px 0', textAlign: 'center' }}>
                     <GraduationCap size={64} color="#D1D5DB" />
                     <h3 style={{ marginTop: '20px', fontSize: '18px', fontWeight: 700, color: '#1A1D3B' }}>Student not found</h3>
@@ -163,7 +163,7 @@ export default function StudentProfilePage() {
     ];
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={['admin', 'coordinator']}>
             <style dangerouslySetInnerHTML={{__html: `
                 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
                 @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }

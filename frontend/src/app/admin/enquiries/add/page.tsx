@@ -44,7 +44,7 @@ export default function AddEnquiryPage() {
             subtitle="Record a new lead or student inquiry into the system"
             backHref="/admin/enquiries"
             backLabel="Back to Enquiries"
-            requiredRole="admin"
+            requiredRole={['admin', 'coordinator']}
             icon={<MessageSquare size={20} strokeWidth={2.5} />}
         >
             <form onSubmit={handleSubmit}>

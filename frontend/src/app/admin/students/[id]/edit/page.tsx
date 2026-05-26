@@ -156,7 +156,7 @@ export default function EditStudentPage() {
             subtitle="Update student information and class enrollments"
             backHref={`/admin/students/${params.id}`}
             backLabel="Back to Profile"
-            requiredRole="admin"
+            requiredRole={['admin', 'coordinator']}
             icon={<Edit2 size={20} strokeWidth={2.5} />}
             maxWidth="900px"
         >

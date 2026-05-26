@@ -52,7 +52,7 @@ export default function EnrollStudentPage() {
             subtitle={student ? `Enroll ${student.first_name} ${student.last_name} in a new batch` : 'Loading...'}
             backHref={`/admin/students/${params.id}`}
             backLabel="Back to Student Profile"
-            requiredRole="admin"
+            requiredRole={['admin', 'coordinator']}
             icon={<GraduationCap size={20} strokeWidth={2.5} />}
         >
             {isLoading ? (

@@ -8,7 +8,7 @@ import AdminStudentsFallbackClient from './AdminStudentsFallbackClient';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminStudentsPage() {
-    const session = await requireRole('admin');
+    const session = await requireRole(['admin', 'coordinator']);
 
     if (!session) {
         return (

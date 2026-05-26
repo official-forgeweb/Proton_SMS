@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
+import { useAuthStore } from '@/stores/authStore';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Calendar, Plus, Clock, Trash2, Edit2, AlertTriangle, CheckCircle, X, MapPin, User, ChevronRight, ChevronLeft, BookOpen, Layers } from 'lucide-react';
@@ -64,6 +65,7 @@ interface Props {
 
 export default function AdminTimetableClient({ initialTimetable, initialClasses, initialTeachers, initialFilters }: Props) {
     const router = useRouter();
+    const { user } = useAuthStore();
     const [timetable, setTimetable] = useState<any[]>(initialTimetable);
     const [classes, setClasses] = useState<any[]>(initialClasses);
     const [teachers, setTeachers] = useState<any[]>(initialTeachers);
@@ -520,7 +522,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                                                 }}
                                                     onClick={() => {
                                                         if (isTest) {
-                                                            router.push(`/admin/tests/${entry.id}`);
+                                                            router.push(`/${user?.role || 'admin'}/tests/${entry.id}`);
                                                         } else {
                                                             openModal(entry);
                                                         }
@@ -672,7 +674,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                                                     }}
                                                         onClick={() => {
                                                             if (isTest) {
-                                                                window.location.href = `/admin/tests/${entry.id}`;
+                                                                window.location.href = `/${user?.role || 'admin'}/tests/${entry.id}`;
                                                             } else {
                                                                 openModal(entry);
                                                             }

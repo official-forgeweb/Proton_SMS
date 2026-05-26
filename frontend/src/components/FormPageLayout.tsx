@@ -10,7 +10,7 @@ interface FormPageLayoutProps {
     subtitle?: string;
     backHref: string;
     backLabel?: string;
-    requiredRole: 'admin' | 'teacher' | 'student' | 'parent';
+    requiredRole: string | string[];
     icon?: ReactNode;
     accentColor?: string;
     maxWidth?: string;

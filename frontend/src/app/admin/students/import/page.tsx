@@ -219,7 +219,7 @@ export default function ImportStudentsPage() {
             subtitle="Upload a CSV file to bulk import student records"
             backHref="/admin/students"
             backLabel="Back to Students"
-            requiredRole="admin"
+            requiredRole={['admin', 'coordinator']}
             icon={<Upload size={20} strokeWidth={2.5} />}
         >
             <style dangerouslySetInnerHTML={{ __html: `

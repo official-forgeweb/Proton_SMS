@@ -73,7 +73,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
           teacherCondition
         ];
       }
-    } else if (req.user!.role === 'admin') {
+    } else if (req.user!.role === 'admin' || req.user!.role === 'coordinator') {
       if (student_id) where.student_id = student_id;
     }
 
@@ -122,7 +122,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 });
 
 // GET /api/queries/stats — query stats for dashboard
-router.get('/stats', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/stats', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const [total, newCount, processing, resolved, unresolved] = await Promise.all([
       prisma.studentQuery.count(),
@@ -215,7 +215,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
 });
 
 // POST /api/queries — create a new query
-router.post('/', authenticateToken, authorize('admin', 'teacher', 'student'), async (req: Request, res: Response): Promise<void> => {
+router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher', 'student'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { student_id, query_type, query_subtype, description, target_teacher_id, priority } = req.body;
 
@@ -285,7 +285,7 @@ router.post('/', authenticateToken, authorize('admin', 'teacher', 'student'), as
 });
 
 // PUT /api/queries/:id — update query status (teacher/admin)
-router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { status, resolution_note } = req.body;
     const id = req.params.id as string;
@@ -339,7 +339,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
 });
 
 // DELETE /api/queries/:id — delete query (admin only)
-router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     await prisma.studentQuery.delete({ where: { id: req.params.id as string } });
     res.json({ success: true, message: 'Query deleted' });
@@ -356,7 +356,7 @@ router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request
 // GET /api/queries/:id/details — CRM query detailed view
 router.get('/:id/details', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const query = await prisma.studentQuery.findUnique({
       where: { id },
       include: {
@@ -479,7 +479,7 @@ router.get('/:id/details', authenticateToken, async (req: Request, res: Response
 // POST /api/queries/:id/replies — Add reply to ticket
 router.post('/:id/replies', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { message } = req.body;
 
     if (!message || !message.trim()) {
@@ -578,9 +578,9 @@ router.post('/:id/replies', authenticateToken, async (req: Request, res: Respons
 });
 
 // POST /api/queries/:id/notes — Add internal note
-router.post('/:id/notes', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/notes', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { note } = req.body;
 
     if (!note || !note.trim()) {
@@ -630,9 +630,9 @@ router.post('/:id/notes', authenticateToken, authorize('admin', 'teacher'), asyn
 });
 
 // PUT /api/queries/:id/notes/:noteId — Edit internal note (admin only)
-router.put('/:id/notes/:noteId', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.put('/:id/notes/:noteId', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { noteId } = req.params;
+    const noteId = req.params.noteId as string;
     const { note } = req.body;
 
     if (!note || !note.trim()) {
@@ -679,9 +679,9 @@ router.put('/:id/notes/:noteId', authenticateToken, authorize('admin'), async (r
 });
 
 // DELETE /api/queries/:id/notes/:noteId — Delete internal note (admin only)
-router.delete('/:id/notes/:noteId', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id/notes/:noteId', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { noteId } = req.params;
+    const noteId = req.params.noteId as string;
 
     const existingNote = await prisma.queryInternalNote.findUnique({ where: { id: noteId } });
     if (!existingNote) {
@@ -709,9 +709,9 @@ router.delete('/:id/notes/:noteId', authenticateToken, authorize('admin'), async
 });
 
 // PUT /api/queries/:id/crm — CRM updates for admin/teachers (status, priority, teacher reassignment)
-router.put('/:id/crm', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.put('/:id/crm', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status, priority, target_teacher_id, resolution_note } = req.body;
 
     const query = await prisma.studentQuery.findUnique({
@@ -820,7 +820,7 @@ router.put('/:id/crm', authenticateToken, authorize('admin', 'teacher'), async (
 // POST /api/queries/:id/attachments — Add mock attachment details
 router.post('/:id/attachments', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { file_name, file_url, file_size } = req.body;
 
     if (!file_name || !file_url) {

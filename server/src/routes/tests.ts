@@ -142,7 +142,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
 });
 
 // POST /api/tests
-router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     let createdBy: string | null = null;
     if (req.user!.role === 'teacher') {
@@ -194,7 +194,7 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
 });
 
 // PUT /api/tests/:id
-router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const existing = await prisma.test.findUnique({ where: { id } });
@@ -220,7 +220,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
 });
 
 // POST /api/tests/:id/results
-router.post('/:id/results', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/results', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const test = await prisma.test.findUnique({ where: { id } });
@@ -315,7 +315,7 @@ router.post('/:id/results', authenticateToken, authorize('admin', 'teacher'), as
       );
     }
 
-    if (req.user!.role === 'teacher') {
+    if (req.user!.role === 'teacher' || req.user!.role === 'coordinator') {
       const classInfo = await prisma.class.findUnique({
         where: { id: test.class_id },
         select: { class_name: true }
@@ -344,7 +344,7 @@ router.post('/:id/results', authenticateToken, authorize('admin', 'teacher'), as
 });
 
 // DELETE /api/tests/:id
-router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     await prisma.testResult.deleteMany({ where: { test_id: id } });

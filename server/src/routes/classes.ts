@@ -125,7 +125,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
 });
 
 // POST /api/classes
-router.post('/', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { schedule, ...rest } = req.body;
 
@@ -164,7 +164,7 @@ router.post('/', authenticateToken, authorize('admin'), async (req: Request, res
 });
 
 // PUT /api/classes/:id
-router.put('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const { schedule, ...rest } = req.body;
@@ -244,7 +244,7 @@ router.get('/:id/attendance', authenticateToken, async (req: Request, res: Respo
 });
 
 // POST /api/classes/:id/attendance
-router.post('/:id/attendance', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/attendance', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const { date, records } = req.body;

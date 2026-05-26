@@ -18,12 +18,31 @@ export async function logTeacherActivity(
       where: { user_id: userId }
     });
 
-    if (!teacher) {
-      // Action performed by non-teacher (e.g. Admin or Student)
-      return;
-    }
+    let teacherName = '';
+    let teacherId: string | null = null;
 
-    const teacherName = `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || 'Unknown Teacher';
+    if (teacher) {
+      teacherName = `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || 'Unknown Teacher';
+      teacherId = teacher.id;
+    } else {
+      // Resolve user to coordinator profile
+      const coordinator = await prisma.coordinator.findUnique({
+        where: { user_id: userId }
+      });
+      if (coordinator) {
+        teacherName = `${coordinator.full_name || 'Coordinator'}`.trim();
+      } else {
+        // Resolve user to admin
+        const user = await prisma.user.findUnique({
+          where: { id: userId }
+        });
+        if (user && user.role === 'admin') {
+          teacherName = `Admin (${user.email})`;
+        } else {
+          return;
+        }
+      }
+    }
 
     // Retrieve IP and User-Agent/Device from express request if provided
     let ipAddress = null;
@@ -43,7 +62,7 @@ export async function logTeacherActivity(
 
     await prisma.teacherActivityLog.create({
       data: {
-        teacher_id: teacher.id,
+        teacher_id: teacherId,
         teacher_name: teacherName,
         action_type: actionType,
         previous_value: previousValue,

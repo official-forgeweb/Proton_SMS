@@ -15,7 +15,7 @@ const generateProId = (): string =>
 const paramId = (req: Request): string => String(req.params.id);
 
 // GET /api/students
-router.get('/', authenticateToken, authorize('admin', 'teacher'), cacheMiddleware(10), async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), cacheMiddleware(10), async (req: Request, res: Response): Promise<void> => {
   try {
     const { search, status, class_id, subject, fee_status, global_search, page = '1', limit = '50' } = req.query as Record<string, string>;
     const pageNum = parseInt(page as string);
@@ -147,7 +147,7 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), cacheMiddlewar
 });
 
 // GET /api/students/stats
-router.get('/stats', authenticateToken, authorize('admin', 'teacher'), cacheMiddleware(30), async (req: Request, res: Response): Promise<void> => {
+router.get('/stats', authenticateToken, authorize('admin', 'coordinator', 'teacher'), cacheMiddleware(30), async (req: Request, res: Response): Promise<void> => {
   try {
     const [total, active, maleCount, femaleCount, feeAgg] = await Promise.all([
       prisma.student.count(),
@@ -239,7 +239,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
 });
 
 // POST /api/students/bulk - Bulk import students
-router.post('/bulk', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/bulk', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { students } = req.body;
     
@@ -330,7 +330,7 @@ router.post('/bulk', authenticateToken, authorize('admin'), async (req: Request,
 });
 
 // POST /api/students
-router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { first_name, last_name, date_of_birth, gender, email, phone, school_name, class_id, admission_type } = req.body;
 
@@ -489,7 +489,7 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
 });
 
 // PUT /api/students/:id
-router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const { class_ids, subjects, password, ...studentFields } = req.body;
@@ -567,7 +567,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
 });
 
 // POST /api/students/:id/enroll
-router.post('/:id/enroll', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/enroll', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const { class_id, subjects } = req.body;
@@ -862,7 +862,7 @@ router.get('/:id/performance', authenticateToken, async (req: Request, res: Resp
 });
 
 // DELETE /api/students/:id
-router.post('/delete-many', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/delete-many', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) {
@@ -901,7 +901,7 @@ router.post('/delete-many', authenticateToken, authorize('admin'), async (req: R
 });
 
 // PUT /api/students/:id/subjects - Update subject enrollments for a student
-router.put('/:id/subjects', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.put('/:id/subjects', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const { class_id, subjects } = req.body;
@@ -947,7 +947,7 @@ router.put('/:id/subjects', authenticateToken, authorize('admin'), async (req: R
   }
 });
 
-router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const student = await prisma.student.findUnique({ where: { id } });
@@ -1013,7 +1013,7 @@ router.get('/:id/remarks', authenticateToken, async (req: Request, res: Response
 });
 
 // POST /api/students/:id/remarks
-router.post('/:id/remarks', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/remarks', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const student = isUUID(id)

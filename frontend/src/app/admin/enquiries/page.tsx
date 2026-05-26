@@ -114,7 +114,7 @@ export default function EnquiriesPage() {
     };
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={['admin', 'coordinator']}>
             <style dangerouslySetInnerHTML={{ __html: `
                 @keyframes fadeInUp {
                     from { opacity: 0; transform: translateY(20px); }

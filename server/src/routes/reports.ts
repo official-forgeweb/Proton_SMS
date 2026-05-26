@@ -13,7 +13,7 @@ const calculateAge = (dobString: string | null): number => {
 };
 
 // GET /api/reports/enrollment
-router.get('/enrollment', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.get('/enrollment', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const students = await prisma.student.findMany();
 
@@ -37,7 +37,7 @@ router.get('/enrollment', authenticateToken, authorize('admin'), async (req: Req
 });
 
 // GET /api/reports/revenue
-router.get('/revenue', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.get('/revenue', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const payments = await prisma.feePayment.findMany({
       include: { student: { select: { first_name: true, last_name: true, PRO_ID: true } } },
@@ -61,7 +61,7 @@ router.get('/revenue', authenticateToken, authorize('admin'), async (req: Reques
 });
 
 // GET /api/reports/batch-performance
-router.get('/batch-performance', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.get('/batch-performance', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const results = await prisma.testResult.findMany({
       include: {
@@ -91,7 +91,7 @@ router.get('/batch-performance', authenticateToken, authorize('admin'), async (r
 });
 
 // GET /api/reports/demographics
-router.get('/demographics', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.get('/demographics', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const students = await prisma.student.findMany();
 
@@ -112,7 +112,7 @@ router.get('/demographics', authenticateToken, authorize('admin'), async (req: R
 });
 
 // GET /api/reports/visual
-router.get('/visual', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/visual', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const [feeAgg, genderAgg, statusAgg, gradeAgg] = await Promise.all([
       prisma.studentFeeAssignment.groupBy({
@@ -144,7 +144,7 @@ router.get('/visual', authenticateToken, authorize('admin', 'teacher'), async (r
 });
 
 // GET /api/reports/master
-router.get('/master', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/master', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const [students, classes, activeStudents, enquiries] = await Promise.all([
       prisma.student.count(),

@@ -9,7 +9,7 @@ import ChatDrawer from '@/components/ChatDrawer';
 
 interface DashboardLayoutProps {
     children: ReactNode;
-    requiredRole?: string;
+    requiredRole?: string | string[];
 }
 
 export default function DashboardLayout({ children, requiredRole }: DashboardLayoutProps) {
@@ -167,8 +167,11 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
         if (!isLoading && !serverError) {
             if (!isAuthenticated) {
                 router.push('/login');
-            } else if (requiredRole && user?.role !== requiredRole) {
-                router.push(`/${user?.role}`);
+            } else if (requiredRole) {
+                const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+                if (!allowedRoles.includes(user?.role || '')) {
+                    router.push(`/${user?.role}`);
+                }
             }
         }
     }, [isLoading, isAuthenticated, user, requiredRole, serverError]);

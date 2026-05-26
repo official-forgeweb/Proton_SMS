@@ -6,10 +6,12 @@ import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Target, Calendar, Clock, BookOpen, User, Layers } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
 
 export default function ScheduleDemoPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuthStore();
     const [enquiry, setEnquiry] = useState<any>(null);
     const [classes, setClasses] = useState<any[]>([]);
     const [teachers, setTeachers] = useState<any[]>([]);
@@ -42,7 +44,7 @@ export default function ScheduleDemoPage() {
         setIsSubmitting(true);
         try {
             await api.post(`/enquiries/${params.id}/schedule-demo`, formData);
-            router.push(`/admin/enquiries/${params.id}`);
+            router.push(`/${user?.role || 'admin'}/enquiries/${params.id}`);
         } catch (error) {
             console.error('Error scheduling demo:', error);
             alert('Failed to schedule demo class');
@@ -55,9 +57,9 @@ export default function ScheduleDemoPage() {
         <FormPageLayout
             title="Schedule Demo Class"
             subtitle={`Set up a trial session for ${enquiry?.student_name || 'Enquiry'}`}
-            backHref={`/admin/enquiries/${params.id}`}
+            backHref={`/${user?.role || 'admin'}/enquiries/${params.id}`}
             backLabel="Back to Enquiry"
-            requiredRole="admin"
+            requiredRole={['admin', 'coordinator']}
             icon={<Target size={20} strokeWidth={2.5} />}
         >
             {isLoading ? (
@@ -142,7 +144,7 @@ export default function ScheduleDemoPage() {
                     </div>
 
                     <div className="form-actions">
-                        <button type="button" className="btn-cancel" onClick={() => router.push(`/admin/enquiries/${params.id}`)}>
+                        <button type="button" className="btn-cancel" onClick={() => router.push(`/${user?.role || 'admin'}/enquiries/${params.id}`)}>
                             Cancel
                         </button>
                         <button type="submit" className="btn-submit" disabled={isSubmitting}>

@@ -31,6 +31,7 @@ import notificationRoutes from './routes/notifications';
 import attendanceRoutes from './routes/attendance';
 import messageRoutes from './routes/messages';
 import searchRoutes from './routes/search';
+import coordinatorRoutes from './routes/coordinators';
 
 const app = express();
 
@@ -81,6 +82,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/coordinators', coordinatorRoutes);
 
 // Health check
 app.get('/api/health', dbHealthCheck, (req, res) => {

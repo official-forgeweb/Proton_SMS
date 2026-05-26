@@ -101,7 +101,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 });
 
 // POST /api/homework
-router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     let createdBy = req.user!.id;
     if (req.user!.role === 'teacher') {
@@ -220,7 +220,7 @@ router.post('/:id/submit', authenticateToken, authorize('student'), async (req: 
 });
 
 // POST /api/homework/:id/evaluate
-router.post('/:id/evaluate', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/evaluate', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const { student_id, marks_obtained, feedback } = req.body;

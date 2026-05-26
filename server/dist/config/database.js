@@ -1,0 +1,43 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.disconnectDB = exports.connectDB = void 0;
+const client_1 = require("@prisma/client");
+const prismaClientSingleton = () => {
+    return new client_1.PrismaClient({
+        log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
+    });
+};
+const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+if (process.env.NODE_ENV !== 'production')
+    globalThis.prismaGlobal = prisma;
+const connectDB = async () => {
+    // Retry connection up to 5 times with exponential backoff
+    const MAX_RETRIES = 5;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            await prisma.$connect();
+            console.log('✅ PostgreSQL connected successfully via Prisma');
+            return;
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            console.error(`❌ Database connection attempt ${attempt}/${MAX_RETRIES} failed:`, message);
+            if (attempt === MAX_RETRIES) {
+                console.error('❌ All connection attempts exhausted. Starting server in degraded mode...');
+                // Don't exit – let the server run so it can serve 503s and auto-recover
+                return;
+            }
+            // Exponential backoff: 2s, 4s, 8s, 16s
+            const delay = Math.pow(2, attempt) * 1000;
+            console.log(`⏳ Retrying in ${delay / 1000}s...`);
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+};
+exports.connectDB = connectDB;
+const disconnectDB = async () => {
+    await prisma.$disconnect();
+};
+exports.disconnectDB = disconnectDB;
+exports.default = prisma;
+//# sourceMappingURL=database.js.map

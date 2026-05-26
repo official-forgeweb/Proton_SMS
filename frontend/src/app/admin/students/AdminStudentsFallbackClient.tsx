@@ -26,7 +26,7 @@ export default function AdminStudentsFallbackClient() {
 
     if (isLoading || !data) {
         return (
-            <DashboardLayout requiredRole="admin">
+            <DashboardLayout requiredRole={['admin', 'coordinator']}>
                 <div className="page-header" style={{ marginBottom: '28px' }}>
                     <div className="skeleton" style={{ width: '250px', height: '36px', borderRadius: '8px' }} />
                 </div>

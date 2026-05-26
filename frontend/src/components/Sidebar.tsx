@@ -17,6 +17,7 @@ const adminNav = [
             { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
             { label: 'Students', href: '/admin/students', icon: GraduationCap },
             { label: 'Teachers', href: '/admin/teachers', icon: Users },
+            { label: 'Coordinators', href: '/admin/coordinators', icon: Shield },
             { label: 'Classes', href: '/admin/classes', icon: BookOpen },
             { label: 'Timetable', href: '/admin/timetable', icon: Calendar },
             { label: 'Enquiries', href: '/admin/enquiries', icon: Phone },
@@ -65,6 +66,27 @@ const studentNavSections = [
     }
 ];
 
+const coordinatorNav = [
+    {
+        section: 'MENU',
+        items: [
+            { label: 'Dashboard', href: '/coordinator', icon: LayoutDashboard },
+            { label: 'Students', href: '/coordinator/students', icon: GraduationCap },
+            { label: 'Classes', href: '/coordinator/classes', icon: BookOpen },
+            { label: 'Timetable', href: '/coordinator/timetable', icon: Calendar },
+            { label: 'Enquiries', href: '/coordinator/enquiries', icon: Phone },
+            { label: 'Operations', href: '/coordinator/operations', icon: Zap },
+        ]
+    },
+    {
+        section: 'FINANCIAL',
+        items: [
+            { label: 'Fees', href: '/coordinator/fees', icon: CreditCard },
+            { label: 'Reports', href: '/coordinator/reports', icon: BarChart3 },
+        ]
+    }
+];
+
 export default function Sidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuthStore();
@@ -73,6 +95,7 @@ export default function Sidebar() {
     const teacherPermissions: string[] = user?.role === 'teacher' ? (user.profile?.permissions || []) : [];
 
     const navSections = user?.role === 'admin' ? adminNav
+        : user?.role === 'coordinator' ? coordinatorNav
         : user?.role === 'teacher' ? teacherNavSections.map(section => ({
             ...section,
             items: section.items.filter((item: any) =>

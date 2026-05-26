@@ -135,7 +135,7 @@ export default function AddStudentPage() {
             subtitle="Register a new student into the system"
             backHref="/admin/students"
             backLabel="Back to Students"
-            requiredRole="admin"
+            requiredRole={['admin', 'coordinator']}
             icon={<Users size={20} strokeWidth={2.5} />}
         >
             <form onSubmit={handleSubmit}>

@@ -153,7 +153,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 });
 
 // POST /api/timetable/generate (Admin only)
-router.post('/generate', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { start_date, end_date, class_id } = req.body;
     
@@ -235,7 +235,7 @@ router.post('/generate', authenticateToken, authorize('admin'), async (req: Requ
 });
 
 // POST /api/timetable (Admin or Teacher)
-router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { class_id, subject, teacher_id, date, start_time, end_time, room, online_link, notes } = req.body;
 
@@ -267,7 +267,7 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
       }
     });
 
-    if (req.user!.role === 'teacher') {
+    if (req.user!.role === 'teacher' || req.user!.role === 'coordinator') {
       const { logTeacherActivity } = require('../utils/activityLogger');
       await logTeacherActivity(
         req.user!.id,
@@ -287,7 +287,7 @@ router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req: R
 });
 
 // PUT /api/timetable/:id (Admin or Teacher)
-router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
     const { class_id, subject, teacher_id, date, start_time, end_time, room, online_link, notes, status } = req.body;
@@ -332,7 +332,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
       }
     });
 
-    if (req.user!.role === 'teacher') {
+    if (req.user!.role === 'teacher' || req.user!.role === 'coordinator') {
       const { logTeacherActivity } = require('../utils/activityLogger');
       const prevVal = {
         subject: existing.subject,
@@ -372,7 +372,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
 });
 
 // DELETE /api/timetable/:id (Admin or Teacher)
-router.delete('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
 
@@ -399,7 +399,7 @@ router.delete('/:id', authenticateToken, authorize('admin', 'teacher'), async (r
 
     await prisma.timetable.delete({ where: { id } });
 
-    if (req.user!.role === 'teacher') {
+    if (req.user!.role === 'teacher' || req.user!.role === 'coordinator') {
       const { logTeacherActivity } = require('../utils/activityLogger');
       await logTeacherActivity(
         req.user!.id,

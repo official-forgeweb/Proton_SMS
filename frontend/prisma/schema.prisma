@@ -1,10 +1,5 @@
-// This is a symlink-like copy of the server schema.
-// It uses the SAME database but generates the Prisma Client
-// into THIS package's node_modules so Next.js Server Components
-// can import it without cross-project dependency issues.
-//
-// IMPORTANT: Keep this file in sync with server/prisma/schema.prisma.
-// The server schema is the single source of truth.
+// Prisma Schema for Proton SMS
+// Migrated from MongoDB/Mongoose schemas
 
 generator client {
   provider = "prisma-client-js"
@@ -21,6 +16,7 @@ datasource db {
 
 enum UserRole {
   admin
+  coordinator
   teacher
   student
 }
@@ -51,14 +47,21 @@ model User {
   // Relations
   student              Student?
   teacher              Teacher?
+  coordinator          Coordinator?
   enquiries_assigned   Enquiry[]        @relation("AssignedTo")
   enquiry_remarks      EnquiryRemark[]
   attendance_marked    Attendance[]
   fee_payments_received FeePayment[]
   queries_created    StudentQuery[]   @relation("QueryCreatedBy")
   queries_resolved   StudentQuery[]   @relation("QueryResolvedBy")
+  query_replies        QueryReply[]
+  query_internal_notes QueryInternalNote[]
+  query_audit_logs     QueryAuditLog[]
+  study_materials_uploaded StudyMaterial[] @relation("UploaderMaterial")
   notifications_received Notification[] @relation("NotificationRecipient")
   notifications_sent     Notification[] @relation("NotificationSender")
+  messages_sent          Message[]      @relation("SentMessages")
+  messages_received      Message[]      @relation("ReceivedMessages")
 
   @@map("users")
 }
@@ -95,6 +98,7 @@ model Student {
   fee_assignments         StudentFeeAssignment[]
   fee_payments            FeePayment[]
   queries                 StudentQuery[]
+  remarks                 StudentRemark[]
 
   @@index([academic_status])
   @@index([phone])
@@ -134,6 +138,8 @@ model Teacher {
   tests_created     Test[]
   homework_created  Homework[]
   queries_targeted  StudentQuery[]    @relation("QueryTargetTeacher")
+  remarks           StudentRemark[]
+  activity_logs     TeacherActivityLog[]
 
   @@index([employment_status])
   @@map("teachers")
@@ -179,6 +185,8 @@ model Class {
   homework             Homework[]
   fee_structures       FeeStructure[]
   demo_classes         DemoClass[]
+  video_lectures       VideoLecture[]
+  study_materials      StudyMaterial[]
 
   @@index([status])
   @@index([primary_teacher_id])
@@ -194,18 +202,20 @@ model Timetable {
   class_id    String
   subject     String
   teacher_id  String?
-  date        String
-  start_time  String
-  end_time    String?
+  date        String                // e.g. "2026-04-08"
+  start_time  String                // e.g. "17:00"
+  end_time    String?               // e.g. "18:00"
   room        String?
+  online_link String?
   notes       String?
-  status      String   @default("scheduled")
+  status      String   @default("scheduled")  // scheduled | completed | cancelled
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   // Relations
   class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
   teacher     Teacher? @relation("TimetableTeacher", fields: [teacher_id], references: [id])
+  attendance  Attendance[]
 
   @@index([class_id, date])
   @@index([teacher_id, date])
@@ -358,6 +368,8 @@ model Attendance {
   id              String           @id @default(uuid())
   student_id      String
   class_id        String
+  timetable_id    String?          // Link to specific session
+  subject         String?          // Explicit subject
   attendance_date String
   status          AttendanceStatus
   marked_by       String?
@@ -365,12 +377,14 @@ model Attendance {
   updated_at      DateTime         @updatedAt
 
   // Relations
-  student Student @relation(fields: [student_id], references: [id])
-  class   Class   @relation(fields: [class_id], references: [id])
-  user    User?   @relation(fields: [marked_by], references: [id])
+  student   Student    @relation(fields: [student_id], references: [id])
+  class     Class      @relation(fields: [class_id], references: [id])
+  timetable Timetable? @relation(fields: [timetable_id], references: [id])
+  user      User?      @relation(fields: [marked_by], references: [id])
 
   @@index([student_id, attendance_date])
   @@index([class_id, attendance_date])
+  @@index([timetable_id])
   @@map("attendance")
 }
 
@@ -382,6 +396,7 @@ model Test {
   subject           String?
   test_type         String?
   test_date         String?
+  start_time        String?
   duration_minutes  Int?
   total_marks       Float?
   passing_marks     Float?
@@ -563,15 +578,15 @@ model StudentQuery {
   id              String   @id @default(uuid())
   query_number    String   @unique
   student_id      String
-  query_type      String
-  query_subtype   String?
-  description     String?
-  target_teacher_id String?
-  status          String   @default("new")
-  priority        String   @default("medium")
-  raised_by       String
-  created_by_user_id String?
-  resolved_by_user_id String?
+  query_type      String                // phone_change_student, whatsapp_student, old_assignment, personal_session, leave_application, other
+  query_subtype   String?               // e.g. assignment name, teacher name, etc.
+  description     String?               // Free text details
+  target_teacher_id String?             // For personal_session
+  status          String   @default("new")   // new, processing, resolved, unresolved
+  priority        String   @default("medium") // low, medium, high
+  raised_by       String                // "teacher" or "student"
+  created_by_user_id String?            // User who created the query
+  resolved_by_user_id String?           // User who resolved/updated the query
   resolved_at     DateTime?
   resolution_note String?
   created_at      DateTime @default(now())
@@ -582,12 +597,68 @@ model StudentQuery {
   target_teacher  Teacher?  @relation("QueryTargetTeacher", fields: [target_teacher_id], references: [id])
   created_by_user User?     @relation("QueryCreatedBy", fields: [created_by_user_id], references: [id])
   resolved_by_user User?    @relation("QueryResolvedBy", fields: [resolved_by_user_id], references: [id])
+  replies        QueryReply[]
+  internal_notes QueryInternalNote[]
+  attachments    QueryAttachment[]
+  audit_logs     QueryAuditLog[]
 
   @@index([student_id])
   @@index([status])
   @@index([query_type])
   @@index([created_by_user_id])
   @@map("student_queries")
+}
+
+// ──────────────────────────────────────────────
+// Video Lectures (YouTube videos uploaded via Excel)
+// ──────────────────────────────────────────────
+
+model VideoLecture {
+  id          String   @id @default(uuid())
+  date        String                  // e.g. "2026-04-10"
+  time        String                  // e.g. "17:00"
+  class_id    String
+  subject     String
+  video_url   String                  // YouTube URL
+  title       String?                 // Optional title
+  status      String   @default("active")  // active | inactive
+  uploaded_by String?                 // User ID who uploaded
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
+
+  @@unique([date, time, class_id, subject])
+  @@index([class_id, date])
+  @@index([date])
+  @@index([subject])
+  @@map("video_lectures")
+}
+
+// ──────────────────────────────────────────────
+// Study Materials (PDF Documents directly uploaded to Cloudinary)
+// ──────────────────────────────────────────────
+
+model StudyMaterial {
+  id          String   @id @default(uuid())
+  title       String
+  subject     String
+  class_id    String
+  pdf_url     String
+  uploaded_by String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  status      String   @default("active")  // active, hidden
+
+  // Relations
+  class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  uploader    User     @relation("UploaderMaterial", fields: [uploaded_by], references: [id])
+
+  @@index([class_id])
+  @@index([subject])
+  @@index([uploaded_by])
+  @@map("study_materials")
 }
 
 // ──────────────────────────────────────────────
@@ -638,3 +709,153 @@ model SystemSetting {
 
   @@map("system_settings")
 }
+
+// ──────────────────────────────────────────────
+// Teacher Activity Logs & Remarks
+// ──────────────────────────────────────────────
+
+model StudentRemark {
+  id          String   @id @default(uuid())
+  student_id  String
+  teacher_id  String
+  remark      String   @db.Text
+  remark_type String   @default("general") // general, performance, improvement
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  student Student @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  teacher Teacher @relation(fields: [teacher_id], references: [id], onDelete: Cascade)
+
+  @@index([student_id])
+  @@index([teacher_id])
+  @@map("student_remarks")
+}
+
+model TeacherActivityLog {
+  id              String   @id @default(uuid())
+  teacher_id      String?
+  teacher_name    String
+  action_type     String   // e.g., "schedule_create", "schedule_update", "schedule_delete", "attendance_mark", "marks_upload", "remarks_add", "login"
+  previous_value  String?  @db.Text
+  new_value       String?  @db.Text
+  affected_entity String?  // e.g., "Class 12 Physics", "Student Rahul (PRO-102)"
+  ip_address      String?
+  device          String?
+  created_at      DateTime @default(now())
+
+  teacher         Teacher? @relation(fields: [teacher_id], references: [id], onDelete: SetNull)
+
+  @@index([teacher_id])
+  @@index([action_type])
+  @@index([created_at])
+  @@map("teacher_activity_logs")
+}
+
+// ──────────────────────────────────────────────
+// Chat Messages
+// ──────────────────────────────────────────────
+
+model Message {
+  id           String   @id @default(uuid())
+  sender_id    String
+  recipient_id String
+  content      String   @db.Text
+  is_read      Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  sender    User @relation("SentMessages", fields: [sender_id], references: [id], onDelete: Cascade)
+  recipient User @relation("ReceivedMessages", fields: [recipient_id], references: [id], onDelete: Cascade)
+
+  @@index([sender_id])
+  @@index([recipient_id])
+  @@index([created_at])
+  @@map("messages")
+}
+
+// ──────────────────────────────────────────────
+// Enquiry Management Additions
+// ──────────────────────────────────────────────
+
+model QueryReply {
+  id         String       @id @default(uuid())
+  query_id   String
+  user_id    String
+  message    String       @db.Text
+  created_at DateTime     @default(now())
+
+  query      StudentQuery @relation(fields: [query_id], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([query_id])
+  @@map("query_replies")
+}
+
+model QueryInternalNote {
+  id         String       @id @default(uuid())
+  query_id   String
+  user_id    String
+  note       String       @db.Text
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+
+  query      StudentQuery @relation(fields: [query_id], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([query_id])
+  @@map("query_internal_notes")
+}
+
+model QueryAttachment {
+  id         String       @id @default(uuid())
+  query_id   String
+  file_name  String
+  file_url   String
+  file_size  Int?
+  created_at DateTime     @default(now())
+
+  query      StudentQuery @relation(fields: [query_id], references: [id], onDelete: Cascade)
+
+  @@index([query_id])
+  @@map("query_attachments")
+}
+
+model QueryAuditLog {
+  id         String       @id @default(uuid())
+  query_id   String
+  user_id    String
+  action     String
+  details    String       @db.Text
+  created_at DateTime     @default(now())
+
+  query      StudentQuery @relation(fields: [query_id], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([query_id])
+  @@map("query_audit_logs")
+}
+
+// ──────────────────────────────────────────────
+// Coordinator
+// ──────────────────────────────────────────────
+
+model Coordinator {
+  id             String   @id @default(uuid())
+  user_id        String   @unique
+  coordinator_id String?  @unique // e.g. COORD2026001
+  full_name      String?
+  email          String?
+  phone          String?
+  gender         String?
+  profile_image  String?
+  status         String   @default("active")
+  created_by     String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("coordinators")
+}
+
+

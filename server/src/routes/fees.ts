@@ -13,7 +13,7 @@ const generateReceiptNumber = (): string =>
   `RCPT${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
 
 // GET /api/fees/structures
-router.get('/structures', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.get('/structures', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const structures = await prisma.feeStructure.findMany();
     const data = structures.map(s => ({ ...s, id: s.id }));
@@ -24,7 +24,7 @@ router.get('/structures', authenticateToken, authorize('admin'), async (req: Req
 });
 
 // POST /api/fees/structures
-router.post('/structures', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/structures', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const structure = await prisma.feeStructure.create({
       data: {
@@ -39,7 +39,7 @@ router.post('/structures', authenticateToken, authorize('admin'), async (req: Re
 });
 
 // POST /api/fees/assignments
-router.post('/assignments', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/assignments', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { student_id, final_fee, due_date } = req.body;
 
@@ -68,7 +68,7 @@ router.post('/assignments', authenticateToken, authorize('admin', 'teacher'), as
 });
 
 // GET /api/fees/assignments
-router.get('/assignments', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.get('/assignments', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { status } = req.query as Record<string, string>;
     let where: any = {};
@@ -98,7 +98,7 @@ router.get('/assignments', authenticateToken, authorize('admin'), async (req: Re
 });
 
 // GET /api/fees/stats
-router.get('/stats', authenticateToken, authorize('admin'), async (req: Request, res: Response): Promise<void> => {
+router.get('/stats', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const [paymentAgg, feeAgg] = await Promise.all([
       prisma.feePayment.aggregate({

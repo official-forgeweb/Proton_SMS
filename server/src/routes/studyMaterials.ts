@@ -6,7 +6,7 @@ import crypto from 'crypto';
 const router = Router();
 
 // Get Cloudinary Signature for Direct Frontend Uploads
-router.get('/signature', authenticateToken, authorize('admin', 'teacher'), (req, res) => {
+router.get('/signature', authenticateToken, authorize('admin', 'coordinator', 'teacher'), (req, res) => {
     try {
         const timestamp = Math.round(new Date().getTime() / 1000);
         const folder = 'proton_study_materials';
@@ -38,7 +38,7 @@ router.get('/signature', authenticateToken, authorize('admin', 'teacher'), (req,
 });
 
 // Create Study Material (After Cloudinary Upload is Complete)
-router.post('/', authenticateToken, authorize('admin', 'teacher'), async (req, res) => {
+router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const { title, subject, class_id, pdf_url } = req.body;
         const uploaderId = (req as any).user.id; // from JWT middleware
@@ -152,7 +152,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // Delete Study Material
-router.delete('/:id', authenticateToken, authorize('admin', 'teacher'), async (req, res) => {
+router.delete('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const { id } = req.params as { id: string };
         await prisma.studyMaterial.delete({ where: { id } });

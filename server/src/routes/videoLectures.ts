@@ -20,7 +20,7 @@ const encodeYouTubeUrl = (url: string) => {
 };
 
 // 1. Upload Excel
-router.post('/upload', authenticateToken, authorize('admin', 'teacher'), upload.single('file'), async (req: Request, res: Response): Promise<void> => {
+router.post('/upload', authenticateToken, authorize('admin', 'coordinator', 'teacher'), upload.single('file'), async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.file) {
       res.status(400).json({ success: false, message: 'No file uploaded' });
@@ -155,7 +155,7 @@ router.post('/upload', authenticateToken, authorize('admin', 'teacher'), upload.
 });
 
 // 1.5 Confirm Upload (Bulk Insert)
-router.post('/confirm-upload', authenticateToken, authorize('admin', 'teacher'), express.json(), async (req: Request, res: Response): Promise<void> => {
+router.post('/confirm-upload', authenticateToken, authorize('admin', 'coordinator', 'teacher'), express.json(), async (req: Request, res: Response): Promise<void> => {
   try {
     const { records } = req.body;
     if (!Array.isArray(records) || records.length === 0) {
@@ -298,7 +298,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
 });
 
 // 4. Update
-router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
     try {
         const id = paramId(req);
         const { date, time, subject, video_url, class_id } = req.body;
@@ -317,7 +317,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
 });
 
 // 5. Delete bulk
-router.delete('/bulk', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.delete('/bulk', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
     try {
         const { ids } = req.body;
         if (!Array.isArray(ids) || ids.length === 0) {
@@ -336,7 +336,7 @@ router.delete('/bulk', authenticateToken, authorize('admin', 'teacher'), async (
 });
 
 // 6. Delete
-router.delete('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
     try {
         const id = paramId(req);
         await prisma.videoLecture.delete({ where: { id } });

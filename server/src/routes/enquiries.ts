@@ -12,7 +12,7 @@ const generateDemoNumber = (): string =>
   `DEMO${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
 
 // GET /api/enquiries/demos/all
-router.get('/demos/all', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/demos/all', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const demos = await prisma.demoClass.findMany({
       orderBy: { demo_date: 'desc' },
@@ -36,7 +36,7 @@ router.get('/demos/all', authenticateToken, authorize('admin', 'teacher'), async
 });
 
 // PUT /api/enquiries/demos/:id
-router.put('/demos/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.put('/demos/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const demo = await prisma.demoClass.update({
@@ -70,7 +70,7 @@ router.put('/demos/:id', authenticateToken, authorize('admin', 'teacher'), async
 });
 
 // GET /api/enquiries
-router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { search, status, source, priority, assigned_to, page = '1', limit = '50' } = req.query as Record<string, string>;
     let where: any = {};
@@ -127,7 +127,7 @@ router.get('/', authenticateToken, authorize('admin', 'teacher'), async (req: Re
 });
 
 // GET /api/enquiries/stats
-router.get('/stats', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/stats', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const [total, statusGroups, sourceGroups, enrolled] = await Promise.all([
       prisma.enquiry.count(),
@@ -154,7 +154,7 @@ router.get('/stats', authenticateToken, authorize('admin', 'teacher'), async (re
 });
 
 // GET /api/enquiries/:id
-router.get('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const enquiry = await prisma.enquiry.findUnique({ where: { id } });
@@ -203,7 +203,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 });
 
 // PUT /api/enquiries/:id
-router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const oldEnquiry = await prisma.enquiry.findUnique({ where: { id } });
@@ -236,7 +236,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'teacher'), async (req:
 });
 
 // POST /api/enquiries/:id/remarks
-router.post('/:id/remarks', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/remarks', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const enquiry = await prisma.enquiry.findUnique({ where: { id } });
@@ -280,7 +280,7 @@ router.post('/:id/remarks', authenticateToken, authorize('admin', 'teacher'), as
 });
 
 // POST /api/enquiries/:id/schedule-demo
-router.post('/:id/schedule-demo', authenticateToken, authorize('admin', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/schedule-demo', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const enquiry = await prisma.enquiry.findUnique({ where: { id } });

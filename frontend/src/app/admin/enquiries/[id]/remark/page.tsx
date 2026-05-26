@@ -4,10 +4,12 @@ import { useParams, useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import { MessageSquare, Phone, Mail, MessageCircle, Info } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
 
 export default function AddRemarkPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuthStore();
     const [enquiry, setEnquiry] = useState<any>(null);
     const [remark, setRemark] = useState('');
     const [remarkType, setRemarkType] = useState('call');
@@ -28,7 +30,7 @@ export default function AddRemarkPage() {
         setIsSubmitting(true);
         try {
             await api.post(`/enquiries/${params.id}/remarks`, { remark, remark_type: remarkType });
-            router.push(`/admin/enquiries/${params.id}`);
+            router.push(`/${user?.role || 'admin'}/enquiries/${params.id}`);
         } catch (error) {
             console.error('Error adding remark:', error);
             alert('Failed to add remark');
@@ -41,9 +43,9 @@ export default function AddRemarkPage() {
         <FormPageLayout
             title="Add Remark"
             subtitle={`Log a new interaction or note for ${enquiry?.student_name || 'Enquiry'}`}
-            backHref={`/admin/enquiries/${params.id}`}
+            backHref={`/${user?.role || 'admin'}/enquiries/${params.id}`}
             backLabel="Back to Enquiry"
-            requiredRole="admin"
+            requiredRole={['admin', 'coordinator']}
             icon={<MessageSquare size={20} strokeWidth={2.5} />}
             maxWidth="600px"
         >
@@ -110,7 +112,7 @@ export default function AddRemarkPage() {
                     </div>
 
                     <div className="form-actions">
-                        <button type="button" className="btn-cancel" onClick={() => router.push(`/admin/enquiries/${params.id}`)}>
+                        <button type="button" className="btn-cancel" onClick={() => router.push(`/${user?.role || 'admin'}/enquiries/${params.id}`)}>
                             Cancel
                         </button>
                         <button type="submit" className="btn-submit" disabled={isSubmitting}>

@@ -9,10 +9,12 @@ import {
     ArrowLeft, Edit, Trash2, Plus, ExternalLink
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthStore } from '@/stores/authStore';
 
 export default function EnquiryDetailPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuthStore();
     const [enquiry, setEnquiry] = useState<any>(null);
     const [teachers, setTeachers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -56,7 +58,7 @@ export default function EnquiryDetailPage() {
 
     if (isLoading) {
         return (
-            <DashboardLayout requiredRole="admin">
+            <DashboardLayout requiredRole={['admin', 'coordinator']}>
                 <div style={{ padding: '60px', textAlign: 'center' }}>
                     <div className="spinner" style={{ margin: '0 auto 16px' }} />
                     <p style={{ color: '#A1A5B7', fontSize: '14px' }}>Loading enquiry details...</p>
@@ -67,10 +69,10 @@ export default function EnquiryDetailPage() {
 
     if (!enquiry) {
         return (
-            <DashboardLayout requiredRole="admin">
+            <DashboardLayout requiredRole={['admin', 'coordinator']}>
                 <div style={{ padding: '60px', textAlign: 'center' }}>
                     <h2 style={{ fontSize: '20px', color: '#1A1D3B' }}>Enquiry not found</h2>
-                    <Link href="/admin/enquiries" style={{ color: '#E53935', textDecoration: 'none', marginTop: '12px', display: 'inline-block' }}>Back to Enquiries</Link>
+                    <Link href={`/${user?.role || 'admin'}/enquiries`} style={{ color: '#E53935', textDecoration: 'none', marginTop: '12px', display: 'inline-block' }}>Back to Enquiries</Link>
                 </div>
             </DashboardLayout>
         );
@@ -79,12 +81,12 @@ export default function EnquiryDetailPage() {
     const sc = statusConfig[enquiry.status] || statusConfig.new;
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={['admin', 'coordinator']}>
             <div style={{ paddingBottom: '40px' }}>
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <button onClick={() => router.push('/admin/enquiries')} style={{ width: '40px', height: '40px', borderRadius: '12px', border: '1px solid #E2E8F0', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#1A1D3B' }}>
+                        <button onClick={() => router.push(`/${user?.role || 'admin'}/enquiries`)} style={{ width: '40px', height: '40px', borderRadius: '12px', border: '1px solid #E2E8F0', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#1A1D3B' }}>
                             <ArrowLeft size={20} />
                         </button>
                         <div>
@@ -181,10 +183,10 @@ export default function EnquiryDetailPage() {
                                     <Clock size={20} color="#E53935" /> Activity Timeline
                                 </h3>
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={() => router.push(`/admin/enquiries/${enquiry.id}/remark`)} style={{ padding: '8px 16px', background: '#F8F9FD', border: '1px solid #E2E8F0', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <button onClick={() => router.push(`/${user?.role || 'admin'}/enquiries/${enquiry.id}/remark`)} style={{ padding: '8px 16px', background: '#F8F9FD', border: '1px solid #E2E8F0', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <MessageSquare size={14} /> Add Remark
                                     </button>
-                                    <button onClick={() => router.push(`/admin/enquiries/${enquiry.id}/schedule-demo`)} style={{ padding: '8px 16px', background: '#F8F9FD', border: '1px solid #E2E8F0', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <button onClick={() => router.push(`/${user?.role || 'admin'}/enquiries/${enquiry.id}/schedule-demo`)} style={{ padding: '8px 16px', background: '#F8F9FD', border: '1px solid #E2E8F0', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <Target size={14} /> Schedule Demo
                                     </button>
                                 </div>

@@ -7,7 +7,7 @@ import api from '@/lib/api';
 
 interface StudentProfileEnquiriesProps {
     studentId?: string; // Optional: If provided, filters by student. If not provided or 'all', shows all queries.
-    role: 'admin' | 'teacher';
+    role: 'admin' | 'teacher' | 'coordinator';
 }
 
 interface QueryReply {
@@ -832,8 +832,8 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
                                 />
                             </div>
 
-                            {/* Reassignment: Admin only */}
-                            {role === 'admin' && (
+                             {/* Reassignment: Admin or Coordinator */}
+                            {(role === 'admin' || role === 'coordinator') && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     <label style={{ fontSize: '12px', fontWeight: 800, color: '#64748B' }}>Assign Teacher (Optional)</label>
                                     <select
