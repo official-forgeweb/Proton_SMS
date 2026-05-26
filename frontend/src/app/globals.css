@@ -947,3 +947,269 @@ h6 {
     box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
     background: var(--bg-primary);
 }
+
+/* ===== ADDITIONAL RESPONSIVE & LAYOUT UTILITIES ===== */
+
+/* Dashboard layout grid overrides */
+.responsive-grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.grid-span-8 { grid-column: span 8; }
+.grid-span-4 { grid-column: span 4; }
+.grid-span-6 { grid-column: span 6; }
+
+.responsive-grid-two-cols {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.responsive-grid-half {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.dashboard-container {
+  padding: 32px;
+  margin: -24px;
+  min-height: 100%;
+  border-radius: 24px;
+}
+
+/* ToolBottomBar class */
+.tool-bottom-bar {
+  left: calc(50vw + 130px);
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Responsive header styling */
+.dashboard-header {
+  padding: 16px 32px;
+}
+.dashboard-header-search {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+}
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Table responsive wrapper */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===== TABLET BREAKPOINT (≤1024px) ===== */
+@media (max-width: 1024px) {
+  .responsive-grid-12 {
+    grid-template-columns: 1fr !important;
+  }
+  .grid-span-8,
+  .grid-span-4,
+  .grid-span-6 {
+    grid-column: span 1 !important;
+  }
+  .responsive-grid-two-cols {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Force ALL inline 3+ column grids to 2 columns on tablet */
+  div[style*="repeat(4"],
+  div[style*="repeat(5"],
+  div[style*="repeat(7"],
+  div[style*="repeat(12"],
+  div[style*="grid-template-columns: repeat(4"],
+  div[style*="grid-template-columns: repeat(5"],
+  div[style*="grid-template-columns: repeat(7"],
+  div[style*="grid-template-columns: repeat(12"],
+  div[style*="gridTemplateColumns: 'repeat(4"],
+  div[style*="gridTemplateColumns: 'repeat(5"],
+  div[style*="gridTemplateColumns: 'repeat(7"],
+  div[style*="gridTemplateColumns: 'repeat(12"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Force fixed ratio layout grids (like main content + sidebar) to stack on tablet */
+  div[style*="2fr 1fr"],
+  div[style*="1.5fr 1fr"],
+  div[style*="1.6fr 1fr"],
+  div[style*="1.4fr 1fr"],
+  div[style*="1.2fr 0.8fr"],
+  div[style*="1fr 340px"],
+  div[style*="340px"],
+  div[style*="grid-template-columns: 2fr 1fr"],
+  div[style*="grid-template-columns: 1.5fr 1fr"],
+  div[style*="grid-template-columns: 1.6fr 1fr"],
+  div[style*="grid-template-columns: 1.4fr 1fr"],
+  div[style*="grid-template-columns: 1.2fr 0.8fr"],
+  div[style*="grid-template-columns: 1fr 340px"],
+  div[style*="gridTemplateColumns: '1fr 340px"],
+  div[style*="gridTemplateColumns: '1.2fr 0.8fr"],
+  div[style*="grid-template-columns: 1fr 1fr 0.6fr"],
+  div[style*="gridTemplateColumns: '1fr 1fr 0.6fr"],
+  div[style*="grid-template-columns: 1fr 1fr 1fr 1fr 1fr"],
+  div[style*="gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Force space-between detail page headers to stack on tablet/mobile */
+  div[style*="display: flex"][style*="justify-content: space-between"][style*="margin-bottom: 32px"],
+  div[style*="display: 'flex'"][style*="justifyContent: 'space-between'"][style*="marginBottom: '32px'"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+
+  /* Reduce padding on dashboard content area */
+  .page-body { padding: 0 20px 20px; }
+  .page-header { padding: 20px; }
+}
+
+/* ===== MOBILE BREAKPOINT (≤768px) ===== */
+@media (max-width: 768px) {
+  /* Layout reset for sidebar-less view */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .dashboard-container {
+    padding: 16px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .responsive-grid-half {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ToolBottomBar centering */
+  .tool-bottom-bar {
+    left: 50% !important;
+    max-width: calc(100vw - 24px) !important;
+  }
+
+  /* Header stacking */
+  .dashboard-header {
+    padding: 12px 16px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    height: auto !important;
+  }
+  .dashboard-header-search {
+    padding-left: 44px !important;
+    max-width: 100% !important;
+  }
+  .dashboard-header-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  /* Content area padding reduction */
+  .page-body { padding: 0 12px 16px !important; }
+  .page-header { padding: 12px 16px !important; }
+
+  /* Force ALL multi-column inline grids to single column on mobile */
+  div[style*="grid-template-columns"],
+  div[style*="gridTemplateColumns"],
+  div[style*="repeat("],
+  div[style*="1fr 1fr"],
+  div[style*="2fr 1fr"],
+  div[style*="1.5fr 1fr"],
+  div[style*="1.6fr 1fr"],
+  div[style*="1.4fr 1fr"],
+  div[style*="1.2fr 0.8fr"],
+  div[style*="1fr 340px"],
+  div[style*="340px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Cards: tighter padding on mobile */
+  .card { padding: 20px !important; border-radius: 16px !important; }
+  .stat-card { padding: 16px 18px !important; }
+
+  /* Table horizontal scroll on mobile */
+  .data-table { min-width: 640px; }
+
+  /* Modal full-width on mobile */
+  .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 90vh !important;
+    margin: auto 0 0 0;
+  }
+
+  /* Notification dropdown full-width on mobile */
+  .header-action-btn + div > div[style*="width: '360px'"],
+  div[style*="width: 360px"] {
+    width: calc(100vw - 32px) !important;
+    right: -60px !important;
+  }
+
+  /* Flex row containers → stack on mobile */
+  div[style*="display: flex"][style*="justify-content: space-between"][style*="align-items: flex-end"],
+  div[style*="display: 'flex'"][style*="justifyContent: 'space-between'"][style*="alignItems: 'flex-end'"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  /* Allow flex wrap on tighter containers */
+  div[style*="display: flex"][style*="gap: 12px"],
+  div[style*="display: 'flex'"][style*="gap: '12px'"] {
+    flex-wrap: wrap !important;
+  }
+
+  /* Reduce font sizes for stat cards */
+  .stat-card .stat-value { font-size: 22px !important; }
+  .stat-card .stat-icon { width: 40px !important; height: 40px !important; }
+
+  /* ToolBottomBar: hide JUMP TO label */
+  .tool-bottom-bar > span:first-child { display: none !important; }
+  .tool-bottom-bar { padding: 8px 12px !important; gap: 6px !important; }
+  .tool-bottom-bar a { padding: 6px 10px !important; font-size: 11px !important; }
+}
+
+/* ===== SMALL MOBILE (≤480px) ===== */
+@media (max-width: 480px) {
+  .stat-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .stat-card .stat-value { font-size: 20px !important; }
+  
+  /* Even tighter padding */
+  .dashboard-container { padding: 10px !important; }
+  .card { padding: 16px !important; }
+
+  /* Force single-col on auto-fit grids with higher minmax */
+  div[style*="minmax(320px"],
+  div[style*="minmax(340px"],
+  div[style*="minmax(400px"],
+  div[style*="minmax(440px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Badge and text scaling */
+  .badge { font-size: 10px !important; padding: 2px 8px !important; }
+  
+  /* ToolBottomBar: collapse even further */
+  .tool-bottom-bar a { padding: 5px 8px !important; font-size: 10px !important; gap: 4px !important; }
+  .tool-bottom-bar a svg { width: 12px !important; height: 12px !important; }
+}

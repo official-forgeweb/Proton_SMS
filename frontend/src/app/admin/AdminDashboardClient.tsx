@@ -168,10 +168,10 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
     const formattedDate = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     return (
-        <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: '100%', borderRadius: '24px' }}>
+        <div className="bg-mesh dashboard-container">
 
             {/* Header Section */}
-            <div className="animate-fade-in" style={{ marginBottom: '36px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', animationDelay: '0ms' }}>
+            <div className="animate-fade-in" style={{ marginBottom: '36px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px', animationDelay: '0ms' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                         <div style={{ background: '#E53935', width: '32px', height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
@@ -239,17 +239,12 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
             </div>
 
             {/* Charts Row */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(12, 1fr)',
-                gap: '24px',
-                marginBottom: '32px',
-            }}>
+            <div className="responsive-grid-12">
                 {/* Bar Chart - All Exam Results */}
-                <div className="animate-fade-in glass-panel card-hover" style={{
+                <div className="animate-fade-in glass-panel card-hover grid-span-8" style={{
                     borderRadius: '24px', padding: '32px',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.04)', border: '1px solid rgba(255,255,255,0.8)',
-                    gridColumn: 'span 8', animationDelay: '500ms'
+                    animationDelay: '500ms'
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
                         <div>
@@ -295,11 +290,11 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                 </div>
 
                 {/* Radial Chart - Students */}
-                <div className="animate-fade-in glass-panel card-hover" style={{
+                <div className="animate-fade-in glass-panel card-hover grid-span-4" style={{
                     borderRadius: '24px', padding: '32px',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.04)', border: '1px solid rgba(255,255,255,0.8)',
                     display: 'flex', flexDirection: 'column',
-                    gridColumn: 'span 4', animationDelay: '600ms', position: 'relative', overflow: 'hidden'
+                    animationDelay: '600ms', position: 'relative', overflow: 'hidden'
                 }}>
                     <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '150px', height: '150px', background: 'radial-gradient(circle, #FFF0F1 0%, transparent 70%)', zIndex: 0 }} />
 
@@ -366,16 +361,12 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
             </div>
 
             {/* Bottom Row */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(12, 1fr)',
-                gap: '24px',
-            }}>
+            <div className="responsive-grid-12">
                 {/* Star Students Table */}
-                <div className="animate-fade-in glass-panel" style={{
+                <div className="animate-fade-in glass-panel grid-span-8" style={{
                     borderRadius: '24px', padding: '32px',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.04)', border: '1px solid rgba(255,255,255,0.8)',
-                    gridColumn: 'span 8', animationDelay: '700ms'
+                    animationDelay: '700ms'
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -467,11 +458,11 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                 </div>
 
                 {/* Smart Alerts & Insights Panel */}
-                <div className="animate-fade-in glass-panel" style={{
+                <div className="animate-fade-in glass-panel grid-span-4" style={{
                     borderRadius: '24px', padding: '32px',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.04)', border: '1px solid rgba(255,255,255,0.8)',
                     display: 'flex', flexDirection: 'column',
-                    gridColumn: 'span 4', animationDelay: '800ms',
+                    animationDelay: '800ms',
                     position: 'relative', overflow: 'hidden'
                 }}>
                     <style dangerouslySetInnerHTML={{__html: `

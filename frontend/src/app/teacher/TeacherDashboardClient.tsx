@@ -243,7 +243,7 @@ export default function TeacherDashboardClient({ data }: Props) {
                 </div>
 
                 {/* ── Analytics Charts ── */}
-                <div className="dash-float" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '28px', marginBottom: '36px', animationDelay: '400ms' }}>
+                <div className="dash-float responsive-grid-two-cols" style={{ display: 'grid', gap: '28px', marginBottom: '36px', animationDelay: '400ms' }}>
                     {/* Performance Chart */}
                     <div className="chart-panel" style={{ padding: '32px', position: 'relative' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '26px' }}>
@@ -374,8 +374,8 @@ export default function TeacherDashboardClient({ data }: Props) {
                     </div>
                 </div>
 
-                {/* ── Bottom Grid: Today's Sessions + Pipeline + Quick Links ── */}
-                <div className="dash-float" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '28px', animationDelay: '500ms' }}>
+                {/* Today's Sessions */}
+                <div className="dash-float responsive-grid-two-cols" style={{ animationDelay: '500ms' }}>
                     {/* Today's Schedule */}
                     <div className="chart-panel" style={{ padding: '32px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '26px' }}>

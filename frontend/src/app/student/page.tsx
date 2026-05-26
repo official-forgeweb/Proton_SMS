@@ -35,15 +35,14 @@ export default function StudentDashboard() {
                     {/* Welcome Banner Skeleton */}
                     <div className="skeleton" style={{ height: '180px', borderRadius: '24px', marginBottom: '32px' }} />
                     
-                    {/* Stats Grid Skeleton */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px', marginBottom: '32px' }}>
                         {[1, 2, 3, 4].map(i => (
                             <div key={i} className="skeleton" style={{ height: '140px', borderRadius: '20px' }} />
                         ))}
                     </div>
 
                     {/* Content Columns Skeleton */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px' }}>
+                    <div className="responsive-grid-two-cols">
                         <div className="skeleton" style={{ height: '380px', borderRadius: '18px' }} />
                         <div className="skeleton" style={{ height: '380px', borderRadius: '18px' }} />
                     </div>
@@ -430,7 +429,7 @@ export default function StudentDashboard() {
                     </div>
 
                     {/* Charts Area */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px', marginBottom: '32px' }}>
+                    <div className="responsive-grid-two-cols">
                         {/* Score Trend Card */}
                         <div className="card glass-panel" style={{ padding: '28px 24px', borderRadius: '20px', background: '#FFFFFF', border: '1px solid #E4E6EF' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -515,7 +514,7 @@ export default function StudentDashboard() {
                     </div>
 
                     {/* Lists Grid Section */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                    <div className="responsive-grid-half">
                         {/* Recent Tests Section */}
                         <div className="card glass-panel" style={{ padding: '24px', borderRadius: '20px', background: '#FFFFFF', border: '1px solid #E4E6EF' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>

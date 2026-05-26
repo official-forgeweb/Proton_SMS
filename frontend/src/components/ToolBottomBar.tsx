@@ -36,6 +36,15 @@ const studentTools = [
     { label: 'Profile', href: '/student/profile', icon: Users }
 ];
 
+const coordinatorTools = [
+    { label: 'Materials', href: '/coordinator/study-materials', icon: FileText },
+    { label: 'Videos', href: '/coordinator/video-lectures', icon: Video },
+    { label: 'Tests', href: '/coordinator/tests', icon: ClipboardList },
+    { label: 'Homework', href: '/coordinator/homework', icon: PenTool },
+    { label: 'Demos', href: '/coordinator/demos', icon: Target },
+    { label: 'Queries', href: '/coordinator/queries', icon: MessageSquare },
+];
+
 const parentTools = [
     { label: 'Tests', href: '/parent/tests', icon: ClipboardList },
     { label: 'Alerts', href: '/parent/notifications', icon: Bell },
@@ -45,12 +54,14 @@ export default function ToolBottomBar() {
     const pathname = usePathname();
     const { user } = useAuthStore();
     const permissions = user?.profile?.permissions || [];
+    const role = user?.role as string | undefined;
 
     let tools: any[] = [];
-    if (user?.role === 'admin') tools = adminTools;
-    else if (user?.role === 'teacher') tools = teacherTools.filter(t => !t.perm || permissions.includes(t.perm));
-    else if (user?.role === 'student') tools = studentTools;
-    else if (user?.role === 'parent') tools = parentTools;
+    if (role === 'admin') tools = adminTools;
+    else if (role === 'coordinator') tools = coordinatorTools;
+    else if (role === 'teacher') tools = teacherTools.filter(t => !t.perm || permissions.includes(t.perm));
+    else if (role === 'student') tools = studentTools;
+    else if (role === 'parent') tools = parentTools;
 
     if (tools.length === 0) return null;
 
@@ -58,7 +69,6 @@ export default function ToolBottomBar() {
         <div style={{
             position: 'fixed',
             bottom: '24px',
-            left: 'calc(50vw + 130px)', // Account for 260px sidebar
             transform: 'translateX(-50%)',
             zIndex: 40,
             background: 'rgba(255, 255, 255, 0.88)',
@@ -73,7 +83,8 @@ export default function ToolBottomBar() {
             borderRadius: '100px', // Pill shape
             boxShadow: '0 10px 30px rgba(229, 57, 53, 0.06), 0 1px 3px rgba(0,0,0,0.02)',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        }} className="hide-scrollbar">
+            maxWidth: '90vw',
+        }} className="tool-bottom-bar hide-scrollbar">
             <span style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', marginRight: '6px', whiteSpace: 'nowrap', letterSpacing: '0.08em' }}>JUMP TO:</span>
             {tools.map((tool) => {
                 const Icon = tool.icon;

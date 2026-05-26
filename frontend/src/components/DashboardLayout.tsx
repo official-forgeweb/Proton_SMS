@@ -410,16 +410,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 }
             `}} />
             <Sidebar />
-            <main style={{
-                marginLeft: '260px',
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: '100vh',
-                width: 'calc(100vw - 260px)',
-                minWidth: 'calc(100vw - 260px)',
-                maxWidth: 'calc(100vw - 260px)',
-            }}>
+            <main className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
                 {/* Server error banner - shown when user is authenticated but server is down */}
                 {serverError && (
                     <div style={{
@@ -448,14 +439,14 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 )}
 
                 {/* Top Header */}
-                <header style={{
+                <header className="dashboard-header" style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '16px 32px', background: '#FFFFFF',
+                    background: '#FFFFFF',
                     position: 'sticky', top: 0, zIndex: 30,
                     borderBottom: '1px solid #EEEEF5',
                 }}>
                     {/* Search Bar */}
-                    <div style={{ position: 'relative', width: '340px' }} ref={searchContainerRef}>
+                    <div className="dashboard-header-search" style={{ position: 'relative' }} ref={searchContainerRef}>
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -583,7 +574,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                     </div>
 
                     {/* Right Side Actions */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div className="dashboard-header-actions" style={{ display: 'flex', alignItems: 'center' }}>
                         {/* Notification bell */}
                         <div style={{ position: 'relative' }}>
                             <button 
@@ -726,7 +717,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 </header>
 
                 {/* Page Content */}
-                <div style={{ flex: 1, padding: '0 32px 32px', background: '#F4F5F9' }}>
+                <div className="page-body" style={{ flex: 1, background: '#F4F5F9' }}>
                     {children}
                 </div>
             </main>
