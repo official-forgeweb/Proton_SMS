@@ -1232,4 +1232,136 @@ h6 {
   /* ToolBottomBar: collapse even further */
   .tool-bottom-bar a { padding: 5px 8px !important; font-size: 10px !important; gap: 4px !important; }
   .tool-bottom-bar a svg { width: 12px !important; height: 12px !important; }
+}
+
+/* ==========================================================
+   ULTRA-COMPREHENSIVE GLOBAL RESPONSIVENESS & OVERFLOW SAFETY
+   ========================================================== */
+
+/* Ensure the root layout and viewport strictly restrict horizontal overflow */
+html, body {
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure the main container wraps neatly within screen boundaries */
+main, .main-content, .page-body, .page-container {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* Make sure all images, videos, and icons are fluidly sized by default */
+img, svg, iframe, video {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Safety scroll for any card, grid, or panel that might leak text or content on narrow screens */
+.glass-panel, .card, .stat-card {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Robust horizontal scrolling wrapper for tables */
+.table-responsive,
+div[class*="table-responsive"],
+div[class*="table-container"],
+div:has(table),
+div:has(> table) {
+  width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+/* Responsive tweaks for mobile viewports (<= 768px) */
+@media (max-width: 768px) {
+  /* Login page glass card scaling */
+  .glass-card {
+    padding: 32px 20px !important;
+    margin: 12px !important;
+    border-radius: 16px !important;
+  }
+
+  /* 1. Auto-wrap flex containers that might have side-by-side elements on desktop */
+  div[style*="display: flex"]:not([style*="flex-wrap: no-wrap"]):not([style*="flex-direction: column"]),
+  div[style*="display: 'flex'"]:not([style*="flexWrap: 'no-wrap'"]):not([style*="flexDirection: 'column'"]) {
+    flex-wrap: wrap !important;
+  }
+
+  /* 2. Soften FormPageLayout's cards to be highly friendly on smaller screens */
+  .form-central-card {
+    padding: 32px 16px !important;
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02) !important;
+  }
+
+  /* Make absolute back-button in forms render inline above the form title instead of overlaying */
+  .form-central-card > div[style*="position: absolute"],
+  .form-central-card > div[style*="position: 'absolute'"] {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin-bottom: 24px !important;
+    display: inline-block !important;
+  }
+
+  /* Title and subtitle text scaling inside central cards */
+  .form-central-card h1 {
+    font-size: 26px !important;
+    text-align: left !important;
+    line-height: 1.2 !important;
+  }
+
+  .form-central-card p {
+    font-size: 14px !important;
+    text-align: left !important;
+    margin-top: 8px !important;
+  }
+
+  /* Shrink form sections padding */
+  .form-section {
+    padding: 20px 16px !important;
+    border-radius: 16px !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* Stack button bars and standard actions */
+  .form-actions,
+  .form-actions-left {
+    flex-direction: column-reverse !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    margin-top: 24px !important;
+    padding-top: 20px !important;
+  }
+
+  .form-actions button,
+  .form-actions-left button {
+    width: 100% !important;
+    padding: 14px !important;
+    font-size: 15px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  /* Prevent zoom-in behavior on form inputs on iOS devices */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Responsive adjustments for extremely tiny mobile devices (<= 360px) */
+@media (max-width: 360px) {
+  .page-body {
+    padding: 0 8px 12px !important;
+  }
+  
+  .form-central-card {
+    padding: 20px 8px !important;
+  }
 }
