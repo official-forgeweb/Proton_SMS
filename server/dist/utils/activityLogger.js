@@ -14,11 +14,33 @@ async function logTeacherActivity(userId, actionType, previousValue = null, newV
         const teacher = await database_1.default.teacher.findUnique({
             where: { user_id: userId }
         });
-        if (!teacher) {
-            // Action performed by non-teacher (e.g. Admin or Student)
-            return;
+        let teacherName = '';
+        let teacherId = null;
+        if (teacher) {
+            teacherName = `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || 'Unknown Teacher';
+            teacherId = teacher.id;
         }
-        const teacherName = `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || 'Unknown Teacher';
+        else {
+            // Resolve user to coordinator profile
+            const coordinator = await database_1.default.coordinator.findUnique({
+                where: { user_id: userId }
+            });
+            if (coordinator) {
+                teacherName = `${coordinator.full_name || 'Coordinator'}`.trim();
+            }
+            else {
+                // Resolve user to admin
+                const user = await database_1.default.user.findUnique({
+                    where: { id: userId }
+                });
+                if (user && user.role === 'admin') {
+                    teacherName = `Admin (${user.email})`;
+                }
+                else {
+                    return;
+                }
+            }
+        }
         // Retrieve IP and User-Agent/Device from express request if provided
         let ipAddress = null;
         let device = null;
@@ -34,7 +56,7 @@ async function logTeacherActivity(userId, actionType, previousValue = null, newV
         }
         await database_1.default.teacherActivityLog.create({
             data: {
-                teacher_id: teacher.id,
+                teacher_id: teacherId,
                 teacher_name: teacherName,
                 action_type: actionType,
                 previous_value: previousValue,

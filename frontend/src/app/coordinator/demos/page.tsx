@@ -1,5 +1,4 @@
 'use client';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Target, Calendar, Clock, MessageSquare, Phone } from 'lucide-react';
@@ -99,8 +98,6 @@ export default function CoordinatorDemoClassesPage() {
                     </div>
                 )}
             </div>
-
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

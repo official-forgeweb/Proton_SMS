@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import api from '@/lib/api';
 import {
     Calendar, ClipboardList, Award, BookOpen, TrendingUp,
@@ -632,7 +631,6 @@ export default function StudentDashboard() {
                     </div>
                 </div>
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

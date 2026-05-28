@@ -4,7 +4,6 @@ import DashboardLayout from '@/components/DashboardLayout';
 import PermissionGuard from '@/components/PermissionGuard';
 import { Clock, BookOpen, Calendar, ChevronRight, Sparkles, BookMarked } from 'lucide-react';
 import api from '@/lib/api';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import { useRouter } from 'next/navigation';
 
 export default function TeacherAttendancePage() {
@@ -193,7 +192,6 @@ export default function TeacherAttendancePage() {
                         )}
                     </div>
                 </div>
-                <ToolBottomBar />
             </DashboardLayout>
         </PermissionGuard>
     );

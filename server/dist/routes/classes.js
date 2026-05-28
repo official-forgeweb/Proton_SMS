@@ -119,7 +119,7 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
     }
 });
 // POST /api/classes
-router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const { schedule, ...rest } = req.body;
         const newClass = await database_1.default.class.create({
@@ -154,7 +154,7 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async
     }
 });
 // PUT /api/classes/:id
-router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const id = paramId(req);
         const { schedule, ...rest } = req.body;
@@ -228,7 +228,7 @@ router.get('/:id/attendance', auth_1.authenticateToken, async (req, res) => {
     }
 });
 // POST /api/classes/:id/attendance
-router.post('/:id/attendance', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.post('/:id/attendance', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const id = paramId(req);
         const { date, records } = req.body;

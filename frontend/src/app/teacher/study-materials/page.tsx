@@ -5,7 +5,6 @@ import api from '@/lib/api';
 import axios from 'axios';
 import { BookOpen, Upload, Trash2, Search, FileText, Eye, X, BookMarked, Download, Sparkles } from 'lucide-react';
 import { customAlert, customConfirm } from '@/utils/dialog';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function TeacherStudyMaterialsPage() {
@@ -461,7 +460,6 @@ export default function TeacherStudyMaterialsPage() {
                     </div>
                 )}
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

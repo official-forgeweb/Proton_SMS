@@ -16,7 +16,7 @@ const calculateAge = (dobString) => {
     return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
 };
 // GET /api/reports/enrollment
-router.get('/enrollment', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.get('/enrollment', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const students = await database_1.default.student.findMany();
         const data = students.map(s => {
@@ -38,7 +38,7 @@ router.get('/enrollment', auth_1.authenticateToken, (0, auth_1.authorize)('admin
     }
 });
 // GET /api/reports/revenue
-router.get('/revenue', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.get('/revenue', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const payments = await database_1.default.feePayment.findMany({
             include: { student: { select: { first_name: true, last_name: true, PRO_ID: true } } },
@@ -60,7 +60,7 @@ router.get('/revenue', auth_1.authenticateToken, (0, auth_1.authorize)('admin'),
     }
 });
 // GET /api/reports/batch-performance
-router.get('/batch-performance', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.get('/batch-performance', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const results = await database_1.default.testResult.findMany({
             include: {
@@ -88,7 +88,7 @@ router.get('/batch-performance', auth_1.authenticateToken, (0, auth_1.authorize)
     }
 });
 // GET /api/reports/demographics
-router.get('/demographics', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.get('/demographics', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const students = await database_1.default.student.findMany();
         const data = students.map(s => ({
@@ -107,7 +107,7 @@ router.get('/demographics', auth_1.authenticateToken, (0, auth_1.authorize)('adm
     }
 });
 // GET /api/reports/visual
-router.get('/visual', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.get('/visual', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const [feeAgg, genderAgg, statusAgg, gradeAgg] = await Promise.all([
             database_1.default.studentFeeAssignment.groupBy({
@@ -136,7 +136,7 @@ router.get('/visual', auth_1.authenticateToken, (0, auth_1.authorize)('admin', '
     }
 });
 // GET /api/reports/master
-router.get('/master', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.get('/master', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const [students, classes, activeStudents, enquiries] = await Promise.all([
             database_1.default.student.count(),

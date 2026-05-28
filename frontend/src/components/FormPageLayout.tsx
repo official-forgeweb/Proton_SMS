@@ -205,39 +205,6 @@ export default function FormPageLayout({
         .react-datepicker__input-container input:focus {
             border-color: var(--accentColor, #E53935); background: #FFF; box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1);
         }
-
-        @media (max-width: 768px) {
-            .page-container {
-                padding: 16px 8px !important;
-            }
-            .form-central-card {
-                padding: 32px 16px 24px 16px !important;
-                border-radius: 24px !important;
-            }
-            .form-section {
-                padding: 20px 16px !important;
-                margin-bottom: 20px !important;
-                border-radius: 16px !important;
-            }
-            /* Reset absolute position for back button container on mobile */
-            div[style*="left: 60px"],
-            div[style*="left:60px"] {
-                position: static !important;
-                margin-bottom: 24px !important;
-                display: inline-block !important;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .form-actions, .form-actions-left {
-                flex-direction: column-reverse !important;
-                gap: 12px !important;
-                align-items: stretch !important;
-            }
-            .form-actions button, .form-actions-left button {
-                width: 100% !important;
-            }
-        }
     `;
 
     return (

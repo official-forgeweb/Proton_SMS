@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import api from '@/lib/api';
 import { Calendar, UserCheck, UserX, Clock, ChevronLeft, ChevronRight, TrendingUp, Info, GraduationCap, FileText, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
@@ -348,7 +347,6 @@ export default function StudentAttendancePage() {
                     background-color: #f1f5f9;
                 }
             `}</style>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

@@ -972,6 +972,26 @@ h6 {
   grid-template-columns: 1fr 1fr;
   gap: 24px;
 }
+.detail-grid-main {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+}
+.detail-grid-double {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.detail-grid-triple {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+.detail-grid-quad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
 .dashboard-container {
   padding: 32px;
   margin: -24px;
@@ -1023,12 +1043,16 @@ h6 {
   .responsive-grid-two-cols {
     grid-template-columns: 1fr !important;
   }
+  .detail-grid-main {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+  .detail-grid-quad {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
 
   /* Force ALL inline 3+ column grids to 2 columns on tablet */
-  div[style*="repeat(4"],
-  div[style*="repeat(5"],
-  div[style*="repeat(7"],
-  div[style*="repeat(12"],
   div[style*="grid-template-columns: repeat(4"],
   div[style*="grid-template-columns: repeat(5"],
   div[style*="grid-template-columns: repeat(7"],
@@ -1040,35 +1064,16 @@ h6 {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 
-  /* Force fixed ratio layout grids (like main content + sidebar) to stack on tablet */
-  div[style*="2fr 1fr"],
-  div[style*="1.5fr 1fr"],
-  div[style*="1.6fr 1fr"],
-  div[style*="1.4fr 1fr"],
-  div[style*="1.2fr 0.8fr"],
-  div[style*="1fr 340px"],
-  div[style*="340px"],
-  div[style*="grid-template-columns: 2fr 1fr"],
-  div[style*="grid-template-columns: 1.5fr 1fr"],
-  div[style*="grid-template-columns: 1.6fr 1fr"],
-  div[style*="grid-template-columns: 1.4fr 1fr"],
-  div[style*="grid-template-columns: 1.2fr 0.8fr"],
+  /* Force fixed ratio grids to stack */
   div[style*="grid-template-columns: 1fr 340px"],
   div[style*="gridTemplateColumns: '1fr 340px"],
+  div[style*="grid-template-columns: 1.2fr 0.8fr"],
   div[style*="gridTemplateColumns: '1.2fr 0.8fr"],
   div[style*="grid-template-columns: 1fr 1fr 0.6fr"],
   div[style*="gridTemplateColumns: '1fr 1fr 0.6fr"],
   div[style*="grid-template-columns: 1fr 1fr 1fr 1fr 1fr"],
   div[style*="gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr"] {
     grid-template-columns: 1fr !important;
-  }
-
-  /* Force space-between detail page headers to stack on tablet/mobile */
-  div[style*="display: flex"][style*="justify-content: space-between"][style*="margin-bottom: 32px"],
-  div[style*="display: 'flex'"][style*="justifyContent: 'space-between'"][style*="marginBottom: '32px'"] {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 16px !important;
   }
 
   /* Reduce padding on dashboard content area */
@@ -1094,6 +1099,22 @@ h6 {
 
   .responsive-grid-half {
     grid-template-columns: 1fr !important;
+  }
+  .detail-grid-double,
+  .detail-grid-triple,
+  .detail-grid-quad {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .responsive-flex-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+  .responsive-flex-header .actions-group {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
   }
 
   /* ToolBottomBar centering */
@@ -1124,17 +1145,16 @@ h6 {
   .page-header { padding: 12px 16px !important; }
 
   /* Force ALL multi-column inline grids to single column on mobile */
-  div[style*="grid-template-columns"],
-  div[style*="gridTemplateColumns"],
-  div[style*="repeat("],
-  div[style*="1fr 1fr"],
-  div[style*="2fr 1fr"],
-  div[style*="1.5fr 1fr"],
-  div[style*="1.6fr 1fr"],
-  div[style*="1.4fr 1fr"],
-  div[style*="1.2fr 0.8fr"],
-  div[style*="1fr 340px"],
-  div[style*="340px"] {
+  div[style*="grid-template-columns: repeat("],
+  div[style*="gridTemplateColumns: 'repeat("],
+  div[style*="grid-template-columns: 1fr 1fr"],
+  div[style*="gridTemplateColumns: '1fr 1fr"],
+  div[style*="grid-template-columns: 1.5fr"],
+  div[style*="gridTemplateColumns: '1.5fr"],
+  div[style*="grid-template-columns: 1.2fr"],
+  div[style*="gridTemplateColumns: '1.2fr"],
+  div[style*="grid-template-columns: 1fr 340px"],
+  div[style*="gridTemplateColumns: '1fr 340px"] {
     grid-template-columns: 1fr !important;
   }
 

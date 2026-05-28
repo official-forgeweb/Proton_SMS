@@ -7,7 +7,7 @@ import {
     MessageSquare, Plus, X, Clock, CheckCircle,
     AlertCircle, XCircle, ArrowRight, Hash,
     Smartphone, PhoneCall, MessageCircle, FileText, Users, GraduationCap, Mail, HelpCircle,
-    Activity, ClipboardList
+    Activity, ClipboardList, ExternalLink
 } from 'lucide-react';
 
 const QUERY_TYPES = [
@@ -504,83 +504,179 @@ export default function StudentQueriesPage() {
             {/* Ticket Details Modal */}
             {showDetailModal && selectedQuery && (
                 <div className="modal-blur-overlay" style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-                    <div className="modal-card" style={{ 
-                        background: 'rgba(255, 255, 255, 0.95)', 
-                        backdropFilter: 'blur(20px)',
+                    <div className="modal-card custom-scrollbar" style={{ 
+                        background: '#FFFFFF', 
                         width: '100%', 
-                        maxWidth: '500px', 
-                        borderRadius: '28px', 
-                        padding: '36px', 
+                        maxWidth: '860px', 
+                        borderRadius: '32px', 
+                        padding: '32px', 
                         position: 'relative',
-                        boxShadow: '0 25px 50px -12px rgba(13, 15, 33, 0.25)'
+                        boxShadow: '0 30px 70px rgba(15, 23, 42, 0.12)',
+                        border: '1px solid #E2E8F0',
+                        overflow: 'hidden',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
                     }}>
-                        <button onClick={() => { setShowDetailModal(false); setSelectedQuery(null); }}
-                            style={{ 
-                                position: 'absolute', top: '24px', right: '24px', background: '#F4F5F9', border: 'none', cursor: 'pointer',
-                                width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                transition: 'all 0.2s', color: '#5E6278'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = '#E2E8F0'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#F4F5F9'}
-                        >
-                            <X size={18} />
-                        </button>
+                        {/* Glowing accent spot */}
+                        <div style={{ position: 'absolute', top: 0, right: 0, width: '180px', height: '180px', background: 'radial-gradient(circle at 100% 0%, rgba(229, 57, 53, 0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
-                            {(() => {
-                                const TypeIcon = QUERY_TYPES.find(q => q.value === selectedQuery.query_type)?.icon || HelpCircle;
-                                return (
-                                    <div style={{ 
-                                        width: '56px', height: '56px', borderRadius: '16px', 
-                                        background: 'rgba(26, 29, 59, 0.05)', color: '#1A1D3B',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center' 
-                                    }}>
-                                        <TypeIcon size={28} />
-                                    </div>
-                                );
-                            })()}
-                            <div>
-                                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.3 }}>
-                                    {QUERY_TYPES.find(q => q.value === selectedQuery.query_type)?.label || selectedQuery.query_type}
-                                </h2>
-                                <span style={{ fontSize: '13px', color: '#8F92A1', fontWeight: 600 }}>Ticket ID: {selectedQuery.query_number}</span>
+                        {/* Top Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                {(() => {
+                                    const TypeIcon = QUERY_TYPES.find(q => q.value === selectedQuery.query_type)?.icon || HelpCircle;
+                                    return (
+                                        <div style={{ 
+                                            width: '52px', height: '52px', borderRadius: '16px', 
+                                            background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', color: '#FFFFFF',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '0 8px 16px rgba(26, 29, 59, 0.1)'
+                                        }}>
+                                            <TypeIcon size={24} />
+                                        </div>
+                                    );
+                                })()}
+                                <div>
+                                    <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+                                        {QUERY_TYPES.find(q => q.value === selectedQuery.query_type)?.label || selectedQuery.query_type}
+                                    </h2>
+                                    <span style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                                        Ticket ID: {selectedQuery.query_number}
+                                    </span>
+                                </div>
                             </div>
+                            <button onClick={() => { setShowDetailModal(false); setSelectedQuery(null); }}
+                                style={{ 
+                                    background: '#F1F5F9', border: 'none', cursor: 'pointer',
+                                    width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transition: 'all 0.2s', color: '#64748B'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#E2E8F0'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#F1F5F9'}
+                            >
+                                <X size={16} />
+                            </button>
                         </div>
 
-                        <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 18px', background: 'rgba(248, 249, 253, 0.7)', borderRadius: '14px', border: '1px solid rgba(226, 232, 240, 0.5)' }}>
-                                <span style={{ fontSize: '13.5px', color: '#8F92A1', fontWeight: 700 }}>Ticket Status</span>
-                                <span style={{ 
-                                    fontSize: '13px', fontWeight: 800, color: STATUS_CONFIG[selectedQuery.status]?.color || '#333',
-                                    background: STATUS_CONFIG[selectedQuery.status]?.bg, padding: '2px 8px', borderRadius: '6px'
-                                }}>
-                                    {STATUS_CONFIG[selectedQuery.status]?.label || selectedQuery.status}
-                                </span>
+                        {/* Two Column Responsive Split Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '28px', alignItems: 'start' }}>
+                            
+                            {/* LEFT COLUMN: QUERY INFO */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {/* Metadata Grid */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', padding: '14px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+                                    <div style={{ textAlign: 'center', borderRight: '1px solid #E2E8F0' }}>
+                                        <span style={{ display: 'block', fontSize: '9px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Status</span>
+                                        <span style={{ 
+                                            fontSize: '11px', fontWeight: 800, color: STATUS_CONFIG[selectedQuery.status]?.color || '#333',
+                                            background: STATUS_CONFIG[selectedQuery.status]?.bg, padding: '2px 8px', borderRadius: '6px', display: 'inline-block'
+                                        }}>
+                                            {STATUS_CONFIG[selectedQuery.status]?.label || selectedQuery.status}
+                                        </span>
+                                    </div>
+                                    <div style={{ textAlign: 'center', borderRight: '1px solid #E2E8F0' }}>
+                                        <span style={{ display: 'block', fontSize: '9px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Subject Info</span>
+                                        <span style={{ fontSize: '12px', color: '#1A1D3B', fontWeight: 700, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {selectedQuery.query_subtype || 'N/A'}
+                                        </span>
+                                    </div>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <span style={{ display: 'block', fontSize: '9px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Submitted On</span>
+                                        <span style={{ fontSize: '11px', color: '#1A1D3B', fontWeight: 700 }}>
+                                            {new Date(selectedQuery.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Description Section */}
+                                <div>
+                                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>Query Description</span>
+                                    <div style={{ padding: '16px', background: '#FFFFFF', borderRadius: '16px', borderLeft: '4px solid #CBD5E1', borderTop: '1px solid #F1F5F9', borderRight: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9', boxShadow: '0 4px 12px rgba(0,0,0,0.01)' }}>
+                                        <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap', fontWeight: 500 }}>
+                                            {selectedQuery.description}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                            {selectedQuery.query_subtype && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 18px', background: 'rgba(248, 249, 253, 0.7)', borderRadius: '14px', border: '1px solid rgba(226, 232, 240, 0.5)' }}>
-                                    <span style={{ fontSize: '13.5px', color: '#8F92A1', fontWeight: 700 }}>Subject Info</span>
-                                    <span style={{ fontSize: '13.5px', color: '#1A1D3B', fontWeight: 700 }}>{selectedQuery.query_subtype}</span>
-                                </div>
-                            )}
-                            {selectedQuery.description && (
-                                <div style={{ padding: '16px 18px', background: 'rgba(248, 249, 253, 0.7)', borderRadius: '14px', border: '1px solid rgba(226, 232, 240, 0.5)' }}>
-                                    <span style={{ fontSize: '13px', color: '#8F92A1', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Description</span>
-                                    <span style={{ fontSize: '14px', color: '#1A1D3B', lineHeight: 1.5, display: 'block' }}>{selectedQuery.description}</span>
-                                </div>
-                            )}
-                            {selectedQuery.resolution_note && (
-                                <div style={{ padding: '16px 18px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '14px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                                    <span style={{ fontSize: '13px', color: '#10B981', fontWeight: 800, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Resolution Summary</span>
-                                    <span style={{ fontSize: '14px', color: '#1D4ED8', lineHeight: 1.5, display: 'block', fontWeight: 500 }}>{selectedQuery.resolution_note}</span>
-                                </div>
-                            )}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 18px', background: 'rgba(248, 249, 253, 0.7)', borderRadius: '14px', border: '1px solid rgba(226, 232, 240, 0.5)' }}>
-                                <span style={{ fontSize: '13.5px', color: '#8F92A1', fontWeight: 700 }}>Submitted On</span>
-                                <span style={{ fontSize: '13.5px', color: '#1A1D3B', fontWeight: 700 }}>
-                                    {new Date(selectedQuery.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                </span>
+
+                            {/* RIGHT COLUMN: RESOLUTION & FILES */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {selectedQuery.resolution_note || (selectedQuery.attachments && selectedQuery.attachments.length > 0) ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        {selectedQuery.resolution_note && (
+                                            <div style={{ padding: '20px', background: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)', borderRadius: '24px', border: '1px solid #A7F3D0', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.03)' }}>
+                                                <span style={{ fontSize: '10px', fontWeight: 900, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '6px' }}>Resolution Summary</span>
+                                                <p style={{ fontSize: '14px', color: '#064E3B', lineHeight: 1.6, display: 'block', fontWeight: 600, margin: 0 }}>
+                                                    {selectedQuery.resolution_note}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {selectedQuery.attachments && selectedQuery.attachments.length > 0 && (
+                                            <div style={{ padding: '20px', background: 'linear-gradient(135deg, #EEF2FF 0%, #F5F7FF 100%)', borderRadius: '24px', border: '1px solid #C7D2FE', boxShadow: '0 4px 15px rgba(79, 96, 255, 0.03)' }}>
+                                                <span style={{ fontSize: '10px', fontWeight: 900, color: '#4F60FF', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '12px' }}>Resolution Attachments</span>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                    {selectedQuery.attachments.map((att: any) => {
+                                                        const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(att.file_name);
+                                                        return (
+                                                            <div key={att.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                                <a href={att.file_url} target="_blank" rel="noopener noreferrer" 
+                                                                    style={{ 
+                                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                                                                        background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '12px 16px', 
+                                                                        borderRadius: '12px', textDecoration: 'none', color: '#1E293B', 
+                                                                        fontSize: '13px', fontWeight: 700, boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                                                                        transition: 'all 0.2s ease' 
+                                                                    }}
+                                                                    onMouseEnter={e => {
+                                                                        e.currentTarget.style.borderColor = '#4F60FF';
+                                                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                                                    }}
+                                                                    onMouseLeave={e => {
+                                                                        e.currentTarget.style.borderColor = '#E2E8F0';
+                                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                                    }}
+                                                                >
+                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                        <FileText size={16} color="#4F60FF" />
+                                                                        {att.file_name}
+                                                                    </span>
+                                                                    <span style={{ color: '#4F60FF', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                        View <ExternalLink size={12} />
+                                                                    </span>
+                                                                </a>
+                                                                {isImage && (
+                                                                    <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #C7D2FE', marginTop: '4px', maxWidth: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC', padding: '10px', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.02)' }}>
+                                                                        <img src={att.file_url} alt={att.file_name} 
+                                                                            style={{ 
+                                                                                maxWidth: '100%', 
+                                                                                maxHeight: '200px', 
+                                                                                borderRadius: '12px', 
+                                                                                objectFit: 'contain',
+                                                                                boxShadow: '0 8px 20px rgba(0,0,0,0.06)'
+                                                                            }} 
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div style={{ padding: '32px 24px', background: '#FAFBFD', borderRadius: '24px', border: '1.5px dashed #CBD5E1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: '220px' }}>
+                                        <Clock size={36} color="#94A3B8" style={{ marginBottom: '12px' }} />
+                                        <h4 style={{ fontSize: '15px', color: '#475569', fontWeight: 700, margin: '0 0 6px 0' }}>Resolution Pending</h4>
+                                        <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0, lineHeight: 1.4 }}>
+                                            The Proton support team is reviewing your ticket and will post the solution and files here shortly.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
+
                         </div>
                     </div>
                 </div>

@@ -2,11 +2,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
+import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 import { Phone, User, Mail, MapPin, Target, MessageSquare, Users } from 'lucide-react';
 
 export default function AddEnquiryPage() {
     const router = useRouter();
+    const { user } = useAuthStore();
+    const basePath = user?.role === 'coordinator' ? '/coordinator' : '/admin';
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [enquiryMode, setEnquiryMode] = useState<'walk_in' | 'on_call'>('walk_in');
     const [formData, setFormData] = useState({
@@ -29,7 +32,7 @@ export default function AddEnquiryPage() {
                 });
             }
             
-            router.push('/admin/enquiries');
+            router.push(`${basePath}/enquiries`);
         } catch (error) {
             console.error('Error creating enquiry:', error);
             alert('Failed to create enquiry');
@@ -42,7 +45,7 @@ export default function AddEnquiryPage() {
         <FormPageLayout
             title="New Student Enquiry"
             subtitle="Record a new lead or student inquiry into the system"
-            backHref="/admin/enquiries"
+            backHref={`${basePath}/enquiries`}
             backLabel="Back to Enquiries"
             requiredRole={['admin', 'coordinator']}
             icon={<MessageSquare size={20} strokeWidth={2.5} />}
@@ -210,7 +213,7 @@ export default function AddEnquiryPage() {
                 </div>
 
                 <div className="form-actions">
-                    <button type="button" className="btn-cancel" onClick={() => router.push('/admin/enquiries')}>
+                    <button type="button" className="btn-cancel" onClick={() => router.push(`${basePath}/enquiries`)}>
                         Cancel
                     </button>
                     <button type="submit" className="btn-submit" disabled={isSubmitting}>

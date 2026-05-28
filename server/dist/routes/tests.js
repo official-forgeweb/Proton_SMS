@@ -131,7 +131,7 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
     }
 });
 // POST /api/tests
-router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         let createdBy = null;
         if (req.user.role === 'teacher') {
@@ -173,7 +173,7 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teach
     }
 });
 // PUT /api/tests/:id
-router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const id = paramId(req);
         const existing = await database_1.default.test.findUnique({ where: { id } });
@@ -197,7 +197,7 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'tea
     }
 });
 // POST /api/tests/:id/results
-router.post('/:id/results', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.post('/:id/results', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const id = paramId(req);
         const test = await database_1.default.test.findUnique({ where: { id } });
@@ -273,7 +273,7 @@ router.post('/:id/results', auth_1.authenticateToken, (0, auth_1.authorize)('adm
         if (studentUserIds.length > 0) {
             await (0, notifications_1.sendNotification)(studentUserIds, req.user.id, 'marks_uploaded', `Results Published: ${test.test_name}`, `Results for "${test.test_name}" (${test.subject || 'N/A'}) have been published. Check your performance now!`, test.id);
         }
-        if (req.user.role === 'teacher') {
+        if (req.user.role === 'teacher' || req.user.role === 'coordinator') {
             const classInfo = await database_1.default.class.findUnique({
                 where: { id: test.class_id },
                 select: { class_name: true }
@@ -294,7 +294,7 @@ router.post('/:id/results', auth_1.authenticateToken, (0, auth_1.authorize)('adm
     }
 });
 // DELETE /api/tests/:id
-router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const id = paramId(req);
         await database_1.default.testResult.deleteMany({ where: { test_id: id } });

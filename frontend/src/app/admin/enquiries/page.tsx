@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/authStore';
 import {
     Search, Plus, Phone, Clock, Calendar, ChevronRight, X,
     MessageSquare, User, Target, CheckCircle, AlertTriangle,
@@ -13,6 +14,8 @@ import 'react-datepicker/dist/react-datepicker.css';
 
 export default function EnquiriesPage() {
     const router = useRouter();
+    const { user } = useAuthStore();
+    const basePath = user?.role === 'coordinator' ? '/coordinator' : '/admin';
     const [enquiries, setEnquiries] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -211,7 +214,7 @@ export default function EnquiriesPage() {
                             {stats?.total || 0} total enquiries &bull; <span style={{ color: '#10B981', fontWeight: 700 }}>{stats?.conversion_rate || 0}%</span> conversion rate
                         </p>
                     </div>
-                    <button onClick={() => router.push('/admin/enquiries/add')} style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '12px 24px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(229,57,53,0.4)', transition: 'all 0.25s' }}
+                    <button onClick={() => router.push(`${basePath}/enquiries/add`)} style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '12px 24px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(229,57,53,0.4)', transition: 'all 0.25s' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 28px -6px rgba(229,57,53,0.5)'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px -6px rgba(229,57,53,0.4)'; }}>
                         <Plus size={18} strokeWidth={2.5} /> New Enquiry
@@ -379,7 +382,7 @@ export default function EnquiriesPage() {
                                                 key={enq.id}
                                                 className="table-row-hover"
                                                 style={{ cursor: 'pointer' }}
-                                                onClick={() => router.push(`/admin/enquiries/${enq.id}`)}
+                                                onClick={() => router.push(`${basePath}/enquiries/${enq.id}`)}
                                             >
                                                 <td style={{ padding: '14px 20px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -472,7 +475,7 @@ export default function EnquiriesPage() {
                                                             <X size={16} strokeWidth={2.5} />
                                                         </button>
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); router.push(`/admin/enquiries/${enq.id}`); }}
+                                                            onClick={(e) => { e.stopPropagation(); router.push(`${basePath}/enquiries/${enq.id}`); }}
                                                             title="View Details"
                                                             style={{
                                                                 background: '#F0F4FF', border: 'none', cursor: 'pointer',

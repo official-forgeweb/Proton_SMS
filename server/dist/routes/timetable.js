@@ -151,7 +151,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
     }
 });
 // POST /api/timetable/generate (Admin only)
-router.post('/generate', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.post('/generate', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const { start_date, end_date, class_id } = req.body;
         if (!start_date || !end_date) {
@@ -221,7 +221,7 @@ router.post('/generate', auth_1.authenticateToken, (0, auth_1.authorize)('admin'
     }
 });
 // POST /api/timetable (Admin or Teacher)
-router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const { class_id, subject, teacher_id, date, start_time, end_time, room, online_link, notes } = req.body;
         let finalTeacherId = teacher_id;
@@ -250,7 +250,7 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teach
                 class_ref: { select: { class_name: true } }
             }
         });
-        if (req.user.role === 'teacher') {
+        if (req.user.role === 'teacher' || req.user.role === 'coordinator') {
             const { logTeacherActivity } = require('../utils/activityLogger');
             await logTeacherActivity(req.user.id, 'schedule_create', null, JSON.stringify({ subject, date, start_time, room, online_link }), `Class session for ${entry.class_ref.class_name}: ${subject}`, req);
         }
@@ -262,7 +262,7 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teach
     }
 });
 // PUT /api/timetable/:id (Admin or Teacher)
-router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const id = req.params.id;
         const { class_id, subject, teacher_id, date, start_time, end_time, room, online_link, notes, status } = req.body;
@@ -303,7 +303,7 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'tea
                 class_ref: { select: { class_name: true } }
             }
         });
-        if (req.user.role === 'teacher') {
+        if (req.user.role === 'teacher' || req.user.role === 'coordinator') {
             const { logTeacherActivity } = require('../utils/activityLogger');
             const prevVal = {
                 subject: existing.subject,
@@ -335,7 +335,7 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'tea
     }
 });
 // DELETE /api/timetable/:id (Admin or Teacher)
-router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const id = req.params.id;
         const existing = await database_1.default.timetable.findUnique({
@@ -358,7 +358,7 @@ router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', '
             }
         }
         await database_1.default.timetable.delete({ where: { id } });
-        if (req.user.role === 'teacher') {
+        if (req.user.role === 'teacher' || req.user.role === 'coordinator') {
             const { logTeacherActivity } = require('../utils/activityLogger');
             await logTeacherActivity(req.user.id, 'schedule_delete', JSON.stringify({
                 subject: existing.subject,

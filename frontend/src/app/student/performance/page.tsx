@@ -3,7 +3,6 @@ import { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { TrendingUp, Award, Target, Activity, Calendar, ShieldAlert, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '@/lib/api';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar, Cell
@@ -365,7 +364,6 @@ export default function StudentPerformancePage() {
                     )}
                 </div>
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

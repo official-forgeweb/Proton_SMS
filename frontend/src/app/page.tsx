@@ -1,17 +1,20 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function HomePage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, serverError, checkAuth } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     checkAuth();
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
     if (!isLoading && !serverError) {
       if (isAuthenticated && user) {
         router.push(`/${user.role}`);
@@ -19,7 +22,7 @@ export default function HomePage() {
         router.push('/login');
       }
     }
-  }, [isLoading, isAuthenticated, user, serverError]);
+  }, [mounted, isLoading, isAuthenticated, user, serverError]);
 
   return (
     <div className="bg-mesh" style={{

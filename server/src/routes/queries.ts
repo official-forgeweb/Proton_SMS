@@ -105,7 +105,8 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
           },
           resolved_by_user: {
             select: { id: true, email: true, role: true }
-          }
+          },
+          attachments: true
         }
       })
     ]);
@@ -169,7 +170,8 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
         },
         target_teacher: { select: { id: true, first_name: true, last_name: true } },
         created_by_user: { select: { id: true, email: true, role: true } },
-        resolved_by_user: { select: { id: true, email: true, role: true } }
+        resolved_by_user: { select: { id: true, email: true, role: true } },
+        attachments: true
       }
     });
 

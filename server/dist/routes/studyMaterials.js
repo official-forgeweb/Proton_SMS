@@ -9,7 +9,7 @@ const auth_1 = require("../middleware/auth");
 const crypto_1 = __importDefault(require("crypto"));
 const router = (0, express_1.Router)();
 // Get Cloudinary Signature for Direct Frontend Uploads
-router.get('/signature', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), (req, res) => {
+router.get('/signature', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), (req, res) => {
     try {
         const timestamp = Math.round(new Date().getTime() / 1000);
         const folder = 'proton_study_materials';
@@ -37,7 +37,7 @@ router.get('/signature', auth_1.authenticateToken, (0, auth_1.authorize)('admin'
     }
 });
 // Create Study Material (After Cloudinary Upload is Complete)
-router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const { title, subject, class_id, pdf_url } = req.body;
         const uploaderId = req.user.id; // from JWT middleware
@@ -141,7 +141,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
     }
 });
 // Delete Study Material
-router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const { id } = req.params;
         await database_1.default.studyMaterial.delete({ where: { id } });

@@ -3,7 +3,6 @@ import { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { Calendar, Clock, MapPin, User, ChevronLeft, ChevronRight, BookOpen, Layers } from 'lucide-react';
-import ToolBottomBar from '@/components/ToolBottomBar';
 
 const SUBJECT_PALETTES: Record<string, { bg: string; border: string; text: string; dot: string }> = {
     'Physics':     { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF', dot: '#3B82F6' },
@@ -635,7 +634,6 @@ export default function StudentTimetablePage() {
                     )}
                 </div>
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

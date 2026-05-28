@@ -67,9 +67,9 @@ router.post('/login', async (req, res) => {
             where: { id: user.id },
             data: { failed_login_attempts: 0, locked_until: null, last_login: new Date() },
         });
-        if (user.role === 'teacher') {
+        if (user.role === 'teacher' || user.role === 'coordinator') {
             const { logTeacherActivity } = require('../utils/activityLogger');
-            await logTeacherActivity(user.id, 'login', null, null, 'Teacher Portal Login', req);
+            await logTeacherActivity(user.id, 'login', null, null, `${user.role === 'coordinator' ? 'Coordinator' : 'Teacher'} Portal Login`, req);
         }
         const accessToken = (0, auth_1.generateAccessToken)(user.id, user.role);
         const refreshToken = (0, auth_1.generateRefreshToken)(user.id);

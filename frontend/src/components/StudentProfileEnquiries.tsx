@@ -85,6 +85,7 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
 
     // Modal to raise new enquiry
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [selectedQueryForDetails, setSelectedQueryForDetails] = useState<StudentQuery | null>(null);
     const [newQuerySubject, setNewQuerySubject] = useState('');
     const [newQueryType, setNewQueryType] = useState('academic');
     const [newQueryPriority, setNewQueryPriority] = useState('medium');
@@ -680,7 +681,7 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
                             {filteredResolvedQueries.length > 0 ? (
                                 filteredResolvedQueries.map(q => {
                                     return (
-                                        <div key={q.id} className="crm-card resolved-state animate-in">
+                                        <div key={q.id} onClick={() => setSelectedQueryForDetails(q)} style={{ cursor: 'pointer' }} className="crm-card resolved-state animate-in">
                                             <div className="card-header-row">
                                                 <div>
                                                     <span style={{ fontSize: '10px', fontWeight: 800, fontFamily: 'monospace', color: '#047857', display: 'block', marginBottom: '2px' }}>
@@ -710,8 +711,8 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
                                                 <div style={{ marginTop: '8px' }}>
                                                     <span style={{ fontSize: '9px', fontWeight: 800, color: '#059669', textTransform: 'uppercase', display: 'block', marginBottom: '4px', letterSpacing: '0.05em' }}>Attachments</span>
                                                     <div className="attachment-preview-box" style={{ gap: '4px', marginBottom: '8px' }}>
-                                                        {q.attachments.map(att => (
-                                                            <a key={att.id} href={att.file_url} target="_blank" rel="noopener noreferrer" className="attachment-item resolved-theme" style={{ padding: '4px 8px', fontSize: '10.5px' }}>
+                                                           {q.attachments.map(att => (
+                                                            <a key={att.id} href={att.file_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="attachment-item resolved-theme" style={{ padding: '4px 8px', fontSize: '10.5px' }}>
                                                                 <FileText size={11} /> {att.file_name} <ExternalLink size={8} />
                                                             </a>
                                                         ))}
@@ -871,6 +872,174 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
                             </button>
 
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* RESOLVED QUERY DETAILS MODAL */}
+            {selectedQueryForDetails && (
+                <div className="modal-overlay-new" onClick={() => setSelectedQueryForDetails(null)}>
+                    <div className="modal-content-new custom-scrollbar" onClick={(e) => e.stopPropagation()} style={{ 
+                        background: '#FFFFFF', 
+                        width: '100%', 
+                        maxWidth: '860px', 
+                        borderRadius: '32px', 
+                        padding: '32px', 
+                        position: 'relative',
+                        boxShadow: '0 30px 70px rgba(15, 23, 42, 0.12)',
+                        border: '1px solid #E2E8F0',
+                        overflow: 'hidden',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                    }}>
+                        {/* Glowing accent spot */}
+                        <div style={{ position: 'absolute', top: 0, right: 0, width: '180px', height: '180px', background: 'radial-gradient(circle at 100% 0%, rgba(229, 57, 53, 0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+                        {/* Top Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px' }}>
+                            <div>
+                                <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, fontFamily: 'monospace', display: 'block', marginBottom: '4px' }}>
+                                    Ticket ID: {selectedQueryForDetails.query_number}
+                                </span>
+                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1E293B', margin: 0 }}>Ticket Details</h3>
+                            </div>
+                            <button onClick={() => setSelectedQueryForDetails(null)} 
+                                style={{ 
+                                    background: '#F1F5F9', border: 'none', cursor: 'pointer',
+                                    width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transition: 'all 0.2s', color: '#64748B'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#E2E8F0'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#F1F5F9'}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Two Column Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '28px', alignItems: 'start' }}>
+                            
+                            {/* LEFT COLUMN: QUERY DETAILS & STUDENT INFO */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {/* Student info card */}
+                                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '20px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ background: '#E2E8F0', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569', flexShrink: 0 }}>
+                                        <User size={18} />
+                                    </div>
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', display: 'block', marginBottom: '2px', letterSpacing: '0.05em' }}>Student Info</span>
+                                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {selectedQueryForDetails.student ? `${selectedQueryForDetails.student.first_name} ${selectedQueryForDetails.student.last_name}` : 'Student'}
+                                        </span>
+                                        <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            PRO ID: {selectedQueryForDetails.student?.PRO_ID || 'N/A'} | Phone: {selectedQueryForDetails.student?.phone || 'N/A'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Metadata Grid */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', padding: '14px 16px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+                                    <div style={{ textAlign: 'center', borderRight: '1px solid #E2E8F0' }}>
+                                        <span style={{ display: 'block', fontSize: '9px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Status</span>
+                                        <span style={{ 
+                                            fontSize: '10px', fontWeight: 800, color: selectedQueryForDetails.status === 'resolved' ? '#059669' : '#EF4444',
+                                            background: selectedQueryForDetails.status === 'resolved' ? '#ECFDF5' : '#FEF2F2', padding: '2px 6px', borderRadius: '6px', display: 'inline-block', textTransform: 'uppercase'
+                                        }}>
+                                            {selectedQueryForDetails.status}
+                                        </span>
+                                    </div>
+                                    <div style={{ textAlign: 'center', borderRight: '1px solid #E2E8F0' }}>
+                                        <span style={{ display: 'block', fontSize: '9px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Category</span>
+                                        <span style={{ fontSize: '11px', color: '#1A1D3B', fontWeight: 700, textTransform: 'capitalize', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {selectedQueryForDetails.query_type}
+                                        </span>
+                                    </div>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <span style={{ display: 'block', fontSize: '9px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Date</span>
+                                        <span style={{ fontSize: '11px', color: '#1A1D3B', fontWeight: 700, display: 'block' }}>
+                                            {selectedQueryForDetails.created_at ? new Date(selectedQueryForDetails.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'N/A'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Query subject & description */}
+                                <div>
+                                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>Category Subject & Text</span>
+                                    <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#1E293B', margin: '0 0 8px 0' }}>{selectedQueryForDetails.subject}</h4>
+                                    <div style={{ padding: '16px', background: '#FFFFFF', borderRadius: '16px', borderLeft: '4px solid #CBD5E1', borderTop: '1px solid #F1F5F9', borderRight: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9', boxShadow: '0 4px 12px rgba(0,0,0,0.01)' }}>
+                                        <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap', fontWeight: 500 }}>
+                                            {selectedQueryForDetails.description}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* RIGHT COLUMN: RESOLUTION SUMMARY & ATTACHMENTS */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {selectedQueryForDetails.resolution_note && (
+                                    <div style={{ padding: '20px', background: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)', borderRadius: '24px', border: '1px solid #A7F3D0', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.03)' }}>
+                                        <span style={{ fontSize: '10px', fontWeight: 950, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Resolution Provided</span>
+                                        <p style={{ fontSize: '14px', color: '#064E3B', fontWeight: 600, lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' }}>
+                                            {selectedQueryForDetails.resolution_note}
+                                        </p>
+                                        <span style={{ fontSize: '11px', color: '#047857', fontWeight: 600, display: 'block', marginTop: '12px' }}>
+                                            Resolved: {selectedQueryForDetails.resolved_at ? new Date(selectedQueryForDetails.resolved_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {selectedQueryForDetails.attachments && selectedQueryForDetails.attachments.length > 0 && (
+                                    <div style={{ padding: '20px', background: 'linear-gradient(135deg, #EEF2FF 0%, #F5F7FF 100%)', borderRadius: '24px', border: '1px solid #C7D2FE', boxShadow: '0 4px 15px rgba(79, 96, 255, 0.03)' }}>
+                                        <span style={{ fontSize: '10px', fontWeight: 950, color: '#4F60FF', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '12px' }}>Resolution Attachments</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {selectedQueryForDetails.attachments.map((att) => {
+                                                const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(att.file_name);
+                                                return (
+                                                    <div key={att.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <a href={att.file_url} target="_blank" rel="noopener noreferrer" 
+                                                            className="attachment-item resolved-theme" 
+                                                            style={{ 
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                                                                padding: '12px 16px', borderRadius: '12px', textDecoration: 'none', 
+                                                                fontSize: '13px', fontWeight: 700, boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                                                                transition: 'all 0.2s ease',
+                                                                color: '#4F60FF',
+                                                                background: '#FFFFFF',
+                                                                borderColor: '#C7D2FE'
+                                                            }}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1E293B' }}>
+                                                                <FileText size={16} color="#4F60FF" />
+                                                                {att.file_name}
+                                                            </span>
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#4F60FF', fontWeight: 800 }}>
+                                                                Open File <ExternalLink size={12} />
+                                                            </span>
+                                                        </a>
+                                                        {isImage && (
+                                                            <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #C7D2FE', marginTop: '4px', maxWidth: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC', padding: '10px', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.02)' }}>
+                                                                <img src={att.file_url} alt={att.file_name} 
+                                                                    style={{ 
+                                                                        maxWidth: '100%', 
+                                                                        maxHeight: '200px', 
+                                                                        borderRadius: '12px', 
+                                                                        objectFit: 'contain',
+                                                                        boxShadow: '0 8px 20px rgba(0,0,0,0.06)'
+                                                                    }} 
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             )}

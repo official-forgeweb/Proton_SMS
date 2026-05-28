@@ -85,6 +85,7 @@ export default function StudentProfilePage() {
         return '#DC2626';
     };
 
+
     const getScoreBg = (pct: number) => {
         if (pct >= 80) return '#ECFDF5';
         if (pct >= 60) return '#FEF3C7';
@@ -107,10 +108,11 @@ export default function StudentProfilePage() {
                 <style dangerouslySetInnerHTML={{__html: `
                     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
                     .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; }
+                    .detail-grid-quad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
                 `}} />
                 <div style={{ padding: '32px' }}>
                     <div className="skeleton" style={{ height: '120px', marginBottom: '24px', borderRadius: '24px' }} />
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+                    <div className="detail-grid-quad" style={{ marginBottom: '24px' }}>
                         {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: '90px' }} />)}
                     </div>
                     <div className="skeleton" style={{ height: '400px' }} />
@@ -170,6 +172,10 @@ export default function StudentProfilePage() {
                 @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.2); } 50% { box-shadow: 0 0 0 8px rgba(229, 57, 53, 0); } }
                 .animate-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
                 .animate-scale { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+                .detail-grid-quad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+                .detail-grid-triple { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+                .detail-grid-main { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+                .detail-grid-double { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
                 .stat-card {
                     background: white; border-radius: 20px; padding: 18px; border: 1px solid #F1F4F9;
                     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -364,7 +370,7 @@ export default function StudentProfilePage() {
             </div>
 
             {/* Quick Stats  */}
-            <div className="animate-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px', animationDelay: '100ms' }}>
+            <div className="animate-in detail-grid-quad" style={{ marginBottom: '24px', animationDelay: '100ms' }}>
                 {/* Attendance Card */}
                 <div className="stat-card" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                     <div className="stat-card-icon" style={{ background: '#FFF0F1', color: '#E53935', width: '44px', height: '44px', flexShrink: 0 }}>
@@ -482,7 +488,7 @@ export default function StudentProfilePage() {
 
                 {/* OVERVIEW TAB */}
                 {activeTab === 'overview' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+                    <div className="detail-grid-main" style={{ gap: '20px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             {/* Subject Performance */}
                             <div className="data-card">
@@ -863,7 +869,7 @@ export default function StudentProfilePage() {
                     return (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             {/* Academic Performance Insights */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                            <div className="detail-grid-quad">
                                 <div className="stat-card" style={{ padding: '14px 18px', background: '#FAFBFF' }}>
                                     <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Tests Found</span>
                                     <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#1A1D3B', margin: '4px 0 0 0' }}>{totalFiltered} <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>Assessments</span></h4>
@@ -1104,12 +1110,12 @@ export default function StudentProfilePage() {
                 })()}
 
                 {/* ATTENDANCE TAB */}
-                {/* ATTENDANCE TAB */}
                 {activeTab === 'attendance' && (
                     <div className="animate-in" style={{ animationDelay: '220ms' }}>
                         <StudentAttendanceCalendar studentId={params.id as string} />
                     </div>
                 )}
+
                 {activeTab === 'fees' && (() => {
                     const total = feeInfo?.assignment ? (feeInfo.assignment.final_fee || feeInfo.assignment.total_fee || 0) : 0;
                     const paid = feeInfo?.assignment ? (feeInfo.assignment.total_paid || 0) : 0;
@@ -1126,7 +1132,7 @@ export default function StudentProfilePage() {
                     };
 
                     return (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
+                        <div className="detail-grid-double" style={{ alignItems: 'start' }}>
                             {/* Fee Assignment */}
                             <div className="data-card" style={{ 
                                 padding: '28px', 
@@ -1182,7 +1188,7 @@ export default function StudentProfilePage() {
                                         </div>
 
                                         {/* 3-Column Mini Stat Cards Grid */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                        <div className="detail-grid-triple" style={{ gap: '12px' }}>
                                             {/* Assigned */}
                                             <div style={{ 
                                                 padding: '16px 12px', 

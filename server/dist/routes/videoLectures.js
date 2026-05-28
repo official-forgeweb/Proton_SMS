@@ -55,7 +55,7 @@ const encodeYouTubeUrl = (url) => {
     return '';
 };
 // 1. Upload Excel
-router.post('/upload', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), upload.single('file'), async (req, res) => {
+router.post('/upload', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             res.status(400).json({ success: false, message: 'No file uploaded' });
@@ -178,7 +178,7 @@ router.post('/upload', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 
     }
 });
 // 1.5 Confirm Upload (Bulk Insert)
-router.post('/confirm-upload', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), express_2.default.json(), async (req, res) => {
+router.post('/confirm-upload', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), express_2.default.json(), async (req, res) => {
     try {
         const { records } = req.body;
         if (!Array.isArray(records) || records.length === 0) {
@@ -314,7 +314,7 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
     }
 });
 // 4. Update
-router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const id = paramId(req);
         const { date, time, subject, video_url, class_id } = req.body;
@@ -331,7 +331,7 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'tea
     }
 });
 // 5. Delete bulk
-router.delete('/bulk', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.delete('/bulk', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const { ids } = req.body;
         if (!Array.isArray(ids) || ids.length === 0) {
@@ -348,7 +348,7 @@ router.delete('/bulk', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 
     }
 });
 // 6. Delete
-router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const id = paramId(req);
         await database_1.default.videoLecture.delete({ where: { id } });

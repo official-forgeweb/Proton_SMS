@@ -3,7 +3,6 @@ import { useEffect, useState, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { Video, Upload, Trash2, Search, Edit3, X, FileSpreadsheet, Plus, AlertTriangle } from 'lucide-react';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { customAlert, customConfirm } from '@/utils/dialog';
@@ -404,7 +403,6 @@ export default function CoordinatorVideoLecturesPage() {
                     </div>
                 </div>
             )}
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

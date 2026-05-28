@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import ToolBottomBar from '@/components/ToolBottomBar';
 import api from '@/lib/api';
 import { BookOpen, FileText, Eye, Download, Search, BookMarked, MonitorPlay, X, Loader2, User, Calendar } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
-import ToolBottomBar from '@/components/ToolBottomBar';
 
 export default function StudentStudyMaterialsPage() {
     const [materials, setMaterials] = useState<any[]>([]);
@@ -52,7 +52,7 @@ export default function StudentStudyMaterialsPage() {
             const res = await api.get('/study-materials');
             setMaterials(res.data.data);
         } catch (error) {
-            console.error('Failed to fetch study materials');
+            console.error('Failed to fetch study materials:', error);
         } finally {
             setIsLoading(false);
         }

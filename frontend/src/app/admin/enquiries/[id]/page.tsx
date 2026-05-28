@@ -84,7 +84,7 @@ export default function EnquiryDetailPage() {
         <DashboardLayout requiredRole={['admin', 'coordinator']}>
             <div style={{ paddingBottom: '40px' }}>
                 {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <div className="responsive-flex-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <button onClick={() => router.push(`/${user?.role || 'admin'}/enquiries`)} style={{ width: '40px', height: '40px', borderRadius: '12px', border: '1px solid #E2E8F0', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#1A1D3B' }}>
                             <ArrowLeft size={20} />
@@ -101,7 +101,7 @@ export default function EnquiryDetailPage() {
                             <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>{enquiry.student_name}</h1>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <div className="actions-group" style={{ display: 'flex', gap: '12px' }}>
                         <button style={{ background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '10px 20px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                             <Edit size={16} /> Edit
                         </button>
@@ -111,7 +111,7 @@ export default function EnquiryDetailPage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
+                <div className="detail-grid-main">
                     {/* Main Content */}
                     <div>
                         {/* Profile Info */}
@@ -119,7 +119,7 @@ export default function EnquiryDetailPage() {
                             <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <User size={20} color="#E53935" /> Personal Information
                             </h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                            <div className="detail-grid-double">
                                 <div>
                                     <label style={{ fontSize: '12px', color: '#A1A5B7', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Contact Details</label>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -160,7 +160,7 @@ export default function EnquiryDetailPage() {
 
                             <div style={{ height: '1px', background: '#F0F0F5', margin: '32px 0' }} />
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px' }}>
+                            <div className="detail-grid-triple">
                                 <div>
                                     <label style={{ fontSize: '12px', color: '#A1A5B7', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Interested Course</label>
                                     <div style={{ fontSize: '15px', fontWeight: 700, color: '#E53935' }}>{enquiry.interested_course}</div>

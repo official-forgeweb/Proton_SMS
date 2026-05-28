@@ -1,5 +1,4 @@
 'use client';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import DashboardLayout from '@/components/DashboardLayout';
 import StudentProfileEnquiries from '@/components/StudentProfileEnquiries';
 import { MessageSquare } from 'lucide-react';
@@ -28,7 +27,6 @@ export default function TeacherQueriesPage() {
                 {/* CRM Dashboard */}
                 <StudentProfileEnquiries role="teacher" />
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

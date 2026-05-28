@@ -3,9 +3,8 @@ import { useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import Sidebar from '@/components/Sidebar';
-import { Search, Bell, MessageSquare, WifiOff, RefreshCw, X, Check, GraduationCap, UserCheck, BookOpen, FileText, HelpCircle, Award, User } from 'lucide-react';
+import { Search, Bell, WifiOff, RefreshCw, X, Check, GraduationCap, UserCheck, BookOpen, FileText, HelpCircle, Award, User } from 'lucide-react';
 import api from '@/lib/api';
-import ChatDrawer from '@/components/ChatDrawer';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -16,14 +15,18 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
     const router = useRouter();
     const { user, isAuthenticated, isLoading, serverError, checkAuth } = useAuthStore();
     const [retrying, setRetrying] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     
     // Notifications State
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
 
-    // Chat Drawer & Search States
-    const [showChatDrawer, setShowChatDrawer] = useState(false);
+    // Search States
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -164,6 +167,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
     }, [serverError]);
 
     useEffect(() => {
+        if (!mounted) return;
         if (!isLoading && !serverError) {
             if (!isAuthenticated) {
                 router.push('/login');
@@ -174,7 +178,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 }
             }
         }
-    }, [isLoading, isAuthenticated, user, requiredRole, serverError]);
+    }, [mounted, isLoading, isAuthenticated, user, requiredRole, serverError]);
 
     const handleRetry = useCallback(async () => {
         setRetrying(true);
@@ -676,21 +680,6 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                             )}
                         </div>
 
-                        {/* Message */}
-                        <button 
-                            className="header-action-btn" 
-                            onClick={() => setShowChatDrawer(true)}
-                            style={{
-                                background: '#FFFFFF', border: '1px solid #EEEEF5', cursor: 'pointer',
-                                width: '40px', height: '40px', borderRadius: '50%',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                                transition: 'all 0.2s',
-                            }}
-                        >
-                            <MessageSquare size={18} className="icon-default" />
-                        </button>
-
                         {/* Divider */}
                         <div style={{ width: '1px', height: '28px', background: '#E4E6EF' }} />
 
@@ -722,11 +711,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 </div>
             </main>
 
-            <ChatDrawer
-                isOpen={showChatDrawer}
-                onClose={() => setShowChatDrawer(false)}
-                currentUserId={user.id}
-            />
+
         </div>
     );
 }

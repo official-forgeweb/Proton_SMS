@@ -17,8 +17,9 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 
     const results: any[] = [];
 
-    if (role === 'admin') {
-      // Admin searches for Students, Teachers, Classes, Enquiries, Queries
+    if (role === 'admin' || role === 'coordinator') {
+      const prefix = role === 'admin' ? '/admin' : '/coordinator';
+      // Admin/Coordinator searches for Students, Teachers, Classes, Enquiries, Queries
       const [students, teachers, classes, enquiries, queries] = await Promise.all([
         prisma.student.findMany({
           where: {
@@ -74,35 +75,35 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         title: `${s.first_name || ''} ${s.last_name || ''}`.trim(),
         subtitle: `Student ID: ${s.PRO_ID || 'N/A'}`,
         type: 'student',
-        href: `/admin/students`
+        href: `${prefix}/students`
       }));
 
       teachers.forEach(t => results.push({
         title: `${t.first_name || ''} ${t.last_name || ''}`.trim(),
         subtitle: `Teacher ID: ${t.employee_id || 'N/A'}`,
         type: 'teacher',
-        href: `/admin/teachers`
+        href: `${prefix}/teachers`
       }));
 
       classes.forEach(c => results.push({
         title: c.class_name || 'Class',
         subtitle: `Code: ${c.class_code}`,
         type: 'class',
-        href: `/admin/classes`
+        href: `${prefix}/classes`
       }));
 
       enquiries.forEach(e => results.push({
         title: e.student_name || 'Enquiry',
         subtitle: `Enquiry No: ${e.enquiry_number}`,
         type: 'enquiry',
-        href: `/admin/enquiries`
+        href: `${prefix}/enquiries`
       }));
 
       queries.forEach(q => results.push({
         title: `Query: ${q.query_number}`,
         subtitle: q.description || '',
         type: 'query',
-        href: `/admin/queries`
+        href: `${prefix}/queries`
       }));
 
     } else if (role === 'teacher') {

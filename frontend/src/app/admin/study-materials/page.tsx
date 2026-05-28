@@ -4,7 +4,6 @@ import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import axios from 'axios';
 import { BookOpen, Upload, Trash2, Search, FileText, Eye, X, BookMarked, Download } from 'lucide-react';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import { customAlert, customConfirm } from '@/utils/dialog';
 
 export default function AdminStudyMaterialsPage() {
@@ -392,7 +391,6 @@ export default function AdminStudyMaterialsPage() {
                     </div>
                 </div>
             )}
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

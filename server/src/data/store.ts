@@ -22,50 +22,7 @@ export const seedData = async (): Promise<void> => {
         },
       });
 
-      // 2. Create Teacher
-      const teacherUser = await prisma.user.create({
-        data: {
-          email: 'amit@protoncoaching.com',
-          password_hash: await bcrypt.hash('Teacher@123', salt),
-          role: 'teacher',
-          is_active: true,
-          is_verified: true,
-        },
-      });
-      await prisma.teacher.create({
-        data: {
-          user_id: teacherUser.id,
-          first_name: 'Amit',
-          last_name: 'Sharma',
-          employee_id: 'EMP1001',
-          phone: '+91-9876543211',
-          gender: 'male',
-        },
-      });
-
-      // 3. Create Student
-      const studentUser = await prisma.user.create({
-        data: {
-          email: 'rahul.sharma@email.com',
-          password_hash: await bcrypt.hash('Student@123', salt),
-          role: 'student',
-          is_active: true,
-          is_verified: true,
-        },
-      });
-      await prisma.student.create({
-        data: {
-          user_id: studentUser.id,
-          first_name: 'Rahul',
-          last_name: 'Sharma',
-          PRO_ID: 'PRO10001',
-          phone: '+91-9876543212',
-          gender: 'male',
-        },
-      });
-
-
-      console.log('✅ Demo Credentials Seeded Successfully!');
+      console.log('✅ Admin account seeded successfully!');
     } else {
       console.log('✅ Database already contains an Admin. Skipping seeding.');
     }

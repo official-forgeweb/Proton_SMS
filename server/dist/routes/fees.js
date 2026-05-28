@@ -11,7 +11,7 @@ const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-
 const generatePaymentNumber = () => `PAY${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
 const generateReceiptNumber = () => `RCPT${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
 // GET /api/fees/structures
-router.get('/structures', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.get('/structures', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const structures = await database_1.default.feeStructure.findMany();
         const data = structures.map(s => ({ ...s, id: s.id }));
@@ -22,7 +22,7 @@ router.get('/structures', auth_1.authenticateToken, (0, auth_1.authorize)('admin
     }
 });
 // POST /api/fees/structures
-router.post('/structures', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.post('/structures', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const structure = await database_1.default.feeStructure.create({
             data: {
@@ -37,7 +37,7 @@ router.post('/structures', auth_1.authenticateToken, (0, auth_1.authorize)('admi
     }
 });
 // POST /api/fees/assignments
-router.post('/assignments', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'teacher'), async (req, res) => {
+router.post('/assignments', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const { student_id, final_fee, due_date } = req.body;
         const existing = await database_1.default.studentFeeAssignment.findFirst({ where: { student_id } });
@@ -63,7 +63,7 @@ router.post('/assignments', auth_1.authenticateToken, (0, auth_1.authorize)('adm
     }
 });
 // GET /api/fees/assignments
-router.get('/assignments', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.get('/assignments', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const { status } = req.query;
         let where = {};
@@ -91,7 +91,7 @@ router.get('/assignments', auth_1.authenticateToken, (0, auth_1.authorize)('admi
     }
 });
 // GET /api/fees/stats
-router.get('/stats', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async (req, res) => {
+router.get('/stats', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
         const [paymentAgg, feeAgg] = await Promise.all([
             database_1.default.feePayment.aggregate({
