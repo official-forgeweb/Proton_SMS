@@ -52,6 +52,7 @@ model User {
   enquiry_remarks      EnquiryRemark[]
   attendance_marked    Attendance[]
   fee_payments_received FeePayment[]
+  fee_audit_logs       FeeAuditLog[]
   queries_created    StudentQuery[]   @relation("QueryCreatedBy")
   queries_resolved   StudentQuery[]   @relation("QueryResolvedBy")
   query_replies        QueryReply[]
@@ -163,6 +164,7 @@ model Class {
   room_number            String?
   status                 String   @default("ongoing")
   course_fee             Float?
+  course_duration_months Int?     @default(12)  // Duration in months (e.g. 12, 18, 24)
 
   // Legacy fields for backward compatibility
   subject                String?
@@ -500,14 +502,11 @@ model FeeStructure {
   structure_name    String?
   class_id          String?
   academic_year     String?
-  tuition_fee       Float?
-  registration_fee  Float?
-  development_fee   Float?
-  examination_fee   Float?
-  library_fee       Float?
+  tuition_fee       Float?   @default(0)
+  registration_fee  Float?   @default(0)
+  admission_fee     Float?   @default(0)
   total_annual_fee  Float?
-  installment_plan  String?
-  installment_count Int?
+  max_installments  Int?     @default(12)       // Max allowed installments (1-12)
   is_active         Boolean  @default(true)
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
@@ -521,28 +520,67 @@ model FeeStructure {
 }
 
 model StudentFeeAssignment {
-  id                  String   @id @default(uuid())
-  student_id          String
-  fee_structure_id    String?
-  academic_year       String?
-  total_fee           Float?
-  discount_percentage Float?
-  discount_amount     Float?
-  final_fee           Float?
-  total_paid          Float    @default(0)
-  total_pending       Float?
-  payment_status      String   @default("pending")
-  assigned_date       String?
-  created_at          DateTime @default(now())
-  updated_at          DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  student_id            String
+  fee_structure_id      String?
+  academic_year         String?
+  total_fee             Float?               // Base fee
+  admission_fee         Float?   @default(0)
+  registration_fee      Float?   @default(0)
+  discount_percentage   Float?   @default(0)
+  discount_amount       Float?   @default(0)
+  scholarship_amount    Float?   @default(0)
+  final_fee             Float?               // Net Payable = (total + admission + registration) - discount - scholarship
+  total_paid            Float    @default(0)
+  total_pending         Float?
+  payment_status        String   @default("pending")  // pending, partial, paid, overdue — auto-computed
+  payment_mode          String   @default("one_time") // one_time | installment
+  installment_strategy  String   @default("auto_equal") // auto_equal | manual_custom
+  installment_count     Int?     @default(1)          // Number of installments (1-12)
+  course_duration_months Int?    @default(12)          // Duration in months for interval calc
+  preferred_due_day     Int?     @default(1)           // Day of month (1-28, clamped)
+  start_date            String?                        // First installment date YYYY-MM-DD
+  notes                 String?
+  assigned_date         String?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
 
   // Relations
-  student       Student       @relation(fields: [student_id], references: [id])
-  fee_structure FeeStructure? @relation(fields: [fee_structure_id], references: [id])
+  student       Student          @relation(fields: [student_id], references: [id])
+  fee_structure FeeStructure?    @relation(fields: [fee_structure_id], references: [id])
+  installments  FeeInstallment[]
+  audit_logs    FeeAuditLog[]
 
   @@index([student_id])
   @@index([payment_status])
   @@map("student_fee_assignments")
+}
+
+model FeeInstallment {
+  id                  String    @id @default(uuid())
+  assignment_id       String
+  installment_number  Int                    // Stable: 1, 2, 3 ... up to 12. Never reshuffles.
+  amount              Float                  // Amount due for this installment
+  remaining_amount    Float     @default(0)  // Remaining after partial payment
+  due_date            String                 // YYYY-MM-DD (UTC-safe string)
+  paid_amount         Float     @default(0)
+  paid_date           String?                // When it was actually paid
+  status              String    @default("upcoming") // upcoming, due, paid, overdue, partially_paid
+  payment_id          String?                // Links to FeePayment when fully paid
+  is_deleted          Boolean   @default(false)
+  deleted_at          DateTime?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  // Relations
+  assignment  StudentFeeAssignment @relation(fields: [assignment_id], references: [id], onDelete: Cascade)
+  payment     FeePayment?          @relation(fields: [payment_id], references: [id])
+
+  @@unique([assignment_id, installment_number])
+  @@index([assignment_id])
+  @@index([status])
+  @@index([due_date])
+  @@map("fee_installments")
 }
 
 model FeePayment {
@@ -551,23 +589,46 @@ model FeePayment {
   student_id           String
   amount_paid          Float?
   payment_date         String?
-  payment_method       String?
+  payment_method       String?              // cash, online, bank_transfer, cheque
   transaction_id       String?
   payment_status       String    @default("completed")
   installment_number   Int?
   receipt_number       String?
   receipt_generated_at DateTime?
   received_by          String?
+  remarks              String?
+  is_deleted           Boolean   @default(false)
+  deleted_at           DateTime?
   created_at           DateTime  @default(now())
   updated_at           DateTime  @updatedAt
 
   // Relations
-  student  Student @relation(fields: [student_id], references: [id])
-  receiver User?   @relation(fields: [received_by], references: [id])
+  student      Student          @relation(fields: [student_id], references: [id])
+  receiver     User?            @relation(fields: [received_by], references: [id])
+  installments FeeInstallment[]
 
   @@index([student_id])
   @@index([payment_status])
   @@map("fee_payments")
+}
+
+model FeeAuditLog {
+  id              String   @id @default(uuid())
+  assignment_id   String
+  user_id         String
+  action          String            // installment_created, installment_edited, payment_recorded, recalculated, fee_assigned, fee_edited
+  field_changed   String?           // e.g. "due_date", "amount", "installment_count"
+  old_value       String?
+  new_value       String?
+  details         String?  @db.Text // JSON or human-readable details
+  created_at      DateTime @default(now())
+
+  assignment StudentFeeAssignment @relation(fields: [assignment_id], references: [id], onDelete: Cascade)
+  user       User                 @relation(fields: [user_id], references: [id])
+
+  @@index([assignment_id])
+  @@index([user_id])
+  @@map("fee_audit_logs")
 }
 
 // ──────────────────────────────────────────────

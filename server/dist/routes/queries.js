@@ -107,7 +107,8 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                     },
                     resolved_by_user: {
                         select: { id: true, email: true, role: true }
-                    }
+                    },
+                    attachments: true
                 }
             })
         ]);
@@ -168,7 +169,8 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
                 },
                 target_teacher: { select: { id: true, first_name: true, last_name: true } },
                 created_by_user: { select: { id: true, email: true, role: true } },
-                resolved_by_user: { select: { id: true, email: true, role: true } }
+                resolved_by_user: { select: { id: true, email: true, role: true } },
+                attachments: true
             }
         });
         if (!query) {

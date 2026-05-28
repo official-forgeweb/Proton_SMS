@@ -25,7 +25,7 @@ export default function FormPageLayout({
     requiredRole,
     icon,
     accentColor = '#E53935',
-    maxWidth = '800px',
+    maxWidth = '100%',
 }: FormPageLayoutProps) {
     const router = useRouter();
 
@@ -45,14 +45,11 @@ export default function FormPageLayout({
         }
         
         .page-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 60px 20px;
             position: relative;
+            width: 100%;
+            padding: 24px 0 120px 0;
+            background: transparent;
             overflow: hidden;
-            background: #F4F5F9;
         }
 
         .premium-mesh {
@@ -80,13 +77,14 @@ export default function FormPageLayout({
             position: relative;
             z-index: 10;
             width: 100%;
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 40px;
+            background: #FFFFFF;
+            border-radius: 24px;
             border: 1px solid rgba(226, 232, 240, 0.8);
             box-shadow: 
-                0 40px 120px -20px rgba(26, 29, 59, 0.08),
+                0 12px 40px rgba(26, 29, 59, 0.04),
                 0 0 0 1px rgba(226, 232, 240, 0.4);
-            padding: 60px;
+            padding: 48px;
+            margin: 0 auto;
             animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
@@ -217,7 +215,7 @@ export default function FormPageLayout({
 
                 <div className="form-central-card" style={{ maxWidth }}>
                     {/* Back Button */}
-                    <div style={{ position: 'absolute', top: '40px', left: '60px' }}>
+                    <div style={{ position: 'absolute', top: '32px', left: '48px' }}>
                         <button
                             onClick={() => router.push(backHref)}
                             style={{

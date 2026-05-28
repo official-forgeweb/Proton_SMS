@@ -63,6 +63,12 @@ const studentNavSections = [
             { label: 'Performance', href: '/student/performance', icon: Award },
             { label: 'Operations', href: '/student/operations', icon: Zap },
         ]
+    },
+    {
+        section: 'FINANCIAL',
+        items: [
+            { label: 'Fees', href: '/student/fees', icon: CreditCard },
+        ]
     }
 ];
 

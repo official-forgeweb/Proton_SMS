@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { 
     FileText, ClipboardList, PenTool, Target, 
     Video, MessageSquare, Shield, UserCheck, 
-    BarChart3, PlayCircle, Users, Bell 
+    BarChart3, PlayCircle, Users, Bell, IndianRupee 
 } from 'lucide-react';
 
 const adminTools = [
@@ -14,6 +14,7 @@ const adminTools = [
     { label: 'Homework', href: '/admin/homework', icon: PenTool },
     { label: 'Demos', href: '/admin/demos', icon: Target },
     { label: 'Queries', href: '/admin/queries', icon: MessageSquare },
+    { label: 'Fees', href: '/admin/fees', icon: IndianRupee },
     { label: 'Perms', href: '/admin/permissions', icon: Shield }
 ];
 
@@ -33,6 +34,7 @@ const studentTools = [
     { label: 'Tests', href: '/student/tests', icon: ClipboardList },
     { label: 'Homework', href: '/student/homework', icon: PenTool },
     { label: 'Queries', href: '/student/queries', icon: MessageSquare },
+    { label: 'Fees', href: '/student/fees', icon: IndianRupee },
     { label: 'Profile', href: '/student/profile', icon: Users }
 ];
 
@@ -43,6 +45,7 @@ const coordinatorTools = [
     { label: 'Homework', href: '/coordinator/homework', icon: PenTool },
     { label: 'Demos', href: '/coordinator/demos', icon: Target },
     { label: 'Queries', href: '/coordinator/queries', icon: MessageSquare },
+    { label: 'Fees', href: '/coordinator/fees', icon: IndianRupee },
 ];
 
 const parentTools = [
