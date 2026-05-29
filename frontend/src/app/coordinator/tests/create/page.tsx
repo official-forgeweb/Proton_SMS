@@ -7,6 +7,7 @@ import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ClipboardList } from 'lucide-react';
+import SubjectSelector from '@/components/SubjectSelector';
 
 export default function CoordinatorCreateTestPage() {
     const router = useRouter();
@@ -116,7 +117,12 @@ export default function CoordinatorCreateTestPage() {
                         </div>
                         <div>
                             <label className="form-label">Academic Subject *</label>
-                            <input required className="form-input" placeholder="e.g. Theoretical Physics" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} />
+                            <SubjectSelector 
+                                value={formData.subject} 
+                                onChange={val => setFormData({ ...formData, subject: val })} 
+                                placeholder="Search or select subject..."
+                                required
+                            />
                         </div>
                     </div>
                 </div>

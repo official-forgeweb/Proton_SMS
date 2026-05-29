@@ -7,6 +7,7 @@ import { customAlert } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Layers, Plus, Clock } from 'lucide-react';
+import SubjectSelector from '@/components/SubjectSelector';
 
 export default function AddClassPage() {
     const router = useRouter();
@@ -136,7 +137,12 @@ export default function AddClassPage() {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr 0.8fr', gap: '20px' }}>
                                     <div>
                                         <label className="form-label" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>Subject</label>
-                                        <input required className="form-input" value={session.subject} onChange={e => updateSession(i, 'subject', e.target.value)} placeholder="e.g. Physics" />
+                                        <SubjectSelector 
+                                            value={session.subject} 
+                                            onChange={val => updateSession(i, 'subject', val)} 
+                                            placeholder="Search or select subject..."
+                                            required
+                                        />
                                     </div>
                                     <div>
                                         <label className="form-label" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>Assigned Faculty</label>

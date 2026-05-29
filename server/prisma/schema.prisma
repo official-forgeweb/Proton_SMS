@@ -955,4 +955,33 @@ model EmailLog {
   @@map("email_logs")
 }
 
+// ──────────────────────────────────────────────
+// Subjects Master Data
+// ──────────────────────────────────────────────
+
+model Subject {
+  id             String         @id @default(uuid())
+  canonical_name String         @unique
+  normalized_key String         @unique
+  short_name     String?
+  code           String?
+  description    String?
+  is_active      Boolean        @default(true)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+  aliases        SubjectAlias[]
+
+  @@map("subjects")
+}
+
+model SubjectAlias {
+  id             String   @id @default(uuid())
+  subject_id     String
+  alias          String   @unique
+  normalized_key String   @unique
+  subject        Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@map("subject_aliases")
+}
+
 

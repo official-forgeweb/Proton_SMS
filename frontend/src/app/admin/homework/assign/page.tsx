@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { PenTool } from 'lucide-react';
+import SubjectSelector from '@/components/SubjectSelector';
 
 export default function AssignHomeworkPage() {
     const router = useRouter();
@@ -56,7 +57,12 @@ export default function AssignHomeworkPage() {
                         </div>
                         <div>
                             <label className="form-label">Associated Subject *</label>
-                            <input required className="form-input" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} placeholder="e.g. Mathematics" />
+                            <SubjectSelector 
+                                value={formData.subject} 
+                                onChange={val => setFormData({ ...formData, subject: val })} 
+                                placeholder="Search or select subject..."
+                                required
+                            />
                         </div>
                     </div>
                     <div style={{ marginTop: '24px' }}>
