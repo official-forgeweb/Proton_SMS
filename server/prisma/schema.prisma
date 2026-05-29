@@ -53,6 +53,7 @@ model User {
   attendance_marked    Attendance[]
   fee_payments_received FeePayment[]
   fee_audit_logs       FeeAuditLog[]
+  installment_date_histories InstallmentDateHistory[]
   queries_created    StudentQuery[]   @relation("QueryCreatedBy")
   queries_resolved   StudentQuery[]   @relation("QueryResolvedBy")
   query_replies        QueryReply[]
@@ -534,6 +535,7 @@ model StudentFeeAssignment {
   total_paid            Float    @default(0)
   total_pending         Float?
   payment_status        String   @default("pending")  // pending, partial, paid, overdue — auto-computed
+  risk_level            String   @default("normal")   // normal, watchlist, high_risk_defaulter
   payment_mode          String   @default("one_time") // one_time | installment
   installment_strategy  String   @default("auto_equal") // auto_equal | manual_custom
   installment_count     Int?     @default(1)          // Number of installments (1-12)
@@ -567,14 +569,16 @@ model FeeInstallment {
   paid_date           String?                // When it was actually paid
   status              String    @default("upcoming") // upcoming, due, paid, overdue, partially_paid
   payment_id          String?                // Links to FeePayment when fully paid
+  date_change_count   Int       @default(0)
   is_deleted          Boolean   @default(false)
   deleted_at          DateTime?
   created_at          DateTime  @default(now())
   updated_at          DateTime  @updatedAt
 
   // Relations
-  assignment  StudentFeeAssignment @relation(fields: [assignment_id], references: [id], onDelete: Cascade)
-  payment     FeePayment?          @relation(fields: [payment_id], references: [id])
+  assignment     StudentFeeAssignment     @relation(fields: [assignment_id], references: [id], onDelete: Cascade)
+  payment        FeePayment?              @relation(fields: [payment_id], references: [id])
+  date_histories InstallmentDateHistory[]
 
   @@unique([assignment_id, installment_number])
   @@index([assignment_id])
@@ -629,6 +633,23 @@ model FeeAuditLog {
   @@index([assignment_id])
   @@index([user_id])
   @@map("fee_audit_logs")
+}
+
+model InstallmentDateHistory {
+  id                    String   @id @default(uuid())
+  installment_id        String
+  previous_due_date     String
+  new_due_date          String
+  changed_by            String
+  change_reason         String?
+  created_at            DateTime @default(now())
+
+  installment FeeInstallment @relation(fields: [installment_id], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [changed_by], references: [id])
+
+  @@index([installment_id])
+  @@index([changed_by])
+  @@map("installment_date_histories")
 }
 
 // ──────────────────────────────────────────────

@@ -25,12 +25,18 @@ export interface AdminDashboardStats {
   revenue: { total: number; pending: number };
   attendance: { today_present: number; today_absent: number; avg_percentage: number | string };
   tests: { upcoming: number; avg_performance: number | string };
+  coordinators: { total: number; active: number };
+  upcoming_installments: number;
 }
 
 export interface AdminDashboardCharts {
   performance: Array<{ name: string; Student: number; Attendance: number }>;
   gender: Array<{ name: string; value: number; fill: string }>;
   top_students: Array<{ name: string; id: string; marks: number | null; percent: string; year: number }>;
+  fees: Array<{ name: string; Fees: number }>;
+  students: Array<{ name: string; Students: number }>;
+  attendance: Array<{ name: string; Attendance: number }>;
+  enquiries: Array<{ name: string; Enquiries: number }>;
 }
 
 export interface RecentActivity {
@@ -111,6 +117,31 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       prisma.testResult.count(),
     ]);
 
+    const [totalCoordinators, activeCoordinators, upcomingInstallmentsCount] = await Promise.all([
+      prisma.coordinator.count(),
+      prisma.coordinator.count({ where: { status: 'active' } }),
+      prisma.feeInstallment.count({
+        where: {
+          status: { in: ['upcoming', 'due', 'overdue', 'partially_paid'] },
+          is_deleted: false,
+        }
+      }),
+    ]);
+
+    // Fetch dynamic monthly chart data directly from the DB
+    const [payments, studentRegistrations, enquiryRegistrations] = await Promise.all([
+      prisma.feePayment.findMany({
+        where: { payment_status: 'completed' },
+        select: { amount_paid: true, payment_date: true, created_at: true },
+      }),
+      prisma.student.findMany({
+        select: { created_at: true },
+      }),
+      prisma.enquiry.findMany({
+        select: { created_at: true },
+      }),
+    ]);
+
     // Monthly performance and attendance (raw queries for month extraction)
     const monthlyPerformance: any[] = await prisma.$queryRaw`
       SELECT EXTRACT(MONTH FROM created_at) as month, AVG(percentage) as "avgScore"
@@ -163,6 +194,42 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       return {
         name,
         Student: perf ? Math.round(Number(perf.avgScore)) : 0,
+        Attendance: att ? Math.round((Number(att.presentCount) / Number(att.totalCount)) * 100) : 0,
+      };
+    });
+
+    // Group real dynamic chart aggregations
+    const monthlyFees = monthNames.map((name, index) => {
+      const total = payments
+        .filter(p => {
+          const date = p.payment_date ? new Date(p.payment_date) : p.created_at;
+          return date.getMonth() === index && date.getFullYear() === new Date().getFullYear();
+        })
+        .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+      return { name, Fees: total };
+    });
+
+    const monthlyStudents = monthNames.map((name, index) => {
+      const count = studentRegistrations.filter(s => {
+        const date = new Date(s.created_at);
+        return date.getFullYear() < new Date().getFullYear() || 
+               (date.getFullYear() === new Date().getFullYear() && date.getMonth() <= index);
+      }).length;
+      return { name, Students: count };
+    });
+
+    const monthlyEnquiries = monthNames.map((name, index) => {
+      const count = enquiryRegistrations.filter(e => {
+        const date = new Date(e.created_at);
+        return date.getMonth() === index && date.getFullYear() === new Date().getFullYear();
+      }).length;
+      return { name, Enquiries: count };
+    });
+
+    const monthlyAttendanceData = monthNames.map((name, index) => {
+      const att = monthlyAttendance.find((a: any) => Number(a.month) === index + 1);
+      return {
+        name,
         Attendance: att ? Math.round((Number(att.presentCount) / Number(att.totalCount)) * 100) : 0,
       };
     });
@@ -397,13 +464,19 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         tests: { 
           upcoming: upcomingTestsCount, 
           avg_performance: totalTestCount > 0 ? ((totalTestScore._sum.percentage || 0) / totalTestCount).toFixed(1) : 0 
-        }
+        },
+        coordinators: { total: totalCoordinators, active: activeCoordinators },
+        upcoming_installments: upcomingInstallmentsCount
       },
       recent_activity: recentActivity,
       charts: {
         performance: chartData,
         gender: radialData,
         top_students: topStudentData,
+        fees: monthlyFees,
+        students: monthlyStudents,
+        attendance: monthlyAttendanceData,
+        enquiries: monthlyEnquiries,
       },
       alerts,
     };

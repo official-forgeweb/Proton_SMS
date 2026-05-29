@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
-import { Search, Loader2, CheckCircle, Hash, BookOpen, Phone, ChevronLeft, Smartphone, PhoneCall, MessageCircle, FileText, Users, GraduationCap, Mail, HelpCircle } from 'lucide-react';
+import { Search, Loader2, CheckCircle, Hash, BookOpen, Phone, ChevronLeft, Smartphone, PhoneCall, MessageCircle, FileText, Users, GraduationCap, Mail, HelpCircle, XCircle, X } from 'lucide-react';
 import Link from 'next/link';
 
 const QUERY_TYPES = [
@@ -41,6 +41,18 @@ export default function AddQueryPage() {
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Toast notification state
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning'; visible: boolean }>({ message: '', type: 'error', visible: false });
+    const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' = 'error') => {
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        setToast({ message, type, visible: true });
+        toastTimerRef.current = setTimeout(() => {
+            setToast(prev => ({ ...prev, visible: false }));
+        }, 4000);
+    }, []);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -108,7 +120,7 @@ export default function AddQueryPage() {
             });
             router.push('/teacher/queries');
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Failed to create query');
+            showToast(error.response?.data?.message || 'Failed to create query', 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -344,6 +356,45 @@ export default function AddQueryPage() {
                     </form>
                 </div>
             </div>
+
+            {/* TOAST NOTIFICATION */}
+            <style>{`
+                @keyframes tqToastSlideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes tqToastSlideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+                .tq-toast {
+                    position: fixed; bottom: 32px; right: 32px; z-index: 9999;
+                    display: flex; align-items: center; gap: 12px;
+                    padding: 16px 24px; border-radius: 16px;
+                    font-size: 14px; font-weight: 600;
+                    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+                    backdrop-filter: blur(10px);
+                    max-width: 440px; min-width: 300px;
+                    background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+                    border: 1.5px solid #FCA5A5; color: #991B1B;
+                }
+                .tq-toast.tq-enter { animation: tqToastSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+                .tq-toast.tq-exit { animation: tqToastSlideOut 0.3s ease-in forwards; }
+                .tq-toast-close { background: none; border: none; cursor: pointer; padding: 2px; color: inherit; opacity: 0.6; transition: opacity 0.15s; flex-shrink: 0; }
+                .tq-toast-close:hover { opacity: 1; }
+            `}</style>
+            {toast.message && (
+                <div 
+                    className={`tq-toast ${toast.visible ? 'tq-enter' : 'tq-exit'}`}
+                    onAnimationEnd={() => { if (!toast.visible) setToast(prev => ({ ...prev, message: '' })); }}
+                >
+                    <XCircle size={20} style={{ flexShrink: 0 }} />
+                    <span style={{ flex: 1 }}>{toast.message}</span>
+                    <button className="tq-toast-close" onClick={() => setToast(prev => ({ ...prev, visible: false }))}>
+                        <X size={16} />
+                    </button>
+                </div>
+            )}
         </DashboardLayout>
     );
 }

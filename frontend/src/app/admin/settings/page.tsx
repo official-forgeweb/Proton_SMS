@@ -255,7 +255,7 @@ export default function SettingsPage() {
 
                                 {(activeNav === 'Data Backups' || activeNav === 'Website Settings') && (
                                     <div style={{ padding: '40px', textAlign: 'center', color: '#A1A5B7', background: '#F8F9FD', borderRadius: '16px' }}>
-                                        <Settings size={48} style={{ marginBottom: '16px', opacity: 0.5, color: '#1A1D3B' }} />
+                                        <Settings size={48} style={{ display: 'block', margin: '0 auto 16px', opacity: 0.5, color: '#1A1D3B' }} />
                                         <h3 style={{ color: '#1A1D3B', fontSize: '18px', fontWeight: 700, margin: '0 0 8px 0' }}>Under Active Expansion</h3>
                                         <p style={{ fontSize: '14px', fontWeight: 500, margin: 0, maxWidth: '300px', display: 'inline-block' }}>
                                             The {activeNav} module will be available in the upcoming Version 2.4 core patch.

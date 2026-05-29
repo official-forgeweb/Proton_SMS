@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { 
@@ -36,6 +36,13 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
     const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
     const [deleteRemark, setDeleteRemark] = useState('');
 
+    // Segment Filters & Behavioral states
+    const [selectedFilter, setSelectedFilter] = useState<'all' | 'upcoming' | 'overdue' | 'partial' | 'watchlist' | 'high_risk'>('all');
+    const [changeReason, setChangeReason] = useState('');
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const [isDeleteSubmitting, setIsDeleteSubmitting] = useState(false);
+
     const formatCurrency = (amt: number) => `₹${(amt || 0).toLocaleString('en-IN')}`;
     const formatDate = (dateStr: string) => {
         if (!dateStr) return 'N/A';
@@ -47,10 +54,31 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
     };
 
     // Filter main table
-    const filteredAssignments = assignments.filter(a => 
-        (a.student_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (a.pro_id || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredAssignments = assignments.filter(a => {
+        const matchesSearch = 
+            (a.student_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (a.pro_id || '').toLowerCase().includes(searchTerm.toLowerCase());
+            
+        if (!matchesSearch) return false;
+        
+        if (selectedFilter === 'all') return true;
+        if (selectedFilter === 'upcoming') {
+            return a.payment_status === 'pending' || a.payment_status === 'upcoming';
+        }
+        if (selectedFilter === 'overdue') {
+            return a.payment_status === 'overdue';
+        }
+        if (selectedFilter === 'partial') {
+            return a.payment_status === 'partial';
+        }
+        if (selectedFilter === 'watchlist') {
+            return a.risk_level === 'watchlist';
+        }
+        if (selectedFilter === 'high_risk') {
+            return a.risk_level === 'high_risk_defaulter';
+        }
+        return true;
+    });
 
     // Refresh main view state
     const refreshData = async () => {
@@ -121,10 +149,12 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
         try {
             await api.put(`/fees/assignments/${selectedId}`, {
                 installments: editableInstallments,
-                notes: drawerNotes
+                notes: drawerNotes,
+                change_reason: changeReason
             });
             toast.success('Ledger and installments updated successfully!');
             setIsEditingTimeline(false);
+            setChangeReason('');
             // Refresh drawer
             if (selectedId) openDrawer(selectedId);
             // Refresh dashboard
@@ -133,6 +163,29 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
             toast.error(err.response?.data?.message || 'Failed to save timeline changes');
         } finally {
             setIsSavingTimeline(false);
+        }
+    };
+
+    // Hard delete assignment
+    const handleHardDeleteAssignment = async () => {
+        if (deleteConfirmText !== 'DELETE') {
+            toast.error('Please type DELETE to confirm.');
+            return;
+        }
+        setIsDeleteSubmitting(true);
+        try {
+            await api.delete(`/fees/assignments/${selectedId}`, {
+                data: { force: true }
+            });
+            toast.success('Fee assignment and payment history deleted permanently.');
+            setIsDeleteDialogOpen(false);
+            setDeleteConfirmText('');
+            setIsDrawerOpen(false);
+            refreshData();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to delete fee assignment');
+        } finally {
+            setIsDeleteSubmitting(false);
         }
     };
 
@@ -199,19 +252,20 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
             bottom: 0;
             background: rgba(13, 15, 33, 0.4);
             backdrop-filter: blur(8px);
-            z-index: 100;
+            z-index: 9999;
             display: flex;
             justify-content: flex-end;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .drawer-sheet {
-            width: 700px;
+            width: 640px;
             max-width: 90vw;
-            height: 100%;
+            height: 100vh;
             background: #FFFFFF;
             box-shadow: -10px 0 40px rgba(13, 15, 33, 0.15);
             display: flex;
             flex-direction: column;
+            overflow: hidden;
             animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         @keyframes slideIn {
@@ -351,9 +405,51 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
                     </div>
                 </div>
 
+                {/* Premium Segment Filters Row */}
+                <div style={{ display: 'flex', gap: '8px', padding: '8px 12px 20px', borderBottom: '1px solid rgba(226,232,240,0.6)', marginBottom: '20px', flexWrap: 'wrap' }}>
+                    {[
+                        { id: 'all', label: 'All Students', count: assignments.length },
+                        { id: 'upcoming', label: 'Upcoming', count: assignments.filter(a => a.payment_status === 'pending' || a.payment_status === 'upcoming').length },
+                        { id: 'overdue', label: 'Overdue', count: assignments.filter(a => a.payment_status === 'overdue').length },
+                        { id: 'partial', label: 'Partial Payment', count: assignments.filter(a => a.payment_status === 'partial').length },
+                        { id: 'watchlist', label: 'Watchlist', count: assignments.filter(a => a.risk_level === 'watchlist').length },
+                        { id: 'high_risk', label: 'High Risk Defaulters', count: assignments.filter(a => a.risk_level === 'high_risk_defaulter').length },
+                    ].map(f => (
+                        <button
+                            key={f.id}
+                            onClick={() => setSelectedFilter(f.id as any)}
+                            style={{
+                                background: selectedFilter === f.id ? '#1A1D3B' : '#FFFFFF',
+                                color: selectedFilter === f.id ? '#FFFFFF' : '#5E6278',
+                                border: selectedFilter === f.id ? '1px solid #1A1D3B' : '1px solid #E2E8F0',
+                                padding: '8px 16px',
+                                borderRadius: '10px',
+                                fontSize: '13px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                transition: 'all 0.2s',
+                                boxShadow: selectedFilter === f.id ? '0 4px 12px rgba(26,29,59,0.15)' : 'none'
+                            }}
+                        >
+                            <span>{f.label}</span>
+                            <span style={{
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                background: selectedFilter === f.id ? 'rgba(255,255,255,0.2)' : '#F8F9FD',
+                                color: selectedFilter === f.id ? '#FFFFFF' : '#8F92A1',
+                                padding: '2px 6px',
+                                borderRadius: '6px'
+                            }}>{f.count}</span>
+                        </button>
+                    ))}
+                </div>
+
                 {filteredAssignments.length === 0 ? (
                     <div style={{ padding: '80px', textAlign: 'center', background: '#F8F9FD', borderRadius: '20px' }}>
-                        <CreditCard size={64} style={{ marginBottom: '20px', color: '#A1A5B7', opacity: 0.4 }} />
+                        <CreditCard size={64} style={{ display: 'block', margin: '0 auto 20px', color: '#A1A5B7', opacity: 0.4 }} />
                         <h3 style={{ fontSize: '20px', color: '#1A1D3B', marginBottom: '8px', fontWeight: 800 }}>No Accounts Found</h3>
                         <p style={{ fontSize: '15px', color: '#8F92A1', fontWeight: 500 }}>No fee records match your current view or filter.</p>
                     </div>
@@ -375,14 +471,35 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
                             </thead>
                             <tbody>
                                 {filteredAssignments.map((a, idx) => (
-                                    <tr key={a.id} className="table-row-hover" style={{ cursor: 'pointer' }} onClick={() => openDrawer(a.id)}>
+                                    <tr 
+                                        key={a.id} 
+                                        className="table-row-hover" 
+                                        style={{ 
+                                            cursor: 'pointer',
+                                            boxShadow: a.risk_level === 'high_risk_defaulter' ? 'inset 4px 0 0 #EF4444, 0 0 12px rgba(239, 68, 68, 0.03)' : a.risk_level === 'watchlist' ? 'inset 4px 0 0 #F59E0B' : 'none',
+                                            background: a.risk_level === 'high_risk_defaulter' ? '#FFF5F5' : a.risk_level === 'watchlist' ? '#FFFDF5' : 'inherit'
+                                        }} 
+                                        onClick={() => router.push(`/${user?.role || 'admin'}/fees/ledger/${a.id}`)}
+                                    >
                                         <td style={{ padding: '16px 20px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                                                 <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#F8F9FD', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                     <User size={18} color="#1A1D3B" strokeWidth={2.5} />
                                                 </div>
                                                 <div>
-                                                    <div style={{ fontWeight: 800, fontSize: '15px', color: '#1A1D3B' }}>{a.student_name}</div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <div style={{ fontWeight: 800, fontSize: '15px', color: '#1A1D3B' }}>{a.student_name}</div>
+                                                        {a.risk_level === 'high_risk_defaulter' && (
+                                                            <span style={{ fontSize: '10px', fontWeight: 800, background: '#FEF2F2', color: '#EF4444', padding: '2px 8px', borderRadius: '50px', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                                                                High Risk Defaulter
+                                                            </span>
+                                                        )}
+                                                        {a.risk_level === 'watchlist' && (
+                                                            <span style={{ fontSize: '10px', fontWeight: 800, background: '#FFFBEB', color: '#D97706', padding: '2px 8px', borderRadius: '50px', border: '1px solid rgba(217, 119, 6, 0.1)' }}>
+                                                                Watchlist
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div style={{ fontSize: '12px', color: '#A1A5B7', fontFamily: 'monospace', fontWeight: 600 }}>{a.pro_id}</div>
                                                 </div>
                                             </div>
@@ -410,7 +527,7 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
                                         </td>
                                         <td style={{ padding: '16px 20px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
                                             <button 
-                                                onClick={() => openDrawer(a.id)}
+                                                onClick={() => router.push(`/${user?.role || 'admin'}/fees/ledger/${a.id}`)}
                                                 style={{ 
                                                     background: 'rgba(26,29,59,0.05)', 
                                                     color: '#1A1D3B', border: 'none', borderRadius: '10px', 
@@ -437,223 +554,265 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
                 <div className="drawer-overlay" onClick={() => setIsDrawerOpen(false)}>
                     <div className="drawer-sheet" onClick={e => e.stopPropagation()}>
                         
-                        {/* Drawer Header */}
-                        <div style={{ padding: '24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8F9FD' }}>
-                            <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                                    <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: '#E2E8F0', color: '#475569' }}>LEDGER</span>
-                                    <h2 style={{ fontSize: '20px', fontWeight: 850, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
+                        {/* Drawer Header - Compact */}
+                        <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: '#E2E8F0', color: '#475569', flexShrink: 0 }}>LEDGER</span>
+                                    <h2 style={{ fontSize: '17px', fontWeight: 800, color: '#1A1D3B', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                         {drawerData?.assignment?.student_name}
                                     </h2>
                                 </div>
-                                <p style={{ fontSize: '13px', color: '#8F92A1', fontWeight: 600, margin: 0, display: 'flex', gap: '8px' }}>
-                                    <span>ID: {drawerData?.assignment?.pro_id}</span>
+                                <p style={{ fontSize: '12px', color: '#8F92A1', fontWeight: 600, margin: '2px 0 0', display: 'flex', gap: '6px' }}>
+                                    <span>{drawerData?.assignment?.pro_id}</span>
                                     <span>•</span>
-                                    <span>Batch: {drawerData?.assignment?.class_name}</span>
+                                    <span>{drawerData?.assignment?.class_name}</span>
                                 </p>
                             </div>
                             <button 
                                 onClick={() => setIsDrawerOpen(false)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '6px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#E2E8F0'}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '4px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#F1F5F9'}
                                 onMouseLeave={e => e.currentTarget.style.background = 'none'}
                             >
-                                <X size={24} />
+                                <X size={20} />
                             </button>
                         </div>
 
                         {drawerLoading ? (
-                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px' }}>
-                                <div style={{ fontSize: '14px', color: '#8F92A1', fontWeight: 600 }}>Loading detailed financial ledger...</div>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ fontSize: '13px', color: '#8F92A1', fontWeight: 600 }}>Loading ledger...</div>
                             </div>
                         ) : (
                             <>
-                                {/* Ledger Overview Cards */}
-                                <div style={{ padding: '20px 24px', background: '#F8F9FD', borderBottom: '1px solid #E2E8F0', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                                    <div style={{ background: '#FFFFFF', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
-                                        <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 700 }}>NET PAYABLE FEE</span>
-                                        <div style={{ fontSize: '18px', fontWeight: 900, color: '#1A1D3B', marginTop: '4px' }}>
+                                {/* Compact Summary Bar - single row */}
+                                <div style={{ padding: '12px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', gap: '0', flexShrink: 0, background: '#FAFBFC' }}>
+                                    <div style={{ flex: 1, paddingRight: '16px', borderRight: '1px solid #E2E8F0' }}>
+                                        <div style={{ fontSize: '10px', color: '#8F92A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Net Fee</div>
+                                        <div style={{ fontSize: '16px', fontWeight: 900, color: '#1A1D3B', marginTop: '1px' }}>
                                             {formatCurrency(drawerData?.assignment?.final_fee)}
                                         </div>
                                     </div>
-                                    <div style={{ background: '#FFFFFF', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
-                                        <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 700 }}>TOTAL COLLECTED</span>
-                                        <div style={{ fontSize: '18px', fontWeight: 900, color: '#10B981', marginTop: '4px' }}>
+                                    <div style={{ flex: 1, padding: '0 16px', borderRight: '1px solid #E2E8F0' }}>
+                                        <div style={{ fontSize: '10px', color: '#8F92A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Collected</div>
+                                        <div style={{ fontSize: '16px', fontWeight: 900, color: '#10B981', marginTop: '1px' }}>
                                             {formatCurrency(drawerData?.assignment?.total_paid)}
                                         </div>
                                     </div>
-                                    <div style={{ background: '#FFFFFF', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
-                                        <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 700 }}>OUTSTANDING DUE</span>
-                                        <div style={{ fontSize: '18px', fontWeight: 900, color: (drawerData?.assignment?.total_pending || 0) > 0 ? '#EF4444' : '#10B981', marginTop: '4px' }}>
+                                    <div style={{ flex: 1, paddingLeft: '16px' }}>
+                                        <div style={{ fontSize: '10px', color: '#8F92A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Due</div>
+                                        <div style={{ fontSize: '16px', fontWeight: 900, color: (drawerData?.assignment?.total_pending || 0) > 0 ? '#EF4444' : '#10B981', marginTop: '1px' }}>
                                             {formatCurrency(drawerData?.assignment?.total_pending)}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Drawer Tabs */}
-                                <div style={{ display: 'flex', borderBottom: '1px solid #E2E8F0', background: '#FFFFFF' }}>
+                                {/* Tabs - compact */}
+                                <div style={{ display: 'flex', borderBottom: '2px solid #F1F5F9', flexShrink: 0 }}>
                                     {[
-                                        { id: 'timeline', label: 'Installments Timeline', icon: Calendar },
-                                        { id: 'payments', label: 'Receipt History', icon: CreditCard },
+                                        { id: 'timeline', label: 'Installments', icon: Calendar },
+                                        { id: 'payments', label: 'Receipts', icon: CreditCard },
                                         { id: 'audit', label: 'Audit Trail', icon: History }
                                     ].map(tab => (
                                         <button
                                             key={tab.id}
                                             onClick={() => setActiveTab(tab.id as any)}
                                             style={{
-                                                flex: 1, padding: '16px', border: 'none', background: 'none', cursor: 'pointer',
-                                                fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                                color: activeTab === tab.id ? '#3B82F6' : '#64748B',
-                                                borderBottom: activeTab === tab.id ? '3px solid #3B82F6' : '3px solid transparent',
-                                                transition: 'all 0.2s'
+                                                flex: 1, padding: '10px 8px', border: 'none', background: 'none', cursor: 'pointer',
+                                                fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                                color: activeTab === tab.id ? '#3B82F6' : '#94A3B8',
+                                                borderBottom: activeTab === tab.id ? '2px solid #3B82F6' : '2px solid transparent',
+                                                marginBottom: '-2px',
+                                                transition: 'color 0.15s'
                                             }}
                                         >
-                                            <tab.icon size={16} /> {tab.label}
+                                            <tab.icon size={14} /> {tab.label}
                                         </button>
                                     ))}
                                 </div>
 
-                                {/* Drawer Body Tab Content */}
-                                <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+                                {/* Scrollable Body */}
+                                <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
                                     
                                     {/* 1. Installments Timeline Tab */}
                                     {activeTab === 'timeline' && (
-                                        <div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                                <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>
-                                                    Adjustable Installment Dues
-                                                </h4>
+                                        <div style={{ padding: '16px 20px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>
+                                                    Installment Schedule
+                                                </span>
                                                 {!isEditingTimeline ? (
                                                     <button 
                                                         onClick={() => setIsEditingTimeline(true)}
-                                                        style={{ background: '#3B82F6', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                                        style={{ background: 'none', color: '#3B82F6', border: '1px solid #DBEAFE', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                                                     >
-                                                        <Edit3 size={13} /> Adjust Timeline
+                                                        <Edit3 size={12} /> Edit
                                                     </button>
                                                 ) : (
-                                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <div style={{ display: 'flex', gap: '6px' }}>
                                                         <button 
                                                             onClick={() => {
                                                                 setIsEditingTimeline(false);
                                                                 setEditableInstallments(JSON.parse(JSON.stringify(drawerData?.assignment?.installments || [])));
                                                             }}
-                                                            style={{ background: '#E2E8F0', color: '#475569', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                                                            style={{ background: '#F1F5F9', color: '#64748B', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
                                                         >
                                                             Cancel
                                                         </button>
                                                         <button 
                                                             onClick={saveInstallmentAdjustments}
                                                             disabled={isSavingTimeline || !isTimelineSumValid}
-                                                            style={{ background: '#10B981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                                            style={{ background: '#10B981', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', opacity: (isSavingTimeline || !isTimelineSumValid) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '3px' }}
                                                         >
-                                                            <Check size={13} /> {isSavingTimeline ? 'Saving...' : 'Save'}
+                                                            <Check size={12} /> {isSavingTimeline ? 'Saving...' : 'Save'}
                                                         </button>
                                                     </div>
                                                 )}
                                             </div>
 
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                                                {editableInstallments.map((inst: any, idx: number) => {
-                                                    const isFrozen = inst.paid_amount > 0;
-                                                    return (
-                                                        <div key={inst.id} style={{
-                                                            padding: '16px', background: '#F8F9FD', borderRadius: '16px', border: '1px solid #E2E8F0',
-                                                            display: 'grid', gridTemplateColumns: '40px 1.5fr 1.5fr 1fr', gap: '16px', alignItems: 'center'
-                                                        }}>
-                                                            <span style={{ fontWeight: 800, color: '#A1A5B7', fontSize: '14px' }}>#{inst.installment_number}</span>
-                                                            
-                                                            <div>
-                                                                <label style={{ fontSize: '10px', color: '#8F92A1', fontWeight: 700, display: 'block', marginBottom: '4px' }}>DUE DATE</label>
-                                                                <input 
-                                                                    type="date" 
-                                                                    className="form-input" 
-                                                                    style={{ padding: '6px', borderRadius: '8px', border: '1px solid #CBD5E1', width: '100%', fontSize: '13px' }}
-                                                                    value={inst.due_date}
-                                                                    disabled={!isEditingTimeline}
-                                                                    onChange={e => handleInstallmentEdit(idx, 'due_date', e.target.value)}
-                                                                />
-                                                            </div>
-
-                                                            <div>
-                                                                <label style={{ fontSize: '10px', color: '#8F92A1', fontWeight: 700, display: 'block', marginBottom: '4px' }}>AMOUNT (₹)</label>
-                                                                <input 
-                                                                    type="number" 
-                                                                    className="form-input" 
-                                                                    style={{ padding: '6px', borderRadius: '8px', border: '1px solid #CBD5E1', width: '100%', fontSize: '13px', fontWeight: 700 }}
-                                                                    value={inst.amount}
-                                                                    disabled={!isEditingTimeline || isFrozen}
-                                                                    onChange={e => handleInstallmentEdit(idx, 'amount', e.target.value)}
-                                                                />
-                                                            </div>
-
-                                                            <div style={{ textAlign: 'right' }}>
-                                                                <span style={{ fontSize: '10px', color: '#8F92A1', fontWeight: 700, display: 'block', marginBottom: '4px' }}>STATUS</span>
-                                                                <span style={{
-                                                                    fontSize: '10px', padding: '3px 8px', borderRadius: '50px', fontWeight: 800, textTransform: 'uppercase',
-                                                                    background: inst.status === 'paid' ? '#D1FAE5' : inst.status === 'overdue' ? '#FEE2E2' : '#FEF3C7',
-                                                                    color: inst.status === 'paid' ? '#10B981' : inst.status === 'overdue' ? '#EF4444' : '#F59E0B'
-                                                                }}>
-                                                                    {inst.status}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                            {/* Compact table */}
+                                            <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', overflow: 'hidden' }}>
+                                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                    <thead>
+                                                        <tr style={{ background: '#F8F9FB' }}>
+                                                            <th style={{ padding: '8px 12px', fontSize: '10px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', textAlign: 'left', width: '36px' }}>#</th>
+                                                            <th style={{ padding: '8px 12px', fontSize: '10px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', textAlign: 'left' }}>Due Date</th>
+                                                            <th style={{ padding: '8px 12px', fontSize: '10px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', textAlign: 'left' }}>Amount</th>
+                                                            <th style={{ padding: '8px 12px', fontSize: '10px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', textAlign: 'right' }}>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {editableInstallments.map((inst: any, idx: number) => (
+                                                            <React.Fragment key={inst.id}>
+                                                                <tr style={{ borderTop: '1px solid #F1F5F9' }}>
+                                                                    <td style={{ padding: '8px 12px', fontWeight: 700, color: '#64748B', fontSize: '12px' }}>
+                                                                        {inst.installment_number}
+                                                                    </td>
+                                                                    <td style={{ padding: '6px 12px' }}>
+                                                                        <input 
+                                                                            type="date" 
+                                                                            style={{ 
+                                                                                padding: '4px 8px', borderRadius: '6px', 
+                                                                                border: isEditingTimeline ? '1px solid #CBD5E1' : '1px solid transparent', 
+                                                                                fontSize: '12px', background: isEditingTimeline ? '#FFF' : 'transparent',
+                                                                                color: '#1E293B', outline: 'none', width: '140px',
+                                                                                cursor: isEditingTimeline ? 'text' : 'default'
+                                                                            }}
+                                                                            value={inst.due_date}
+                                                                            disabled={!isEditingTimeline}
+                                                                            onChange={e => handleInstallmentEdit(idx, 'due_date', e.target.value)}
+                                                                        />
+                                                                    </td>
+                                                                    <td style={{ padding: '6px 12px' }}>
+                                                                        <input 
+                                                                            type="number" 
+                                                                            style={{ 
+                                                                                padding: '4px 8px', borderRadius: '6px',
+                                                                                border: isEditingTimeline ? '1px solid #CBD5E1' : '1px solid transparent', 
+                                                                                fontSize: '12px', fontWeight: 700,
+                                                                                background: isEditingTimeline ? '#FFF' : 'transparent',
+                                                                                color: '#1E293B', outline: 'none', width: '100px',
+                                                                                cursor: isEditingTimeline ? 'text' : 'default'
+                                                                            }}
+                                                                            value={inst.amount}
+                                                                            disabled={!isEditingTimeline}
+                                                                            onChange={e => handleInstallmentEdit(idx, 'amount', e.target.value)}
+                                                                        />
+                                                                    </td>
+                                                                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>
+                                                                        <span style={{
+                                                                            fontSize: '10px', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em',
+                                                                            background: inst.status === 'paid' ? '#D1FAE5' : inst.status === 'overdue' ? '#FEE2E2' : '#FEF3C7',
+                                                                            color: inst.status === 'paid' ? '#059669' : inst.status === 'overdue' ? '#DC2626' : '#D97706'
+                                                                        }}>
+                                                                            {inst.status}
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                                
+                                                                {/* Inline audit trail row */}
+                                                                {inst.date_histories && inst.date_histories.length > 0 && (
+                                                                    <tr>
+                                                                        <td colSpan={4} style={{ padding: '4px 12px 8px 36px', background: '#FAFBFC', borderTop: 'none' }}>
+                                                                            <div style={{ fontSize: '10px', color: '#64748B', borderLeft: '2px solid #93C5FD', paddingLeft: '8px' }}>
+                                                                                {inst.date_histories.map((hist: any) => (
+                                                                                    <div key={hist.id} style={{ display: 'flex', gap: '4px', alignItems: 'center', lineHeight: '18px' }}>
+                                                                                        <span style={{ textDecoration: 'line-through', color: '#EF4444' }}>{formatDate(hist.previous_due_date)}</span>
+                                                                                        <span style={{ color: '#CBD5E1' }}>→</span>
+                                                                                        <span style={{ color: '#10B981', fontWeight: 600 }}>{formatDate(hist.new_due_date)}</span>
+                                                                                        {hist.change_reason && <span style={{ color: '#94A3B8' }}>({hist.change_reason})</span>}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
+                                                            </React.Fragment>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
                                             </div>
 
                                             {isEditingTimeline && (
-                                                <>
-                                                    <div style={{ background: '#F8F9FD', padding: '16px', borderRadius: '16px', border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '14px', marginBottom: '20px' }}>
-                                                        <span style={{ color: '#5E6278' }}>Editable Sum: {formatCurrency(installmentsSum)}</span>
-                                                        <span style={{ color: isTimelineSumValid ? '#10B981' : '#EF4444' }}>Target Net Fee: {formatCurrency(targetSum)}</span>
+                                                <div style={{ marginTop: '14px' }}>
+                                                    <div style={{ background: '#F8F9FB', padding: '10px 14px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, marginBottom: '14px', border: '1px solid #E2E8F0' }}>
+                                                        <span style={{ color: '#64748B' }}>Sum: {formatCurrency(installmentsSum)}</span>
+                                                        <span style={{ color: isTimelineSumValid ? '#10B981' : '#EF4444' }}>Target: {formatCurrency(targetSum)} {isTimelineSumValid ? '✓' : '✗'}</span>
                                                     </div>
-                                                    <div style={{ marginBottom: '24px' }}>
-                                                        <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '6px' }}>Adjustment Reason (Saved to History)</label>
-                                                        <textarea className="form-input" style={{ minHeight: '80px', resize: 'vertical' }} value={drawerNotes} onChange={e => setDrawerNotes(e.target.value)} placeholder="E.g. Adjusted installment amounts based on parent request..." />
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                                        <div>
+                                                            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>Notes</label>
+                                                            <textarea style={{ width: '100%', minHeight: '60px', resize: 'vertical', padding: '8px 10px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '12px', outline: 'none', fontFamily: 'inherit' }} value={drawerNotes} onChange={e => setDrawerNotes(e.target.value)} placeholder="Adjustment notes..." />
+                                                        </div>
+                                                        <div>
+                                                            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>Change Reason</label>
+                                                            <textarea style={{ width: '100%', minHeight: '60px', resize: 'vertical', padding: '8px 10px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '12px', outline: 'none', fontFamily: 'inherit' }} value={changeReason} onChange={e => setChangeReason(e.target.value)} placeholder="Reason for date change..." />
+                                                        </div>
                                                     </div>
-                                                </>
+                                                </div>
                                             )}
                                         </div>
                                     )}
 
                                     {/* 2. Receipt History Tab */}
                                     {activeTab === 'payments' && (
-                                        <div>
-                                            <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', marginBottom: '16px' }}>
-                                                Recorded Payments History
-                                            </h4>
+                                        <div style={{ padding: '16px 20px' }}>
+                                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '12px' }}>
+                                                Payment Receipts
+                                            </span>
 
                                             {drawerData?.payments?.length === 0 ? (
-                                                <div style={{ padding: '40px', textAlign: 'center', background: '#F8F9FD', borderRadius: '16px' }}>
-                                                    <CreditCard size={36} style={{ color: '#A1A5B7', opacity: 0.5, marginBottom: '12px' }} />
-                                                    <p style={{ color: '#8F92A1', fontSize: '13px', fontWeight: 500, margin: 0 }}>No payments recorded for this account.</p>
+                                                <div style={{ padding: '32px', textAlign: 'center', background: '#FAFBFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+                                                    <CreditCard size={28} style={{ display: 'block', margin: '0 auto 8px', color: '#CBD5E1' }} />
+                                                    <p style={{ color: '#94A3B8', fontSize: '12px', fontWeight: 500, margin: 0 }}>No payments recorded.</p>
                                                 </div>
                                             ) : (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                                     {drawerData?.payments?.map((payment: any) => (
                                                         <div key={payment.id} style={{
-                                                            padding: '16px', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px',
-                                                            display: 'flex', flexDirection: 'column', gap: '12px'
+                                                            padding: '12px 14px', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '10px',
                                                         }}>
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                 <div>
-                                                                    <div style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B' }}>{payment.receipt_number}</div>
-                                                                    <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>{formatDate(payment.payment_date)} • {payment.payment_method?.toUpperCase()}</span>
+                                                                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#1E293B' }}>{payment.receipt_number}</div>
+                                                                    <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 500 }}>{formatDate(payment.payment_date)} • {payment.payment_method?.toUpperCase()}</span>
                                                                 </div>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                                    <span style={{ fontWeight: 900, color: '#10B981', fontSize: '16px' }}>{formatCurrency(payment.amount_paid)}</span>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <span style={{ fontWeight: 800, color: '#10B981', fontSize: '14px' }}>{formatCurrency(payment.amount_paid)}</span>
                                                                     {deletingPaymentId !== payment.id ? (
                                                                         <button 
                                                                             onClick={() => setDeletingPaymentId(payment.id)}
-                                                                            style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '6px', borderRadius: '8px' }}
-                                                                            title="Reverse Payment Receipt"
+                                                                            style={{ background: 'none', border: 'none', color: '#CBD5E1', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}
+                                                                            title="Reverse Payment"
+                                                                            onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
+                                                                            onMouseLeave={e => e.currentTarget.style.color = '#CBD5E1'}
                                                                         >
-                                                                            <Trash2 size={16} />
+                                                                            <Trash2 size={14} />
                                                                         </button>
                                                                     ) : (
                                                                         <button 
                                                                             onClick={() => setDeletingPaymentId(null)}
-                                                                            style={{ background: '#CBD5E1', color: '#475569', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                                                                            style={{ background: '#F1F5F9', color: '#64748B', border: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}
                                                                         >
                                                                             Cancel
                                                                         </button>
@@ -662,29 +821,26 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
                                                             </div>
                                                             
                                                             {deletingPaymentId === payment.id && (
-                                                                <div style={{ background: '#FEF2F2', border: '1px dashed #FCA5A5', padding: '12px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                                    <span style={{ fontSize: '11px', color: '#991B1B', fontWeight: 700 }}>REVERSE RECEIPT: REASON REQUIRED</span>
-                                                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                                                        <input 
-                                                                            type="text" 
-                                                                            style={{ flex: 1, padding: '6px', borderRadius: '6px', border: '1px solid #FCA5A5', fontSize: '12px' }}
-                                                                            placeholder="Reason for deletion..."
-                                                                            value={deleteRemark}
-                                                                            onChange={e => setDeleteRemark(e.target.value)}
-                                                                        />
-                                                                        <button 
-                                                                            onClick={() => handleRevertPayment(payment.id)}
-                                                                            style={{ background: '#EF4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                                                        >
-                                                                            <Undo2 size={12} /> Confirm Revert
-                                                                        </button>
-                                                                    </div>
+                                                                <div style={{ marginTop: '8px', background: '#FEF2F2', border: '1px solid #FECACA', padding: '8px 10px', borderRadius: '8px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        style={{ flex: 1, padding: '5px 8px', borderRadius: '5px', border: '1px solid #FECACA', fontSize: '11px', outline: 'none' }}
+                                                                        placeholder="Reason for reversal..."
+                                                                        value={deleteRemark}
+                                                                        onChange={e => setDeleteRemark(e.target.value)}
+                                                                    />
+                                                                    <button 
+                                                                        onClick={() => handleRevertPayment(payment.id)}
+                                                                        style={{ background: '#EF4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '5px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                                                    >
+                                                                        Revert
+                                                                    </button>
                                                                 </div>
                                                             )}
 
                                                             {payment.remarks && (
-                                                                <div style={{ fontSize: '12px', color: '#5E6278', background: '#F8F9FD', padding: '10px', borderRadius: '10px', fontStyle: 'italic' }}>
-                                                                    "{payment.remarks}"
+                                                                <div style={{ marginTop: '6px', fontSize: '11px', color: '#64748B', background: '#F8F9FB', padding: '6px 10px', borderRadius: '6px', fontStyle: 'italic' }}>
+                                                                    {payment.remarks}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -696,40 +852,40 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
 
                                     {/* 3. Audit History Log Tab */}
                                     {activeTab === 'audit' && (
-                                        <div>
-                                            <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', marginBottom: '16px' }}>
-                                                Ledger Modification Trail
-                                            </h4>
+                                        <div style={{ padding: '16px 20px' }}>
+                                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '12px' }}>
+                                                Modification History
+                                            </span>
 
                                             {drawerData?.assignment?.audit_logs?.length === 0 ? (
-                                                <div style={{ padding: '40px', textAlign: 'center', background: '#F8F9FD', borderRadius: '16px' }}>
-                                                    <History size={36} style={{ color: '#A1A5B7', opacity: 0.5, marginBottom: '12px' }} />
-                                                    <p style={{ color: '#8F92A1', fontSize: '13px', fontWeight: 500, margin: 0 }}>No audit logs recorded for this ledger.</p>
+                                                <div style={{ padding: '32px', textAlign: 'center', background: '#FAFBFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+                                                    <History size={28} style={{ display: 'block', margin: '0 auto 8px', color: '#CBD5E1' }} />
+                                                    <p style={{ color: '#94A3B8', fontSize: '12px', fontWeight: 500, margin: 0 }}>No audit logs.</p>
                                                 </div>
                                             ) : (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                                     {drawerData?.assignment?.audit_logs?.map((log: any) => (
                                                         <div key={log.id} style={{
-                                                            padding: '14px', background: '#F8F9FD', borderRadius: '12px', border: '1px solid #E2E8F0',
-                                                            fontSize: '13px', color: '#475569', lineHeight: 1.5
+                                                            padding: '10px 12px', background: '#FAFBFC', borderRadius: '8px', border: '1px solid #F1F5F9',
+                                                            fontSize: '12px', color: '#475569'
                                                         }}>
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                                                <span style={{ fontWeight: 800, color: '#1A1D3B' }}>{log.action?.toUpperCase().replace('_', ' ')}</span>
-                                                                <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>{formatDate(log.created_at)}</span>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                                <span style={{ fontWeight: 700, color: '#1E293B', fontSize: '12px' }}>{log.action?.toUpperCase().replace('_', ' ')}</span>
+                                                                <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600 }}>{formatDate(log.created_at)}</span>
                                                             </div>
-                                                            <div style={{ fontSize: '12px', color: '#5E6278', marginBottom: '6px' }}>{log.details}</div>
+                                                            <div style={{ fontSize: '11px', color: '#64748B', marginBottom: '4px' }}>{log.details}</div>
                                                             
                                                             {log.field_changed && (
-                                                                <div style={{ display: 'flex', gap: '8px', fontSize: '11px', background: '#FFFFFF', padding: '6px', borderRadius: '6px', width: 'fit-content', border: '1px solid #E2E8F0', fontWeight: 600 }}>
-                                                                    <span style={{ color: '#8F92A1' }}>{log.field_changed?.toUpperCase()}:</span>
+                                                                <div style={{ display: 'inline-flex', gap: '6px', fontSize: '10px', background: '#FFFFFF', padding: '3px 6px', borderRadius: '4px', border: '1px solid #E2E8F0', fontWeight: 600 }}>
+                                                                    <span style={{ color: '#94A3B8' }}>{log.field_changed?.toUpperCase()}:</span>
                                                                     <span style={{ color: '#EF4444', textDecoration: 'line-through' }}>{log.old_value}</span>
                                                                     <span>→</span>
                                                                     <span style={{ color: '#10B981' }}>{log.new_value}</span>
                                                                 </div>
                                                             )}
                                                             
-                                                            <div style={{ fontSize: '11px', color: '#A1A5B7', marginTop: '6px', fontWeight: 700 }}>
-                                                                Authorized by: {log.user?.email} ({log.user?.role?.toUpperCase()})
+                                                            <div style={{ fontSize: '10px', color: '#94A3B8', marginTop: '4px', fontWeight: 600 }}>
+                                                                by {log.user?.email}
                                                             </div>
                                                         </div>
                                                     ))}
@@ -739,9 +895,94 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
                                     )}
 
                                 </div>
+
+                                {/* Drawer Footer - Compact */}
+                                <div style={{ padding: '10px 20px', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+                                    <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 500 }}>
+                                        Registered {formatDate(drawerData?.assignment?.created_at)}
+                                    </span>
+                                    <button 
+                                        onClick={() => setIsDeleteDialogOpen(true)}
+                                        style={{ 
+                                            background: 'none', color: '#EF4444', border: 'none', 
+                                            padding: '6px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, 
+                                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = '#FEF2F2'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+                                    >
+                                        <Trash2 size={13} /> Delete
+                                    </button>
+                                </div>
                             </>
                         )}
 
+                    </div>
+                </div>
+            )}
+
+            {/* center modal for hard delete validation */}
+            {isDeleteDialogOpen && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(13,15,33,0.4)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#FFFFFF', width: '480px', borderRadius: '24px', boxShadow: '0 20px 50px rgba(13,15,33,0.15)', border: '1px solid #E2E8F0', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ background: '#FEF2F2', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
+                                <AlertCircle size={22} />
+                            </div>
+                            <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif' }}>Confirm Permanent Deletion</h3>
+                        </div>
+
+                        {drawerData?.assignment?.total_paid > 0 || (drawerData?.payments && drawerData.payments.length > 0) ? (
+                            <div style={{ background: '#FEF2F2', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '16px', padding: '16px' }}>
+                                <p style={{ fontSize: '14px', color: '#991B1B', fontWeight: 700, margin: '0 0 8px' }}>⚠️ Warning: Payment History Exists</p>
+                                <p style={{ fontSize: '13px', color: '#B91C1C', fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
+                                    This student already has payment history. Deleting this fee assignment will permanently remove:
+                                    <br />• installments
+                                    <br />• payment mappings
+                                    <br />• financial history
+                                </p>
+                            </div>
+                        ) : (
+                            <p style={{ fontSize: '14px', color: '#475569', fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
+                                Are you sure you want to permanently delete the fee assignment for <strong>{drawerData?.assignment?.student_name}</strong>? This will remove all generated installments. This action is irreversible.
+                            </p>
+                        )}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Type <span style={{ color: '#EF4444', fontFamily: 'monospace' }}>DELETE</span> to confirm</label>
+                            <input 
+                                type="text" 
+                                style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #CBD5E1', fontSize: '14px', outline: 'none', fontWeight: 600 }}
+                                value={deleteConfirmText}
+                                onChange={e => setDeleteConfirmText(e.target.value)}
+                                placeholder="DELETE"
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
+                            <button 
+                                onClick={() => {
+                                    setIsDeleteDialogOpen(false);
+                                    setDeleteConfirmText('');
+                                }}
+                                style={{ background: '#E2E8F0', color: '#475569', border: 'none', borderRadius: '12px', padding: '12px 20px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleHardDeleteAssignment}
+                                disabled={deleteConfirmText !== 'DELETE' || isDeleteSubmitting}
+                                style={{ 
+                                    background: deleteConfirmText === 'DELETE' ? '#EF4444' : '#FCA5A5', 
+                                    color: 'white', border: 'none', borderRadius: '12px', 
+                                    padding: '12px 24px', fontSize: '14px', fontWeight: 700, 
+                                    cursor: deleteConfirmText === 'DELETE' ? 'pointer' : 'not-allowed',
+                                    display: 'flex', alignItems: 'center', gap: '6px'
+                                }}
+                            >
+                                <Trash2 size={14} /> {isDeleteSubmitting ? 'Deleting...' : 'Delete Assignment'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

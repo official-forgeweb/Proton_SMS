@@ -294,4 +294,76 @@ router.post('/:id/attendance', authenticateToken, authorize('admin', 'coordinato
   }
 });
 
+// DELETE /api/classes/:id
+router.delete('/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = paramId(req);
+
+    // 1. Fetch class details to check validations
+    const cls = await prisma.class.findUnique({
+      where: { id },
+      include: {
+        schedule: true,
+        timetable_entries: true,
+      }
+    });
+
+    if (!cls) {
+      res.status(404).json({ success: false, message: 'Class not found' });
+      return;
+    }
+
+    // 2. Check if students are assigned (active enrollments)
+    const activeEnrollmentsCount = await prisma.studentClassEnrollment.count({
+      where: {
+        class_id: id,
+        enrollment_status: 'active'
+      }
+    });
+
+    if (activeEnrollmentsCount > 0) {
+      res.status(400).json({
+        success: false,
+        message: `Cannot delete class. There are currently ${activeEnrollmentsCount} active student(s) enrolled. Please unassign students first.`
+      });
+      return;
+    }
+
+    // 3. Check if teachers are linked
+    const hasPrimaryTeacher = cls.primary_teacher_id !== null && cls.primary_teacher_id !== '';
+    const assignedSchedulesCount = cls.schedule.filter((s: any) => s.teacher_id).length;
+    const assignedTimetablesCount = cls.timetable_entries.filter((t: any) => t.teacher_id).length;
+
+    if (hasPrimaryTeacher || assignedSchedulesCount > 0 || assignedTimetablesCount > 0) {
+      const reasons: string[] = [];
+      if (hasPrimaryTeacher) reasons.push('Primary instructor is assigned');
+      if (assignedSchedulesCount > 0) reasons.push(`${assignedSchedulesCount} schedule slot(s) link to a teacher`);
+      if (assignedTimetablesCount > 0) reasons.push(`${assignedTimetablesCount} session(s) in timetable link to a teacher`);
+
+      res.status(400).json({
+        success: false,
+        message: `Cannot delete class. Teacher(s) are linked to this class: ${reasons.join(', ')}. Please unassign teachers first.`
+      });
+      return;
+    }
+
+    // 4. Safe delete the class cohort
+    await prisma.$transaction([
+      prisma.classSchedule.deleteMany({ where: { class_id: id } }),
+      prisma.timetable.deleteMany({ where: { class_id: id } }),
+      prisma.studentClassEnrollment.deleteMany({ where: { class_id: id } }),
+      prisma.class.delete({ where: { id } })
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Class batch deleted successfully.'
+    });
+  } catch (error) {
+    console.error('Error deleting class:', error);
+    res.status(500).json({ success: false, message: 'Server error occurred while deleting the class.' });
+  }
+});
+
 export default router;
+

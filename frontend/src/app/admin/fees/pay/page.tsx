@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import { CreditCard, IndianRupee, User, Info, CheckCircle } from 'lucide-react';
@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 
 export default function RecordPaymentPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { user } = useAuthStore();
     const [assignments, setAssignments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -17,11 +18,25 @@ export default function RecordPaymentPage() {
         student_id: '', amount_paid: 0, payment_method: 'cash', remarks: ''
     });
 
+    const queryStudentId = searchParams.get('student_id') || '';
+
     useEffect(() => {
         api.get('/fees/assignments').then(res => {
-            setAssignments(res.data.data || []);
+            const list = res.data.data || [];
+            setAssignments(list);
+            
+            if (queryStudentId) {
+                const match = list.find((a: any) => a.student_id === queryStudentId);
+                if (match) {
+                    setFormData(prev => ({
+                        ...prev,
+                        student_id: queryStudentId,
+                        amount_paid: match.total_pending || 0
+                    }));
+                }
+            }
         }).catch(console.error).finally(() => setIsLoading(false));
-    }, []);
+    }, [queryStudentId]);
 
     const selectedAssignment = assignments.find(a => a.student_id === formData.student_id);
 

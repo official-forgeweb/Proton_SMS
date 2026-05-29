@@ -146,7 +146,7 @@ export default function CoordinatorClassesPage() {
                         </div>
                     ) :  classes.length === 0 ? (
                         <div style={{ padding: '80px', textAlign: 'center', background: '#F8F9FD', borderRadius: '16px' }}>
-                            <BookOpen size={56} style={{ marginBottom: '20px', color: '#A1A5B7', opacity: 0.5 }} />
+                            <BookOpen size={56} style={{ display: 'block', margin: '0 auto 20px', color: '#A1A5B7', opacity: 0.5 }} />
                             <h3 style={{ fontSize: '18px', color: '#1A1D3B', marginBottom: '8px', fontWeight: 700 }}>No Classes Found</h3>
                             <p style={{ fontSize: '14px', color: '#8F92A1', fontWeight: 500 }}>Create a new class to get started.</p>
                         </div>

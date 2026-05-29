@@ -38,7 +38,7 @@ export default function TeacherProfilePage() {
         return (
             <DashboardLayout requiredRole="admin">
                 <div style={{ padding: '80px', textAlign: 'center', background: '#F8F9FD', borderRadius: '24px', margin: '24px' }}>
-                    <User size={64} style={{ color: '#A1A5B7', marginBottom: '20px', opacity: 0.5 }} />
+                    <User size={64} style={{ display: 'block', margin: '0 auto 20px', color: '#A1A5B7', opacity: 0.5 }} />
                     <h3 style={{ fontSize: '20px', color: '#1A1D3B', marginBottom: '12px', fontWeight: 800 }}>Teacher Not Found</h3>
                     <p style={{ fontSize: '15px', color: '#8F92A1', fontWeight: 500, marginBottom: '24px' }}>The teacher profile you're looking for doesn't exist or was removed.</p>
                     <button 
@@ -263,7 +263,7 @@ export default function TeacherProfilePage() {
                                 ))
                             ) : (
                                 <div style={{ padding: '60px 40px', textAlign: 'center', background: '#F8F9FD', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                                    <Clock size={48} style={{ color: '#A1A5B7', marginBottom: '16px', opacity: 0.4 }} />
+                                    <Clock size={48} style={{ display: 'block', margin: '0 auto 16px', color: '#A1A5B7', opacity: 0.4 }} />
                                     <h4 style={{ fontSize: '16px', color: '#1A1D3B', marginBottom: '8px', fontWeight: 700 }}>No Classes Assigned</h4>
                                     <p style={{ fontSize: '14px', color: '#8F92A1', fontWeight: 500, margin: 0 }}>This teacher is not currently assigned to any active classes or batches.</p>
                                 </div>

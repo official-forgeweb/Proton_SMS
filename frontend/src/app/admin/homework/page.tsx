@@ -44,7 +44,7 @@ export default function HomeworkPage() {
                         </div>
                     ) :  homework.length === 0 ? (
                         <div style={{ padding: '60px', textAlign: 'center', color: '#A1A5B7' }}>
-                            <PenTool size={48} style={{ marginBottom: '16px', opacity: 0.4 }} />
+                            <PenTool size={48} style={{ display: 'block', margin: '0 auto 16px', opacity: 0.4 }} />
                             <h3 style={{ fontSize: '16px', color: '#5E6278', marginBottom: '8px', fontWeight: 700 }}>No Homework Found</h3>
                             <p style={{ fontSize: '13px' }}>Assign new homework to students.</p>
                         </div>

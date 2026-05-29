@@ -116,7 +116,7 @@ export default function TeacherStudentsClient({ initialData }: Props) {
                             </div>
                         ) : students.length === 0 ? (
                             <div style={{ padding: '80px', textAlign: 'center', background: '#F8F9FD', borderRadius: '16px' }}>
-                                <GraduationCap size={56} style={{ marginBottom: '20px', color: '#A1A5B7', opacity: 0.5 }} />
+                                <GraduationCap size={56} style={{ display: 'block', margin: '0 auto 20px', color: '#A1A5B7', opacity: 0.5 }} />
                                 <h3 style={{ fontSize: '18px', color: '#1A1D3B', marginBottom: '8px', fontWeight: 700 }}>No Students Found</h3>
                                 <p style={{ fontSize: '14px', color: '#8F92A1', fontWeight: 500 }}>
                                     {search ? 'Try adjusting your search to see more results.' : 'There are no students to display.'}

@@ -93,6 +93,20 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
     const totalRevenue = revenueAgg._sum.amount_paid || 0;
     const totalPending = pendingAgg._sum.total_pending || 0;
 
+    // Fetch dynamic monthly chart data directly from the DB
+    const [payments, studentRegistrations, enquiryRegistrations] = await Promise.all([
+      prisma.feePayment.findMany({
+        where: { payment_status: 'completed' },
+        select: { amount_paid: true, payment_date: true, created_at: true },
+      }),
+      prisma.student.findMany({
+        select: { created_at: true },
+      }),
+      prisma.enquiry.findMany({
+        select: { created_at: true },
+      }),
+    ]);
+
     const recentActivity = [
       ...recentStudents.map(s => ({ type: 'enrollment', message: `New enrollment: ${s.first_name} ${s.last_name} (${s.PRO_ID})`, time: s.created_at })),
       ...recentPayments.map(p => ({ type: 'payment', message: `Payment received: ₹${(p.amount_paid || 0).toLocaleString()} from ${p.student?.first_name || 'Unknown'}`, time: p.payment_date })),
@@ -106,6 +120,42 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
       return {
         name,
         Student: perf ? Math.round(Number(perf.avgScore)) : 0,
+        Attendance: att ? Math.round((Number(att.presentCount) / Number(att.totalCount)) * 100) : 0,
+      };
+    });
+
+    // Group real dynamic chart aggregations
+    const monthlyFees = monthNames.map((name, index) => {
+      const total = payments
+        .filter(p => {
+          const date = p.payment_date ? new Date(p.payment_date) : p.created_at;
+          return date.getMonth() === index && date.getFullYear() === new Date().getFullYear();
+        })
+        .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+      return { name, Fees: total };
+    });
+
+    const monthlyStudents = monthNames.map((name, index) => {
+      const count = studentRegistrations.filter(s => {
+        const date = new Date(s.created_at);
+        return date.getFullYear() < new Date().getFullYear() || 
+               (date.getFullYear() === new Date().getFullYear() && date.getMonth() <= index);
+      }).length;
+      return { name, Students: count };
+    });
+
+    const monthlyEnquiries = monthNames.map((name, index) => {
+      const count = enquiryRegistrations.filter(e => {
+        const date = new Date(e.created_at);
+        return date.getMonth() === index && date.getFullYear() === new Date().getFullYear();
+      }).length;
+      return { name, Enquiries: count };
+    });
+
+    const monthlyAttendanceData = monthNames.map((name, index) => {
+      const att = monthlyAttendance.find((a: any) => Number(a.month) === index + 1);
+      return {
+        name,
         Attendance: att ? Math.round((Number(att.presentCount) / Number(att.totalCount)) * 100) : 0,
       };
     });
@@ -318,6 +368,27 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
         });
     }
 
+    // 7. Internal Risky Fee Behavior Alerts
+    const riskyAssignments = await prisma.studentFeeAssignment.findMany({
+        where: {
+            risk_level: { in: ['watchlist', 'high_risk_defaulter'] }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } }
+        }
+    });
+
+    riskyAssignments.forEach(a => {
+        if (a.student) {
+            alerts.push({
+                type: a.risk_level === 'high_risk_defaulter' ? 'danger' : 'warning',
+                title: a.risk_level === 'high_risk_defaulter' ? 'High Risk Defaulter Flagged' : 'Watchlist Financial Notice',
+                message: `${a.student.first_name} ${a.student.last_name || ''} (${a.student.PRO_ID}) has been flagged as ${a.risk_level === 'high_risk_defaulter' ? 'High Risk Defaulter' : 'Watchlist'} due to frequent due date modifications.`,
+                action_link: '/admin/fees'
+            });
+        }
+    });
+
     if (alerts.length === 0) {
         alerts.push({
             type: 'success',
@@ -362,6 +433,10 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
             percent: `${s.percentage}%`,
             year: new Date(s.created_at).getFullYear(),
           })),
+          fees: monthlyFees,
+          students: monthlyStudents,
+          attendance: monthlyAttendanceData,
+          enquiries: monthlyEnquiries,
         },
       },
     });

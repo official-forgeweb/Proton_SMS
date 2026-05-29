@@ -7,8 +7,9 @@ import {
   TrendingUp, Award, AlertCircle, FileSpreadsheet, 
   Search, ArrowLeft, ChevronRight, UserCheck, 
   UserX, Percent, BarChart2, Star, ThumbsDown, 
-  Activity, GraduationCap
+  Activity, GraduationCap, Trash2
 } from 'lucide-react';
+import api from '@/lib/api';
 
 interface ClassCohortClientProps {
   initialData: {
@@ -39,6 +40,31 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
   const { class: cls, students, subject_counts, stats } = initialData;
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'roster' | 'attendance' | 'academics'>('roster');
+
+  // Class cohort delete validation & hooks
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const hasTeacherLinked = (cls.primary_teacher_id !== null && cls.primary_teacher_id !== '') || (cls.schedule && cls.schedule.length > 0);
+  const hasStudentsAssigned = students.length > 0;
+  const canDelete = !hasTeacherLinked && !hasStudentsAssigned;
+
+  const handleDeleteClass = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await api.delete(`/classes/${cls.id}`);
+      if (res.data.success) {
+        window.location.href = '/admin/classes';
+      } else {
+        alert(res.data.message || 'Failed to delete class.');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Server error occurred while deleting class.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
 
   // Filter students based on search
   const filteredStudents = students.filter(student => 
@@ -135,6 +161,18 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
             onMouseLeave={e => e.currentTarget.style.background = 'white'}
           >
             <FileSpreadsheet size={16} color="#10B981" /> Export Roster
+          </button>
+          
+          <button 
+            onClick={() => setShowDeleteModal(true)}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', borderRadius: '12px',
+              border: '1px solid #FEE2E2', background: '#FEF2F2', color: '#EF4444', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#FEE2E2'}
+            onMouseLeave={e => e.currentTarget.style.background = '#FEF2F2'}
+          >
+            <Trash2 size={16} /> Delete Class
           </button>
         </div>
       </div>
@@ -555,6 +593,93 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
         </div>
 
       </div>
+
+
+      {/* Dynamic Deletion Modal */}
+      {showDeleteModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(9,11,17,0.4)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '24px', padding: '32px', maxWidth: '440px', width: '90%',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.15)', border: '1px solid #F0F0F5', display: 'flex',
+            flexDirection: 'column', gap: '20px', animation: 'fadeIn var(--duration-fast) var(--ease-premium)'
+          }}>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+              <div style={{
+                width: '48px', height: '48px', borderRadius: '16px',
+                background: canDelete ? '#FEF2F2' : '#FFF4E5',
+                color: canDelete ? '#EF4444' : '#F97316',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+              }}>
+                {canDelete ? <Trash2 size={24} /> : <AlertCircle size={24} />}
+              </div>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+                  {canDelete ? 'Delete Class Cohort' : 'Deletion Locked'}
+                </h3>
+                <p style={{ fontSize: '14px', color: '#64748B', lineHeight: 1.5, marginTop: '8px', marginInline: 0 }}>
+                  {canDelete 
+                    ? `Are you sure you want to delete ${cls.class_name || cls.class_code}? This action is permanent and will discard all schedules.`
+                    : 'This class cannot be deleted right now because active resources are linked:'
+                  }
+                </p>
+              </div>
+            </div>
+
+            {/* Validation warning block if cannot delete */}
+            {!canDelete && (
+              <div style={{ background: '#FFF9F2', border: '1px solid #FFEADA', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {hasStudentsAssigned && (
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#B45309', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Users size={16} /> {students.length} active students are assigned.
+                  </p>
+                )}
+                {hasTeacherLinked && (
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#B45309', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <BookOpen size={16} /> Primary instructor or timetable slots are assigned.
+                  </p>
+                )}
+                <span style={{ fontSize: '11px', color: '#B45309', opacity: 0.85, fontWeight: 500 }}>
+                  Please unassign all students and clear teacher slots to delete this class safely.
+                </span>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                style={{
+                  padding: '12px 20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: 'white',
+                  color: '#475569', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
+                onMouseLeave={e => e.currentTarget.style.background = 'white'}
+              >
+                Close
+              </button>
+              {canDelete && (
+                <button
+                  onClick={handleDeleteClass}
+                  disabled={isDeleting}
+                  style={{
+                    padding: '12px 20px', borderRadius: '12px', border: 'none', background: '#EF4444',
+                    color: 'white', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s',
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#DC2626'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#EF4444'}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Permanently'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

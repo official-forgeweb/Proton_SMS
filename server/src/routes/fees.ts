@@ -467,7 +467,20 @@ router.get('/assignments/:id', authenticateToken, authorize('admin', 'coordinato
         fee_structure: true,
         installments: {
           where: { is_deleted: false },
-          orderBy: { installment_number: 'asc' }
+          orderBy: { installment_number: 'asc' },
+          include: {
+            date_histories: {
+              orderBy: { created_at: 'desc' },
+              include: {
+                user: {
+                  select: {
+                    email: true,
+                    role: true
+                  }
+                }
+              }
+            }
+          }
         },
         audit_logs: {
           orderBy: { created_at: 'desc' },
@@ -509,7 +522,7 @@ router.get('/assignments/:id', authenticateToken, authorize('admin', 'coordinato
 router.put('/assignments/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const assignmentId = req.params.id as string;
-    const { installments: updatedInstallments, notes } = req.body;
+    const { installments: updatedInstallments, notes, change_reason } = req.body;
     
     const assignment = await prisma.studentFeeAssignment.findUnique({
       where: { id: assignmentId },
@@ -525,31 +538,90 @@ router.put('/assignments/:id', authenticateToken, authorize('admin', 'coordinato
       for (const updated of updatedInstallments) {
         const existing = (assignment.installments as any[]).find((i: any) => i.installment_number === updated.installment_number);
         if (existing) {
-          if (existing.amount !== Number(updated.amount) || existing.due_date !== updated.due_date) {
-            if (existing.paid_amount > 0 && existing.amount !== Number(updated.amount)) {
-              throw new Error(`Cannot change amount for installment ${existing.installment_number} because it has already been paid/partially paid.`);
+          const isDateChanged = existing.due_date !== updated.due_date;
+          const isAmountChanged = existing.amount !== Number(updated.amount);
+
+          if (isDateChanged || isAmountChanged) {
+            let nextChangeCount = existing.date_change_count || 0;
+
+            if (isDateChanged) {
+              nextChangeCount += 1;
+
+              // Record due date audit history
+              await tx.installmentDateHistory.create({
+                data: {
+                  installment_id: existing.id,
+                  previous_due_date: existing.due_date,
+                  new_due_date: updated.due_date,
+                  changed_by: req.user!.id,
+                  change_reason: change_reason || notes || 'Due date adjusted'
+                }
+              });
+
+              // Add a generic fee audit log
+              await tx.feeAuditLog.create({
+                data: {
+                  assignment_id: assignmentId,
+                  user_id: req.user!.id,
+                  action: 'installment_edited',
+                  field_changed: 'due_date',
+                  old_value: existing.due_date,
+                  new_value: updated.due_date,
+                  details: `Installment ${existing.installment_number} due date updated. Total changes: ${nextChangeCount}`
+                }
+              });
             }
-            
-            await tx.feeAuditLog.create({
-              data: {
-                assignment_id: assignmentId,
-                user_id: req.user!.id,
-                action: 'installment_edited',
-                field_changed: existing.amount !== Number(updated.amount) ? 'amount' : 'due_date',
-                old_value: existing.amount !== Number(updated.amount) ? String(existing.amount) : existing.due_date,
-                new_value: existing.amount !== Number(updated.amount) ? String(updated.amount) : updated.due_date,
-                details: `Installment ${existing.installment_number} updated`
-              }
-            });
-            
+
+            if (isAmountChanged) {
+              await tx.feeAuditLog.create({
+                data: {
+                  assignment_id: assignmentId,
+                  user_id: req.user!.id,
+                  action: 'installment_edited',
+                  field_changed: 'amount',
+                  old_value: String(existing.amount),
+                  new_value: String(updated.amount),
+                  details: `Installment ${existing.installment_number} amount updated`
+                }
+              });
+            }
+
             await tx.feeInstallment.update({
               where: { id: existing.id },
               data: {
                 amount: Number(updated.amount),
-                due_date: updated.due_date
+                due_date: updated.due_date,
+                date_change_count: nextChangeCount
               }
             });
           }
+        } else {
+          // Create new installment
+          await tx.feeInstallment.create({
+            data: {
+              assignment_id: assignmentId,
+              installment_number: Number(updated.installment_number),
+              amount: Number(updated.amount),
+              remaining_amount: Number(updated.amount),
+              due_date: updated.due_date,
+              status: 'upcoming',
+              paid_amount: 0,
+              date_change_count: 0
+            }
+          });
+
+          // Add a generic fee audit log for installment creation
+          await tx.feeAuditLog.create({
+            data: {
+              assignment_id: assignmentId,
+              user_id: req.user!.id,
+              action: 'installment_edited',
+              field_changed: 'installment_created',
+              old_value: 'N/A',
+              new_value: String(updated.amount),
+              details: `Added new Installment #${updated.installment_number} with amount ₹${updated.amount} due on ${updated.due_date}`
+            }
+          });
         }
       }
       
@@ -564,16 +636,41 @@ router.put('/assignments/:id', authenticateToken, authorize('admin', 'coordinato
         where: { assignment_id: assignmentId, is_deleted: false }
       });
       const newFinalFee = allActive.reduce((acc, curr) => acc + curr.amount, 0);
+
+      // Recalculate risk level based on max change count across active installments
+      const maxChangeCount = allActive.reduce((max, inst) => Math.max(max, inst.date_change_count || 0), 0);
+      let riskLevel = 'normal';
+      if (maxChangeCount === 2) {
+        riskLevel = 'watchlist';
+      } else if (maxChangeCount >= 3) {
+        riskLevel = 'high_risk_defaulter';
+      }
       
       await tx.studentFeeAssignment.update({
         where: { id: assignmentId },
-        data: { final_fee: newFinalFee }
+        data: { 
+          final_fee: newFinalFee,
+          risk_level: riskLevel
+        }
       });
       
       await reallocatePaymentsAndRecalculate(assignmentId, tx);
     });
     
-    res.json({ success: true, message: 'Installments updated successfully' });
+    // Fetch final updated assignment to return correct API response fields
+    const finalAssignment = await prisma.studentFeeAssignment.findUnique({
+      where: { id: assignmentId },
+      include: { installments: { where: { is_deleted: false } } }
+    });
+    const finalMaxCount = finalAssignment?.installments.reduce((max, inst) => Math.max(max, inst.date_change_count || 0), 0) || 0;
+
+    res.json({ 
+      success: true, 
+      message: 'Installments updated successfully',
+      installmentUpdated: true,
+      dateChangeCount: finalMaxCount,
+      riskLevel: finalAssignment?.risk_level || 'normal'
+    });
   } catch (error: any) {
     console.error(error);
     res.status(400).json({ success: false, message: error.message || 'Server error' });
@@ -788,7 +885,13 @@ router.get('/student/:studentId', authenticateToken, async (req: Request, res: R
         fee_structure: true,
         installments: {
           where: { is_deleted: false },
-          orderBy: { installment_number: 'asc' }
+          orderBy: { installment_number: 'asc' },
+          include: {
+            date_histories: {
+              orderBy: { created_at: 'desc' },
+              include: { user: { select: { email: true, role: true } } }
+            }
+          }
         },
         audit_logs: {
           orderBy: { created_at: 'desc' },
@@ -801,6 +904,17 @@ router.get('/student/:studentId', authenticateToken, async (req: Request, res: R
       where: { student_id: sId, is_deleted: false },
       orderBy: { payment_date: 'desc' }
     });
+
+    if (assignment && req.user!.role === 'student') {
+      // Security Boundary: Strip internal defaulter indicators
+      assignment.risk_level = 'normal';
+      assignment.audit_logs = [];
+      assignment.installments = assignment.installments.map((inst: any) => ({
+        ...inst,
+        date_change_count: 0,
+        date_histories: []
+      }));
+    }
     
     res.json({
       success: true,
@@ -882,6 +996,83 @@ router.post('/overdue-check', authenticateToken, authorize('admin', 'coordinator
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// DELETE /api/fees/assignments/:id
+router.delete('/assignments/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const assignmentId = req.params.id as string;
+    const force = req.body.force === true || req.query.force === 'true';
+
+    const assignment = await prisma.studentFeeAssignment.findUnique({
+      where: { id: assignmentId },
+      include: {
+        installments: { where: { is_deleted: false } }
+      }
+    });
+
+    if (!assignment) {
+      res.status(404).json({ success: false, message: 'Fee assignment not found' });
+      return;
+    }
+
+    // Check if payments exist
+    const completedPayments = await prisma.feePayment.count({
+      where: {
+        student_id: assignment.student_id,
+        is_deleted: false,
+        payment_status: 'completed'
+      }
+    });
+
+    const hasPaymentHistory = (assignment.total_paid || 0) > 0 || completedPayments > 0;
+
+    if (hasPaymentHistory && !force) {
+      res.json({
+        success: false,
+        requiresConfirmation: true,
+        message: `This student already has payment history. Deleting this fee assignment will permanently remove:\n- installments\n- payment mappings\n- financial history\n\nAre you sure you want to continue?`
+      });
+      return;
+    }
+
+    // Perform hard delete inside transaction
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete all payments of the student
+      await tx.feePayment.deleteMany({
+        where: { student_id: assignment.student_id }
+      });
+
+      // 2. Delete installment date histories
+      const installmentIds = assignment.installments.map(i => i.id);
+      await tx.installmentDateHistory.deleteMany({
+        where: { installment_id: { in: installmentIds } }
+      });
+
+      // 3. Delete installments
+      await tx.feeInstallment.deleteMany({
+        where: { assignment_id: assignmentId }
+      });
+
+      // 4. Delete audit logs
+      await tx.feeAuditLog.deleteMany({
+        where: { assignment_id: assignmentId }
+      });
+
+      // 5. Delete the assignment
+      await tx.studentFeeAssignment.delete({
+        where: { id: assignmentId }
+      });
+    });
+
+    res.json({
+      success: true,
+      message: 'Fee assignment and all related payment history deleted permanently.'
+    });
+  } catch (error: any) {
+    console.error('Error hard deleting fee assignment:', error);
+    res.status(500).json({ success: false, message: error.message || 'Server error' });
   }
 });
 

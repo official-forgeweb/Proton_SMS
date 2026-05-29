@@ -68,7 +68,7 @@ export default function AddClassPage() {
             <form onSubmit={handleSubmit}>
                 <div className="form-section">
                     <div className="form-section-title">
-                        <Layers size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                        <Layers size={16} strokeWidth={2.5} style={{ color: '#E53935' }} />
                         Batch Basic Configuration
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr', gap: '24px' }}>
@@ -90,12 +90,12 @@ export default function AddClassPage() {
                 <div className="form-section">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                         <div className="form-section-title" style={{ marginBottom: 0 }}>
-                            <Clock size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
+                            <Clock size={16} strokeWidth={2.5} style={{ color: '#E53935' }} />
                             Class Schedule & Curriculum
                         </div>
-                        <button 
-                            type="button" 
-                            onClick={addSession} 
+                        <button
+                            type="button"
+                            onClick={addSession}
                             style={{
                                 padding: '8px 16px', borderRadius: '10px', background: '#1A1D3B', border: 'none',
                                 color: 'white', fontSize: '13px', fontWeight: 800, cursor: 'pointer',
@@ -108,27 +108,27 @@ export default function AddClassPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         {formData.schedule && formData.schedule.map((session: any, i: number) => (
-                            <div key={i} style={{ 
-                                padding: '28px', 
-                                background: 'white', 
-                                borderRadius: '24px', 
-                                border: '1px solid #F1F2F7', 
+                            <div key={i} style={{
+                                padding: '28px',
+                                background: 'white',
+                                borderRadius: '24px',
+                                border: '1px solid #F1F2F7',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                gap: '20px', 
-                                position: 'relative' 
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '20px',
+                                position: 'relative'
                             }}>
-                                <button 
-                                    type="button" 
-                                    onClick={() => removeSession(i)} 
-                                    style={{ 
-                                        position: 'absolute', top: '24px', right: '24px', 
-                                        background: '#FEE2E2', color: '#EF4444', 
-                                        width: '32px', height: '32px', borderRadius: '10px', 
-                                        border: 'none', cursor: 'pointer', 
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                        transition: 'all 0.2s', fontSize: '18px', fontWeight: 800 
+                                <button
+                                    type="button"
+                                    onClick={() => removeSession(i)}
+                                    style={{
+                                        position: 'absolute', top: '24px', right: '24px',
+                                        background: '#FEE2E2', color: '#EF4444',
+                                        width: '32px', height: '32px', borderRadius: '10px',
+                                        border: 'none', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        transition: 'all 0.2s', fontSize: '18px', fontWeight: 800
                                     }}
                                 >×</button>
 
@@ -165,7 +165,7 @@ export default function AddClassPage() {
                         ))}
                         {(!formData.schedule || formData.schedule.length === 0) && (
                             <div style={{ textAlign: 'center', padding: '48px', background: 'rgba(26,29,59,0.02)', borderRadius: '24px', border: '2px dashed #E2E8F0', color: '#A1A5B7', fontSize: '14px', fontWeight: 600 }}>
-                                <Layers size={32} style={{ marginBottom: '12px', opacity: 0.3 }} />
+                                <Layers size={32} style={{ display: 'block', margin: '0 auto 12px', opacity: 0.3 }} />
                                 <div style={{ color: '#1A1D3B', opacity: 0.6 }}>No sessions configured.</div>
                                 <div style={{ fontSize: '12px', fontWeight: 500, color: '#A1A5B7', marginTop: '4px' }}>Add sessions to define subjects and assigned teachers.</div>
                             </div>

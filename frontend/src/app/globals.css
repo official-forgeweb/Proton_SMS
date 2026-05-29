@@ -59,6 +59,20 @@
   --radius-lg: 20px;
   --radius-xl: 28px;
   --radius-full: 9999px;
+
+  /* Premium Animation & Timing Easing Standards */
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-medium: 250ms;
+  --duration-slow: 400ms;
+
+  /* HSL Token System for Semantic Design Variables */
+  --background-hsl: 240, 20%, 98%;
+  --foreground-hsl: 235, 38%, 17%;
+  --card-hsl: 0, 0%, 100%;
+  --primary-hsl: 1, 78%, 55%;
+  --muted-hsl: 230, 10%, 60%;
+  --border-hsl: 240, 15%, 95%;
 }
 
 .bg-mesh {
@@ -1364,4 +1378,130 @@ div:has(> table) {
   .form-central-card {
     padding: 20px 8px !important;
   }
-}
+}
+
+/* ==========================================================
+   PREMIUM SaaS SYSTEM OVERRIDES — SINGLE SCROLL, TRANSITIONS & EMPTY STATES
+   ========================================================== */
+
+/* VIEWPORT LEVEL LAYOUT LOCKS & SCROLL ARCHITECTURE */
+html, body, .main-layout-root {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+}
+
+/* Scroll exclusively within the inner page container */
+.page-body {
+  flex: 1 !important;
+  height: calc(100vh - 72px) !important; /* reserve exact space for sticky header */
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  background-color: var(--bg-secondary) !important;
+}
+
+/* Premium translucent glass header backdrops */
+.dashboard-header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 30 !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-bottom: 1px solid rgba(228, 230, 239, 0.6) !important;
+  height: 72px !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* DYNAMIC PREMIUM ROUTE MOUNT TRANSITIONS */
+@keyframes pageEntry {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-page-entry {
+  animation: pageEntry var(--duration-medium) var(--ease-premium) forwards;
+  will-change: transform, opacity;
+  transform-origin: top center;
+}
+
+/* SYSTEM-WIDE ELITE SKELETON SHIMMER SYSTEM */
+@keyframes premiumShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.premium-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(238, 238, 245, 0.6) 25%,
+    rgba(228, 230, 239, 0.9) 37%,
+    rgba(238, 238, 245, 0.6) 63%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: premiumShimmer 1.8s ease-in-out infinite !important;
+  border-radius: var(--radius-md) !important;
+  will-change: background-position;
+}
+
+/* PREMIUM GLOBAL EMPTY STATES DESIGN STYLE */
+.premium-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 64px 32px;
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--border-secondary);
+  box-shadow: var(--shadow-sm);
+  max-width: 580px;
+  margin: 40px auto;
+  transition: all var(--duration-medium) var(--ease-premium);
+}
+
+.premium-empty-state:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.premium-empty-state-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 20px rgba(229, 57, 53, 0.1);
+}
+
+.premium-empty-state-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.premium-empty-state-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 380px;
+  margin-bottom: 24px;
+}
+

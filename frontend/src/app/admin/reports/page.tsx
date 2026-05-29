@@ -156,124 +156,172 @@ export default function ReportsPage() {
                         <p style={{ color: '#1A1D3B', fontSize: '16px', fontWeight: 600 }}>Analyzing institutional parameters...</p>
                     </div>
                 ) : visualData ? (
-                    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', marginBottom: '40px', animationDelay: '100ms' }}>
-                        
-                        {/* Demographics Pie Chart */}
-                        <div className="glass-card" style={{ padding: '28px' }}>
-                            <div className="chart-header">
-                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <PieChart size={18} strokeWidth={2.5} />
+                    (() => {
+                        const renderEmptyState = (actionText: string) => (
+                            <div style={{
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                height: '100%', width: '100%', gap: '14px', padding: '24px', textAlign: 'center',
+                                background: '#F8F9FD', borderRadius: '16px', border: '1px dashed #E2E8F0',
+                                animation: 'fadeIn 0.3s ease'
+                            }}>
+                                <div style={{
+                                    width: '40px', height: '40px', borderRadius: '50%',
+                                    background: 'rgba(161, 165, 183, 0.08)', color: '#8F92A1',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <Activity size={18} />
                                 </div>
-                                <h3 className="chart-title">Student Demographics</h3>
+                                <div>
+                                    <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>No Data Recorded</h4>
+                                    <p style={{ fontSize: '11px', color: '#8F92A1', marginTop: '4px', marginInline: 0, fontWeight: 500 }}>
+                                        {actionText}
+                                    </p>
+                                </div>
                             </div>
-                            <div style={{ height: '260px' }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RechartsPie>
-                                        <Pie
-                                            data={visualData.demographics}
-                                            dataKey="value"
-                                            nameKey="name"
-                                            cx="50%" cy="50%"
-                                            outerRadius={90}
-                                            innerRadius={65}
-                                            paddingAngle={5}
-                                            stroke="none"
-                                        >
-                                            {visualData.demographics.map((entry: any, index: number) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip 
-                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '12px', fontWeight: 'bold' }} 
-                                        />
-                                        <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                                    </RechartsPie>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
+                        );
 
-                        {/* Revenue Bar Chart */}
-                        <div className="glass-card" style={{ padding: '28px' }}>
-                            <div className="chart-header">
-                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <TrendingUp size={18} strokeWidth={2.5} />
-                                </div>
-                                <h3 className="chart-title">Revenue Distribution (₹)</h3>
-                            </div>
-                            <div style={{ height: '260px' }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={visualData.fees} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748B' }} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748B' }} />
-                                        <Tooltip 
-                                            cursor={{fill: '#F8FAFC'}}
-                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '13px' }} 
-                                        />
-                                        <Bar dataKey="amount" fill="#10B981" radius={[6, 6, 0, 0]} barSize={40} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
+                        const hasDemographics = visualData.demographics && visualData.demographics.length > 0;
+                        const hasFees = visualData.fees && visualData.fees.some((f: any) => f.amount > 0);
+                        const hasTestGrades = visualData.testGrades && visualData.testGrades.length > 0;
+                        const hasEnquiries = visualData.enquiries && visualData.enquiries.length > 0;
 
-                        {/* Test Grades Bar Chart */}
-                        <div className="glass-card" style={{ padding: '28px' }}>
-                            <div className="chart-header">
-                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Activity size={18} strokeWidth={2.5} />
+                        return (
+                            <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', marginBottom: '40px', animationDelay: '100ms' }}>
+                                
+                                {/* Demographics Pie Chart */}
+                                <div className="glass-card" style={{ padding: '28px' }}>
+                                    <div className="chart-header">
+                                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <PieChart size={18} strokeWidth={2.5} />
+                                        </div>
+                                        <h3 className="chart-title">Student Demographics</h3>
+                                    </div>
+                                    <div style={{ height: '260px' }}>
+                                        {hasDemographics ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <RechartsPie>
+                                                    <Pie
+                                                        data={visualData.demographics}
+                                                        dataKey="value"
+                                                        nameKey="name"
+                                                        cx="50%" cy="50%"
+                                                        outerRadius={90}
+                                                        innerRadius={65}
+                                                        paddingAngle={5}
+                                                        stroke="none"
+                                                    >
+                                                        {visualData.demographics.map((entry: any, index: number) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip 
+                                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '12px', fontWeight: 'bold' }} 
+                                                    />
+                                                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                                </RechartsPie>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            renderEmptyState('Admit your first student to construct demographic distributions.')
+                                        )}
+                                    </div>
                                 </div>
-                                <h3 className="chart-title">Academics Performance</h3>
-                            </div>
-                            <div style={{ height: '260px' }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={visualData.testGrades}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748B' }} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748B' }} />
-                                        <Tooltip 
-                                            cursor={{fill: '#F8FAFC'}}
-                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '13px' }} 
-                                        />
-                                        <Bar dataKey="value" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={40} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
 
-                        {/* Enquiries Pie Chart */}
-                        <div className="glass-card" style={{ padding: '28px' }}>
-                            <div className="chart-header">
-                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Share2 size={18} strokeWidth={2.5} />
+                                {/* Revenue Bar Chart */}
+                                <div className="glass-card" style={{ padding: '28px' }}>
+                                    <div className="chart-header">
+                                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <TrendingUp size={18} strokeWidth={2.5} />
+                                        </div>
+                                        <h3 className="chart-title">Revenue Distribution (₹)</h3>
+                                    </div>
+                                    <div style={{ height: '260px' }}>
+                                        {hasFees ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={visualData.fees} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748B' }} dy={10} />
+                                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748B' }} />
+                                                    <Tooltip 
+                                                        cursor={{fill: '#F8FAFC'}}
+                                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '13px' }} 
+                                                    />
+                                                    <Bar dataKey="amount" fill="#10B981" radius={[6, 6, 0, 0]} barSize={40} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            renderEmptyState('Record a payment receipt to populate historical cashflows.')
+                                        )}
+                                    </div>
                                 </div>
-                                <h3 className="chart-title">Lead Pipeline Analysis</h3>
+
+                                {/* Test Grades Bar Chart */}
+                                <div className="glass-card" style={{ padding: '28px' }}>
+                                    <div className="chart-header">
+                                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Activity size={18} strokeWidth={2.5} />
+                                        </div>
+                                        <h3 className="chart-title">Academics Performance</h3>
+                                    </div>
+                                    <div style={{ height: '260px' }}>
+                                        {hasTestGrades ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={visualData.testGrades}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748B' }} dy={10} />
+                                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748B' }} />
+                                                    <Tooltip 
+                                                        cursor={{fill: '#F8FAFC'}}
+                                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '13px' }} 
+                                                    />
+                                                    <Bar dataKey="value" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={40} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            renderEmptyState('Create tests and publish exam scores to analyze performance distributions.')
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Enquiries Pie Chart */}
+                                <div className="glass-card" style={{ padding: '28px' }}>
+                                    <div className="chart-header">
+                                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Share2 size={18} strokeWidth={2.5} />
+                                        </div>
+                                        <h3 className="chart-title">Lead Pipeline Analysis</h3>
+                                    </div>
+                                    <div style={{ height: '260px' }}>
+                                        {hasEnquiries ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <RechartsPie>
+                                                    <Pie
+                                                        data={visualData.enquiries}
+                                                        dataKey="value"
+                                                        nameKey="name"
+                                                        cx="50%" cy="50%"
+                                                        outerRadius={90}
+                                                        innerRadius={65}
+                                                        paddingAngle={5}
+                                                        stroke="none"
+                                                    >
+                                                        {visualData.enquiries.map((entry: any, index: number) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip 
+                                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '12px', fontWeight: 'bold' }} 
+                                                    />
+                                                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                                </RechartsPie>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            renderEmptyState('Log student enquiries in the sales funnel to analyze pipeline performance.')
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <div style={{ height: '260px' }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RechartsPie>
-                                        <Pie
-                                            data={visualData.enquiries}
-                                            dataKey="value"
-                                            nameKey="name"
-                                            cx="50%" cy="50%"
-                                            outerRadius={90}
-                                            innerRadius={65}
-                                            paddingAngle={5}
-                                            stroke="none"
-                                        >
-                                            {visualData.enquiries.map((entry: any, index: number) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip 
-                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '12px', fontWeight: 'bold' }} 
-                                        />
-                                        <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                                    </RechartsPie>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
+                        );
+                    })()
                 ) : null}
 
                 {/* Report Table Export Cards */}

@@ -92,7 +92,7 @@ export default function TeacherClassesPage() {
                     </div>
                 ) : classes.length === 0 ? (
                     <div className="animate-in" style={{ textAlign: 'center', padding: '80px', background: '#F8F9FD', borderRadius: '24px' }}>
-                        <BookOpen size={56} style={{ marginBottom: '16px', color: '#A1A5B7', opacity: 0.5 }} />
+                        <BookOpen size={56} style={{ display: 'block', margin: '0 auto 16px', color: '#A1A5B7', opacity: 0.5 }} />
                         <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px' }}>No Classes Assigned</h3>
                         <p style={{ fontSize: '14px', color: '#8F92A1', fontWeight: 500 }}>You have no classes assigned yet.</p>
                     </div>

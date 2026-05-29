@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
     MessageSquare, Clock, CheckCircle2, AlertCircle, Search, 
-    Plus, Send, Paperclip, Trash2, Edit, RefreshCw, X, AlertOctagon, User, BookOpen, FileText, Check, ExternalLink
+    Plus, Send, Paperclip, Trash2, Edit, RefreshCw, X, AlertOctagon, User, BookOpen, FileText, Check, ExternalLink, Info, AlertTriangle, XCircle
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -95,6 +95,18 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
     const [studentsList, setStudentsList] = useState<any[]>([]);
     const [submittingQuery, setSubmittingQuery] = useState(false);
 
+    // Toast notification state
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning'; visible: boolean }>({ message: '', type: 'success', visible: false });
+    const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' = 'success') => {
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        setToast({ message, type, visible: true });
+        toastTimerRef.current = setTimeout(() => {
+            setToast(prev => ({ ...prev, visible: false }));
+        }, 4000);
+    }, []);
+
     useEffect(() => {
         fetchQueries();
         fetchTeachers();
@@ -148,11 +160,11 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
         e.preventDefault();
         const activeStudentId = studentId && studentId !== 'all' ? studentId : newQueryStudentId;
         if (!activeStudentId) {
-            alert('Please select a student.');
+            showToast('Please select a student.', 'warning');
             return;
         }
         if (!newQuerySubject.trim() || !newQueryDesc.trim()) {
-            alert('Subject and description are required.');
+            showToast('Subject and description are required.', 'warning');
             return;
         }
 
@@ -180,11 +192,11 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
                 }
                 fetchQueries();
             } else {
-                alert(response.data.message || 'Failed to create enquiry');
+                showToast(response.data.message || 'Failed to create enquiry', 'error');
             }
         } catch (err: any) {
             console.error('Create query error:', err);
-            alert(err.response?.data?.message || 'Error creating enquiry');
+            showToast(err.response?.data?.message || 'Error creating enquiry', 'error');
         } finally {
             setSubmittingQuery(false);
         }
@@ -214,7 +226,7 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
     const handleResolveQuery = async (queryId: string) => {
         const solutionText = solutions[queryId] || '';
         if (!solutionText.trim()) {
-            alert('Please write a solution before marking the query as resolved.');
+            showToast('Please write a solution before marking the query as resolved.', 'warning');
             return;
         }
 
@@ -251,11 +263,11 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
                 });
                 fetchQueries();
             } else {
-                alert(response.data.message || 'Failed to resolve enquiry');
+                showToast(response.data.message || 'Failed to resolve enquiry', 'error');
             }
         } catch (err: any) {
             console.error('Resolve query error:', err);
-            alert(err.response?.data?.message || 'Error resolving enquiry');
+            showToast(err.response?.data?.message || 'Error resolving enquiry', 'error');
         } finally {
             setResolvingId(null);
         }
@@ -478,6 +490,49 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
                     display: flex; align-items: center; gap: 6px; transition: background 0.15s;
                 }
                 .quick-file-btn:hover { background: #F1F5F9; }
+
+                /* Toast Notification */
+                @keyframes toastSlideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes toastSlideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+                .toast-notification {
+                    position: fixed; bottom: 32px; right: 32px; z-index: 9999;
+                    display: flex; align-items: center; gap: 12px;
+                    padding: 16px 24px; border-radius: 16px;
+                    font-size: 14px; font-weight: 600;
+                    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+                    backdrop-filter: blur(10px);
+                    max-width: 440px; min-width: 300px;
+                    pointer-events: auto;
+                }
+                .toast-notification.toast-enter {
+                    animation: toastSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+                }
+                .toast-notification.toast-exit {
+                    animation: toastSlideOut 0.3s ease-in forwards;
+                }
+                .toast-notification.toast-success {
+                    background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+                    border: 1.5px solid #6EE7B7; color: #065F46;
+                }
+                .toast-notification.toast-error {
+                    background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+                    border: 1.5px solid #FCA5A5; color: #991B1B;
+                }
+                .toast-notification.toast-warning {
+                    background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+                    border: 1.5px solid #FCD34D; color: #92400E;
+                }
+                .toast-close-btn {
+                    background: none; border: none; cursor: pointer; padding: 2px;
+                    color: inherit; opacity: 0.6; transition: opacity 0.15s; flex-shrink: 0;
+                }
+                .toast-close-btn:hover { opacity: 1; }
             ` }} />
 
             {/* HEADER SEARCH AND ACTION ROW */}
@@ -1041,6 +1096,22 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
 
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* TOAST NOTIFICATION */}
+            {toast.message && (
+                <div 
+                    className={`toast-notification toast-${toast.type} ${toast.visible ? 'toast-enter' : 'toast-exit'}`}
+                    onAnimationEnd={() => { if (!toast.visible) setToast(prev => ({ ...prev, message: '' })); }}
+                >
+                    {toast.type === 'success' && <CheckCircle2 size={20} style={{ flexShrink: 0 }} />}
+                    {toast.type === 'error' && <XCircle size={20} style={{ flexShrink: 0 }} />}
+                    {toast.type === 'warning' && <AlertTriangle size={20} style={{ flexShrink: 0 }} />}
+                    <span style={{ flex: 1 }}>{toast.message}</span>
+                    <button className="toast-close-btn" onClick={() => setToast(prev => ({ ...prev, visible: false }))}>
+                        <X size={16} />
+                    </button>
                 </div>
             )}
 

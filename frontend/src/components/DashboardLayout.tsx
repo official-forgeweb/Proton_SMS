@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, ReactNode, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import Sidebar from '@/components/Sidebar';
 import { Search, Bell, WifiOff, RefreshCw, X, Check, GraduationCap, UserCheck, BookOpen, FileText, HelpCircle, Award, User } from 'lucide-react';
@@ -13,6 +13,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, requiredRole }: DashboardLayoutProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const { user, isAuthenticated, isLoading, serverError, checkAuth } = useAuthStore();
     const [retrying, setRetrying] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -396,7 +397,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
     const avatarImgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=E53935&color=fff`;
 
     return (
-        <div className="bg-mesh" suppressHydrationWarning style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+        <div className="bg-mesh main-layout-root" suppressHydrationWarning style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
             <style dangerouslySetInnerHTML={{__html: `
                 .search-result-item:hover {
                     background-color: #F8F9FD !important;
@@ -706,8 +707,10 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 </header>
 
                 {/* Page Content */}
-                <div className="page-body" style={{ flex: 1, background: '#F4F5F9' }}>
-                    {children}
+                <div className="page-body" style={{ flex: 1, background: '#F4F5F9', overflowY: 'auto' }}>
+                    <div key={pathname} className="animate-page-entry" style={{ width: '100%', height: '100%' }}>
+                        {children}
+                    </div>
                 </div>
             </main>
 

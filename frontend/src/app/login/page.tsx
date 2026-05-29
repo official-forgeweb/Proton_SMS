@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { Eye, EyeOff, GraduationCap, Mail, Lock, Hash, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, GraduationCap, Mail, Lock, Hash, ArrowRight, ShieldCheck } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -35,183 +35,362 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="bg-mesh" style={{
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            overflow: 'hidden',
-            fontFamily: "'Inter', sans-serif"
-        }}>
+        <div className="login-container" suppressHydrationWarning>
             <Toaster position="top-center"
                 toastOptions={{
                     style: { background: '#FFFFFF', color: '#1E293B', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }
                 }}
             />
 
-            {/* Premium Background Elements */}
-            <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-                <div style={{
-                    position: 'absolute', width: '800px', height: '800px', borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(229,57,53,0.06) 0%, transparent 60%)',
-                    top: '-300px', right: '-200px', filter: 'blur(40px)', animation: 'pulse 10s infinite alternate'
-                }} />
-                <div style={{
-                    position: 'absolute', width: '600px', height: '600px', borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(37,99,235,0.05) 0%, transparent 60%)',
-                    bottom: '-200px', left: '-100px', filter: 'blur(40px)', animation: 'pulse 8s infinite alternate-reverse'
-                }} />
-                {/* Dotted Grid Pattern for tech feel */}
-                <div style={{
-                    position: 'absolute', inset: 0,
-                    backgroundImage: 'radial-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px)',
-                    backgroundSize: '24px 24px',
-                    opacity: 0.8
-                }} />
-            </div>
-
             <style dangerouslySetInnerHTML={{__html: `
-                @keyframes pulse { 0% { opacity: 0.5; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } }
-                @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-                .glass-card {
-                    background: rgba(255, 255, 255, 0.8);
-                    backdrop-filter: blur(24px);
-                    -webkit-backdrop-filter: blur(24px);
-                    border: 1px solid rgba(255, 255, 255, 0.8);
-                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0,0,0,0.02);
+                @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
+                @keyframes gradient-pulse { 0% { opacity: 0.45; } 100% { opacity: 0.75; } }
+                
+                .login-container {
+                    display: flex;
+                    height: 100vh;
+                    width: 100vw;
+                    overflow: hidden;
+                    background: #FAFAFC;
+                    font-family: 'Inter', sans-serif;
                 }
+                
+                .login-left {
+                    width: 55%;
+                    height: 100vh;
+                    background: #080A10;
+                    position: relative;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    padding: 64px;
+                    color: #FFFFFF;
+                    border-right: 1px solid rgba(255, 255, 255, 0.05);
+                }
+                
+                .login-right {
+                    width: 45%;
+                    height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    background: #FFFFFF;
+                    position: relative;
+                    padding: 40px;
+                }
+                
+                .glow-blob-1 {
+                    position: absolute;
+                    width: 500px;
+                    height: 500px;
+                    border-radius: 50%;
+                    background: radial-gradient(circle, rgba(229, 57, 53, 0.15) 0%, transparent 70%);
+                    top: -200px;
+                    left: -100px;
+                    filter: blur(40px);
+                    animation: gradient-pulse 6s infinite alternate;
+                    pointer-events: none;
+                }
+                
+                .glow-blob-2 {
+                    position: absolute;
+                    width: 600px;
+                    height: 600px;
+                    border-radius: 50%;
+                    background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+                    bottom: -200px;
+                    right: -100px;
+                    filter: blur(40px);
+                    animation: gradient-pulse 8s infinite alternate-reverse;
+                    pointer-events: none;
+                }
+                
+                .grid-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                    background-size: 32px 32px;
+                    pointer-events: none;
+                }
+                
+                .glass-mockup {
+                    background: rgba(255, 255, 255, 0.02);
+                    border: 1px solid rgba(255, 255, 255, 0.06);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                    border-radius: 20px;
+                    padding: 24px;
+                    box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.45);
+                    width: 100%;
+                    max-width: 440px;
+                    margin-top: 32px;
+                    transform: perspective(1000px) rotateX(8deg) rotateY(-4deg) rotateZ(1deg);
+                    animation: float 6s ease-in-out infinite;
+                }
+                
+                .login-form-wrapper {
+                    width: 100%;
+                    max-width: 380px;
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                .login-input-group {
+                    position: relative;
+                    margin-bottom: 20px;
+                }
+                
                 .login-input {
                     width: 100%;
-                    background: rgba(248, 250, 252, 0.8);
-                    border: 1px solid rgba(226, 232, 240, 1);
+                    background: #F8FAFC;
+                    border: 1px solid #E2E8F0;
                     color: #1E293B;
                     padding: 14px 16px 14px 44px;
                     border-radius: 12px;
                     font-size: 15px;
-                    transition: all 0.3s ease;
+                    font-weight: 500;
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
+                
                 .login-input:focus {
                     background: #FFFFFF;
                     border-color: #E53935;
                     outline: none;
-                    box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1);
+                    box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.08);
                 }
-                .login-input::placeholder { color: #94A3B8; }
                 
-                .method-btn {
-                    flex: 1; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 600;
-                    color: #64748B; background: transparent; border: 1px solid transparent; cursor: pointer;
-                    transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+                .login-input::placeholder {
+                    color: #94A3B8;
                 }
-                .method-btn.active {
-                    background: rgba(229, 57, 53, 0.1); color: #E53935; border-color: rgba(229, 57, 53, 0.2);
+                
+                .method-toggle-container {
+                    display: flex;
+                    gap: 6px;
+                    background: #F1F5F9;
+                    padding: 4px;
+                    border-radius: 12px;
+                    margin-bottom: 28px;
+                    border: 1px solid #E2E8F0;
                 }
-                .method-btn:hover:not(.active) { color: #1E293B; background: rgba(241, 245, 249, 1); }
-
-                .login-button {
-                    background: linear-gradient(135deg, #E53935 0%, #B71C1C 100%);
-                    color: white; border: none; padding: 16px; border-radius: 12px;
-                    font-size: 15px; font-weight: 700; width: 100%; cursor: pointer;
-                    display: flex; align-items: center; justify-content: center; gap: 10px;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    box-shadow: 0 8px 25px -4px rgba(229, 57, 53, 0.4);
+                
+                .method-toggle-btn {
+                    flex: 1;
+                    padding: 10px;
+                    border-radius: 8px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: #64748B;
+                    background: transparent;
+                    border: none;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 6px;
                 }
-                .login-button:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -4px rgba(229, 57, 53, 0.5); }
-                .login-button:active { transform: translateY(0); }
-                .login-button:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+                
+                .method-toggle-btn.active {
+                    background: #FFFFFF;
+                    color: #1E293B;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+                }
+                
+                .login-btn {
+                    background: linear-gradient(135deg, #E53935 0%, #C62828 100%);
+                    color: white;
+                    border: none;
+                    padding: 16px;
+                    border-radius: 12px;
+                    font-size: 15px;
+                    font-weight: 700;
+                    width: 100%;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    box-shadow: 0 8px 24px rgba(229, 57, 53, 0.25);
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                
+                .login-btn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 12px 28px rgba(229, 57, 53, 0.35);
+                }
+                
+                .login-btn:active {
+                    transform: translateY(0);
+                }
+                
+                .login-btn:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                    transform: none;
+                }
+                
+                @media (max-width: 768px) {
+                    .login-left {
+                        display: none !important;
+                    }
+                    .login-right {
+                        width: 100% !important;
+                        padding: 24px;
+                    }
+                }
             `}} />
 
-            <div className="glass-card animate-fade-in" style={{
-                width: '100%', maxWidth: '440px', borderRadius: '24px', padding: '48px 40px',
-                position: 'relative', zIndex: 10, margin: '20px'
-            }}>
-                <div style={{ textAlign: 'center', marginBottom: '40px', animation: 'float 6s ease-in-out infinite' }}>
+            {/* Left branding panel */}
+            <div className="login-left">
+                <div className="glow-blob-1" />
+                <div className="glow-blob-2" />
+                <div className="grid-overlay" />
+
+                {/* Header branding */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative', zIndex: 5 }}>
                     <div style={{
-                        width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px',
-                        boxShadow: '0 12px 24px -6px rgba(229,57,53,0.5)', border: '1px solid rgba(255,255,255,0.5)'
+                        width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(229,57,53,0.3)'
                     }}>
-                        <GraduationCap size={32} color="white" strokeWidth={2.5} />
+                        <GraduationCap size={20} color="white" />
                     </div>
-                    <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.5px' }}>
-                        Proton LMS
+                    <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.5px' }}>Proton SMS</span>
+                </div>
+
+                {/* Taglines */}
+                <div style={{ position: 'relative', zIndex: 5, margin: 'auto 0' }}>
+                    <h1 style={{ fontSize: '44px', fontWeight: 900, lineHeight: 1.15, letterSpacing: '-0.03em', maxWidth: '480px' }}>
+                        Manage Your Institute Smarter
                     </h1>
-                    <p style={{ color: '#64748B', fontSize: '15px' }}>
-                        Sign in to access your workspace
+                    <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.7)', fontWeight: 500, marginTop: '16px', maxWidth: '440px', lineHeight: 1.5 }}>
+                        Modern ERP for Coaching & Institutes. Track Students, Fees, Attendance & Operations in real-time.
                     </p>
+
+                    {/* Cyber glass dashboard skeleton mockup */}
+                    <div className="glass-mockup">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                            <div style={{ width: '40px', height: '8px', background: 'rgba(255,255,255,0.15)', borderRadius: '4px' }} />
+                            <div style={{ width: '60px', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px' }} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                            <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                <div style={{ width: '20px', height: '20px', background: 'rgba(229, 57, 53, 0.2)', borderRadius: '6px', marginBottom: '8px' }} />
+                                <div style={{ width: '50%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', marginBottom: '6px' }} />
+                                <div style={{ width: '70%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px' }} />
+                            </div>
+                            <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                <div style={{ width: '20px', height: '20px', background: 'rgba(99, 102, 241, 0.2)', borderRadius: '6px', marginBottom: '8px' }} />
+                                <div style={{ width: '40%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', marginBottom: '6px' }} />
+                                <div style={{ width: '80%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px' }} />
+                            </div>
+                        </div>
+                        <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '8px' }} />
+                        <div style={{ width: '90%', height: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }} />
+                    </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', background: '#F1F5F9', padding: '6px', borderRadius: '14px', marginBottom: '32px', border: '1px solid #E2E8F0' }}>
-                    <button suppressHydrationWarning className={"method-btn " + (loginMethod === 'email' ? 'active' : '')} onClick={() => setLoginMethod('email')}>
-                        <Mail size={16} /> Email
-                    </button>
-                    <button suppressHydrationWarning className={"method-btn " + (loginMethod === 'proId' ? 'active' : '')} onClick={() => setLoginMethod('proId')}>
-                        <Hash size={16} /> User ID
-                    </button>
+                {/* Footer terms */}
+                <div suppressHydrationWarning style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', position: 'relative', zIndex: 5, fontWeight: 500 }}>
+                    © {new Date().getFullYear()} Proton LMS. Enterprise Grade Institute Management.
                 </div>
+            </div>
 
-                <form suppressHydrationWarning onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    {loginMethod === 'email' ? (
-                        <div style={{ position: 'relative' }}>
-                            <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
-                            <input
-                                suppressHydrationWarning
-                                type="email" className="login-input" placeholder="alice@example.com"
-                                value={email} onChange={(e) => setEmail(e.target.value)} required
-                            />
+            {/* Right form panel */}
+            <div className="login-right">
+                <div className="login-form-wrapper">
+                    
+                    {/* Centered graduation logo cap */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+                        <div style={{
+                            width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px',
+                            boxShadow: '0 8px 20px rgba(229,57,53,0.2)', border: '1px solid rgba(255,255,255,0.5)'
+                        }}>
+                            <GraduationCap size={28} color="white" />
                         </div>
-                    ) : (
-                        <div style={{ position: 'relative' }}>
-                            <Hash size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
-                            <input
-                                suppressHydrationWarning
-                                type="text" className="login-input" placeholder="e.g., PRO123 or EMP456"
-                                value={proId} onChange={(e) => setProId(e.target.value)} required
-                            />
-                        </div>
-                    )}
+                        <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.5px', margin: 0 }}>
+                            Sign in to Proton SMS
+                        </h2>
+                        <p style={{ color: '#64748B', fontSize: '14px', marginTop: '6px', fontWeight: 500, textAlign: 'center' }}>
+                            Enter your credentials to access your administrative workspace
+                        </p>
+                    </div>
 
-                    <div style={{ position: 'relative' }}>
-                        <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
-                        <input
-                            suppressHydrationWarning
-                            type={showPassword ? 'text' : 'password'} className="login-input" placeholder="Enter your password"
-                            value={password} onChange={(e) => setPassword(e.target.value)} required
-                        />
-                        <button
-                            suppressHydrationWarning
-                            type="button" onClick={() => setShowPassword(!showPassword)}
-                            style={{
-                                position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
-                                background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '4px',
-                            }}
-                        >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {/* Method toggler */}
+                    <div className="method-toggle-container">
+                        <button suppressHydrationWarning className={"method-toggle-btn " + (loginMethod === 'email' ? 'active' : '')} onClick={() => setLoginMethod('email')}>
+                            <Mail size={15} /> Email Workspace
+                        </button>
+                        <button suppressHydrationWarning className={"method-toggle-btn " + (loginMethod === 'proId' ? 'active' : '')} onClick={() => setLoginMethod('proId')}>
+                            <Hash size={15} /> PRO Identity
                         </button>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-8px' }}>
-                        <a href="#" style={{ color: '#64748B', fontSize: '13px', textDecoration: 'none', transition: 'color 0.2s', fontWeight: 500 }}
-                           onMouseEnter={e => e.currentTarget.style.color = '#E53935'}
-                           onMouseLeave={e => e.currentTarget.style.color = '#64748B'}>
-                            Forgot password?
-                        </a>
-                    </div>
-
-                    <button suppressHydrationWarning type="submit" className="login-button" disabled={isLoading} style={{ marginTop: '8px' }}>
-                        {isLoading ? (
-                            <div style={{ width: '22px', height: '22px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    {/* Input form */}
+                    <form suppressHydrationWarning onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column' }}>
+                        {loginMethod === 'email' ? (
+                            <div className="login-input-group">
+                                <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', pointerEvents: 'none' }} />
+                                <input
+                                    suppressHydrationWarning
+                                    type="email" className="login-input" placeholder="e.g., admin@proton.com"
+                                    value={email} onChange={(e) => setEmail(e.target.value)} required
+                                />
+                            </div>
                         ) : (
-                            <>Sign In <ArrowRight size={18} strokeWidth={2.5} /></>
+                            <div className="login-input-group">
+                                <Hash size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', pointerEvents: 'none' }} />
+                                <input
+                                    suppressHydrationWarning
+                                    type="text" className="login-input" placeholder="e.g., PRO102 or EMP203"
+                                    value={proId} onChange={(e) => setProId(e.target.value)} required
+                                />
+                            </div>
                         )}
-                    </button>
-                </form>
 
-                <div style={{ textAlign: 'center', marginTop: '32px' }}>
-                    <p style={{ color: '#94A3B8', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 500 }}>
-                        <Lock size={12} /> Secure 256-bit encryption
-                    </p>
+                        <div className="login-input-group" style={{ marginBottom: '14px' }}>
+                            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', pointerEvents: 'none' }} />
+                            <input
+                                suppressHydrationWarning
+                                type={showPassword ? 'text' : 'password'} className="login-input" placeholder="Enter security password"
+                                value={password} onChange={(e) => setPassword(e.target.value)} required
+                            />
+                            <button
+                                suppressHydrationWarning
+                                type="button" onClick={() => setShowPassword(!showPassword)}
+                                style={{
+                                    position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
+                                    background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '4px',
+                                }}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
+                            <a href="#" style={{ color: '#64748B', fontSize: '13px', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }}
+                               onMouseEnter={e => e.currentTarget.style.color = '#E53935'}
+                               onMouseLeave={e => e.currentTarget.style.color = '#64748B'}>
+                                Forgot password?
+                            </a>
+                        </div>
+
+                        <button suppressHydrationWarning type="submit" className="login-btn" disabled={isLoading}>
+                            {isLoading ? (
+                                <div style={{ width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                            ) : (
+                                <>Sign In to Workspace <ArrowRight size={16} strokeWidth={2.5} /></>
+                            )}
+                        </button>
+                    </form>
+
+                    <div style={{ textAlign: 'center', marginTop: '36px' }}>
+                        <p style={{ color: '#94A3B8', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: 500, margin: 0 }}>
+                            <ShieldCheck size={14} color="#10B981" /> Encrypted end-to-end user session
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

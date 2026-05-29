@@ -159,7 +159,7 @@ export default function CoordinatorsPage() {
                             gridColumn: '1 / -1', borderRadius: '20px',
                             padding: '60px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.8)',
                         }}>
-                            <Shield size={48} style={{ color: '#A1A5B7', marginBottom: '16px', opacity: 0.5 }} />
+                            <Shield size={48} style={{ display: 'block', margin: '0 auto 16px', color: '#A1A5B7', opacity: 0.5 }} />
                             <h3 style={{ fontSize: '16px', color: '#1A1D3B', marginBottom: '8px', fontWeight: 800 }}>No Coordinators Found</h3>
                             <p style={{ fontSize: '13px', color: '#8F92A1', fontWeight: 500 }}>Add a new coordinator or adjust your search criteria.</p>
                         </div>
