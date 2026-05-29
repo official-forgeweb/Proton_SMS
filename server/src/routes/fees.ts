@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { mailEventEmitter } from '../services/mail/sendMail';
 
 const router = Router();
 
@@ -441,6 +442,27 @@ router.post('/assignments', authenticateToken, authorize('admin', 'coordinator')
       return assignment;
     });
 
+    // Notify student of fee assignment asynchronously
+    try {
+      const student = await prisma.student.findUnique({ where: { id: student_id } });
+      if (student && student.email) {
+        const insts = await prisma.feeInstallment.findMany({
+          where: { assignment_id: result.id, is_deleted: false },
+          orderBy: { installment_number: 'asc' }
+        });
+        mailEventEmitter.emit('fee.assigned', {
+          name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
+          email: student.email,
+          amount: result.final_fee,
+          structureName: academic_year || 'Academic Year',
+          installments: insts.map(i => ({ date: i.due_date, amount: i.amount })),
+          studentId: student.id
+        });
+      }
+    } catch (mailErr) {
+      console.error('[Mail Error] Failed to emit fee.assigned event:', mailErr);
+    }
+
     res.status(201).json({ success: true, data: result });
   } catch (error: any) {
     console.error(error);
@@ -657,6 +679,30 @@ router.put('/assignments/:id', authenticateToken, authorize('admin', 'coordinato
       await reallocatePaymentsAndRecalculate(assignmentId, tx);
     });
     
+    // Notify student of installment date change asynchronously
+    try {
+      const fullAssignment = await prisma.studentFeeAssignment.findUnique({
+        where: { id: assignmentId },
+        include: { student: true, installments: { where: { is_deleted: false } } }
+      });
+      if (fullAssignment && fullAssignment.student && fullAssignment.student.email) {
+        for (const updated of updatedInstallments) {
+          const existing = (assignment.installments as any[]).find((i: any) => i.installment_number === updated.installment_number);
+          if (existing && existing.due_date !== updated.due_date) {
+            mailEventEmitter.emit('installment.updated', {
+              name: `${fullAssignment.student.first_name || ''} ${fullAssignment.student.last_name || ''}`.trim(),
+              email: fullAssignment.student.email,
+              amount: Number(updated.amount),
+              dueDate: updated.due_date,
+              installmentId: existing.id
+            });
+          }
+        }
+      }
+    } catch (mailErr) {
+      console.error('[Mail Error] Failed to emit installment.updated event:', mailErr);
+    }
+     
     // Fetch final updated assignment to return correct API response fields
     const finalAssignment = await prisma.studentFeeAssignment.findUnique({
       where: { id: assignmentId },
@@ -727,6 +773,25 @@ router.post('/pay', authenticateToken, authorize('admin', 'coordinator'), async 
 
       return payment;
     });
+
+    // Notify student of recorded payment asynchronously
+    try {
+      const student = await prisma.student.findUnique({ where: { id: student_id } });
+      const updatedAssignment = await prisma.studentFeeAssignment.findUnique({ where: { id: assignment.id } });
+      if (student && student.email && updatedAssignment) {
+        mailEventEmitter.emit('payment.recorded', {
+          name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
+          email: student.email,
+          amountPaid: payAmount,
+          remainingBalance: updatedAssignment.total_pending || 0,
+          txRef: result.payment_number,
+          date: result.payment_date || new Date().toISOString(),
+          studentId: student.id
+        });
+      }
+    } catch (mailErr) {
+      console.error('[Mail Error] Failed to emit payment.recorded event:', mailErr);
+    }
 
     res.status(201).json({ success: true, data: result, message: `Payment recorded: ${result.receipt_number}` });
   } catch (error: any) {

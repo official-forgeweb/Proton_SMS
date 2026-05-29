@@ -10,6 +10,7 @@ import {
   Activity, GraduationCap, Trash2
 } from 'lucide-react';
 import api from '@/lib/api';
+import { customAlert, customConfirm } from '@/utils/dialog';
 
 interface ClassCohortClientProps {
   initialData: {
@@ -54,12 +55,13 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
     try {
       const res = await api.delete(`/classes/${cls.id}`);
       if (res.data.success) {
+        await customAlert(`Class "${cls.class_name || cls.class_code}" deleted successfully.`, 'Delete Successful');
         window.location.href = '/admin/classes';
       } else {
-        alert(res.data.message || 'Failed to delete class.');
+        await customAlert(res.data.message || 'Failed to delete class.', 'Error');
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Server error occurred while deleting class.');
+      await customAlert(err.response?.data?.message || 'Server error occurred while deleting class.', 'Error');
     } finally {
       setIsDeleting(false);
       setShowDeleteModal(false);

@@ -7,6 +7,7 @@ import {
     Search, Plus, Trash2, Edit2, ChevronLeft, ChevronRight,
     GraduationCap, Users, Filter, BookOpen, ChevronDown, X, Eye, TrendingUp, Download, Upload, LayoutGrid, List
 } from 'lucide-react';
+import { customAlert, customConfirm } from '@/utils/dialog';
 
 const INLINE_STYLES = (
     <style dangerouslySetInnerHTML={{__html: `
@@ -131,25 +132,30 @@ export default function AdminStudentsClient({ initialData }: Props) {
     }, [selectedBatch, classes]);
 
     const handleDelete = async (id: string, name: string) => {
-        if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
+        const confirmed = await customConfirm(`Are you sure you want to delete ${name}? This action cannot be undone.`, 'Confirm Deletion');
+        if (!confirmed) return;
         try {
             await api.delete(`/students/${id}`);
             fetchStudents();
+            await customAlert(`Student "${name}" deleted successfully.`, 'Delete Successful');
         } catch (error: any) {
             console.error('Error deleting student:', error);
-            alert(error.response?.data?.message || 'Failed to delete student');
+            await customAlert(error.response?.data?.message || 'Failed to delete student', 'Error');
         }
     };
 
     const handleBulkDelete = async () => {
-        if (!window.confirm(`Are you sure you want to delete ${selectedStudentIds.length} students? This action cannot be undone.`)) return;
+        const count = selectedStudentIds.length;
+        const confirmed = await customConfirm(`Are you sure you want to delete ${count} students? This action cannot be undone.`, 'Confirm Bulk Deletion');
+        if (!confirmed) return;
         try {
             await api.post('/students/delete-many', { ids: selectedStudentIds });
             setSelectedStudentIds([]);
             fetchStudents();
+            await customAlert(`${count} students deleted successfully.`, 'Delete Successful');
         } catch (error: any) {
             console.error('Error deleting students:', error);
-            alert(error.response?.data?.message || 'Failed to delete students');
+            await customAlert(error.response?.data?.message || 'Failed to delete students', 'Error');
         }
     };
 
@@ -303,7 +309,7 @@ export default function AdminStudentsClient({ initialData }: Props) {
             document.body.removeChild(link);
         } catch (error) {
             console.error('Error exporting data:', error);
-            alert('Failed to export data');
+            await customAlert('Failed to export data', 'Error');
         }
     };
 

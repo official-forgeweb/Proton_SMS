@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
+import { customAlert, customConfirm } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Calendar, Plus, Clock, Trash2, Edit2, AlertTriangle, CheckCircle, X, MapPin, User, ChevronRight, ChevronLeft, BookOpen, Layers } from 'lucide-react';
@@ -151,20 +152,24 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
             setShowGenerateModal(false);
             setGenerateSuccessMsg(res.data.message);
             fetchTimetable();
+            await customAlert(res.data.message || 'Timetable generated successfully.', 'Success');
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Failed to generate timetable');
+            await customAlert(error.response?.data?.message || 'Failed to generate timetable', 'Error');
         } finally {
             setIsGenerating(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this schedule?')) return;
+        const confirmed = await customConfirm('Are you sure you want to delete this schedule?', 'Confirm Deletion');
+        if (!confirmed) return;
         try {
             await api.delete(`/timetable/${id}`);
             fetchTimetable();
+            await customAlert('Schedule deleted successfully.', 'Delete Successful');
         } catch (error) {
             console.error(error);
+            await customAlert('Failed to delete schedule', 'Error');
         }
     };
 

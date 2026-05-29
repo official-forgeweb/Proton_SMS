@@ -3,13 +3,31 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Plus, Calendar, Clock, Users, Download, Eye, Layers, Edit } from 'lucide-react';
+import { BookOpen, Plus, Calendar, Clock, Users, Download, Eye, Layers, Edit, Trash2, AlertCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function ClassesPage() {
     const router = useRouter();
     const [classes, setClasses] = useState<any[]>([]);
     const [teachers, setTeachers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [deleteTarget, setDeleteTarget] = useState<any>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDeleteClass = async () => {
+        if (!deleteTarget) return;
+        setIsDeleting(true);
+        try {
+            await api.delete(`/classes/${deleteTarget.id}`);
+            toast.success(`Class "${deleteTarget.class_name}" deleted successfully.`);
+            setDeleteTarget(null);
+            fetchClasses();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to delete class.');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     const formatTime = (time: string) => {
         if (!time) return '';
@@ -280,6 +298,19 @@ export default function ClassesPage() {
                                                 >
                                                     <Eye size={14} strokeWidth={2.5} /> View
                                                 </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(cls); }}
+                                                    style={{
+                                                        background: '#FEF2F2', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.15)',
+                                                        borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700,
+                                                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = '#FEE2E2'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = '#FEF2F2'; }}
+                                                >
+                                                    <Trash2 size={14} strokeWidth={2.5} /> Delete
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -290,6 +321,73 @@ export default function ClassesPage() {
                 </div>
             </div>
 
+            {/* Delete Confirmation Modal */}
+            {deleteTarget && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(13,15,33,0.4)', backdropFilter: 'blur(8px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#FFFFFF', width: '440px', maxWidth: '90vw', borderRadius: '24px', boxShadow: '0 20px 50px rgba(13,15,33,0.15)', border: '1px solid #E2E8F0', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ background: '#FEF2F2', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444', flexShrink: 0 }}>
+                                <AlertCircle size={22} />
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif' }}>Delete Class</h3>
+                                <p style={{ fontSize: '13px', color: '#64748B', margin: '2px 0 0 0', fontWeight: 500 }}>This action cannot be undone.</p>
+                            </div>
+                        </div>
+
+                        <div style={{ background: '#F8F9FD', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                                <span style={{ color: '#64748B', fontWeight: 600 }}>Class Name</span>
+                                <span style={{ color: '#1A1D3B', fontWeight: 800 }}>{deleteTarget.class_name}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                                <span style={{ color: '#64748B', fontWeight: 600 }}>Code</span>
+                                <span style={{ color: '#E53935', fontWeight: 700, fontFamily: 'monospace' }}>{deleteTarget.class_code}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                                <span style={{ color: '#64748B', fontWeight: 600 }}>Students</span>
+                                <span style={{ color: '#1A1D3B', fontWeight: 700 }}>{deleteTarget.current_students_count || 0}</span>
+                            </div>
+                        </div>
+
+                        {(deleteTarget.current_students_count > 0) && (
+                            <div style={{ background: '#FEF3C7', border: '1px solid rgba(217, 119, 6, 0.2)', borderRadius: '12px', padding: '12px 16px', fontSize: '12.5px', color: '#92400E', fontWeight: 600, lineHeight: 1.5 }}>
+                                ⚠️ This class has active students. The server will block deletion until all students are unassigned.
+                            </div>
+                        )}
+
+                        <p style={{ fontSize: '13.5px', color: '#475569', fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
+                            Are you sure you want to permanently delete <strong>{deleteTarget.class_name}</strong>? All associated schedules and timetable entries will be removed.
+                        </p>
+
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                            <button
+                                onClick={() => setDeleteTarget(null)}
+                                disabled={isDeleting}
+                                style={{ background: '#F1F5F9', color: '#475569', border: 'none', borderRadius: '12px', padding: '12px 22px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#E2E8F0'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#F1F5F9'}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteClass}
+                                disabled={isDeleting}
+                                style={{
+                                    background: '#EF4444', color: 'white', border: 'none', borderRadius: '12px',
+                                    padding: '12px 22px', fontSize: '14px', fontWeight: 700,
+                                    cursor: isDeleting ? 'not-allowed' : 'pointer', opacity: isDeleting ? 0.6 : 1,
+                                    display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s'
+                                }}
+                                onMouseEnter={e => { if (!isDeleting) e.currentTarget.style.background = '#DC2626'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = '#EF4444'; }}
+                            >
+                                <Trash2 size={14} /> {isDeleting ? 'Deleting...' : 'Delete Class'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </DashboardLayout>
     );

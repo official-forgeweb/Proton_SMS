@@ -16,6 +16,9 @@ interface EnvConfig {
   SMTP_PASS: string;
   FROM_EMAIL: string;
   FROM_NAME: string;
+  SMTP_FROM: string;
+  APP_NAME: string;
+  APP_URL: string;
   MAX_FILE_SIZE: number;
   UPLOAD_DIR: string;
 }
@@ -35,6 +38,9 @@ export const env: EnvConfig = {
   SMTP_PASS: process.env.SMTP_PASS || '',
   FROM_EMAIL: process.env.FROM_EMAIL || 'noreply@protoncoaching.com',
   FROM_NAME: process.env.FROM_NAME || 'Proton Coaching Institute',
+  SMTP_FROM: process.env.SMTP_FROM || process.env.FROM_EMAIL || 'noreply@protoncoaching.com',
+  APP_NAME: process.env.APP_NAME || 'Proton SMS',
+  APP_URL: process.env.APP_URL || process.env.CLIENT_URL || 'http://localhost:3000',
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
   UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
 };

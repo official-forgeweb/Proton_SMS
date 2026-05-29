@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { cacheMiddleware, invalidateCache } from '../middleware/cache';
+import { mailEventEmitter } from '../services/mail/sendMail';
 
 const router = Router();
 
@@ -272,10 +273,11 @@ router.post('/bulk', authenticateToken, authorize('admin', 'coordinator'), async
           continue;
         }
 
+        const tempPassword = `Proton@${Math.floor(1000 + Math.random() * 9000)}`;
         const user = await prisma.user.create({
           data: {
             email: userEmail,
-            password_hash: await bcrypt.hash(`Proton@${Math.floor(1000 + Math.random() * 9000)}`, salt),
+            password_hash: await bcrypt.hash(tempPassword, salt),
             role: 'student',
           },
         });
@@ -296,6 +298,14 @@ router.post('/bulk', authenticateToken, authorize('admin', 'coordinator'), async
             enrollment_number: `ENR${proId}`,
             admission_type: admission_type || 'fresh',
           },
+        });
+
+        // Notify new student of welcome onboarding details
+        mailEventEmitter.emit('student.created', {
+          name: `${first_name || ''} ${last_name || ''}`.trim(),
+          email: newStudent.email || userEmail,
+          proId: newStudent.PRO_ID,
+          tempPass: tempPassword,
         });
 
         if (class_id) {
@@ -470,6 +480,15 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
 
 
     invalidateCache('/api/students');
+
+    // Notify newly enrolled student with login credentials
+    mailEventEmitter.emit('student.created', {
+      name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
+      email: student.email || userEmail,
+      proId: student.PRO_ID,
+      tempPass: password,
+    });
+
     res.status(201).json({
       success: true,
       data: {

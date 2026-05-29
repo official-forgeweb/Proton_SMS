@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
+import { customAlert } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Layers, Plus, Clock } from 'lucide-react';
@@ -49,7 +50,7 @@ export default function AddClassPage() {
             router.push('/admin/classes');
         } catch (error) {
             console.error('Error creating batch:', error);
-            alert('Failed to create batch');
+            await customAlert('Failed to create batch', 'Error');
         } finally {
             setIsSubmitting(false);
         }

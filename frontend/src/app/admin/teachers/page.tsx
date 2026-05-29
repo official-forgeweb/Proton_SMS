@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { Users, Search, Plus, Mail, Phone, BookOpen, Award, ChevronRight, ChevronLeft, Download, Edit, Trash2 } from 'lucide-react';
+import { customAlert, customConfirm } from '@/utils/dialog';
 
 export default function TeachersPage() {
     const router = useRouter();
@@ -12,13 +13,15 @@ export default function TeachersPage() {
     const [search, setSearch] = useState('');
 
     const handleDelete = async (id: string, name: string) => {
-        if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
+        const confirmed = await customConfirm(`Are you sure you want to delete ${name}? This action cannot be undone.`, 'Confirm Deletion');
+        if (!confirmed) return;
         try {
             await api.delete(`/teachers/${id}`);
             fetchTeachers();
+            await customAlert(`Teacher "${name}" deleted successfully.`, 'Delete Successful');
         } catch (error) {
             console.error('Error deleting teacher:', error);
-            alert('Failed to delete teacher');
+            await customAlert('Failed to delete teacher', 'Error');
         }
     };
 

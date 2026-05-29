@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { mailEventEmitter } from '../services/mail/sendMail';
 
 const router = Router();
 
@@ -113,6 +114,15 @@ router.post('/', authenticateToken, authorize('admin'), async (req: Request, res
         role_type: role_type || 'subject_teacher',
         subjects: subjects || [],
       },
+    });
+
+    // Emit teacher welcome onboarding notification
+    mailEventEmitter.emit('teacher.created', {
+      name: `${first_name || ''} ${last_name || ''}`.trim(),
+      email,
+      employeeId: teacher.employee_id || '',
+      tempPass: password,
+      role: role_type || 'subject_teacher'
     });
 
     res.status(201).json({

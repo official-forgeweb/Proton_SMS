@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
+import { customAlert } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Edit2, Plus, Clock } from 'lucide-react';
@@ -67,7 +68,7 @@ export default function EditClassPage() {
             router.push(`/admin/classes/${params.id}`);
         } catch (error) {
             console.error('Error updating batch:', error);
-            alert('Failed to update batch');
+            await customAlert('Failed to update batch', 'Error');
         } finally {
             setIsSubmitting(false);
         }

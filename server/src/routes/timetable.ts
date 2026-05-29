@@ -2,8 +2,51 @@ import { Router, Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { mailEventEmitter } from '../services/mail/sendMail';
 
 const router = Router();
+
+const notifyTimetableChange = async (classId: string, teacherId: string | null, date: string, details: string, scheduleId: string) => {
+  try {
+    // 1. Notify Teacher
+    if (teacherId) {
+      const teacher = await prisma.teacher.findUnique({
+        where: { id: teacherId },
+        select: { email: true, first_name: true, last_name: true }
+      });
+      if (teacher && teacher.email) {
+        mailEventEmitter.emit('timetable.updated', {
+          name: `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim(),
+          email: teacher.email,
+          details,
+          date,
+          scheduleId
+        });
+      }
+    }
+    
+    // 2. Notify Enrolled Students
+    const enrollments = await prisma.studentClassEnrollment.findMany({
+      where: { class_id: classId, enrollment_status: 'active' },
+      include: { student: true }
+    });
+    
+    for (const enrollment of enrollments) {
+      const student = enrollment.student;
+      if (student && student.email) {
+        mailEventEmitter.emit('timetable.updated', {
+          name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
+          email: student.email,
+          details,
+          date,
+          scheduleId
+        });
+      }
+    }
+  } catch (err) {
+    console.error('[Mail Error] Failed to notify timetable change:', err);
+  }
+};
 
 // GET /api/timetable
 // Admins see all, Teachers see their own, Students see their class+subjects
@@ -279,6 +322,15 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
       );
     }
 
+    // Notify affected teacher and students asynchronously
+    notifyTimetableChange(
+      class_id,
+      finalTeacherId,
+      date,
+      `New class session scheduled: ${subject} in Room ${room || 'N/A'} at ${start_time} - ${end_time || 'N/A'}.`,
+      entry.id
+    );
+
     res.status(201).json({ success: true, data: entry });
   } catch (error) {
     console.error(error);
@@ -357,6 +409,18 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
         JSON.stringify(newVal),
         `Class session for ${entry.class_ref.class_name}: ${entry.subject}`,
         req
+      );
+    }
+
+    // Notify affected teacher and students asynchronously of schedule adjustment
+    const hasChanged = existing.date !== date || existing.start_time !== start_time || existing.room !== room || existing.subject !== subject;
+    if (hasChanged) {
+      notifyTimetableChange(
+        entry.class_id,
+        entry.teacher_id,
+        entry.date,
+        `Class session adjusted: ${entry.subject} in Room ${entry.room || 'N/A'} at ${entry.start_time} - ${entry.end_time || 'N/A'}.`,
+        entry.id
       );
     }
 

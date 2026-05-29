@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { mailEventEmitter } from '../services/mail/sendMail';
 
 const router = Router();
 
@@ -227,6 +228,16 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
           created_by: req.user!.id,
         },
       });
+
+      if (req.body.status === 'resolved' && updated.email) {
+        mailEventEmitter.emit('enquiry.resolved', {
+          name: updated.student_name || 'Enquirer',
+          email: updated.email,
+          subject: updated.interested_course || 'ERP Enquiry',
+          response: req.body.resolution_note || 'Your enquiry has been successfully resolved by our coordinators.',
+          enquiryId: updated.id
+        });
+      }
     }
 
     res.json({ success: true, data: { ...updated, id: updated.id } });

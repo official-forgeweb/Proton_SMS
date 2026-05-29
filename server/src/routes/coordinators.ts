@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { mailEventEmitter } from '../services/mail/sendMail';
 
 const router = Router();
 
@@ -78,6 +79,14 @@ router.post('/', authenticateToken, authorize('admin'), async (req: Request, res
         status: status || 'active',
         created_by: req.user!.id,
       },
+    });
+
+    // Emit coordinator welcome onboarding notification
+    mailEventEmitter.emit('coordinator.created', {
+      name: full_name || 'Coordinator',
+      email,
+      coordinatorId: coordinator.coordinator_id || '',
+      tempPass: password
     });
 
     res.status(201).json({

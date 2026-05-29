@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { Shield, Search, Plus, Mail, Phone, ChevronRight, Download, Edit, Trash2, UserCheck } from 'lucide-react';
+import { customAlert, customConfirm } from '@/utils/dialog';
 
 export default function CoordinatorsPage() {
     const router = useRouter();
@@ -12,13 +13,15 @@ export default function CoordinatorsPage() {
     const [search, setSearch] = useState('');
 
     const handleDelete = async (id: string, name: string) => {
-        if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
+        const confirmed = await customConfirm(`Are you sure you want to delete ${name}? This action cannot be undone.`, 'Confirm Deletion');
+        if (!confirmed) return;
         try {
             await api.delete(`/coordinators/${id}`);
             fetchCoordinators();
+            await customAlert(`Coordinator "${name}" deleted successfully.`, 'Delete Successful');
         } catch (error) {
             console.error('Error deleting coordinator:', error);
-            alert('Failed to delete coordinator');
+            await customAlert('Failed to delete coordinator', 'Error');
         }
     };
 
