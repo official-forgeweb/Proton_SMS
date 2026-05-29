@@ -1,5 +1,6 @@
 'use client';
 import DashboardLayout from '@/components/DashboardLayout';
+import ToolBottomBar from '@/components/ToolBottomBar';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
 import { 
@@ -25,7 +26,7 @@ export default function TeacherOperationsPage() {
 
     return (
         <DashboardLayout requiredRole="teacher">
-            <div style={{ paddingBottom: '32px' }}>
+            <div style={{ paddingBottom: '120px' }}>
                 <div style={{ marginBottom: '32px' }}>
                     <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <Zap size={28} color="#4F60FF" /> Teaching Operations
@@ -74,6 +75,7 @@ export default function TeacherOperationsPage() {
                     })}
                 </div>
             </div>
+            <ToolBottomBar />
         </DashboardLayout>
     );
 }

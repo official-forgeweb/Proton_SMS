@@ -72,6 +72,7 @@ export default function ToolBottomBar() {
         <div style={{
             position: 'fixed',
             bottom: '24px',
+            left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 40,
             background: 'rgba(255, 255, 255, 0.88)',

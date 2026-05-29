@@ -1,5 +1,6 @@
 'use client';
 import DashboardLayout from '@/components/DashboardLayout';
+import ToolBottomBar from '@/components/ToolBottomBar';
 import Link from 'next/link';
 import { 
     FileText, ClipboardList, PenTool, Target, 
@@ -19,7 +20,7 @@ const adminTools = [
 export default function AdminOperationsPage() {
     return (
         <DashboardLayout requiredRole="admin">
-            <div style={{ paddingBottom: '32px' }}>
+            <div style={{ paddingBottom: '120px' }}>
                 <div style={{ marginBottom: '32px' }}>
                     <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <Zap size={28} color="#E53935" /> Core Operations
@@ -68,6 +69,7 @@ export default function AdminOperationsPage() {
                     })}
                 </div>
             </div>
+            <ToolBottomBar />
         </DashboardLayout>
     );
 }
