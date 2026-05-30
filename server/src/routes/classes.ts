@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { cacheMiddleware, invalidateCache } from '../middleware/cache';
 
 const router = Router();
 
@@ -10,7 +11,7 @@ const generateClassCode = (): string =>
 const paramId = (req: Request): string => String(req.params.id);
 
 // GET /api/classes
-router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
   try {
     const { subject, grade_level, status, batch_type, academic_year } = req.query as Record<string, string>;
     let where: any = {};
@@ -60,7 +61,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 });
 
 // GET /api/classes/:id
-router.get('/:id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/:id', authenticateToken, cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const cls: any = await prisma.class.findUnique({
@@ -138,6 +139,10 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator'), async (re
       },
     });
 
+    invalidateCache('/api/classes');
+    invalidateCache('/api/dashboard');
+    invalidateCache('/api/timetable');
+
     if (schedule && Array.isArray(schedule) && schedule.length > 0) {
       await prisma.classSchedule.createMany({
         data: schedule.map((s: any) => ({
@@ -174,6 +179,10 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator'), async (
       data: rest,
     });
 
+    invalidateCache('/api/classes');
+    invalidateCache('/api/dashboard');
+    invalidateCache('/api/timetable');
+
     if (schedule && Array.isArray(schedule)) {
       await prisma.classSchedule.deleteMany({ where: { class_id: id } });
       if (schedule.length > 0) {
@@ -206,7 +215,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator'), async (
 });
 
 // GET /api/classes/:id/attendance
-router.get('/:id/attendance', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/:id/attendance', authenticateToken, cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const { date } = req.query as Record<string, string>;
@@ -283,6 +292,9 @@ router.post('/:id/attendance', authenticateToken, authorize('admin', 'coordinato
       }
     }
 
+    invalidateCache('/api/classes');
+    invalidateCache('/api/dashboard');
+
     res.json({
       success: true,
       data: savedRecords,
@@ -354,6 +366,10 @@ router.delete('/:id', authenticateToken, authorize('admin', 'coordinator'), asyn
       prisma.studentClassEnrollment.deleteMany({ where: { class_id: id } }),
       prisma.class.delete({ where: { id } })
     ]);
+
+    invalidateCache('/api/classes');
+    invalidateCache('/api/dashboard');
+    invalidateCache('/api/timetable');
 
     res.json({
       success: true,

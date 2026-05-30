@@ -67,7 +67,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
         const userRole = req.user.role;
         const userId = req.user.id;
         let filters = { status: 'active' };
-        // Admin and Teachers can see everything or filter
+        // Prefill class_id and subject if passed
         if (class_id)
             filters.class_id = String(class_id);
         if (subject)
@@ -123,6 +123,49 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                     res.json({ success: true, data: [] });
                     return;
                 }
+            }
+        }
+        // If Teacher, restrict to their assigned classes, schedules or uploads
+        if (userRole === 'teacher') {
+            const teacher = await database_1.default.teacher.findUnique({ where: { user_id: userId } });
+            if (teacher) {
+                // 1. Classes where teacher is primary instructor
+                const primaryClasses = await database_1.default.class.findMany({
+                    where: { primary_teacher_id: teacher.id },
+                    select: { id: true }
+                });
+                const primaryClassIds = primaryClasses.map(c => c.id);
+                // 2. Class-Subject combinations from schedules
+                const schedules = await database_1.default.classSchedule.findMany({
+                    where: { teacher_id: teacher.id },
+                    select: { class_id: true, subject: true }
+                });
+                const teacherOrConditions = [];
+                if (primaryClassIds.length > 0) {
+                    teacherOrConditions.push({ class_id: { in: primaryClassIds } });
+                }
+                schedules.forEach(sched => {
+                    if (sched.class_id && sched.subject) {
+                        teacherOrConditions.push({
+                            class_id: sched.class_id,
+                            subject: { equals: sched.subject, mode: 'insensitive' }
+                        });
+                    }
+                });
+                // 3. Fallback: study materials uploaded by this teacher
+                teacherOrConditions.push({ uploaded_by: userId });
+                const currentClassId = filters.class_id;
+                const currentSubject = filters.subject;
+                delete filters.class_id;
+                delete filters.subject;
+                const andConditions = [{ OR: teacherOrConditions }];
+                if (currentClassId) {
+                    andConditions.push({ class_id: currentClassId });
+                }
+                if (currentSubject) {
+                    andConditions.push({ subject: { contains: String(currentSubject), mode: 'insensitive' } });
+                }
+                filters.AND = andConditions;
             }
         }
         const materials = await database_1.default.studyMaterial.findMany({

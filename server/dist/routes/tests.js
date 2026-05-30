@@ -25,34 +25,61 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
         if (req.user.role === 'teacher') {
             const teacher = await database_1.default.teacher.findUnique({ where: { user_id: req.user.id } });
             if (teacher) {
-                const myClasses = await database_1.default.class.findMany({
+                // 1. Classes where teacher is primary instructor
+                const primaryClasses = await database_1.default.class.findMany({
                     where: { primary_teacher_id: teacher.id },
                     select: { id: true },
                 });
-                const classIds = myClasses.map(c => c.id);
-                const teacherOrCondition = [
-                    { class_id: { in: classIds } },
-                    { created_by: teacher.id }
-                ];
+                const primaryClassIds = primaryClasses.map(c => c.id);
+                // 2. Class-Subject combinations from schedules
+                const schedules = await database_1.default.classSchedule.findMany({
+                    where: { teacher_id: teacher.id },
+                    select: { class_id: true, subject: true }
+                });
+                const teacherOrConditions = [];
+                if (primaryClassIds.length > 0) {
+                    teacherOrConditions.push({ class_id: { in: primaryClassIds } });
+                }
+                schedules.forEach(sched => {
+                    if (sched.class_id && sched.subject) {
+                        teacherOrConditions.push({
+                            class_id: sched.class_id,
+                            subject: { equals: sched.subject, mode: 'insensitive' }
+                        });
+                    }
+                });
+                // 3. Fallback: tests personally created by this teacher
+                teacherOrConditions.push({ created_by: req.user.id });
                 if (where.class_id) {
                     where = {
                         ...where,
                         AND: [
                             { class_id: where.class_id },
-                            { OR: teacherOrCondition }
+                            { OR: teacherOrConditions }
                         ]
                     };
                     delete where.class_id;
                 }
                 else {
-                    where.OR = teacherOrCondition;
+                    where.OR = teacherOrConditions;
                 }
             }
         }
         const tests = await database_1.default.test.findMany({
             where,
             orderBy: { test_date: 'desc' },
-            include: { class: true },
+            include: {
+                class: true,
+                creator: {
+                    select: {
+                        id: true,
+                        email: true,
+                        role: true,
+                        teacher: { select: { first_name: true, last_name: true } },
+                        coordinator: { select: { full_name: true } }
+                    }
+                }
+            },
         });
         const testIds = tests.map(t => t.id);
         let resultMap = {};
@@ -69,6 +96,20 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
         }
         const data = tests.map((t) => {
             const stats = resultMap[t.id] || { count: 0, avgMarks: 0 };
+            let creatorName = 'System';
+            let creatorRole = 'admin';
+            if (t.creator) {
+                creatorRole = t.creator.role;
+                if (t.creator.role === 'teacher' && t.creator.teacher) {
+                    creatorName = `${t.creator.teacher.first_name || ''} ${t.creator.teacher.last_name || ''}`.trim();
+                }
+                else if (t.creator.role === 'coordinator' && t.creator.coordinator) {
+                    creatorName = (t.creator.coordinator.full_name || '').trim();
+                }
+                else {
+                    creatorName = 'Admin';
+                }
+            }
             return {
                 ...t,
                 id: t.id,
@@ -76,7 +117,10 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                 class_name: t.class?.class_name || '',
                 results_count: stats.count,
                 average_marks: stats.count > 0 ? stats.avgMarks.toFixed(1) : 0,
+                creator_name: creatorName,
+                creator_role: creatorRole,
                 class: undefined,
+                creator: undefined,
             };
         });
         res.json({ success: true, data });
@@ -90,8 +134,36 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
     try {
         const id = paramId(req);
         const test = isUUID(id)
-            ? await database_1.default.test.findUnique({ where: { id }, include: { class: true } })
-            : await database_1.default.test.findFirst({ where: { test_code: id }, include: { class: true } });
+            ? await database_1.default.test.findUnique({
+                where: { id },
+                include: {
+                    class: true,
+                    creator: {
+                        select: {
+                            id: true,
+                            email: true,
+                            role: true,
+                            teacher: { select: { first_name: true, last_name: true } },
+                            coordinator: { select: { full_name: true } }
+                        }
+                    }
+                }
+            })
+            : await database_1.default.test.findFirst({
+                where: { test_code: id },
+                include: {
+                    class: true,
+                    creator: {
+                        select: {
+                            id: true,
+                            email: true,
+                            role: true,
+                            teacher: { select: { first_name: true, last_name: true } },
+                            coordinator: { select: { full_name: true } }
+                        }
+                    }
+                }
+            });
         if (!test) {
             res.status(404).json({ success: false, message: 'Test not found' });
             return;
@@ -121,9 +193,33 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
             failed: mappedResults.filter((r) => r.pass_fail === 'fail').length,
             pass_percentage: mappedResults.length > 0 ? ((mappedResults.filter((r) => r.pass_fail === 'pass').length / mappedResults.length) * 100).toFixed(1) : 0,
         };
+        let creatorName = 'System';
+        let creatorRole = 'admin';
+        if (test.creator) {
+            creatorRole = test.creator.role;
+            if (test.creator.role === 'teacher' && test.creator.teacher) {
+                creatorName = `${test.creator.teacher.first_name || ''} ${test.creator.teacher.last_name || ''}`.trim();
+            }
+            else if (test.creator.role === 'coordinator' && test.creator.coordinator) {
+                creatorName = (test.creator.coordinator.full_name || '').trim();
+            }
+            else {
+                creatorName = 'Admin';
+            }
+        }
         res.json({
             success: true,
-            data: { ...test, id: test.id, class_name: test.class?.class_name, results: mappedResults, stats, class: undefined },
+            data: {
+                ...test,
+                id: test.id,
+                class_name: test.class?.class_name,
+                results: mappedResults,
+                stats,
+                creator_name: creatorName,
+                creator_role: creatorRole,
+                class: undefined,
+                creator: undefined
+            },
         });
     }
     catch (error) {
@@ -133,13 +229,27 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
 // POST /api/tests
 router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
-        let createdBy = null;
-        if (req.user.role === 'teacher') {
-            const teacher = await database_1.default.teacher.findUnique({ where: { user_id: req.user.id } });
-            if (teacher)
-                createdBy = teacher.id;
-        }
         const { test_name, class_id, subject, test_type, test_date, start_time, duration_minutes, total_marks, passing_marks, description, images, status } = req.body;
+        if (!class_id || !subject) {
+            res.status(400).json({ success: false, message: 'Class ID and Subject are required.' });
+            return;
+        }
+        // Validate that a subject teacher is assigned to this class and subject in ClassSchedule
+        const mapping = await database_1.default.classSchedule.findFirst({
+            where: {
+                class_id,
+                subject: { equals: subject.trim(), mode: 'insensitive' },
+                teacher_id: { not: null }
+            }
+        });
+        if (!mapping) {
+            res.status(400).json({
+                success: false,
+                message: 'No teacher is assigned to this subject for the selected class. Please assign a subject teacher before creating the test.'
+            });
+            return;
+        }
+        const createdBy = req.user.id; // Store User.id universally
         const test = await database_1.default.test.create({
             data: {
                 test_code: generateTestCode(),

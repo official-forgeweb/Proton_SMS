@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { cacheMiddleware, invalidateCache } from '../middleware/cache';
 
 const router = Router();
 
@@ -58,7 +59,7 @@ export const getAllStudentUserIds = async (): Promise<string[]> => {
 };
 
 // GET /api/notifications — get current user's notifications
-router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
   try {
     const { page = '1', limit = '20', unread_only } = req.query as Record<string, string>;
     const pageNum = parseInt(page);
@@ -107,7 +108,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 });
 
 // GET /api/notifications/unread-count
-router.get('/unread-count', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/unread-count', authenticateToken, cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
   try {
     const count = await prisma.notification.count({
       where: { recipient_id: req.user!.id, is_read: false },
@@ -125,6 +126,7 @@ router.put('/:id/read', authenticateToken, async (req: Request, res: Response): 
       where: { id: req.params.id as string, recipient_id: req.user!.id },
       data: { is_read: true },
     });
+    invalidateCache('/api/notifications');
     res.json({ success: true, message: 'Notification marked as read' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -138,6 +140,7 @@ router.put('/read-all', authenticateToken, async (req: Request, res: Response): 
       where: { recipient_id: req.user!.id, is_read: false },
       data: { is_read: true },
     });
+    invalidateCache('/api/notifications');
     res.json({ success: true, message: 'All notifications marked as read' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -180,7 +183,7 @@ router.post('/send', authenticateToken, authorize('admin', 'teacher'), async (re
     }
 
     await sendNotification(recipientIds, req.user!.id, 'announcement', title, message);
-
+    invalidateCache('/api/notifications');
     res.json({ success: true, message: `Announcement sent to ${recipientIds.length} recipients` });
   } catch (error) {
     console.error('Send notification error:', error);
@@ -194,6 +197,7 @@ router.delete('/:id', authenticateToken, async (req: Request, res: Response): Pr
     await prisma.notification.deleteMany({
       where: { id: req.params.id as string, recipient_id: req.user!.id },
     });
+    invalidateCache('/api/notifications');
     res.json({ success: true, message: 'Notification deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });

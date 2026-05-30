@@ -231,7 +231,7 @@ h6 {
 .skeleton {
   background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--border-primary) 50%, var(--bg-tertiary) 75%);
   background-size: 1000px 100%;
-  animation: shimmer 2s infinite;
+  animation: shimmer 6s infinite;
   border-radius: var(--radius-sm);
 }
 
@@ -1454,7 +1454,7 @@ html, body, .main-layout-root {
     rgba(238, 238, 245, 0.6) 63%
   ) !important;
   background-size: 200% 100% !important;
-  animation: premiumShimmer 1.8s ease-in-out infinite !important;
+  animation: premiumShimmer 6s ease-in-out infinite !important;
   border-radius: var(--radius-md) !important;
   will-change: background-position;
 }
@@ -1513,6 +1513,6 @@ html, body, .main-layout-root {
 .skeleton {
   background: linear-gradient(90deg, #F8F9FA 25%, #EAECEF 50%, #F8F9FA 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite linear;
+  animation: shimmer 6s infinite linear;
 }
 

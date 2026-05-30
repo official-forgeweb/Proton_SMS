@@ -56,7 +56,7 @@ export default function TeacherStudentsClient({ initialData }: Props) {
                     .table-row-hover:hover { background: linear-gradient(135deg, #FAFBFF 0%, #F5F7FF 100%); transform: scale(1.002); box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
                     .table-row-hover:hover td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
                     .table-row-hover:hover td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
-                    .skeleton-row { background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+                    .skeleton-row { background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 4s infinite linear; border-radius: 8px; }
                     .bg-mesh {
                         background-color: #f7f8fc;
                         background-image: radial-gradient(at 40% 20%, hsla(28,100%,74%,0.12) 0px, transparent 50%),

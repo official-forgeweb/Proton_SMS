@@ -335,7 +335,7 @@ export default function EnquiriesPage() {
                     {isLoading ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {[1, 2, 3, 4, 5].map(i => (
-                                <div key={i} style={{ height: '70px', borderRadius: '14px', background: 'linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                <div key={i} style={{ height: '70px', borderRadius: '14px', background: 'linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 4s infinite linear' }} />
                             ))}
                         </div>
                     ) : enquiries.length === 0 ? (

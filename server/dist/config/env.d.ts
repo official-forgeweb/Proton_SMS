@@ -13,6 +13,9 @@ interface EnvConfig {
     SMTP_PASS: string;
     FROM_EMAIL: string;
     FROM_NAME: string;
+    SMTP_FROM: string;
+    APP_NAME: string;
+    APP_URL: string;
     MAX_FILE_SIZE: number;
     UPLOAD_DIR: string;
 }

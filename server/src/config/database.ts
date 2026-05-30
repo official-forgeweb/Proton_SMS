@@ -2,9 +2,15 @@ import { PrismaClient } from '@prisma/client';
 
 const getDatabaseUrl = () => {
   let url = process.env.DATABASE_URL || '';
-  if (url && !url.includes('pgbouncer=')) {
-    const separator = url.includes('?') ? '&' : '?';
-    url = `${url}${separator}pgbouncer=true&connect_timeout=15`;
+  if (url) {
+    if (!url.includes('pgbouncer=')) {
+      const separator = url.includes('?') ? '&' : '?';
+      url = `${url}${separator}pgbouncer=true&connect_timeout=15`;
+    }
+    if (!url.includes('connection_limit=')) {
+      const separator = url.includes('?') ? '&' : '?';
+      url = `${url}${separator}connection_limit=3`;
+    }
   }
   return url;
 };

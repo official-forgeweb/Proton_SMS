@@ -8,6 +8,7 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
 const cache_1 = require("../middleware/cache");
+const sendMail_1 = require("../services/mail/sendMail");
 const router = (0, express_1.Router)();
 const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 const generateProId = () => `PRO${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
@@ -256,10 +257,11 @@ router.post('/bulk', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'c
                     errors.push(`Row ${i + 1}: Email already exists - ${userEmail}`);
                     continue;
                 }
+                const tempPassword = `Proton@${Math.floor(1000 + Math.random() * 9000)}`;
                 const user = await database_1.default.user.create({
                     data: {
                         email: userEmail,
-                        password_hash: await bcryptjs_1.default.hash(`Proton@${Math.floor(1000 + Math.random() * 9000)}`, salt),
+                        password_hash: await bcryptjs_1.default.hash(tempPassword, salt),
                         role: 'student',
                     },
                 });
@@ -279,6 +281,13 @@ router.post('/bulk', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'c
                         enrollment_number: `ENR${proId}`,
                         admission_type: admission_type || 'fresh',
                     },
+                });
+                // Notify new student of welcome onboarding details
+                sendMail_1.mailEventEmitter.emit('student.created', {
+                    name: `${first_name || ''} ${last_name || ''}`.trim(),
+                    email: newStudent.email || userEmail,
+                    proId: newStudent.PRO_ID,
+                    tempPass: tempPassword,
                 });
                 if (class_id) {
                     await database_1.default.studentClassEnrollment.create({
@@ -440,6 +449,13 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
             }
         }
         (0, cache_1.invalidateCache)('/api/students');
+        // Notify newly enrolled student with login credentials
+        sendMail_1.mailEventEmitter.emit('student.created', {
+            name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
+            email: student.email || userEmail,
+            proId: student.PRO_ID,
+            tempPass: password,
+        });
         res.status(201).json({
             success: true,
             data: {

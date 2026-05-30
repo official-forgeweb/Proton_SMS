@@ -7,6 +7,7 @@ const express_1 = require("express");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
+const sendMail_1 = require("../services/mail/sendMail");
 const router = (0, express_1.Router)();
 const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 const generateCoordinatorId = () => `COORD${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
@@ -70,6 +71,13 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async
                 status: status || 'active',
                 created_by: req.user.id,
             },
+        });
+        // Emit coordinator welcome onboarding notification
+        sendMail_1.mailEventEmitter.emit('coordinator.created', {
+            name: full_name || 'Coordinator',
+            email,
+            coordinatorId: coordinator.coordinator_id || '',
+            tempPass: password
         });
         res.status(201).json({
             success: true,

@@ -122,7 +122,7 @@ export default function StudentAttendanceCalendar({ studentId }: { studentId: st
             <div style={{ padding: '40px', textAlign: 'center' }}>
                 <style dangerouslySetInnerHTML={{__html: `
                     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-                    .skeleton-cal { background: linear-gradient(90deg, #f0f0f5 25%, #e8e8f0 50%, #f0f0f5 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 16px; }
+                    .skeleton-cal { background: linear-gradient(90deg, #f0f0f5 25%, #e8e8f0 50%, #f0f0f5 75%); background-size: 200% 100%; animation: shimmer 4s infinite linear; border-radius: 16px; }
                 `}} />
                 <div className="skeleton-cal" style={{ height: '80px', marginBottom: '24px' }} />
                 <div className="skeleton-cal" style={{ height: '400px' }} />

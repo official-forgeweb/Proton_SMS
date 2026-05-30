@@ -21,23 +21,49 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
         if (req.user.role === 'teacher') {
             const teacher = await database_1.default.teacher.findUnique({ where: { user_id: req.user.id } });
             if (teacher) {
-                const myClasses = await database_1.default.class.findMany({
+                // 1. Classes where teacher is primary instructor
+                const primaryClasses = await database_1.default.class.findMany({
                     where: { primary_teacher_id: teacher.id },
                     select: { id: true },
                 });
-                const classIds = myClasses.map(c => c.id);
-                if (where.class_id && !classIds.includes(where.class_id)) {
-                    res.json({ success: true, data: [] });
-                    return;
+                const primaryClassIds = primaryClasses.map(c => c.id);
+                // 2. Classes where teacher is scheduled
+                const schedules = await database_1.default.classSchedule.findMany({
+                    where: { teacher_id: teacher.id },
+                    select: { class_id: true }
+                });
+                const scheduleClassIds = schedules.map(s => s.class_id).filter(Boolean);
+                const allClassIds = Array.from(new Set([...primaryClassIds, ...scheduleClassIds]));
+                const teacherOrConditions = [
+                    { class_id: { in: allClassIds } },
+                    { created_by: req.user.id }
+                ];
+                if (where.class_id) {
+                    if (!allClassIds.includes(where.class_id) && where.created_by !== req.user.id) {
+                        res.json({ success: true, data: [] });
+                        return;
+                    }
                 }
-                if (!where.class_id)
-                    where.class_id = { in: classIds };
+                else {
+                    where.OR = teacherOrConditions;
+                }
             }
         }
         const homeworks = await database_1.default.homework.findMany({
             where,
             orderBy: { assigned_date: 'desc' },
-            include: { class: true },
+            include: {
+                class: true,
+                creator: {
+                    select: {
+                        id: true,
+                        email: true,
+                        role: true,
+                        teacher: { select: { first_name: true, last_name: true } },
+                        coordinator: { select: { full_name: true } }
+                    }
+                }
+            },
         });
         if (homeworks.length === 0) {
             res.json({ success: true, data: [] });
@@ -76,6 +102,20 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
         studentCountStats.forEach(s => { studentCountMap[s.class_id] = s._count; });
         const data = homeworks.map((h) => {
             const stats = submissionMap[h.id] || { submitted: 0, pending: 0, evaluated: 0 };
+            let creatorName = 'System';
+            let creatorRole = 'admin';
+            if (h.creator) {
+                creatorRole = h.creator.role;
+                if (h.creator.role === 'teacher' && h.creator.teacher) {
+                    creatorName = `${h.creator.teacher.first_name || ''} ${h.creator.teacher.last_name || ''}`.trim();
+                }
+                else if (h.creator.role === 'coordinator' && h.creator.coordinator) {
+                    creatorName = (h.creator.coordinator.full_name || '').trim();
+                }
+                else {
+                    creatorName = 'Admin';
+                }
+            }
             return {
                 ...h,
                 id: h.id,
@@ -85,7 +125,10 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                 submitted: stats.submitted,
                 pending: stats.pending,
                 evaluated: stats.evaluated,
+                creator_name: creatorName,
+                creator_role: creatorRole,
                 class: undefined,
+                creator: undefined,
             };
         });
         res.json({ success: true, data });
@@ -97,12 +140,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
 // POST /api/homework
 router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
-        let createdBy = req.user.id;
-        if (req.user.role === 'teacher') {
-            const teacher = await database_1.default.teacher.findUnique({ where: { user_id: req.user.id } });
-            if (teacher)
-                createdBy = teacher.id;
-        }
+        const createdBy = req.user.id; // Store User.id universally
         const hw = await database_1.default.homework.create({
             data: {
                 homework_code: generateHomeworkCode(),

@@ -7,6 +7,7 @@ const express_1 = require("express");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
+const sendMail_1 = require("../services/mail/sendMail");
 const router = (0, express_1.Router)();
 const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 const generateEmployeeId = () => `EMP${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
@@ -101,6 +102,14 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async
                 role_type: role_type || 'subject_teacher',
                 subjects: subjects || [],
             },
+        });
+        // Emit teacher welcome onboarding notification
+        sendMail_1.mailEventEmitter.emit('teacher.created', {
+            name: `${first_name || ''} ${last_name || ''}`.trim(),
+            email,
+            employeeId: teacher.employee_id || '',
+            tempPass: password,
+            role: role_type || 'subject_teacher'
         });
         res.status(201).json({
             success: true,

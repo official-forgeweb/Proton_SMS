@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { mailEventEmitter } from '../services/mail/sendMail';
+import { cacheMiddleware, invalidateCache } from '../middleware/cache';
 
 const router = Router();
 
@@ -15,7 +16,7 @@ const generateEmployeeId = (): string =>
 const paramId = (req: Request): string => String(req.params.id);
 
 // GET /api/teachers
-router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher', 'student'), async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher', 'student'), cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
   try {
     const { search, subject, status } = req.query as Record<string, string>;
     let where: any = {};
@@ -53,7 +54,7 @@ router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher', 
 });
 
 // GET /api/teachers/:id
-router.get('/:id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/:id', authenticateToken, cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     const teacher = isUUID(id)
@@ -125,6 +126,10 @@ router.post('/', authenticateToken, authorize('admin'), async (req: Request, res
       role: role_type || 'subject_teacher'
     });
 
+    invalidateCache('/api/teachers');
+    invalidateCache('/api/classes');
+    invalidateCache('/api/dashboard');
+
     res.status(201).json({
       success: true,
       data: { teacher: { ...teacher, id: teacher.id }, credentials: { email, password } },
@@ -156,6 +161,10 @@ router.put('/:id', authenticateToken, authorize('admin'), async (req: Request, r
       await prisma.user.update({ where: { id: teacher.user_id }, data: { password_hash } });
     }
 
+    invalidateCache('/api/teachers');
+    invalidateCache('/api/classes');
+    invalidateCache('/api/dashboard');
+
     res.json({ success: true, data: { ...teacher, id: teacher.id } });
   } catch (error: any) {
     if (error.code === 'P2025') {
@@ -167,7 +176,7 @@ router.put('/:id', authenticateToken, authorize('admin'), async (req: Request, r
 });
 
 // GET /api/teachers/:id/classes
-router.get('/:id/classes', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/:id/classes', authenticateToken, cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
     let teacher: any = null;
@@ -240,6 +249,10 @@ router.delete('/:id', authenticateToken, authorize('admin'), async (req: Request
     if (teacher.user_id) {
         await prisma.user.delete({ where: { id: teacher.user_id } });
     }
+
+    invalidateCache('/api/teachers');
+    invalidateCache('/api/classes');
+    invalidateCache('/api/dashboard');
 
     res.json({ success: true, message: 'Teacher deleted successfully' });
   } catch (error) {

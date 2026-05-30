@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { authenticateToken, generateAccessToken, generateRefreshToken } from '../middleware/auth';
+import { cacheMiddleware } from '../middleware/cache';
 
 const router = Router();
 
@@ -121,7 +122,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-router.get('/me', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/me', authenticateToken, cacheMiddleware(10), async (req: Request, res: Response): Promise<void> => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
     if (!user) {

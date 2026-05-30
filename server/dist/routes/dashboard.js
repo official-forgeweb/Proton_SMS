@@ -74,6 +74,19 @@ router.get('/admin', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'c
     `;
         const totalRevenue = revenueAgg._sum.amount_paid || 0;
         const totalPending = pendingAgg._sum.total_pending || 0;
+        // Fetch dynamic monthly chart data directly from the DB
+        const [payments, studentRegistrations, enquiryRegistrations] = await Promise.all([
+            database_1.default.feePayment.findMany({
+                where: { payment_status: 'completed' },
+                select: { amount_paid: true, payment_date: true, created_at: true },
+            }),
+            database_1.default.student.findMany({
+                select: { created_at: true },
+            }),
+            database_1.default.enquiry.findMany({
+                select: { created_at: true },
+            }),
+        ]);
         const recentActivity = [
             ...recentStudents.map(s => ({ type: 'enrollment', message: `New enrollment: ${s.first_name} ${s.last_name} (${s.PRO_ID})`, time: s.created_at })),
             ...recentPayments.map(p => ({ type: 'payment', message: `Payment received: ₹${(p.amount_paid || 0).toLocaleString()} from ${p.student?.first_name || 'Unknown'}`, time: p.payment_date })),
@@ -86,6 +99,38 @@ router.get('/admin', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'c
             return {
                 name,
                 Student: perf ? Math.round(Number(perf.avgScore)) : 0,
+                Attendance: att ? Math.round((Number(att.presentCount) / Number(att.totalCount)) * 100) : 0,
+            };
+        });
+        // Group real dynamic chart aggregations
+        const monthlyFees = monthNames.map((name, index) => {
+            const total = payments
+                .filter(p => {
+                const date = p.payment_date ? new Date(p.payment_date) : p.created_at;
+                return date.getMonth() === index && date.getFullYear() === new Date().getFullYear();
+            })
+                .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+            return { name, Fees: total };
+        });
+        const monthlyStudents = monthNames.map((name, index) => {
+            const count = studentRegistrations.filter(s => {
+                const date = new Date(s.created_at);
+                return date.getFullYear() < new Date().getFullYear() ||
+                    (date.getFullYear() === new Date().getFullYear() && date.getMonth() <= index);
+            }).length;
+            return { name, Students: count };
+        });
+        const monthlyEnquiries = monthNames.map((name, index) => {
+            const count = enquiryRegistrations.filter(e => {
+                const date = new Date(e.created_at);
+                return date.getMonth() === index && date.getFullYear() === new Date().getFullYear();
+            }).length;
+            return { name, Enquiries: count };
+        });
+        const monthlyAttendanceData = monthNames.map((name, index) => {
+            const att = monthlyAttendance.find((a) => Number(a.month) === index + 1);
+            return {
+                name,
                 Attendance: att ? Math.round((Number(att.presentCount) / Number(att.totalCount)) * 100) : 0,
             };
         });
@@ -277,6 +322,25 @@ router.get('/admin', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'c
                 action_link: '/admin/fees'
             });
         }
+        // 7. Internal Risky Fee Behavior Alerts
+        const riskyAssignments = await database_1.default.studentFeeAssignment.findMany({
+            where: {
+                risk_level: { in: ['watchlist', 'high_risk_defaulter'] }
+            },
+            include: {
+                student: { select: { first_name: true, last_name: true, PRO_ID: true } }
+            }
+        });
+        riskyAssignments.forEach(a => {
+            if (a.student) {
+                alerts.push({
+                    type: a.risk_level === 'high_risk_defaulter' ? 'danger' : 'warning',
+                    title: a.risk_level === 'high_risk_defaulter' ? 'High Risk Defaulter Flagged' : 'Watchlist Financial Notice',
+                    message: `${a.student.first_name} ${a.student.last_name || ''} (${a.student.PRO_ID}) has been flagged as ${a.risk_level === 'high_risk_defaulter' ? 'High Risk Defaulter' : 'Watchlist'} due to frequent due date modifications.`,
+                    action_link: '/admin/fees'
+                });
+            }
+        });
         if (alerts.length === 0) {
             alerts.push({
                 type: 'success',
@@ -320,12 +384,363 @@ router.get('/admin', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'c
                         percent: `${s.percentage}%`,
                         year: new Date(s.created_at).getFullYear(),
                     })),
+                    fees: monthlyFees,
+                    students: monthlyStudents,
+                    attendance: monthlyAttendanceData,
+                    enquiries: monthlyEnquiries,
                 },
             },
         });
     }
     catch (error) {
         console.error('Dashboard admin error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+// GET /api/dashboard/admin/charts
+router.get('/admin/charts', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), (0, cache_1.cacheMiddleware)(30), async (req, res) => {
+    try {
+        const [genderAgg, topStudents, payments, studentRegistrations, enquiryRegistrations] = await Promise.all([
+            database_1.default.student.groupBy({ by: ['gender'], _count: true }),
+            database_1.default.testResult.findMany({
+                orderBy: { percentage: 'desc' },
+                take: 5,
+                include: { student: { select: { first_name: true, last_name: true, PRO_ID: true } } },
+            }),
+            database_1.default.feePayment.findMany({
+                where: { payment_status: 'completed' },
+                select: { amount_paid: true, payment_date: true, created_at: true },
+            }),
+            database_1.default.student.findMany({
+                select: { created_at: true },
+            }),
+            database_1.default.enquiry.findMany({
+                select: { created_at: true },
+            }),
+        ]);
+        const monthlyPerformance = await database_1.default.$queryRaw `
+      SELECT EXTRACT(MONTH FROM created_at) as month, AVG(percentage) as "avgScore"
+      FROM test_results
+      WHERE created_at IS NOT NULL
+      GROUP BY EXTRACT(MONTH FROM created_at)
+      ORDER BY month
+    `;
+        const monthlyAttendance = await database_1.default.$queryRaw `
+      SELECT
+        EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD')) as month,
+        SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as "presentCount",
+        COUNT(*) as "totalCount"
+      FROM attendance
+      WHERE attendance_date IS NOT NULL AND attendance_date != ''
+      GROUP BY EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD'))
+      ORDER BY month
+    `;
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const chartData = monthNames.map((name, index) => {
+            const perf = monthlyPerformance.find((p) => Number(p.month) === index + 1);
+            const att = monthlyAttendance.find((a) => Number(a.month) === index + 1);
+            return {
+                name,
+                Student: perf ? Math.round(Number(perf.avgScore)) : 0,
+                Attendance: att ? Math.round((Number(att.presentCount) / Number(att.totalCount)) * 100) : 0,
+            };
+        });
+        const monthlyFees = monthNames.map((name, index) => {
+            const total = payments
+                .filter(p => {
+                const date = p.payment_date ? new Date(p.payment_date) : p.created_at;
+                return date.getMonth() === index && date.getFullYear() === new Date().getFullYear();
+            })
+                .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+            return { name, Fees: total };
+        });
+        const monthlyStudents = monthNames.map((name, index) => {
+            const count = studentRegistrations.filter(s => {
+                const date = new Date(s.created_at);
+                return date.getFullYear() < new Date().getFullYear() ||
+                    (date.getFullYear() === new Date().getFullYear() && date.getMonth() <= index);
+            }).length;
+            return { name, Students: count };
+        });
+        const monthlyEnquiries = monthNames.map((name, index) => {
+            const count = enquiryRegistrations.filter(e => {
+                const date = new Date(e.created_at);
+                return date.getMonth() === index && date.getFullYear() === new Date().getFullYear();
+            }).length;
+            return { name, Enquiries: count };
+        });
+        const monthlyAttendanceData = monthNames.map((name, index) => {
+            const att = monthlyAttendance.find((a) => Number(a.month) === index + 1);
+            return {
+                name,
+                Attendance: att ? Math.round((Number(att.presentCount) / Number(att.totalCount)) * 100) : 0,
+            };
+        });
+        const radialData = genderAgg.map(g => ({
+            name: g.gender || 'Unknown',
+            value: g._count,
+            fill: g.gender === 'male' ? '#E53935' : '#F97316',
+        }));
+        res.json({
+            success: true,
+            data: {
+                performance: chartData,
+                gender: radialData,
+                top_students: topStudents.map(s => ({
+                    name: s.student ? `${s.student.first_name} ${s.student.last_name}` : 'Unknown',
+                    id: s.student?.PRO_ID || 'N/A',
+                    marks: s.marks_obtained,
+                    percent: `${s.percentage}%`,
+                    year: new Date(s.created_at).getFullYear(),
+                })),
+                fees: monthlyFees,
+                students: monthlyStudents,
+                attendance: monthlyAttendanceData,
+                enquiries: monthlyEnquiries,
+            }
+        });
+    }
+    catch (error) {
+        console.error('Dashboard charts error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+// GET /api/dashboard/admin/alerts
+router.get('/admin/alerts', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), (0, cache_1.cacheMiddleware)(15), async (req, res) => {
+    try {
+        const [totalStudents, totalTeachers, totalClasses, totalEnquiries, totalDemos, completedDemos, revenueAgg, pendingAgg, totalAttendanceCount, totalPresentCount,] = await Promise.all([
+            database_1.default.student.count(),
+            database_1.default.teacher.count(),
+            database_1.default.class.count(),
+            database_1.default.enquiry.count(),
+            database_1.default.demoClass.count(),
+            database_1.default.demoClass.count({ where: { status: 'completed' } }),
+            database_1.default.feePayment.aggregate({
+                where: { payment_status: 'completed' },
+                _sum: { amount_paid: true },
+            }),
+            database_1.default.studentFeeAssignment.aggregate({
+                _sum: { total_pending: true },
+            }),
+            database_1.default.attendance.count(),
+            database_1.default.attendance.count({ where: { status: 'present' } }),
+        ]);
+        const totalPending = pendingAgg._sum.total_pending || 0;
+        const alerts = [];
+        // 1. Critical Student Attendance Alert (< 60% overall attendance)
+        const lowAttendanceEnrollments = await database_1.default.studentClassEnrollment.findMany({
+            where: {
+                enrollment_status: 'active',
+                overall_attendance_percentage: { lt: 60, gt: 0 }
+            },
+            include: {
+                student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+                class: { select: { class_name: true, class_code: true } }
+            },
+            orderBy: { overall_attendance_percentage: 'asc' },
+            take: 3
+        });
+        lowAttendanceEnrollments.forEach(e => {
+            if (e.student) {
+                alerts.push({
+                    type: 'danger',
+                    title: 'Critical Student Attendance',
+                    message: `${e.student.first_name} ${e.student.last_name || ''} (${e.student.PRO_ID}) has an attendance of ${e.overall_attendance_percentage.toFixed(1)}% in Class ${e.class.class_name || e.class.class_code}.`,
+                    action_link: `/admin/students/${e.student_id}`
+                });
+            }
+        });
+        // 2. Academic Failure Alert (Average score < 40%)
+        const lowAverageEnrollments = await database_1.default.studentClassEnrollment.findMany({
+            where: {
+                enrollment_status: 'active',
+                average_marks: { lt: 40, gt: 0 }
+            },
+            include: {
+                student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+                class: { select: { class_name: true, class_code: true } }
+            },
+            orderBy: { average_marks: 'asc' },
+            take: 3
+        });
+        lowAverageEnrollments.forEach(e => {
+            if (e.student) {
+                alerts.push({
+                    type: 'danger',
+                    title: 'Academic Failure Alert',
+                    message: `${e.student.first_name} ${e.student.last_name || ''} (${e.student.PRO_ID}) is failing with an average score of ${e.average_marks.toFixed(1)}% in Class ${e.class.class_name || e.class.class_code}.`,
+                    action_link: `/admin/students/${e.student_id}`
+                });
+            }
+        });
+        // 3. Consecutive Absences Warning (Absent for 3+ sessions)
+        const recentAttendances = await database_1.default.attendance.findMany({
+            orderBy: { attendance_date: 'desc' },
+            take: 1000,
+            select: {
+                student_id: true,
+                status: true,
+                attendance_date: true,
+                student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+                class: { select: { class_name: true, class_code: true } }
+            }
+        });
+        const attendancesByStudent = {};
+        recentAttendances.forEach(att => {
+            if (!attendancesByStudent[att.student_id]) {
+                attendancesByStudent[att.student_id] = [];
+            }
+            attendancesByStudent[att.student_id].push(att);
+        });
+        let consecutiveAbsenceCount = 0;
+        for (const studentId in attendancesByStudent) {
+            const records = attendancesByStudent[studentId];
+            records.sort((a, b) => b.attendance_date.localeCompare(a.attendance_date));
+            let consecutiveAbsences = 0;
+            for (const r of records) {
+                if (r.status === 'absent') {
+                    consecutiveAbsences++;
+                }
+                else {
+                    break;
+                }
+            }
+            if (consecutiveAbsences >= 3 && consecutiveAbsenceCount < 3) {
+                const student = records[0].student;
+                const cls = records[0].class;
+                if (student) {
+                    alerts.push({
+                        type: 'danger',
+                        title: 'Consecutive Absences Warning',
+                        message: `${student.first_name} ${student.last_name || ''} (${student.PRO_ID}) has been absent for ${consecutiveAbsences} consecutive class sessions in Class ${cls.class_name || cls.class_code}.`,
+                        action_link: `/admin/students/${studentId}`
+                    });
+                    consecutiveAbsenceCount++;
+                }
+            }
+        }
+        // 4. Sudden Performance Drop (Drop of >= 20% in latest exam compared to prior)
+        const recentResults = await database_1.default.testResult.findMany({
+            orderBy: { created_at: 'desc' },
+            take: 500,
+            include: {
+                student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+                test: { select: { test_name: true, subject: true, class: { select: { class_name: true, class_code: true } } } }
+            }
+        });
+        const resultsByStudent = {};
+        recentResults.forEach(r => {
+            if (!resultsByStudent[r.student_id]) {
+                resultsByStudent[r.student_id] = [];
+            }
+            resultsByStudent[r.student_id].push(r);
+        });
+        let performanceDropCount = 0;
+        for (const studentId in resultsByStudent) {
+            const studentResults = resultsByStudent[studentId];
+            studentResults.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            if (studentResults.length >= 2 && performanceDropCount < 3) {
+                const latest = studentResults[0];
+                const previous = studentResults[1];
+                if (latest.percentage !== null && previous.percentage !== null) {
+                    const drop = previous.percentage - latest.percentage;
+                    if (drop >= 20) {
+                        const student = latest.student;
+                        if (student) {
+                            alerts.push({
+                                type: 'warning',
+                                title: 'Sudden Performance Drop',
+                                message: `${student.first_name} ${student.last_name || ''} (${student.PRO_ID}) had a sudden drop of ${drop.toFixed(0)}% in their latest exam "${latest.test.test_name || 'Test'}" compared to prior.`,
+                                action_link: `/admin/students/${studentId}`
+                            });
+                            performanceDropCount++;
+                        }
+                    }
+                }
+            }
+        }
+        // 5. Academic Star Performer (Average score >= 90%)
+        const topPerformers = await database_1.default.studentClassEnrollment.findMany({
+            where: {
+                enrollment_status: 'active',
+                average_marks: { gte: 90 }
+            },
+            include: {
+                student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+                class: { select: { class_name: true, class_code: true } }
+            },
+            orderBy: { average_marks: 'desc' },
+            take: 3
+        });
+        topPerformers.forEach(e => {
+            if (e.student) {
+                alerts.push({
+                    type: 'success',
+                    title: 'Academic Star Performer',
+                    message: `${e.student.first_name} ${e.student.last_name || ''} (${e.student.PRO_ID}) is excelling with an average score of ${e.average_marks.toFixed(1)}% in Class ${e.class.class_name || e.class.class_code}.`,
+                    action_link: `/admin/students/${e.student_id}`
+                });
+            }
+        });
+        // 6. Institutional Stats Alerts
+        if (totalAttendanceCount > 0 && (totalPresentCount / totalAttendanceCount) < 0.6) {
+            alerts.push({
+                type: 'danger',
+                title: 'Critical Attendance Drop',
+                message: `Overall institute attendance is below 60% today.`,
+                action_link: '/admin/attendance'
+            });
+        }
+        const pendingDemosCount = totalDemos - completedDemos;
+        if (pendingDemosCount > 0) {
+            alerts.push({
+                type: 'warning',
+                title: 'Pending Demo Classes',
+                message: `There are ${pendingDemosCount} demo classes scheduled that need attention.`,
+                action_link: '/admin/demos'
+            });
+        }
+        if (totalPending > 50000) {
+            alerts.push({
+                type: 'danger',
+                title: 'High Pending Dues',
+                message: `Total pending fee collection has exceeded ₹50,000.`,
+                action_link: '/admin/fees'
+            });
+        }
+        // 7. Internal Risky Fee Behavior Alerts
+        const riskyAssignments = await database_1.default.studentFeeAssignment.findMany({
+            where: {
+                risk_level: { in: ['watchlist', 'high_risk_defaulter'] }
+            },
+            include: {
+                student: { select: { first_name: true, last_name: true, PRO_ID: true } }
+            }
+        });
+        riskyAssignments.forEach(a => {
+            if (a.student) {
+                alerts.push({
+                    type: a.risk_level === 'high_risk_defaulter' ? 'danger' : 'warning',
+                    title: a.risk_level === 'high_risk_defaulter' ? 'High Risk Defaulter Flagged' : 'Watchlist Financial Notice',
+                    message: `${a.student.first_name} ${a.student.last_name || ''} (${a.student.PRO_ID}) has been flagged as ${a.risk_level === 'high_risk_defaulter' ? 'High Risk Defaulter' : 'Watchlist'} due to frequent due date modifications.`,
+                    action_link: '/admin/fees'
+                });
+            }
+        });
+        if (alerts.length === 0) {
+            alerts.push({
+                type: 'success',
+                title: 'All Systems Nominal',
+                message: 'No critical alerts or warnings at this time.'
+            });
+        }
+        res.json({
+            success: true,
+            data: alerts
+        });
+    }
+    catch (error) {
+        console.error('Dashboard alerts error:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
@@ -363,6 +778,34 @@ router.get('/teacher', auth_1.authenticateToken, (0, auth_1.authorize)('teacher'
             };
         });
         const classIds = myClasses.map(c => c.id);
+        // Get teacher-responsible tests
+        const primaryClasses = await database_1.default.class.findMany({
+            where: { primary_teacher_id: teacher.id },
+            select: { id: true },
+        });
+        const primaryClassIds = primaryClasses.map(c => c.id);
+        const schedulesForTeacher = await database_1.default.classSchedule.findMany({
+            where: { teacher_id: teacher.id },
+            select: { class_id: true, subject: true }
+        });
+        const teacherOrConditions = [];
+        if (primaryClassIds.length > 0) {
+            teacherOrConditions.push({ class_id: { in: primaryClassIds } });
+        }
+        schedulesForTeacher.forEach(sched => {
+            if (sched.class_id && sched.subject) {
+                teacherOrConditions.push({
+                    class_id: sched.class_id,
+                    subject: { equals: sched.subject, mode: 'insensitive' }
+                });
+            }
+        });
+        teacherOrConditions.push({ created_by: req.user.id });
+        const testIds = await database_1.default.test.findMany({
+            where: { OR: teacherOrConditions },
+            select: { id: true }
+        });
+        const testIdList = testIds.map(t => t.id);
         const [todaysAttendance, studentCountsAgg, pendingEvaluations, myEnquiries, pendingDemos, assignedEnquiriesCount, pendingDemosCount] = await Promise.all([
             database_1.default.attendance.findMany({ where: { attendance_date: today, class_id: { in: classIds } } }),
             database_1.default.studentClassEnrollment.groupBy({
@@ -370,7 +813,7 @@ router.get('/teacher', auth_1.authenticateToken, (0, auth_1.authorize)('teacher'
                 where: { class_id: { in: classIds }, enrollment_status: 'active' },
                 _count: true,
             }),
-            database_1.default.testResult.count(),
+            database_1.default.testResult.count({ where: { test_id: { in: testIdList }, marks_obtained: null } }),
             database_1.default.enquiry.findMany({ where: { assigned_to: req.user.id }, take: 5 }),
             database_1.default.demoClass.findMany({ where: { teacher_id: teacher.id, status: 'scheduled' }, take: 5 }),
             database_1.default.enquiry.count({ where: { assigned_to: req.user.id } }),
@@ -388,12 +831,7 @@ router.get('/teacher', auth_1.authenticateToken, (0, auth_1.authorize)('teacher'
             ...c, id: c.id,
             student_count: studentCountMap[c.id] || 0,
         }));
-        // Performance trend
-        const testIds = await database_1.default.test.findMany({
-            where: { class_id: { in: classIds } },
-            select: { id: true },
-        });
-        const testIdList = testIds.map(t => t.id);
+        // Performance trend using teacher-restricted testIdList
         let performanceData = [];
         if (testIdList.length > 0) {
             const performanceAgg = await database_1.default.$queryRaw `

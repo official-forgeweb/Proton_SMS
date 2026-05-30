@@ -7,6 +7,7 @@ exports.getAllStudentUserIds = exports.getTeacherUserIds = exports.getStudentUse
 const express_1 = require("express");
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
+const cache_1 = require("../middleware/cache");
 const router = (0, express_1.Router)();
 // Helper: send notification to multiple recipients
 const sendNotification = async (recipientIds, senderId, type, title, message, referenceId) => {
@@ -57,7 +58,7 @@ const getAllStudentUserIds = async () => {
 };
 exports.getAllStudentUserIds = getAllStudentUserIds;
 // GET /api/notifications — get current user's notifications
-router.get('/', auth_1.authenticateToken, async (req, res) => {
+router.get('/', auth_1.authenticateToken, (0, cache_1.cacheMiddleware)(15), async (req, res) => {
     try {
         const { page = '1', limit = '20', unread_only } = req.query;
         const pageNum = parseInt(page);
@@ -103,7 +104,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
     }
 });
 // GET /api/notifications/unread-count
-router.get('/unread-count', auth_1.authenticateToken, async (req, res) => {
+router.get('/unread-count', auth_1.authenticateToken, (0, cache_1.cacheMiddleware)(15), async (req, res) => {
     try {
         const count = await database_1.default.notification.count({
             where: { recipient_id: req.user.id, is_read: false },
@@ -121,6 +122,7 @@ router.put('/:id/read', auth_1.authenticateToken, async (req, res) => {
             where: { id: req.params.id, recipient_id: req.user.id },
             data: { is_read: true },
         });
+        (0, cache_1.invalidateCache)('/api/notifications');
         res.json({ success: true, message: 'Notification marked as read' });
     }
     catch (error) {
@@ -134,6 +136,7 @@ router.put('/read-all', auth_1.authenticateToken, async (req, res) => {
             where: { recipient_id: req.user.id, is_read: false },
             data: { is_read: true },
         });
+        (0, cache_1.invalidateCache)('/api/notifications');
         res.json({ success: true, message: 'All notifications marked as read' });
     }
     catch (error) {
@@ -173,6 +176,7 @@ router.post('/send', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 't
             return;
         }
         await (0, exports.sendNotification)(recipientIds, req.user.id, 'announcement', title, message);
+        (0, cache_1.invalidateCache)('/api/notifications');
         res.json({ success: true, message: `Announcement sent to ${recipientIds.length} recipients` });
     }
     catch (error) {
@@ -186,6 +190,7 @@ router.delete('/:id', auth_1.authenticateToken, async (req, res) => {
         await database_1.default.notification.deleteMany({
             where: { id: req.params.id, recipient_id: req.user.id },
         });
+        (0, cache_1.invalidateCache)('/api/notifications');
         res.json({ success: true, message: 'Notification deleted' });
     }
     catch (error) {

@@ -7,6 +7,7 @@ const express_1 = require("express");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
+const cache_1 = require("../middleware/cache");
 const router = (0, express_1.Router)();
 router.post('/login', async (req, res) => {
     try {
@@ -117,7 +118,7 @@ router.post('/register', async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
-router.get('/me', auth_1.authenticateToken, async (req, res) => {
+router.get('/me', auth_1.authenticateToken, (0, cache_1.cacheMiddleware)(10), async (req, res) => {
     try {
         const user = await database_1.default.user.findUnique({ where: { id: req.user.id } });
         if (!user) {

@@ -10,7 +10,7 @@ import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { dbHealthCheck } from './middleware/dbHealth';
 
-// Import routes
+// Import routes (triggered configuration refresh)
 import authRoutes from './routes/auth';
 import studentRoutes from './routes/students';
 import teacherRoutes from './routes/teachers';

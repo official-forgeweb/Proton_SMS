@@ -14,7 +14,7 @@ const path_1 = __importDefault(require("path"));
 const env_1 = require("./config/env");
 const errorHandler_1 = require("./middleware/errorHandler");
 const dbHealth_1 = require("./middleware/dbHealth");
-// Import routes
+// Import routes (triggered configuration refresh)
 const auth_1 = __importDefault(require("./routes/auth"));
 const students_1 = __importDefault(require("./routes/students"));
 const teachers_1 = __importDefault(require("./routes/teachers"));
@@ -36,6 +36,7 @@ const attendance_1 = __importDefault(require("./routes/attendance"));
 const messages_1 = __importDefault(require("./routes/messages"));
 const search_1 = __importDefault(require("./routes/search"));
 const coordinators_1 = __importDefault(require("./routes/coordinators"));
+const subjects_1 = __importDefault(require("./routes/subjects"));
 const app = (0, express_1.default)();
 // Security & Middleware
 app.use((0, helmet_1.default)({ crossOriginResourcePolicy: false }));
@@ -54,6 +55,17 @@ const limiter = (0, express_rate_limit_1.default)({
 app.use('/api/', limiter);
 app.use((0, compression_1.default)());
 app.use((0, morgan_1.default)('dev'));
+// Slow API Request Instrumentation (>200ms)
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        if (duration > 200) {
+            console.warn(`⚠️  SLOW API [${duration}ms] ${req.method} ${req.originalUrl}`);
+        }
+    });
+    next();
+});
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
@@ -81,6 +93,7 @@ app.use('/api/attendance', attendance_1.default);
 app.use('/api/messages', messages_1.default);
 app.use('/api/search', search_1.default);
 app.use('/api/coordinators', coordinators_1.default);
+app.use('/api/subjects', subjects_1.default);
 // Health check
 app.get('/api/health', dbHealth_1.dbHealthCheck, (req, res) => {
     res.json({

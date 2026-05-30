@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
+const sendMail_1 = require("../services/mail/sendMail");
 const router = (0, express_1.Router)();
 const paramId = (req) => String(req.params.id);
 const generateEnquiryNumber = () => `ENQ${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
@@ -215,6 +216,15 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
                     created_by: req.user.id,
                 },
             });
+            if (req.body.status === 'resolved' && updated.email) {
+                sendMail_1.mailEventEmitter.emit('enquiry.resolved', {
+                    name: updated.student_name || 'Enquirer',
+                    email: updated.email,
+                    subject: updated.interested_course || 'ERP Enquiry',
+                    response: req.body.resolution_note || 'Your enquiry has been successfully resolved by our coordinators.',
+                    enquiryId: updated.id
+                });
+            }
         }
         res.json({ success: true, data: { ...updated, id: updated.id } });
     }

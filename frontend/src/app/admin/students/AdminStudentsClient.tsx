@@ -89,7 +89,7 @@ const INLINE_STYLES = (
                 .skeleton-row {
                     background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
                     background-size: 200% 100%;
-                    animation: shimmer 1.5s infinite;
+                    animation: shimmer 4s infinite linear;
                     border-radius: 8px;
                 }
             `}} />

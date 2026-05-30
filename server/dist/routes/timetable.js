@@ -6,7 +6,48 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
+const sendMail_1 = require("../services/mail/sendMail");
 const router = (0, express_1.Router)();
+const notifyTimetableChange = async (classId, teacherId, date, details, scheduleId) => {
+    try {
+        // 1. Notify Teacher
+        if (teacherId) {
+            const teacher = await database_1.default.teacher.findUnique({
+                where: { id: teacherId },
+                select: { email: true, first_name: true, last_name: true }
+            });
+            if (teacher && teacher.email) {
+                sendMail_1.mailEventEmitter.emit('timetable.updated', {
+                    name: `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim(),
+                    email: teacher.email,
+                    details,
+                    date,
+                    scheduleId
+                });
+            }
+        }
+        // 2. Notify Enrolled Students
+        const enrollments = await database_1.default.studentClassEnrollment.findMany({
+            where: { class_id: classId, enrollment_status: 'active' },
+            include: { student: true }
+        });
+        for (const enrollment of enrollments) {
+            const student = enrollment.student;
+            if (student && student.email) {
+                sendMail_1.mailEventEmitter.emit('timetable.updated', {
+                    name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
+                    email: student.email,
+                    details,
+                    date,
+                    scheduleId
+                });
+            }
+        }
+    }
+    catch (err) {
+        console.error('[Mail Error] Failed to notify timetable change:', err);
+    }
+};
 // GET /api/timetable
 // Admins see all, Teachers see their own, Students see their class+subjects
 router.get('/', auth_1.authenticateToken, async (req, res) => {
@@ -254,6 +295,8 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
             const { logTeacherActivity } = require('../utils/activityLogger');
             await logTeacherActivity(req.user.id, 'schedule_create', null, JSON.stringify({ subject, date, start_time, room, online_link }), `Class session for ${entry.class_ref.class_name}: ${subject}`, req);
         }
+        // Notify affected teacher and students asynchronously
+        notifyTimetableChange(class_id, finalTeacherId, date, `New class session scheduled: ${subject} in Room ${room || 'N/A'} at ${start_time} - ${end_time || 'N/A'}.`, entry.id);
         res.status(201).json({ success: true, data: entry });
     }
     catch (error) {
@@ -322,6 +365,11 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
                 status: entry.status
             };
             await logTeacherActivity(req.user.id, 'schedule_update', JSON.stringify(prevVal), JSON.stringify(newVal), `Class session for ${entry.class_ref.class_name}: ${entry.subject}`, req);
+        }
+        // Notify affected teacher and students asynchronously of schedule adjustment
+        const hasChanged = existing.date !== date || existing.start_time !== start_time || existing.room !== room || existing.subject !== subject;
+        if (hasChanged) {
+            notifyTimetableChange(entry.class_id, entry.teacher_id, entry.date, `Class session adjusted: ${entry.subject} in Room ${entry.room || 'N/A'} at ${entry.start_time} - ${entry.end_time || 'N/A'}.`, entry.id);
         }
         res.json({ success: true, data: entry });
     }

@@ -107,7 +107,7 @@ export default function StudentProfilePage() {
             <DashboardLayout requiredRole={['admin', 'coordinator']}>
                 <style dangerouslySetInnerHTML={{__html: `
                     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-                    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; }
+                    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 4s infinite linear; border-radius: 12px; }
                     .detail-grid-quad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
                 `}} />
                 <div style={{ padding: '32px' }}>
@@ -199,7 +199,7 @@ export default function StudentProfilePage() {
                 .progress-bar-fill::after {
                     content: ''; position: absolute; inset: 0;
                     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-                    animation: shimmer 2s infinite linear;
+                    animation: shimmer 4s infinite linear;
                 }
                 .tab-btn {
                     padding: 10px 20px; border: none; border-radius: 12px; font-size: 14px;

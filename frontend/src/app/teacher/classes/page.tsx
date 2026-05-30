@@ -87,7 +87,7 @@ export default function TeacherClassesPage() {
                 {isLoading ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
                         {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="animate-in" style={{ height: '220px', borderRadius: '20px', background: 'linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: `shimmer 1.5s infinite, fadeInUp 0.5s forwards`, animationDelay: `${i * 80}ms`, opacity: 0 }} />
+                            <div key={i} className="animate-in" style={{ height: '220px', borderRadius: '20px', background: 'linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: `shimmer 4s infinite linear, fadeInUp 0.5s forwards`, animationDelay: `${i * 80}ms`, opacity: 0 }} />
                         ))}
                     </div>
                 ) : classes.length === 0 ? (

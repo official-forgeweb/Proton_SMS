@@ -1,0 +1,1 @@
+{"version":3,"file":"layout.d.ts","sourceRoot":"","sources":["../../../../src/services/mail/helpers/layout.ts"],"names":[],"mappings":"AAEA,UAAU,aAAa;IACrB,KAAK,EAAE,MAAM,CAAC;IACd,SAAS,CAAC,EAAE,MAAM,CAAC;IACnB,OAAO,CAAC,EAAE,MAAM,CAAC;IACjB,MAAM,CAAC,EAAE,MAAM,CAAC;CACjB;AAED,eAAO,MAAM,iBAAiB,GAAI,aAAa,MAAM,EAAE,SAAS,aAAa,KAAG,MAoG/E,CAAC"}
