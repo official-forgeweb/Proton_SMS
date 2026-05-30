@@ -96,13 +96,13 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
     // Fetch dynamic monthly chart data directly from the DB
     const [payments, studentRegistrations, enquiryRegistrations] = await Promise.all([
       prisma.feePayment.findMany({
-        where: { payment_status: 'completed' },
+        where: { payment_status: 'completed', created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
         select: { amount_paid: true, payment_date: true, created_at: true },
       }),
       prisma.student.findMany({
         select: { created_at: true },
       }),
-      prisma.enquiry.findMany({
+      prisma.enquiry.findMany({ where: { created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
         select: { created_at: true },
       }),
     ]);
@@ -461,13 +461,13 @@ router.get('/admin/charts', authenticateToken, authorize('admin', 'coordinator')
         include: { student: { select: { first_name: true, last_name: true, PRO_ID: true } } },
       }),
       prisma.feePayment.findMany({
-        where: { payment_status: 'completed' },
+        where: { payment_status: 'completed', created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
         select: { amount_paid: true, payment_date: true, created_at: true },
       }),
       prisma.student.findMany({
         select: { created_at: true },
       }),
-      prisma.enquiry.findMany({
+      prisma.enquiry.findMany({ where: { created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
         select: { created_at: true },
       }),
     ]);

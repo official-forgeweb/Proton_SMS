@@ -224,8 +224,10 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
     const [alerts, setAlerts] = useState<AlertInsight[]>(data?.alerts || []);
     const [loadingCharts, setLoadingCharts] = useState(!data?.charts?.fees?.length);
     const [loadingAlerts, setLoadingAlerts] = useState(!data?.alerts?.length);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         if (loadingCharts) {
             api.get('/dashboard/admin/charts')
                 .then(res => {
@@ -348,7 +350,7 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Monthly Fee Collection</span>
                         <div style={{ height: '240px', width: '100%' }}>
-                            {loadingCharts ? (
+                            {loadingCharts || !mounted ? (
                                 <div className="skeleton" style={{ height: '100%', width: '100%', borderRadius: '12px' }} />
                             ) : hasFeesData ? (
                                 <FeeCollectionChart data={charts?.fees || []} />
@@ -362,7 +364,7 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Cumulative Student Growth</span>
                         <div style={{ height: '240px', width: '100%' }}>
-                            {loadingCharts ? (
+                            {loadingCharts || !mounted ? (
                                 <div className="skeleton" style={{ height: '100%', width: '100%', borderRadius: '12px' }} />
                             ) : hasStudentsData ? (
                                 <StudentGrowthChart data={charts?.students || []} />
@@ -376,7 +378,7 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Attendance Overview</span>
                         <div style={{ height: '240px', width: '100%' }}>
-                            {loadingCharts ? (
+                            {loadingCharts || !mounted ? (
                                 <div className="skeleton" style={{ height: '100%', width: '100%', borderRadius: '12px' }} />
                             ) : hasAttendanceData ? (
                                 <AttendanceOverviewChart data={charts?.attendance || []} />
@@ -390,7 +392,7 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Enquiry Lead Trends</span>
                         <div style={{ height: '240px', width: '100%' }}>
-                            {loadingCharts ? (
+                            {loadingCharts || !mounted ? (
                                 <div className="skeleton" style={{ height: '100%', width: '100%', borderRadius: '12px' }} />
                             ) : hasEnquiriesData ? (
                                 <EnquiryTrendsChart data={charts?.enquiries || []} />

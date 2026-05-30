@@ -1141,21 +1141,44 @@ h6 {
     max-width: calc(100vw - 24px) !important;
   }
 
-  /* Header stacking */
+  /* Premium single-line mobile header layout */
   .dashboard-header {
-    padding: 12px 16px !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
+    padding: 12px 16px 12px 64px !important; /* Leave room for floating hamburger on the left */
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    height: 72px !important;
     gap: 12px !important;
-    height: auto !important;
   }
   .dashboard-header-search {
-    padding-left: 44px !important;
+    padding-left: 0 !important;
     max-width: 100% !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+  .dashboard-header-search input {
+    min-width: 0 !important;
   }
   .dashboard-header-actions {
-    width: 100% !important;
-    justify-content: space-between !important;
+    width: auto !important;
+    flex-shrink: 0 !important;
+    gap: 8px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+  .dashboard-user-text {
+    display: none !important;
+  }
+
+  /* Override inline negative margins globally on mobile to prevent header overlap */
+  .bg-mesh,
+  div[style*="margin:"][style*="-"] {
+    margin: 0 !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
   }
 
   /* Content area padding reduction */
@@ -1207,11 +1230,7 @@ h6 {
     gap: 12px !important;
   }
 
-  /* Allow flex wrap on tighter containers */
-  div[style*="display: flex"][style*="gap: 12px"],
-  div[style*="display: 'flex'"][style*="gap: '12px'"] {
-    flex-wrap: wrap !important;
-  }
+
 
   /* Reduce font sizes for stat cards */
   .stat-card .stat-value { font-size: 22px !important; }
@@ -1303,11 +1322,7 @@ div:has(> table) {
     border-radius: 16px !important;
   }
 
-  /* 1. Auto-wrap flex containers that might have side-by-side elements on desktop */
-  div[style*="display: flex"]:not([style*="flex-wrap: no-wrap"]):not([style*="flex-direction: column"]),
-  div[style*="display: 'flex'"]:not([style*="flexWrap: 'no-wrap'"]):not([style*="flexDirection: 'column'"]) {
-    flex-wrap: wrap !important;
-  }
+
 
   /* 2. Soften FormPageLayout's cards to be highly friendly on smaller screens */
   .form-central-card {
@@ -1389,17 +1404,33 @@ div:has(> table) {
    ========================================================== */
 
 /* VIEWPORT LEVEL LAYOUT LOCKS & SCROLL ARCHITECTURE */
-html, body, .main-layout-root {
-  height: 100vh !important;
-  max-height: 100vh !important;
-  overflow: hidden !important;
+@media (min-width: 1025px) {
+  html, body, .main-layout-root {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+  }
+  .page-body {
+    height: calc(100vh - 72px) !important; /* reserve exact space for sticky header */
+    overflow-y: auto !important;
+  }
 }
 
-/* Scroll exclusively within the inner page container */
+@media (max-width: 1024px) {
+  html, body, .main-layout-root {
+    height: auto !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .page-body {
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+}
+
 .page-body {
   flex: 1 !important;
-  height: calc(100vh - 72px) !important; /* reserve exact space for sticky header */
-  overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
   will-change: scroll-position;
   background-color: var(--bg-secondary) !important;

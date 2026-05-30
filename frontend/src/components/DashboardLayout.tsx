@@ -695,7 +695,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                                     border: '2px solid #EEEEF5',
                                 }}
                             />
-                            <div style={{ textAlign: 'left' }}>
+                            <div className="dashboard-user-text" style={{ textAlign: 'left' }}>
                                 <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A1D3B', lineHeight: 1.2 }}>
                                     {userName}
                                 </p>
