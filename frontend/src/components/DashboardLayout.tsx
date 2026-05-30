@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import Sidebar from '@/components/Sidebar';
 import { Search, Bell, WifiOff, RefreshCw, X, Check, GraduationCap, UserCheck, BookOpen, FileText, HelpCircle, Award, User } from 'lucide-react';
 import api from '@/lib/api';
+import ToolBottomBar from '@/components/ToolBottomBar';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -712,6 +713,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                         {children}
                     </div>
                 </div>
+                <ToolBottomBar />
             </main>
 
 

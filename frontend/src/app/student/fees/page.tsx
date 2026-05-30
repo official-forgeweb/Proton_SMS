@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import api from '@/lib/api';
 import { IndianRupee, Clock, CheckCircle2, AlertCircle, FileText, Calendar, ShieldCheck, History, CornerDownRight } from 'lucide-react';
 
@@ -262,7 +261,6 @@ export default function StudentFeesPage() {
                 )}
 
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import { User, Mail, Phone, Building, Shield, Calendar, Users } from 'lucide-react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -235,7 +234,6 @@ export default function StudentProfilePage() {
                     )}
                 </div>
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

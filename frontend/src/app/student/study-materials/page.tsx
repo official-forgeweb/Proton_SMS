@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import api from '@/lib/api';
 import { BookOpen, FileText, Eye, Download, Search, BookMarked, MonitorPlay, X, Loader2, User, Calendar } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
@@ -298,7 +297,6 @@ export default function StudentStudyMaterialsPage() {
                     </div>
                 )}
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

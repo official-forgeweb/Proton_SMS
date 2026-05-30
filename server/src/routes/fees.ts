@@ -440,7 +440,7 @@ router.post('/assignments', authenticateToken, authorize('admin', 'coordinator')
       });
 
       return assignment;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     // Notify student of fee assignment asynchronously
     try {
@@ -677,7 +677,7 @@ router.put('/assignments/:id', authenticateToken, authorize('admin', 'coordinato
       });
       
       await reallocatePaymentsAndRecalculate(assignmentId, tx);
-    });
+    }, { maxWait: 15000, timeout: 30000 });
     
     // Notify student of installment date change asynchronously
     try {
@@ -772,7 +772,7 @@ router.post('/pay', authenticateToken, authorize('admin', 'coordinator'), async 
       });
 
       return payment;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     // Notify student of recorded payment asynchronously
     try {
@@ -907,7 +907,7 @@ router.delete('/payments/:id', authenticateToken, authorize('admin', 'coordinato
           details: `Reversed payment ${payment.receipt_number} of amount ${payment.amount_paid}. Remarks: ${remarks || 'None'}`
         }
       });
-    });
+    }, { maxWait: 15000, timeout: 30000 });
     
     res.json({ success: true, message: 'Payment deleted and balances restored successfully' });
   } catch (error: any) {
@@ -1055,7 +1055,7 @@ router.post('/overdue-check', authenticateToken, authorize('admin', 'coordinator
       for (const a of assignments) {
         await reallocatePaymentsAndRecalculate(a.id, tx);
       }
-    });
+    }, { maxWait: 15000, timeout: 60000 });
     
     res.json({ success: true, message: 'Overdue check completed' });
   } catch (error) {
@@ -1129,7 +1129,7 @@ router.delete('/assignments/:id', authenticateToken, authorize('admin', 'coordin
       await tx.studentFeeAssignment.delete({
         where: { id: assignmentId }
       });
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     res.json({
       success: true,

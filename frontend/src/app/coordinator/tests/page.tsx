@@ -159,7 +159,7 @@ export default function CoordinatorTestsPage() {
                                         <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.01em', marginBottom: '6px' }}>
                                             {test.test_name}
                                         </h3>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
                                             <span style={{ fontSize: '14px', color: '#5E6278', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                 <BookOpen size={14} /> {test.subject}
                                             </span>
@@ -167,6 +167,13 @@ export default function CoordinatorTestsPage() {
                                                 <LayoutGrid size={14} /> {test.class_name}
                                             </span>
                                         </div>
+
+                                        {test.creator_name && (
+                                            <div style={{ fontSize: '12px', color: '#5E6278', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', background: '#F8FAFC', padding: '6px 12px', borderRadius: '10px', width: 'fit-content', border: '1px solid #F1F5F9' }}>
+                                                <span style={{ color: '#E53935', fontWeight: 700 }}>Created By:</span>
+                                                <span style={{ color: '#1A1D3B' }}>{test.creator_name} <span style={{ fontSize: '10px', color: '#7E8299', background: '#E2E8F0', padding: '2px 6px', borderRadius: '4px', marginLeft: '2px' }}>{test.creator_role?.toUpperCase()}</span></span>
+                                            </div>
+                                        )}
 
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
                                             <div style={{ background: '#F8FAFC', padding: '10px', borderRadius: '12px', border: '1px solid #F1F5F9' }}>

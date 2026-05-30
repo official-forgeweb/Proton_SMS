@@ -64,6 +64,8 @@ model User {
   notifications_sent     Notification[] @relation("NotificationSender")
   messages_sent          Message[]      @relation("SentMessages")
   messages_received      Message[]      @relation("ReceivedMessages")
+  tests_created            Test[]
+  homework_created         Homework[]
 
   @@map("users")
 }
@@ -137,8 +139,6 @@ model Teacher {
   class_schedules   ClassSchedule[]
   timetable_entries Timetable[]       @relation("TimetableTeacher")
   demo_classes      DemoClass[]
-  tests_created     Test[]
-  homework_created  Homework[]
   queries_targeted  StudentQuery[]    @relation("QueryTargetTeacher")
   remarks           StudentRemark[]
   activity_logs     TeacherActivityLog[]
@@ -414,7 +414,7 @@ model Test {
 
   // Relations
   class     Class        @relation(fields: [class_id], references: [id])
-  creator   Teacher?     @relation(fields: [created_by], references: [id])
+  creator   User?        @relation(fields: [created_by], references: [id])
   results   TestResult[]
 
   @@index([class_id])
@@ -466,7 +466,7 @@ model Homework {
 
   // Relations
   class       Class                @relation(fields: [class_id], references: [id])
-  creator     Teacher?             @relation(fields: [created_by], references: [id])
+  creator     User?                @relation(fields: [created_by], references: [id])
   submissions HomeworkSubmission[]
 
   @@index([class_id])

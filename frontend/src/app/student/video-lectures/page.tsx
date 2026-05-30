@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import api from '@/lib/api';
 import { Video, Search, PlayCircle, X, Clock, ChevronLeft, Folder, Play, Monitor, Calendar, ChevronRight } from 'lucide-react';
 
@@ -963,7 +962,6 @@ export default function StudentVideoLecturesPage() {
                     </>
                 )}
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

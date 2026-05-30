@@ -873,6 +873,10 @@ h6 {
     margin-left: 0;
   }
 
+  .tool-bottom-bar {
+    left: 50% !important;
+  }
+
   .page-header {
     padding: 16px 20px;
   }
@@ -1015,7 +1019,7 @@ h6 {
 
 /* ToolBottomBar class */
 .tool-bottom-bar {
-  left: calc(50vw + 130px);
+  left: calc(50vw + 130px) !important;
 }
 
 /* Hide scrollbar utility */

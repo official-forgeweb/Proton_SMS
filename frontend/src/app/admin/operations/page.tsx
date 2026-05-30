@@ -1,6 +1,5 @@
 'use client';
 import DashboardLayout from '@/components/DashboardLayout';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import Link from 'next/link';
 import { 
     FileText, ClipboardList, PenTool, Target, 
@@ -69,7 +68,6 @@ export default function AdminOperationsPage() {
                     })}
                 </div>
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

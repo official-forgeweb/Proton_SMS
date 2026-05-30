@@ -25,28 +25,48 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
     if (req.user!.role === 'teacher') {
       const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
       if (teacher) {
-        const myClasses = await prisma.class.findMany({
+        // 1. Classes where teacher is primary instructor
+        const primaryClasses = await prisma.class.findMany({
           where: { primary_teacher_id: teacher.id },
           select: { id: true },
         });
-        const classIds = myClasses.map(c => c.id);
+        const primaryClassIds = primaryClasses.map(c => c.id);
+
+        // 2. Class-Subject combinations from schedules
+        const schedules = await prisma.classSchedule.findMany({
+          where: { teacher_id: teacher.id },
+          select: { class_id: true, subject: true }
+        });
+
+        const teacherOrConditions: any[] = [];
         
-        const teacherOrCondition = [
-          { class_id: { in: classIds } },
-          { created_by: teacher.id }
-        ];
+        if (primaryClassIds.length > 0) {
+          teacherOrConditions.push({ class_id: { in: primaryClassIds } });
+        }
+
+        schedules.forEach(sched => {
+          if (sched.class_id && sched.subject) {
+            teacherOrConditions.push({
+              class_id: sched.class_id,
+              subject: { equals: sched.subject, mode: 'insensitive' }
+            });
+          }
+        });
+
+        // 3. Fallback: tests personally created by this teacher
+        teacherOrConditions.push({ created_by: req.user!.id });
 
         if (where.class_id) {
           where = {
             ...where,
             AND: [
               { class_id: where.class_id },
-              { OR: teacherOrCondition }
+              { OR: teacherOrConditions }
             ]
           };
           delete where.class_id;
         } else {
-          where.OR = teacherOrCondition;
+          where.OR = teacherOrConditions;
         }
       }
     }
@@ -54,7 +74,18 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
     const tests = await prisma.test.findMany({
       where,
       orderBy: { test_date: 'desc' },
-      include: { class: true },
+      include: {
+        class: true,
+        creator: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            teacher: { select: { first_name: true, last_name: true } },
+            coordinator: { select: { full_name: true } }
+          }
+        }
+      },
     });
 
     const testIds = tests.map(t => t.id);
@@ -74,6 +105,21 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 
     const data = tests.map((t: any) => {
       const stats = resultMap[t.id] || { count: 0, avgMarks: 0 };
+      
+      let creatorName = 'System';
+      let creatorRole = 'admin';
+
+      if (t.creator) {
+        creatorRole = t.creator.role;
+        if (t.creator.role === 'teacher' && t.creator.teacher) {
+          creatorName = `${t.creator.teacher.first_name || ''} ${t.creator.teacher.last_name || ''}`.trim();
+        } else if (t.creator.role === 'coordinator' && t.creator.coordinator) {
+          creatorName = (t.creator.coordinator.full_name || '').trim();
+        } else {
+          creatorName = 'Admin';
+        }
+      }
+
       return {
         ...t,
         id: t.id,
@@ -81,7 +127,10 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         class_name: t.class?.class_name || '',
         results_count: stats.count,
         average_marks: stats.count > 0 ? stats.avgMarks.toFixed(1) : 0,
+        creator_name: creatorName,
+        creator_role: creatorRole,
         class: undefined,
+        creator: undefined,
       };
     });
 
@@ -96,8 +145,36 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
   try {
     const id = paramId(req);
     const test: any = isUUID(id)
-      ? await prisma.test.findUnique({ where: { id }, include: { class: true } })
-      : await prisma.test.findFirst({ where: { test_code: id }, include: { class: true } });
+      ? await prisma.test.findUnique({
+          where: { id },
+          include: {
+            class: true,
+            creator: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                teacher: { select: { first_name: true, last_name: true } },
+                coordinator: { select: { full_name: true } }
+              }
+            }
+          }
+        })
+      : await prisma.test.findFirst({
+          where: { test_code: id },
+          include: {
+            class: true,
+            creator: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                teacher: { select: { first_name: true, last_name: true } },
+                coordinator: { select: { full_name: true } }
+              }
+            }
+          }
+        });
 
     if (!test) {
       res.status(404).json({ success: false, message: 'Test not found' });
@@ -132,9 +209,33 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
       pass_percentage: mappedResults.length > 0 ? ((mappedResults.filter((r: any) => r.pass_fail === 'pass').length / mappedResults.length) * 100).toFixed(1) : 0,
     };
 
+    let creatorName = 'System';
+    let creatorRole = 'admin';
+
+    if (test.creator) {
+      creatorRole = test.creator.role;
+      if (test.creator.role === 'teacher' && test.creator.teacher) {
+        creatorName = `${test.creator.teacher.first_name || ''} ${test.creator.teacher.last_name || ''}`.trim();
+      } else if (test.creator.role === 'coordinator' && test.creator.coordinator) {
+        creatorName = (test.creator.coordinator.full_name || '').trim();
+      } else {
+        creatorName = 'Admin';
+      }
+    }
+
     res.json({
       success: true,
-      data: { ...test, id: test.id, class_name: test.class?.class_name, results: mappedResults, stats, class: undefined },
+      data: {
+        ...test,
+        id: test.id,
+        class_name: test.class?.class_name,
+        results: mappedResults,
+        stats,
+        creator_name: creatorName,
+        creator_role: creatorRole,
+        class: undefined,
+        creator: undefined
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -144,13 +245,31 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
 // POST /api/tests
 router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
-    let createdBy: string | null = null;
-    if (req.user!.role === 'teacher') {
-      const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
-      if (teacher) createdBy = teacher.id;
+    const { test_name, class_id, subject, test_type, test_date, start_time, duration_minutes, total_marks, passing_marks, description, images, status } = req.body;
+
+    if (!class_id || !subject) {
+      res.status(400).json({ success: false, message: 'Class ID and Subject are required.' });
+      return;
     }
 
-    const { test_name, class_id, subject, test_type, test_date, start_time, duration_minutes, total_marks, passing_marks, description, images, status } = req.body;
+    // Validate that a subject teacher is assigned to this class and subject in ClassSchedule
+    const mapping = await prisma.classSchedule.findFirst({
+      where: {
+        class_id,
+        subject: { equals: subject.trim(), mode: 'insensitive' },
+        teacher_id: { not: null }
+      }
+    });
+
+    if (!mapping) {
+      res.status(400).json({
+        success: false,
+        message: 'No teacher is assigned to this subject for the selected class. Please assign a subject teacher before creating the test.'
+      });
+      return;
+    }
+
+    const createdBy = req.user!.id; // Store User.id universally
 
     const test = await prisma.test.create({
       data: {

@@ -21,16 +21,50 @@ export default function AttemptTestPage() {
         }
     }, [params.id]);
 
+    useEffect(() => {
+        if (test?.results && user) {
+            const studentId = user.profile?.id;
+            const proId = user.profile?.PRO_ID;
+            const userId = user.id;
+
+            console.log('DEBUG: Student Test matching results:', {
+                studentId,
+                proId,
+                userId,
+                resultsCount: test.results.length,
+                results: test.results.map((r: any) => ({
+                    student_id: r.student_id,
+                    pro_id: r.pro_id,
+                    was_present: r.was_present,
+                    marks: r.marks_obtained
+                }))
+            });
+
+            const myResult = test.results.find((r: any) => 
+                (studentId && r.student_id === studentId) ||
+                (proId && r.pro_id?.toLowerCase() === proId.toLowerCase()) ||
+                (r.student_id === userId)
+            );
+
+            console.log('DEBUG: matched result:', myResult);
+
+            // Show result if results are published, test is marked completed, or status indicates publication
+            const isPublished = test.results_published || test.status === 'completed' || test.status === 'result_published';
+            console.log('DEBUG: isPublished:', isPublished, 'test.status:', test.status, 'test.results_published:', test.results_published);
+
+            if (isPublished && myResult) {
+                setResult(myResult);
+            } else {
+                setResult(null);
+            }
+        }
+    }, [test, user]);
+
     const fetchTestData = async () => {
         try {
             const res = await api.get(`/tests/${params.id}`);
             const testData = res.data.data;
             setTest(testData);
-
-            if (user?.profile?.id && testData.results) {
-                const myResult = testData.results.find((r: any) => r.student_id === user.profile.id);
-                setResult(myResult || null);
-            }
         } catch (error) {
             console.error(error);
             toast.error('Failed to load test details');

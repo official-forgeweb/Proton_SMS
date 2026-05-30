@@ -1,6 +1,5 @@
 'use client';
 import DashboardLayout from '@/components/DashboardLayout';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
 import { 
@@ -75,7 +74,6 @@ export default function TeacherOperationsPage() {
                     })}
                 </div>
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

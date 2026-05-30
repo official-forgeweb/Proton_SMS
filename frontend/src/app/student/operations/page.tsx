@@ -1,6 +1,5 @@
 'use client';
 import DashboardLayout from '@/components/DashboardLayout';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import Link from 'next/link';
 import { 
     FileText, ClipboardList, PenTool, PlayCircle, 
@@ -109,7 +108,6 @@ export default function StudentOperationsPage() {
                     })}
                 </div>
             </div>
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

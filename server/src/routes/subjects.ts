@@ -22,7 +22,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
           prisma.timetable.count({ where: { subject: subj.canonical_name } }),
           prisma.test.count({ where: { subject: subj.canonical_name } }),
           prisma.studyMaterial.count({ where: { subject: subj.canonical_name } }),
-          prisma.homework.count({ where: { class_ref: { subject: subj.canonical_name } } }) // fallback class level
+          prisma.homework.count({ where: { class: { subject: subj.canonical_name } } }) // fallback class level
         ]);
 
         return {
@@ -193,7 +193,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator'), async (
         await (tx as any).test.updateMany({ where: { subject: oldName }, data: { subject: canonical } });
         await (tx as any).videoLecture.updateMany({ where: { subject: oldName }, data: { subject: canonical } });
         await (tx as any).studyMaterial.updateMany({ where: { subject: oldName }, data: { subject: canonical } });
-        await (tx as any).homework.updateMany({ where: { class_ref: { subject: oldName } }, data: { description: { contains: oldName } } }); // safe update
+
       }
 
       const subject = await (tx as any).subject.update({

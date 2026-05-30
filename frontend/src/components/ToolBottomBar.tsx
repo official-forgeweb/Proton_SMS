@@ -68,11 +68,20 @@ export default function ToolBottomBar() {
 
     if (tools.length === 0) return null;
 
+    // Check if the current pathname is one of the tools, or a child path of one of the tools,
+    // or if pathname is exactly `/admin/operations`, `/teacher/operations`, etc.
+    const isOperationPage = pathname?.endsWith('/operations');
+    const isToolPage = tools.some(t => {
+        return pathname === t.href || 
+            (t.href !== `/${role}` && pathname.startsWith(t.href + '/'));
+    });
+
+    if (!isOperationPage && !isToolPage) return null;
+
     return (
         <div style={{
             position: 'fixed',
             bottom: '24px',
-            left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 40,
             background: 'rgba(255, 255, 255, 0.88)',

@@ -1,5 +1,4 @@
 'use client';
-import ToolBottomBar from '@/components/ToolBottomBar';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
@@ -681,7 +680,6 @@ export default function StudentQueriesPage() {
                     </div>
                 </div>
             )}
-            <ToolBottomBar />
         </DashboardLayout>
     );
 }

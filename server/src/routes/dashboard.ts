@@ -484,6 +484,38 @@ router.get('/teacher', authenticateToken, authorize('teacher'), cacheMiddleware(
     
     const classIds = myClasses.map(c => c.id);
 
+    // Get teacher-responsible tests
+    const primaryClasses = await prisma.class.findMany({
+      where: { primary_teacher_id: teacher.id },
+      select: { id: true },
+    });
+    const primaryClassIds = primaryClasses.map(c => c.id);
+
+    const schedulesForTeacher = await prisma.classSchedule.findMany({
+      where: { teacher_id: teacher.id },
+      select: { class_id: true, subject: true }
+    });
+
+    const teacherOrConditions: any[] = [];
+    if (primaryClassIds.length > 0) {
+      teacherOrConditions.push({ class_id: { in: primaryClassIds } });
+    }
+    schedulesForTeacher.forEach(sched => {
+      if (sched.class_id && sched.subject) {
+        teacherOrConditions.push({
+          class_id: sched.class_id,
+          subject: { equals: sched.subject, mode: 'insensitive' }
+        });
+      }
+    });
+    teacherOrConditions.push({ created_by: req.user!.id });
+
+    const testIds = await prisma.test.findMany({
+      where: { OR: teacherOrConditions },
+      select: { id: true }
+    });
+    const testIdList = testIds.map(t => t.id);
+
     const [todaysAttendance, studentCountsAgg, pendingEvaluations, myEnquiries, pendingDemos, assignedEnquiriesCount, pendingDemosCount] = await Promise.all([
       prisma.attendance.findMany({ where: { attendance_date: today, class_id: { in: classIds } } }),
       prisma.studentClassEnrollment.groupBy({
@@ -491,7 +523,7 @@ router.get('/teacher', authenticateToken, authorize('teacher'), cacheMiddleware(
         where: { class_id: { in: classIds }, enrollment_status: 'active' },
         _count: true,
       }),
-      prisma.testResult.count(),
+      prisma.testResult.count({ where: { test_id: { in: testIdList }, marks_obtained: null } }),
       prisma.enquiry.findMany({ where: { assigned_to: req.user!.id }, take: 5 }),
       prisma.demoClass.findMany({ where: { teacher_id: teacher.id, status: 'scheduled' }, take: 5 }),
       prisma.enquiry.count({ where: { assigned_to: req.user!.id } }),
@@ -514,13 +546,7 @@ router.get('/teacher', authenticateToken, authorize('teacher'), cacheMiddleware(
       student_count: studentCountMap[c.id] || 0,
     }));
 
-    // Performance trend
-    const testIds = await prisma.test.findMany({
-      where: { class_id: { in: classIds } },
-      select: { id: true },
-    });
-    const testIdList = testIds.map(t => t.id);
-
+    // Performance trend using teacher-restricted testIdList
     let performanceData: any[] = [];
     if (testIdList.length > 0) {
       const performanceAgg: any[] = await prisma.$queryRaw`
