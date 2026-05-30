@@ -48,10 +48,8 @@ declare global {
 
 const prisma = globalThis.__prismaNextClient ?? prismaClientSingleton();
 
-// In development, store on globalThis to survive HMR
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.__prismaNextClient = prisma;
-}
+// Always preserve on globalThis in serverless environments to prevent connection leaks
+globalThis.__prismaNextClient = prisma;
 
 // ── Eager Connection Warm-Up ──
 // Connect immediately so the first query doesn't pay the cold-start cost.

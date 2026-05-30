@@ -11,6 +11,7 @@
 let keepAliveInterval: NodeJS.Timeout | null = null;
 
 export function startKeepAlive(prismaClient: any) {
+  if (process.env.VERCEL) return; // Disable background keep-alive interval in serverless Vercel
   // Only keep-alive in production to avoid wasting local dev database connections
   if (process.env.NODE_ENV !== 'production') {
     return;

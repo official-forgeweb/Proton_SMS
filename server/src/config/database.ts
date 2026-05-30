@@ -9,7 +9,9 @@ const getDatabaseUrl = () => {
     }
     if (!url.includes('connection_limit=')) {
       const separator = url.includes('?') ? '&' : '?';
-      url = `${url}${separator}connection_limit=20`;
+      // In serverless (Vercel), limit connections per lambda to 3 to avoid exhausting pool
+      const limit = process.env.VERCEL ? '3' : '20';
+      url = `${url}${separator}connection_limit=${limit}`;
     }
   }
   return url;
@@ -32,7 +34,8 @@ declare global {
 
 const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
-if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma;
+// Always preserve on globalThis in a serverless environment to prevent connection leaks
+globalThis.prismaGlobal = prisma;
 
 // Eager connection warm-up
 if (!globalThis.prismaConnected) {
@@ -46,6 +49,7 @@ if (!globalThis.prismaConnected) {
 let keepAliveInterval: NodeJS.Timeout | null = null;
 
 const startKeepAlive = () => {
+  if (process.env.VERCEL) return; // Disable background keep-alive interval in serverless Vercel
   if (process.env.NODE_ENV !== 'production') return;
   if (keepAliveInterval) return;
 
