@@ -1508,4 +1508,11 @@ html, body, .main-layout-root {
   max-width: 380px;
   margin-bottom: 24px;
 }
+
+/* Unified Premium Shimmer Loader Utility */
+.skeleton {
+  background: linear-gradient(90deg, #F8F9FA 25%, #EAECEF 50%, #F8F9FA 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
 

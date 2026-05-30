@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Users, GraduationCap, DollarSign, TrendingUp, TrendingDown, BookOpen, Clock, Activity, Target, Zap, ChevronRight, Award, AlertTriangle, CheckCircle, Bell, Plus, Calendar, Shield, Phone
@@ -10,7 +10,8 @@ import {
     AreaChart, Area, LineChart, Line
 } from 'recharts';
 
-import type { AdminDashboardData } from '@/services/dataAccess';
+import api from '@/lib/api';
+import type { AdminDashboardData, AdminDashboardCharts, AlertInsight } from '@/services/dataAccess';
 
 // ──────────────────────────────────────────────
 // Custom Tooltip for Charts
@@ -218,7 +219,35 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
 
     const stats = data?.stats;
     const recentActivity = data?.recent_activity || [];
-    const alerts = data?.alerts || [];
+
+    const [charts, setCharts] = useState<AdminDashboardCharts | null>(data?.charts || null);
+    const [alerts, setAlerts] = useState<AlertInsight[]>(data?.alerts || []);
+    const [loadingCharts, setLoadingCharts] = useState(!data?.charts?.fees?.length);
+    const [loadingAlerts, setLoadingAlerts] = useState(!data?.alerts?.length);
+
+    useEffect(() => {
+        if (loadingCharts) {
+            api.get('/dashboard/admin/charts')
+                .then(res => {
+                    if (res.data && res.data.success) {
+                        setCharts(res.data.data);
+                    }
+                })
+                .catch(console.error)
+                .finally(() => setLoadingCharts(false));
+        }
+
+        if (loadingAlerts) {
+            api.get('/dashboard/admin/alerts')
+                .then(res => {
+                    if (res.data && res.data.success) {
+                        setAlerts(res.data.data);
+                    }
+                })
+                .catch(console.error)
+                .finally(() => setLoadingAlerts(false));
+        }
+    }, [loadingCharts, loadingAlerts]);
 
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -232,10 +261,10 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
     // ──────────────────────────────────────────────
     // Dynamic DB-Backed Historical Chart Series & Parity
     // ──────────────────────────────────────────────
-    const hasFeesData = useMemo(() => data?.charts?.fees?.some((item: any) => item.Fees > 0), [data]);
-    const hasStudentsData = useMemo(() => data?.charts?.students?.some((item: any) => item.Students > 0), [data]);
-    const hasAttendanceData = useMemo(() => data?.charts?.attendance?.some((item: any) => item.Attendance > 0), [data]);
-    const hasEnquiriesData = useMemo(() => data?.charts?.enquiries?.some((item: any) => item.Enquiries > 0), [data]);
+    const hasFeesData = useMemo(() => charts?.fees?.some((item: any) => item.Fees > 0), [charts]);
+    const hasStudentsData = useMemo(() => charts?.students?.some((item: any) => item.Students > 0), [charts]);
+    const hasAttendanceData = useMemo(() => charts?.attendance?.some((item: any) => item.Attendance > 0), [charts]);
+    const hasEnquiriesData = useMemo(() => charts?.enquiries?.some((item: any) => item.Enquiries > 0), [charts]);
 
     // Premium dynamic HSL empty state placeholder
     const renderEmptyState = (label: string, actionText: string) => (
@@ -319,8 +348,10 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Monthly Fee Collection</span>
                         <div style={{ height: '240px', width: '100%' }}>
-                            {hasFeesData ? (
-                                <FeeCollectionChart data={data?.charts?.fees || []} />
+                            {loadingCharts ? (
+                                <div className="skeleton" style={{ height: '100%', width: '100%', borderRadius: '12px' }} />
+                            ) : hasFeesData ? (
+                                <FeeCollectionChart data={charts?.fees || []} />
                             ) : (
                                 renderEmptyState('Fee Collection', 'Collect your first installment to display revenue projections.')
                             )}
@@ -331,8 +362,10 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Cumulative Student Growth</span>
                         <div style={{ height: '240px', width: '100%' }}>
-                            {hasStudentsData ? (
-                                <StudentGrowthChart data={data?.charts?.students || []} />
+                            {loadingCharts ? (
+                                <div className="skeleton" style={{ height: '100%', width: '100%', borderRadius: '12px' }} />
+                            ) : hasStudentsData ? (
+                                <StudentGrowthChart data={charts?.students || []} />
                             ) : (
                                 renderEmptyState('Student Growth', 'Admit your first student to track institutional growth.')
                             )}
@@ -343,8 +376,10 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Attendance Overview</span>
                         <div style={{ height: '240px', width: '100%' }}>
-                            {hasAttendanceData ? (
-                                <AttendanceOverviewChart data={data?.charts?.attendance || []} />
+                            {loadingCharts ? (
+                                <div className="skeleton" style={{ height: '100%', width: '100%', borderRadius: '12px' }} />
+                            ) : hasAttendanceData ? (
+                                <AttendanceOverviewChart data={charts?.attendance || []} />
                             ) : (
                                 renderEmptyState('Attendance Overview', 'Mark student attendance in class cohorts to track engagement metrics.')
                             )}
@@ -355,8 +390,10 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Enquiry Lead Trends</span>
                         <div style={{ height: '240px', width: '100%' }}>
-                            {hasEnquiriesData ? (
-                                <EnquiryTrendsChart data={data?.charts?.enquiries || []} />
+                            {loadingCharts ? (
+                                <div className="skeleton" style={{ height: '100%', width: '100%', borderRadius: '12px' }} />
+                            ) : hasEnquiriesData ? (
+                                <EnquiryTrendsChart data={charts?.enquiries || []} />
                             ) : (
                                 renderEmptyState('Enquiry Leads', 'Add enquiry inquiries in lead pipeline to analyze lead generation performance.')
                             )}
