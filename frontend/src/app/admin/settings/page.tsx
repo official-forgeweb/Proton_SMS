@@ -10,11 +10,14 @@ export default function SettingsPage() {
     const [settings, setSettings] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isTesting, setIsTesting] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const navItems = [
         { label: 'General Info', icon: Building },
         { label: 'Security & Access', icon: Shield },
         { label: 'Notifications', icon: Bell },
+        { label: 'Google Sheets', icon: Database },
         { label: 'Data Backups', icon: Database },
         { label: 'Website Settings', icon: Globe },
     ];
@@ -36,6 +39,40 @@ export default function SettingsPage() {
         }
     };
 
+    const handleTestConnection = async () => {
+        if (!settings?.google_spreadsheet_id) return;
+        try {
+            setIsTesting(true);
+            const res = await api.post('/video-lectures/test-connection', {
+                spreadsheetId: settings.google_spreadsheet_id
+            });
+            customAlert(res.data.message || 'Connection test successful!', 'Success');
+        } catch (error: any) {
+            console.error(error);
+            const msg = error.response?.data?.message || 'Failed to authenticate with Google Sheets API.';
+            customAlert(msg, 'Connection Failed');
+        } finally {
+            setIsTesting(false);
+        }
+    };
+
+    const handleSyncNow = async () => {
+        if (!settings?.google_spreadsheet_id) return;
+        try {
+            setIsSyncing(true);
+            const res = await api.post('/video-lectures/sync');
+            const summary = res.data.summary;
+            const message = `Sync Completed!\n\n• Processed: ${summary.processed}\n• Created: ${summary.created}\n• Updated: ${summary.updated}\n• Deleted: ${summary.deleted}`;
+            customAlert(message, 'Synchronization Report');
+        } catch (error: any) {
+            console.error(error);
+            const msg = error.response?.data?.message || 'Google Sheets synchronization failed.';
+            customAlert(msg, 'Sync Failed');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     const handleSave = async () => {
         if (!settings) return;
         try {
@@ -50,7 +87,11 @@ export default function SettingsPage() {
                 require_email_verification: settings.require_email_verification,
                 enable_2fa: settings.enable_2fa,
                 email_notifications: settings.email_notifications,
-                sms_notifications: settings.sms_notifications
+                sms_notifications: settings.sms_notifications,
+                google_sheets_enabled: settings.google_sheets_enabled,
+                google_spreadsheet_id: settings.google_spreadsheet_id,
+                google_sheet_name: settings.google_sheet_name,
+                google_sync_interval_minutes: parseInt(settings.google_sync_interval_minutes) || 5
             });
             customAlert('System settings have been successfully updated.', 'Settings Saved');
         } catch (error) {
@@ -253,6 +294,91 @@ export default function SettingsPage() {
                                     </div>
                                 )}
 
+                                {activeNav === 'Google Sheets' && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                        <ToggleSwitch 
+                                            label="Enable Google Sheets Auto-Sync" 
+                                            description="Automatically synchronizes lecture videos and materials directly from your shared Google Spreadsheet every few minutes."
+                                            checked={settings.google_sheets_enabled || false}
+                                            onChange={val => handleChange('google_sheets_enabled', val)}
+                                        />
+                                        
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '16px', background: '#F8F9FD', borderRadius: '14px', border: '1px solid #F0F0F5' }}>
+                                            <div style={{ gridColumn: 'span 2' }}>
+                                                <label style={labelStyle}>Google Spreadsheet ID</label>
+                                                <input 
+                                                    style={inputStyle} 
+                                                    placeholder="e.g. 1aBcDeFgHiJkLmNoPqRsTuVwXyZ"
+                                                    value={settings.google_spreadsheet_id || ''} 
+                                                    onChange={e => handleChange('google_spreadsheet_id', e.target.value)} 
+                                                />
+                                                <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: '#8F92A1', fontWeight: 500 }}>
+                                                    The unique ID in your Google Sheet's URL. Make sure to share the sheet with your service account email as a **Viewer**!
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label style={labelStyle}>Sheet Tab Name</label>
+                                                <input 
+                                                    style={inputStyle} 
+                                                    placeholder="e.g. Videos"
+                                                    value={settings.google_sheet_name || 'Videos'} 
+                                                    onChange={e => handleChange('google_sheet_name', e.target.value)} 
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={labelStyle}>Sync Interval (Minutes)</label>
+                                                <input 
+                                                    type="number"
+                                                    style={inputStyle} 
+                                                    min={1}
+                                                    value={settings.google_sync_interval_minutes || 5} 
+                                                    onChange={e => handleChange('google_sync_interval_minutes', parseInt(e.target.value) || 5)} 
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                                            <button 
+                                                onClick={handleTestConnection}
+                                                disabled={isTesting || !settings.google_spreadsheet_id}
+                                                style={{
+                                                    padding: '10px 20px', 
+                                                    background: '#FFFFFF',
+                                                    color: '#4F60FF',
+                                                    border: '1px solid #4F60FF', 
+                                                    borderRadius: '10px', 
+                                                    fontWeight: 700,
+                                                    fontSize: '13px', 
+                                                    cursor: (isTesting || !settings.google_spreadsheet_id) ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    opacity: (isTesting || !settings.google_spreadsheet_id) ? 0.6 : 1
+                                                }}
+                                            >
+                                                {isTesting ? 'Testing Connection...' : 'Test Connection'}
+                                            </button>
+                                            <button 
+                                                onClick={handleSyncNow}
+                                                disabled={isSyncing || !settings.google_spreadsheet_id}
+                                                style={{
+                                                    padding: '10px 20px', 
+                                                    background: 'linear-gradient(135deg, #4F60FF 0%, #3144E5 100%)',
+                                                    color: 'white',
+                                                    border: 'none', 
+                                                    borderRadius: '10px', 
+                                                    fontWeight: 700,
+                                                    fontSize: '13px', 
+                                                    cursor: (isSyncing || !settings.google_spreadsheet_id) ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    opacity: (isSyncing || !settings.google_spreadsheet_id) ? 0.6 : 1,
+                                                    boxShadow: '0 4px 10px rgba(79, 96, 255, 0.15)'
+                                                }}
+                                            >
+                                                {isSyncing ? 'Syncing...' : 'Sync Now'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {(activeNav === 'Data Backups' || activeNav === 'Website Settings') && (
                                     <div style={{ padding: '40px', textAlign: 'center', color: '#A1A5B7', background: '#F8F9FD', borderRadius: '16px' }}>
                                         <Settings size={48} style={{ display: 'block', margin: '0 auto 16px', opacity: 0.5, color: '#1A1D3B' }} />
@@ -263,7 +389,7 @@ export default function SettingsPage() {
                                     </div>
                                 )}
 
-                                {['General Info', 'Security & Access', 'Notifications'].includes(activeNav) && (
+                                {['General Info', 'Security & Access', 'Notifications', 'Google Sheets'].includes(activeNav) && (
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px', borderTop: '1px solid #F0F0F5', paddingTop: '20px' }}>
                                         <button 
                                             onClick={handleSave}

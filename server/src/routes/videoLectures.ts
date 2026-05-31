@@ -398,4 +398,69 @@ router.delete('/:id', authenticateToken, authorize('admin', 'coordinator', 'teac
     }
 });
 
+// 7. Test connection
+router.post('/test-connection', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { spreadsheetId } = req.body;
+    let resolvedId = spreadsheetId;
+    if (!resolvedId) {
+      const settings = await prisma.systemSetting.findUnique({ where: { id: 'global' } });
+      resolvedId = settings?.google_spreadsheet_id || process.env.GOOGLE_SPREADSHEET_ID;
+    }
+    if (!resolvedId) {
+      res.status(400).json({ success: false, message: 'Spreadsheet ID not provided' });
+      return;
+    }
+    const { GoogleSheetsService } = await import('../services/googleSheetsService');
+    await GoogleSheetsService.testConnection(resolvedId);
+    res.json({ success: true, message: 'Connection to Google Sheet successful! Credentials verified.' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Connection failed: ${error.message}` });
+  }
+});
+
+// 8. Manual Sync trigger from UI
+router.post('/sync', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { GoogleSheetSyncJob } = await import('../jobs/googleSheetSyncJob');
+    const result = await GoogleSheetSyncJob.sync(true); // force = true
+    res.json({ success: true, message: 'Google Sheets synchronization completed successfully.', ...result });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Synchronization failed: ${error.message}` });
+  }
+});
+
+// 9. Cron/Webhook Sync trigger
+router.post('/sync/cron', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const cronSecret = process.env.CRON_SECRET || process.env.VERCEL_CRON_SECRET;
+    const authHeader = req.headers.authorization;
+
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      res.status(401).json({ success: false, message: 'Unauthorized cron trigger' });
+      return;
+    }
+
+    const { GoogleSheetSyncJob } = await import('../jobs/googleSheetSyncJob');
+    const result = await GoogleSheetSyncJob.sync(false); // force = false (respects settings toggles)
+    res.json({ success: true, message: 'Automated sync job executed successfully.', ...result });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Automated sync job failed: ${error.message}` });
+  }
+});
+
+// 10. Sync Logs endpoint
+router.get('/sync-logs', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const logs = await prisma.googleSheetSyncLog.findMany({
+      where: { sync_type: 'video_lectures' },
+      orderBy: { start_time: 'desc' },
+      take: 50
+    });
+    res.json({ success: true, data: logs });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to retrieve sync logs: ${error.message}` });
+  }
+});
+
 export default router;

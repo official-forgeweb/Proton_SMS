@@ -705,6 +705,7 @@ model VideoLecture {
   title       String?                 // Optional title
   status      String   @default("active")  // active | inactive
   uploaded_by String?                 // User ID who uploaded
+  sheet_row_id String?  @unique             // Google Sheet Row ID/Hash
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
@@ -786,6 +787,12 @@ model SystemSetting {
   
   email_notifications        Boolean  @default(true)
   sms_notifications          Boolean  @default(true)
+
+  // Google Sheets Auto-Sync Settings
+  google_sheets_enabled      Boolean  @default(false)
+  google_spreadsheet_id      String?
+  google_sheet_name          String   @default("Videos")
+  google_sync_interval_minutes Int    @default(5)
 
   updated_at                 DateTime @updatedAt
 
@@ -982,6 +989,21 @@ model SubjectAlias {
   subject        Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
 
   @@map("subject_aliases")
+}
+
+model GoogleSheetSyncLog {
+  id             String    @id @default(uuid())
+  sync_type      String    @default("video_lectures")
+  start_time     DateTime  @default(now())
+  end_time       DateTime?
+  rows_processed Int       @default(0)
+  rows_created   Int       @default(0)
+  rows_updated   Int       @default(0)
+  rows_deleted   Int       @default(0)
+  status         String    // "success" | "failed"
+  error_message  String?   @db.Text
+
+  @@map("google_sheet_sync_logs")
 }
 
 
