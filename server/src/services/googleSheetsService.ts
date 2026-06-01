@@ -15,8 +15,8 @@ export class GoogleSheetsService {
       );
     }
 
-    // Clean up escaped newlines in Vercel/environment private keys
-    privateKey = privateKey.replace(/\\n/g, '\n');
+    // Clean up escaped newlines and double quotes in Vercel/environment private keys
+    privateKey = privateKey.trim().replace(/^"/, '').replace(/"$/, '').replace(/\\n/g, '\n');
 
     return new google.auth.JWT({
       email: clientEmail,
