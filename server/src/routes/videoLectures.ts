@@ -334,6 +334,20 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
   }
 });
 
+// 10. Sync Logs endpoint
+router.get('/sync-logs', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const logs = await prisma.googleSheetSyncLog.findMany({
+      where: { sync_type: 'video_lectures' },
+      orderBy: { start_time: 'desc' },
+      take: 50
+    });
+    res.json({ success: true, data: logs });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to retrieve sync logs: ${error.message}` });
+  }
+});
+
 // 3. Get Single
 router.get('/:id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
     try {
@@ -449,18 +463,6 @@ router.post('/sync/cron', async (req: Request, res: Response): Promise<void> => 
   }
 });
 
-// 10. Sync Logs endpoint
-router.get('/sync-logs', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
-  try {
-    const logs = await prisma.googleSheetSyncLog.findMany({
-      where: { sync_type: 'video_lectures' },
-      orderBy: { start_time: 'desc' },
-      take: 50
-    });
-    res.json({ success: true, data: logs });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: `Failed to retrieve sync logs: ${error.message}` });
-  }
-});
+
 
 export default router;
