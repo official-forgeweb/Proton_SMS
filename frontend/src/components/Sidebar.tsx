@@ -2,13 +2,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
+import { useLayoutStore } from '@/stores/layoutStore';
 import {
-    LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
+    LayoutDashboard, Users, GraduationCap, BookOpen,
     Calendar, CreditCard, BarChart3, Settings, LogOut, Phone,
-    UserCheck, FileText, Bell, Menu, X, Target, Clock,
-    Home, PenTool, Award, HelpCircle, MessageSquare, Zap, Shield, Video, PlayCircle
+    X, Menu, Zap, Shield, Clock, Award
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const adminNav = [
     {
@@ -96,7 +96,51 @@ const coordinatorNav = [
 export default function Sidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuthStore();
-    const [isOpen, setIsOpen] = useState(false);
+    
+    // Global layout reactive states
+    const { 
+        isSidebarOpen, 
+        isSidebarCollapsed, 
+        setSidebarOpen, 
+        setSidebarCollapsed 
+    } = useLayoutStore();
+
+    const [isMobile, setIsMobile] = useState(false);
+    const [isTablet, setIsTablet] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+
+    // Track window sizes dynamically
+    useEffect(() => {
+        const handleResize = () => {
+            const width = window.innerWidth;
+            const mobile = width < 768;
+            const tablet = width >= 768 && width < 1024;
+            setIsMobile(mobile);
+            setIsTablet(tablet);
+            
+            // Set collapsed state automatically based on size
+            if (mobile) {
+                setSidebarCollapsed(false);
+            } else if (tablet) {
+                setSidebarCollapsed(true);
+            }
+        };
+        
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [setSidebarCollapsed]);
+
+    // Handle Escape key closure on mobile drawer mode
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isMobile) {
+                setSidebarOpen(false);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isMobile, setSidebarOpen]);
 
     const teacherPermissions: string[] = user?.role === 'teacher' ? (user.profile?.permissions || []) : [];
 
@@ -105,7 +149,6 @@ export default function Sidebar() {
         : user?.role === 'teacher' ? teacherNavSections.map(section => ({
             ...section,
             items: section.items.filter((item: any) =>
-                // Always show Dashboard (no permissionKey) and items the teacher is permitted
                 !item.permissionKey || teacherPermissions.includes(item.permissionKey)
             )
         }))
@@ -113,47 +156,48 @@ export default function Sidebar() {
 
     const isItemActive = (item: any): boolean => {
         if (!pathname) return false;
-        // Exact match
         if (pathname === item.href) return true;
         
-        // Start match to keep active when in sub-pages (e.g. /admin/students/1)
         if (item.href && item.href !== `/${user?.role}` && pathname.startsWith(item.href)) {
             return true;
         }
 
-        // Highlight Operations tab when inside any of its sub-tools
         if (item.label === 'Operations') {
             const operationRoutes = ['/study-materials', '/video-lectures', '/tests', '/homework', '/demos', '/queries', '/permissions'];
             if (operationRoutes.some(route => pathname.includes(route))) {
                 return true;
             }
         }
-        
         return false;
     };
 
+    // Calculate collapse logic
+    const isCurrentlyCollapsed = !isMobile && (isSidebarCollapsed || (isTablet && !isHovered));
+    const sidebarWidth = isMobile ? '260px' : (isCurrentlyCollapsed ? '70px' : '260px');
+
     return (
         <>
-            {/* Mobile Toggle */}
-            <button
-                className="fixed top-4 left-4 z-[60] p-2 rounded-lg bg-white shadow-md md:hidden"
-                onClick={() => setIsOpen(!isOpen)}
-                style={{ border: '1px solid var(--border-primary)' }}
-            >
-                {isOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-
-            {isOpen && (
+            {/* Backdrop overlay for Mobile Drawer */}
+            {isMobile && isSidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-black/30 z-40 md:hidden"
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        backgroundColor: 'rgba(16, 18, 27, 0.4)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 45,
+                        transition: 'opacity 0.25s ease',
+                    }}
                 />
             )}
 
             <aside
-                className={`sidebar ${isOpen ? 'open' : ''}`}
+                onMouseEnter={() => !isMobile && setIsHovered(true)}
+                onMouseLeave={() => !isMobile && setIsHovered(false)}
+                className={`sidebar ${isMobile && isSidebarOpen ? 'open' : ''}`}
                 style={{
-                    width: '260px',
+                    width: sidebarWidth,
                     background: '#10121B',
                     borderRight: '1px solid rgba(255,255,255,0.05)',
                     display: 'flex',
@@ -163,6 +207,8 @@ export default function Sidebar() {
                     left: 0,
                     top: 0,
                     zIndex: 50,
+                    transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                    transform: isMobile ? (isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
                 }}
             >
                 {/* Subtle dark radial glow for depth */}
@@ -171,36 +217,59 @@ export default function Sidebar() {
                     background: 'radial-gradient(ellipse at top left, rgba(229,57,53,0.08) 0%, transparent 70%)',
                     pointerEvents: 'none', zIndex: 0
                 }} />
-                {/* Logo */}
-                <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+
+                {/* Logo Section */}
+                <div style={{ 
+                    padding: isCurrentlyCollapsed ? '16px 0' : '16px 24px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    position: 'relative', 
+                    zIndex: 1,
+                    transition: 'padding 0.2s',
+                }}>
                     <Link href={`/${user?.role}`} style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
                         <img 
                             src="/image.png" 
                             alt="Proton Logo" 
                             style={{ 
-                                width: '72px', 
-                                height: '72px', 
+                                width: isCurrentlyCollapsed ? '40px' : '64px', 
+                                height: isCurrentlyCollapsed ? '40px' : '64px', 
                                 borderRadius: '50%',
-                                boxShadow: '0 4px 16px rgba(229,57,53,0.4)',
-                                backgroundColor: '#FF0000'
+                                boxShadow: '0 4px 16px rgba(229,57,53,0.3)',
+                                backgroundColor: '#FF0000',
+                                transition: 'all 0.2s ease',
                             }} 
                         />
                     </Link>
                 </div>
 
                 {/* Navigation Sections */}
-                <nav style={{ flex: 1, padding: '0 16px', overflowY: 'auto', overflowX: 'hidden' }} className="hide-scrollbar">
+                <nav 
+                    style={{ 
+                        flex: 1, 
+                        padding: isCurrentlyCollapsed ? '0 8px' : '0 16px', 
+                        overflowY: 'auto', 
+                        overflowX: 'hidden',
+                        transition: 'padding 0.2s'
+                    }} 
+                    className="hide-scrollbar"
+                >
                     {navSections.map((section) => (
-                        <div key={section.section} style={{ marginBottom: '12px' }}>
-                            {/* Section Label */}
-                            <div style={{ padding: '12px 12px 6px', marginBottom: 0 }}>
-                                <p style={{
-                                    fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em',
-                                    color: '#6B7280', textTransform: 'uppercase',
-                                }}>
-                                    {section.section}
-                                </p>
-                            </div>
+                        <div key={section.section} style={{ marginBottom: '16px' }}>
+                            {/* Section Label (Hide in collapsed mode) */}
+                            {!isCurrentlyCollapsed ? (
+                                <div style={{ padding: '12px 12px 6px', marginBottom: 0 }}>
+                                    <p style={{
+                                        fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em',
+                                        color: '#6B7280', textTransform: 'uppercase',
+                                    }}>
+                                        {section.section}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '12px 8px 6px' }} />
+                            )}
 
                             {section.items.map((item: any) => {
                                 const Icon = item.icon;
@@ -210,17 +279,33 @@ export default function Sidebar() {
                                     <div key={item.label} style={{ marginBottom: '4px' }}>
                                         <Link
                                             href={item.href || '#'}
-                                            onClick={() => setIsOpen(false)}
+                                            onClick={() => isMobile && setSidebarOpen(false)}
+                                            title={isCurrentlyCollapsed ? item.label : undefined}
                                             className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
                                             style={{
-                                                display: 'flex', alignItems: 'center', gap: '12px',
-                                                padding: '10px 14px', borderRadius: '12px', textDecoration: 'none',
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: isCurrentlyCollapsed ? 'center' : 'flex-start',
+                                                gap: isCurrentlyCollapsed ? '0' : '12px',
+                                                padding: '10px 14px', 
+                                                borderRadius: '12px', 
+                                                textDecoration: 'none',
                                                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                position: 'relative', zIndex: 1,
+                                                position: 'relative', 
+                                                zIndex: 1,
                                             }}
                                         >
-                                            <Icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ opacity: isActive ? 1 : 0.8 }} />
-                                            <span>{item.label}</span>
+                                            <Icon 
+                                                size={18} 
+                                                strokeWidth={isActive ? 2.5 : 2} 
+                                                style={{ 
+                                                    opacity: isActive ? 1 : 0.8,
+                                                    flexShrink: 0
+                                                }} 
+                                            />
+                                            {!isCurrentlyCollapsed && (
+                                                <span style={{ transition: 'opacity 0.2s' }}>{item.label}</span>
+                                            )}
                                         </Link>
                                     </div>
                                 );
@@ -229,24 +314,31 @@ export default function Sidebar() {
                     ))}
                 </nav>
 
-                {/* Upgrade Card */}
-                
-
-                {/* Sign Out */}
-                <div style={{ padding: '6px 24px 16px', position: 'relative', zIndex: 1 }}>
+                {/* Sign Out Section */}
+                <div style={{ padding: isCurrentlyCollapsed ? '6px 8px 16px' : '6px 24px 16px', position: 'relative', zIndex: 1 }}>
                     <button
                         onClick={logout}
+                        title={isCurrentlyCollapsed ? 'Sign Out' : undefined}
                         className="sidebar-signout-btn"
                         style={{
-                            display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center',
-                            background: 'rgba(255,255,255,0.05)', cursor: 'pointer', fontSize: '14px',
-                            border: '1px solid rgba(255,255,255,0.1)', color: '#9CA3AF', fontWeight: 600, width: '100%',
-                            padding: '12px 0', transition: 'all 0.2s',
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            gap: isCurrentlyCollapsed ? '0' : '12px', 
+                            background: 'rgba(255,255,255,0.05)', 
+                            cursor: 'pointer', 
+                            fontSize: '14px',
+                            border: '1px solid rgba(255,255,255,0.1)', 
+                            color: '#9CA3AF', 
+                            fontWeight: 600, 
+                            width: '100%',
+                            padding: '12px 0', 
+                            transition: 'all 0.2s',
                             borderRadius: '12px',
                         }}
                     >
-                        <LogOut size={18} strokeWidth={2} />
-                        Sign Out
+                        <LogOut size={18} strokeWidth={2} style={{ flexShrink: 0 }} />
+                        {!isCurrentlyCollapsed && <span>Sign Out</span>}
                     </button>
                 </div>
             </aside>

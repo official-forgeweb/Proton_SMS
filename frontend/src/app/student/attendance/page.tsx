@@ -2,6 +2,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
+import ResponsivePageContainer from '@/components/ui/ResponsivePageContainer';
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid';
+import ResponsiveTable, { TableColumn } from '@/components/ui/ResponsiveTable';
 import { Calendar, UserCheck, UserX, Clock, ChevronLeft, ChevronRight, TrendingUp, Info, GraduationCap, FileText, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -13,12 +16,10 @@ interface CalendarItem {
     type: 'class' | 'test';
     subject: string;
     start_time: string;
-    // Class specific
     end_time?: string;
     teacher_name?: string;
-    status: string; // 'present'|'absent'|'late'|'unmarked' for class, 'upcoming'|'completed'|'result_published'|'missed' for test
+    status: string;
     attendance_id?: string | null;
-    // Test specific
     test_name?: string;
     test_type?: string;
     score?: number;
@@ -122,13 +123,47 @@ export default function StudentAttendancePage() {
         }
     };
 
+    // Columns schema for responsive table
+    const tableColumns: TableColumn[] = [
+        { key: 'subject', header: 'Subject', style: { fontWeight: 700 } },
+        { 
+            key: 'sessions', 
+            header: 'Classes Attended', 
+            render: (row: any) => `${row.present} of ${row.total} sessions` 
+        },
+        { 
+            key: 'status', 
+            header: 'Attendance Status', 
+            render: (row: any) => (
+                <span style={{ 
+                    padding: '4px 10px', 
+                    borderRadius: '8px', 
+                    fontSize: '11px', 
+                    fontWeight: 800,
+                    background: Number(row.percentage) >= 75 ? '#ECFDF5' : '#FEF2F2',
+                    color: Number(row.percentage) >= 75 ? '#10B981' : '#E53935',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.02em'
+                }}>
+                    {Number(row.percentage) >= 75 ? 'Excellent' : 'Critical'}
+                </span>
+            ) 
+        },
+        { 
+            key: 'percentage', 
+            header: 'Percentage', 
+            style: { textAlign: 'right' },
+            render: (row: any) => <strong style={{ fontSize: '15px' }}>{row.percentage}%</strong>
+        }
+    ];
+
     return (
         <DashboardLayout requiredRole="student">
-            <div style={{ padding: '16px 20px', maxWidth: '1400px', margin: '0 auto', paddingBottom: '120px' }}>
+            <ResponsivePageContainer style={{ paddingBottom: '120px' }}>
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1D3B', letterSpacing: '-0.02em', margin: 0 }}>Academic Calendar</h1>
+                        <h1 style={{ fontSize: 'clamp(20px, 3.5vw, 24px)', fontWeight: 800, color: '#1A1D3B', letterSpacing: '-0.02em', margin: 0, fontFamily: 'Poppins, sans-serif' }}>Academic Calendar</h1>
                         <p style={{ color: '#5E6278', fontSize: '13.5px', fontWeight: 500, margin: '4px 0 0 0' }}>Your personalized schedule of classes and examinations.</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', background: 'white', padding: '4px', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
@@ -145,7 +180,7 @@ export default function StudentAttendancePage() {
                 </div>
 
                 {/* Main Stats (Spacious Balanced Cards) */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                <ResponsiveGrid desktopCols={3} tabletCols={2} mobileCols={1} gap="16px" style={{ marginBottom: '24px' }}>
                     {/* Overall Performance Card */}
                     <div className="card shadow-sm" style={{ 
                         background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', 
@@ -158,7 +193,8 @@ export default function StudentAttendancePage() {
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center',
-                        minHeight: '100px'
+                        minHeight: '100px',
+                        boxSizing: 'border-box'
                     }}>
                         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -187,21 +223,22 @@ export default function StudentAttendancePage() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '14px',
-                            minHeight: '100px'
+                            minHeight: '100px',
+                            boxSizing: 'border-box'
                         }}>
-                            <div style={{ padding: '9px', background: 'rgba(229, 57, 53, 0.06)', borderRadius: '12px', color: '#E53935', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ padding: '9px', background: 'rgba(229, 57, 53, 0.06)', borderRadius: '12px', color: '#E53935', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <GraduationCap size={20} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1A1D3B', margin: '0 0 3px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.subject}</h3>
                                 <p style={{ color: '#5E6278', fontSize: '12.5px', fontWeight: 500, margin: 0 }}>{s.present} of {s.total} attended</p>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                 <span style={{ fontSize: '20px', fontWeight: 800, color: Number(s.percentage) >= 75 ? '#10B981' : '#E53935' }}>{s.percentage}%</span>
                             </div>
                         </div>
                     ))}
-                </div>
+                </ResponsiveGrid>
 
                 {/* Legend & Layout Details */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 4px' }}>
@@ -215,128 +252,100 @@ export default function StudentAttendancePage() {
                     </div>
                 </div>
 
-                {/* Calendar Grid (Beautifully Spacious & Balanced) */}
-                <div style={{ background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                        {DAY_NAMES.map(d => (
-                            <div key={d} style={{ textAlign: 'center', padding: '12px 10px', fontWeight: 800, fontSize: '11px', color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{d}</div>
-                        ))}
-                    </div>
+                {/* Calendar Grid (Swipable on mobile) */}
+                <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', marginBottom: '24px', borderRadius: '24px', border: '1px solid #E2E8F0', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
+                    <div style={{ minWidth: '800px', background: 'white' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                            {DAY_NAMES.map(d => (
+                                <div key={d} style={{ textAlign: 'center', padding: '12px 10px', fontWeight: 800, fontSize: '11px', color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{d}</div>
+                            ))}
+                        </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(130px, auto)' }}>
-                        {calendarCells.map((cell, idx) => (
-                            <div key={idx} style={{ 
-                                padding: '10px 12px', 
-                                borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid #F1F5F9',
-                                borderBottom: '1px solid #F1F5F9',
-                                background: cell.day === null ? '#FBFCFD' : 'white',
-                                position: 'relative',
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}>
-                                {cell.day && (
-                                    <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                            <span style={{ 
-                                                fontSize: '13px', 
-                                                fontWeight: 800, 
-                                                color: cell.isToday ? '#FFFFFF' : '#1A1D3B',
-                                                width: '24px', height: '24px',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                borderRadius: '6px',
-                                                background: cell.isToday ? '#E53935' : 'transparent',
-                                                boxShadow: cell.isToday ? '0 3px 8px rgba(229, 57, 53, 0.2)' : 'none'
-                                            }}>{cell.day}</span>
-                                            {cell.isToday && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#E53935' }} />}
-                                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(130px, auto)' }}>
+                            {calendarCells.map((cell, idx) => (
+                                <div key={idx} style={{ 
+                                    padding: '10px 12px', 
+                                    borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid #F1F5F9',
+                                    borderBottom: '1px solid #F1F5F9',
+                                    background: cell.day === null ? '#FBFCFD' : 'white',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    flexDirection: 'column'
+                                }}>
+                                    {cell.day && (
+                                        <>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                <span style={{ 
+                                                    fontSize: '13px', 
+                                                    fontWeight: 800, 
+                                                    color: cell.isToday ? '#FFFFFF' : '#1A1D3B',
+                                                    width: '24px', height: '24px',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    borderRadius: '6px',
+                                                    background: cell.isToday ? '#E53935' : 'transparent',
+                                                    boxShadow: cell.isToday ? '0 3px 8px rgba(229, 57, 53, 0.2)' : 'none'
+                                                }}>{cell.day}</span>
+                                                {cell.isToday && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#E53935' }} />}
+                                            </div>
 
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                                            {cell.items.map((item, iIdx) => {
-                                                const isClass = item.type === 'class';
-                                                const styles: any = isClass ? getClassStyles(item.status) : getTestStyles(item.status);
-                                                
-                                                return (
-                                                    <div key={iIdx} style={{ 
-                                                        padding: '6px 10px', 
-                                                        borderRadius: '8px', 
-                                                        background: styles.bg,
-                                                        borderLeft: `3px solid ${styles.border}`,
-                                                        transition: 'all 0.2s ease',
-                                                        cursor: 'pointer'
-                                                    }} className="activity-card">
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                                                            <span style={{ fontSize: '9px', fontWeight: 800, color: styles.color, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                                                                {isClass ? 'Class' : styles.label}
-                                                            </span>
-                                                            <div style={{ color: styles.color }}>{styles.icon}</div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                                                {cell.items.map((item, iIdx) => {
+                                                    const isClass = item.type === 'class';
+                                                    const styles: any = isClass ? getClassStyles(item.status) : getTestStyles(item.status);
+                                                    
+                                                    return (
+                                                        <div key={iIdx} style={{ 
+                                                            padding: '6px 10px', 
+                                                            borderRadius: '8px', 
+                                                            background: styles.bg,
+                                                            borderLeft: `3px solid ${styles.border}`,
+                                                            transition: 'all 0.2s ease',
+                                                            cursor: 'pointer'
+                                                        }} className="activity-card">
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                                                                <span style={{ fontSize: '9px', fontWeight: 800, color: styles.color, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                                                    {isClass ? 'Class' : styles.label}
+                                                                </span>
+                                                                <div style={{ color: styles.color }}>{styles.icon}</div>
+                                                            </div>
+                                                            <h4 style={{ fontSize: '11.5px', fontWeight: 800, color: '#1A1D3B', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: '1.2' }}>
+                                                                    {isClass ? item.subject : item.test_name}
+                                                            </h4>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9.5px', color: '#5E6278', fontWeight: 600 }}>
+                                                                <Clock size={10} /> {item.start_time}
+                                                                {!isClass && item.score !== undefined && (
+                                                                    <span style={{ marginLeft: 'auto', fontWeight: 800, color: '#10B981' }}>{item.score}/{item.total_marks}</span>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <h4 style={{ fontSize: '11.5px', fontWeight: 800, color: '#1A1D3B', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: '1.2' }}>
-                                                                {isClass ? item.subject : item.test_name}
-                                                        </h4>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9.5px', color: '#5E6278', fontWeight: 600 }}>
-                                                            <Clock size={10} /> {item.start_time}
-                                                            {!isClass && item.score !== undefined && (
-                                                                <span style={{ marginLeft: 'auto', fontWeight: 800, color: '#10B981' }}>{item.score}/{item.total_marks}</span>
-                                                            )}
-                                                        </div>
+                                                    );
+                                                })}
+                                                {cell.items.length === 0 && !cell.isToday && cell.day !== null && (
+                                                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.05, minHeight: '40px' }}>
+                                                        <Info size={20} />
                                                     </div>
-                                                );
-                                            })}
-                                            {cell.items.length === 0 && !cell.isToday && cell.day !== null && (
-                                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.05, minHeight: '40px' }}>
-                                                    <Info size={20} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        ))}
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* Detailed Table (Roomy & High Contrast) */}
+                {/* Detailed Table (Responsive Table Layout) */}
                 <div style={{ marginTop: '32px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', letterSpacing: '-0.02em', margin: 0 }}>Subject-wise Attendance</h2>
+                        <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', letterSpacing: '-0.02em', margin: 0, fontFamily: 'Poppins, sans-serif' }}>Subject-wise Attendance</h2>
                     </div>
-                    <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.01)' }}>
-                        <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                                <tr>
-                                    <th style={{ padding: '12px 18px', textAlign: 'left', fontSize: '11px', fontWeight: 800, color: '#8F92A1', textTransform: 'uppercase' }}>Subject</th>
-                                    <th style={{ padding: '12px 18px', textAlign: 'left', fontSize: '11px', fontWeight: 800, color: '#8F92A1', textTransform: 'uppercase' }}>Classes Attended</th>
-                                    <th style={{ padding: '12px 18px', textAlign: 'left', fontSize: '11px', fontWeight: 800, color: '#8F92A1', textTransform: 'uppercase' }}>Attendance Status</th>
-                                    <th style={{ padding: '12px 18px', textAlign: 'right', fontSize: '11px', fontWeight: 800, color: '#8F92A1', textTransform: 'uppercase' }}>Percentage</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {stats?.subjects.map((s, idx) => (
-                                    <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                                        <td style={{ padding: '12px 18px', fontWeight: 700, color: '#1A1D3B', fontSize: '13.5px' }}>{s.subject}</td>
-                                        <td style={{ padding: '12px 18px', color: '#5E6278', fontWeight: 600, fontSize: '13px' }}>{s.present} of {s.total} sessions</td>
-                                        <td style={{ padding: '12px 18px' }}>
-                                            <span style={{ 
-                                                padding: '4px 10px', 
-                                                borderRadius: '8px', 
-                                                fontSize: '11px', 
-                                                fontWeight: 800,
-                                                background: Number(s.percentage) >= 75 ? '#ECFDF5' : '#FEF2F2',
-                                                color: Number(s.percentage) >= 75 ? '#10B981' : '#E53935',
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '0.02em'
-                                            }}>
-                                                {Number(s.percentage) >= 75 ? 'Excellent' : 'Critical'}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '12px 18px', textAlign: 'right', fontWeight: 800, fontSize: '16px', color: '#1A1D3B' }}>{s.percentage}%</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ResponsiveTable
+                        columns={tableColumns}
+                        data={stats?.subjects || []}
+                        cardTitleKey="subject"
+                    />
                 </div>
-            </div>
+            </ResponsivePageContainer>
             
             <style jsx>{`
                 .activity-card:hover {

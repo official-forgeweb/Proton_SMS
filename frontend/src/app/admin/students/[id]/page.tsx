@@ -12,6 +12,11 @@ import {
 import { useParams, useRouter } from 'next/navigation';
 import StudentAttendanceCalendar from '@/components/StudentAttendanceCalendar';
 import StudentProfileEnquiries from '@/components/StudentProfileEnquiries';
+import ResponsivePageContainer from '@/components/ui/ResponsivePageContainer';
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid';
+import ResponsiveCard from '@/components/ui/ResponsiveCard';
+import ResponsiveTabs from '@/components/ui/ResponsiveTabs';
+import ResponsiveModal from '@/components/ui/ResponsiveModal';
 
 export default function StudentProfilePage() {
     const params = useParams();
@@ -27,12 +32,10 @@ export default function StudentProfilePage() {
     const [queries, setQueries] = useState<any[]>([]);
     const [homeworkHistory, setHomeworkHistory] = useState<any>(null);
 
-    // Attendance filter states
     const [attSubjFilter, setAttSubjFilter] = useState('all');
     const [attStatusFilter, setAttStatusFilter] = useState('all');
     const [attSearch, setAttSearch] = useState('');
 
-    // Test filter and sort states
     const [testSearch, setTestSearch] = useState('');
     const [testSubjectFilter, setTestSubjectFilter] = useState('all');
     const [testStatusFilter, setTestStatusFilter] = useState('all');
@@ -471,17 +474,11 @@ export default function StudentProfilePage() {
             </div>
 
             {/* Tabs */}
-            <div className="animate-in" style={{ display: 'flex', gap: '6px', marginBottom: '24px', background: 'white', padding: '6px', borderRadius: '16px', border: '1px solid #F1F2F6', animationDelay: '150ms' }}>
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveTab(tab.id)}
-                    >
-                        {tab.icon} {tab.label}
-                    </button>
-                ))}
-            </div>
+            <ResponsiveTabs
+                tabs={tabs}
+                activeTab={activeTab}
+                onChange={setActiveTab}
+            />
 
             {/* Tab Content */}
             <div className="animate-in" style={{ animationDelay: '200ms' }}>

@@ -3,7 +3,8 @@ import { useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import Sidebar from '@/components/Sidebar';
-import { Search, Bell, WifiOff, RefreshCw, X, Check, GraduationCap, UserCheck, BookOpen, FileText, HelpCircle, Award, User } from 'lucide-react';
+import { useLayoutStore } from '@/stores/layoutStore';
+import { Search, Bell, WifiOff, RefreshCw, X, Check, GraduationCap, UserCheck, BookOpen, FileText, HelpCircle, Award, User, Menu } from 'lucide-react';
 import api from '@/lib/api';
 import ToolBottomBar from '@/components/ToolBottomBar';
 
@@ -18,6 +19,32 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
     const { user, isAuthenticated, isLoading, serverError, checkAuth } = useAuthStore();
     const [retrying, setRetrying] = useState(false);
     const [mounted, setMounted] = useState(false);
+
+    // Global layout reactive states
+    const { isSidebarOpen, isSidebarCollapsed, toggleSidebar, setSidebarCollapsed } = useLayoutStore();
+    const [isMobile, setIsMobile] = useState(false);
+    const [isTablet, setIsTablet] = useState(false);
+
+    // Track window resize for sidebar responsive layouts
+    useEffect(() => {
+        const handleResize = () => {
+            const width = window.innerWidth;
+            const mobile = width < 768;
+            const tablet = width >= 768 && width < 1024;
+            setIsMobile(mobile);
+            setIsTablet(tablet);
+            
+            // Sync collapses
+            if (mobile) {
+                setSidebarCollapsed(false);
+            } else if (tablet) {
+                setSidebarCollapsed(true);
+            }
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [setSidebarCollapsed]);
 
     useEffect(() => {
         setMounted(true);
@@ -397,8 +424,20 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
     const roleLabel = user.role.charAt(0).toUpperCase() + user.role.slice(1);
     const avatarImgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=E53935&color=fff`;
 
+    const currentSidebarWidth = isMobile ? '0px' : (isSidebarCollapsed ? '70px' : '260px');
+
     return (
-        <div className="bg-mesh main-layout-root" suppressHydrationWarning style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+        <div 
+            className="main-layout-root" 
+            suppressHydrationWarning 
+            style={{ 
+                display: 'flex', 
+                height: '100vh', 
+                width: '100vw', 
+                overflow: 'hidden',
+                '--sidebar-width': currentSidebarWidth
+            } as any}
+        >
             <style dangerouslySetInnerHTML={{__html: `
                 .search-result-item:hover {
                     background-color: #F8F9FD !important;
@@ -451,6 +490,37 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                     position: 'sticky', top: 0, zIndex: 30,
                     borderBottom: '1px solid #EEEEF5',
                 }}>
+                    {/* Sidebar Toggle for Mobile/Tablet */}
+                    {(isMobile || isTablet) && (
+                        <button
+                            onClick={toggleSidebar}
+                            className="header-action-btn"
+                            style={{
+                                border: '1px solid #EEEEF5',
+                                background: '#FFFFFF',
+                                padding: '8px',
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#5E6278',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                transition: 'all 0.2s',
+                                width: '40px',
+                                height: '40px',
+                                flexShrink: 0,
+                                position: 'absolute',
+                                left: '16px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                zIndex: 35
+                            }}
+                        >
+                            <Menu size={18} className="icon-default" />
+                        </button>
+                    )}
+
                     {/* Search Bar */}
                     <div className="dashboard-header-search" style={{ position: 'relative' }} ref={searchContainerRef}>
                         <div style={{

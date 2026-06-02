@@ -10,6 +10,7 @@ import {
 import { useParams, useRouter } from 'next/navigation';
 import StudentAttendanceCalendar from '@/components/StudentAttendanceCalendar';
 import StudentProfileEnquiries from '@/components/StudentProfileEnquiries';
+import ResponsiveTabs from '@/components/ui/ResponsiveTabs';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -382,17 +383,11 @@ export default function TeacherStudentProfilePage() {
                 </div>
 
                 {/* Styled Interactive Tab Bar */}
-                <div className="animate-in" style={{ display: 'flex', gap: '8px', marginBottom: '28px', background: 'rgba(255, 255, 255, 0.6)', padding: '6px', borderRadius: '18px', border: '1px solid rgba(229,57,53,0.05)', width: 'fit-content', animationDelay: '180ms' }}>
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                            onClick={() => setActiveTab(tab.id)}
-                        >
-                            {tab.icon} {tab.label}
-                        </button>
-                    ))}
-                </div>
+                <ResponsiveTabs
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    onChange={setActiveTab}
+                />
 
                 {/* Tab content containers */}
                 {activeTab === 'overview' && (

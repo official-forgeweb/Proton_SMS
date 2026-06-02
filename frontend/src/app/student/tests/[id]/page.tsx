@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Calendar, Info, ArrowLeft, Clock, Award, CheckCircle, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/stores/authStore';
+import ResponsivePageContainer from '@/components/ui/ResponsivePageContainer';
 
 export default function AttemptTestPage() {
     const params = useParams();
@@ -78,7 +79,7 @@ export default function AttemptTestPage() {
 
     return (
         <DashboardLayout requiredRole="student">
-        <div style={{ minHeight: 'calc(100vh - 40px)', background: '#F4F5F9', padding: '24px', margin: '-24px', borderRadius: '24px' }} suppressHydrationWarning>
+        <ResponsivePageContainer style={{ minHeight: '100%', background: '#F4F5F9', borderRadius: '24px' }}>
             <div style={{ maxWidth: '1000px', margin: '0 auto 24px' }}>
                 <button 
                     onClick={() => router.push('/student/tests')}
@@ -291,7 +292,7 @@ export default function AttemptTestPage() {
                     )}
                 </div>
             </div>
-        </div>
+        </ResponsivePageContainer>
         </DashboardLayout>
     );
 }

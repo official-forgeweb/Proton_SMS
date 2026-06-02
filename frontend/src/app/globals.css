@@ -3,6 +3,9 @@
 @import "tailwindcss";
 
 :root {
+  /* Dynamic Layout Variables */
+  --sidebar-width: 260px;
+
   /* Primary - Red theme */
   --primary: #E53935;
   --primary-light: #FFEBEE;
@@ -1174,7 +1177,7 @@ h6 {
   }
 
   /* Override inline negative margins globally on mobile to prevent header overlap */
-  .bg-mesh,
+  .bg-mesh:not(.main-layout-root),
   div[style*="margin:"][style*="-"] {
     margin: 0 !important;
     padding: 16px !important;
@@ -1404,29 +1407,14 @@ div:has(> table) {
    ========================================================== */
 
 /* VIEWPORT LEVEL LAYOUT LOCKS & SCROLL ARCHITECTURE */
-@media (min-width: 1025px) {
-  html, body, .main-layout-root {
-    height: 100vh !important;
-    max-height: 100vh !important;
-    overflow: hidden !important;
-  }
-  .page-body {
-    height: calc(100vh - 72px) !important; /* reserve exact space for sticky header */
-    overflow-y: auto !important;
-  }
+html, body, .main-layout-root {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
 }
-
-@media (max-width: 1024px) {
-  html, body, .main-layout-root {
-    height: auto !important;
-    max-height: none !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-  }
-  .page-body {
-    height: auto !important;
-    overflow-y: visible !important;
-  }
+.page-body {
+  height: calc(100vh - 72px) !important; /* reserve exact space for sticky header */
+  overflow-y: auto !important;
 }
 
 .page-body {

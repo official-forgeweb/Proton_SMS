@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
+import ResponsivePageContainer from '@/components/ui/ResponsivePageContainer';
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid';
+import ResponsiveCard from '@/components/ui/ResponsiveCard';
 import { IndianRupee, Clock, CheckCircle2, AlertCircle, FileText, Calendar, ShieldCheck, History, CornerDownRight } from 'lucide-react';
 
 export default function StudentFeesPage() {
@@ -32,20 +35,6 @@ export default function StudentFeesPage() {
     const installments = assignment?.installments || [];
 
     const customStyles = `
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0;
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            border-radius: 24px;
-        }
         .timeline-item {
             position: relative;
             padding-left: 32px;
@@ -77,31 +66,31 @@ export default function StudentFeesPage() {
     return (
         <DashboardLayout requiredRole="student">
             <style dangerouslySetInnerHTML={{ __html: customStyles }} />
-            <div style={{ paddingBottom: '120px', width: '100%' }}>
+            <ResponsivePageContainer style={{ paddingBottom: '120px' }}>
                 
                 {/* Header */}
-                <div className="animate-fade-in" style={{ marginBottom: '32px' }}>
+                <div style={{ marginBottom: '32px' }} className="animate-page-entry">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         <div style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px rgba(59,130,246,0.3)' }}>
                             <IndianRupee size={20} strokeWidth={2.5} />
                         </div>
-                        <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', margin: 0 }}>
+                        <h1 style={{ fontSize: 'clamp(20px, 3.5vw, 28px)', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', margin: 0 }}>
                             My Fees & Ledger
                         </h1>
                     </div>
-                    <p style={{ color: '#5E6278', fontSize: '15px', fontWeight: 500, margin: 0 }}>
+                    <p style={{ color: '#5E6278', fontSize: '14px', fontWeight: 500, margin: 0 }}>
                         Track your upcoming installments, view paid receipts, and review your financial timeline.
                     </p>
                 </div>
 
                 {isLoading ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="glass-panel" style={{ height: '140px', background: '#F8F9FD' }} />
+                    <ResponsiveGrid desktopCols={3} tabletCols={2} mobileCols={1} gap="20px">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="glass-panel skeleton" style={{ height: '140px' }} />
                         ))}
-                    </div>
+                    </ResponsiveGrid>
                 ) : !assignment ? (
-                    <div className="glass-panel animate-fade-in" style={{ textAlign: 'center', padding: '60px 40px' }}>
+                    <div style={{ textAlign: 'center', padding: '60px 40px', background: '#FFFFFF', borderRadius: '24px', border: '1px solid #E2E8F0' }} className="animate-page-entry">
                         <ShieldCheck size={48} style={{ color: '#10B981', marginBottom: '16px', opacity: 0.8 }} />
                         <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1D3B', margin: '0 0 8px 0' }}>No Fees Assigned Yet</h3>
                         <p style={{ color: '#8F92A1', fontSize: '14px', fontWeight: 500, margin: 0 }}>
@@ -109,31 +98,31 @@ export default function StudentFeesPage() {
                         </p>
                     </div>
                 ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '30px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }} className="animate-page-entry">
                         
                         {/* Summary Cards */}
-                        <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', animationDelay: '50ms' }}>
-                            <div className="glass-panel" style={{ padding: '24px', background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', color: 'white' }}>
+                        <ResponsiveGrid desktopCols={3} tabletCols={3} mobileCols={1} gap="20px">
+                            <ResponsiveCard style={{ background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', color: 'white', border: 'none' }}>
                                 <p style={{ fontSize: '12px', opacity: 0.7, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>Net Payable Fee</p>
-                                <h2 style={{ fontSize: '30px', fontWeight: 900, marginTop: '8px', margin: '8px 0 0 0' }}>{formatCurrency(assignment.final_fee)}</h2>
+                                <h2 style={{ fontSize: '26px', fontWeight: 900, marginTop: '8px', margin: '8px 0 0 0' }}>{formatCurrency(assignment.final_fee)}</h2>
                                 <div style={{ marginTop: '12px', display: 'flex', gap: '8px', fontSize: '11px', opacity: 0.8 }}>
                                     <span>Base: {formatCurrency(assignment.total_fee)}</span>
                                     <span>•</span>
                                     <span>Scholarship: {formatCurrency(assignment.scholarship_amount || assignment.discount_amount)}</span>
                                 </div>
-                            </div>
+                            </ResponsiveCard>
 
-                            <div className="glass-panel" style={{ padding: '24px', background: '#FFFFFF' }}>
+                            <ResponsiveCard>
                                 <p style={{ fontSize: '12px', color: '#8F92A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>Total Paid to Date</p>
-                                <h2 style={{ fontSize: '30px', fontWeight: 900, color: '#10B981', marginTop: '8px', margin: '8px 0 0 0' }}>{formatCurrency(assignment.total_paid)}</h2>
+                                <h2 style={{ fontSize: '26px', fontWeight: 900, color: '#10B981', marginTop: '8px', margin: '8px 0 0 0' }}>{formatCurrency(assignment.total_paid)}</h2>
                                 <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#10B981', fontWeight: 700 }}>
                                     <CheckCircle2 size={14} /> Receipts Authenticated
                                 </div>
-                            </div>
+                            </ResponsiveCard>
 
-                            <div className="glass-panel" style={{ padding: '24px', background: '#FFFFFF' }}>
+                            <ResponsiveCard>
                                 <p style={{ fontSize: '12px', color: '#8F92A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>Outstanding Pending</p>
-                                <h2 style={{ fontSize: '30px', fontWeight: 900, color: assignment.total_pending > 0 ? '#EF4444' : '#10B981', marginTop: '8px', margin: '8px 0 0 0' }}>{formatCurrency(assignment.total_pending)}</h2>
+                                <h2 style={{ fontSize: '26px', fontWeight: 900, color: assignment.total_pending > 0 ? '#EF4444' : '#10B981', marginTop: '8px', margin: '8px 0 0 0' }}>{formatCurrency(assignment.total_pending)}</h2>
                                 <div style={{
                                     marginTop: '12px', display: 'inline-flex', padding: '4px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase',
                                     background: assignment.payment_status === 'paid' ? '#ECFDF5' : assignment.payment_status === 'overdue' ? '#FEF2F2' : '#FFFBEB',
@@ -141,20 +130,20 @@ export default function StudentFeesPage() {
                                 }}>
                                     {assignment.payment_status}
                                 </div>
-                            </div>
-                        </div>
+                            </ResponsiveCard>
+                        </ResponsiveGrid>
 
                         {/* Timeline & Payments Split */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '30px', alignItems: 'flex-start' }} className="animate-fade-in">
+                        <ResponsiveGrid desktopCols={2} tabletCols={1} mobileCols={1} gap="30px" style={{ alignItems: 'flex-start' }}>
                             
                             {/* Timeline of Installments */}
-                            <div className="glass-panel" style={{ padding: '30px', background: '#FFFFFF' }}>
+                            <ResponsiveCard style={{ padding: '30px' }}>
                                 <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <Calendar size={20} style={{ color: '#3B82F6' }} /> Installment Schedule
                                 </h3>
 
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    {installments.map((inst: any, idx: number) => {
+                                    {installments.map((inst: any) => {
                                         const isPaid = inst.status === 'paid';
                                         const isOverdue = inst.status === 'overdue';
                                         const isDue = inst.status === 'due';
@@ -183,7 +172,7 @@ export default function StudentFeesPage() {
                                                 <div className="timeline-bullet" style={{ background: bulletBg, color: bulletColor }}>
                                                     {bulletIcon}
                                                 </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
                                                     <div>
                                                         <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>
                                                             Installment #{inst.installment_number}
@@ -218,10 +207,10 @@ export default function StudentFeesPage() {
                                         );
                                     })}
                                 </div>
-                            </div>
+                            </ResponsiveCard>
 
                             {/* Paid Receipts */}
-                            <div className="glass-panel" style={{ padding: '30px', background: '#FFFFFF' }}>
+                            <ResponsiveCard style={{ padding: '30px' }}>
                                 <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <History size={20} style={{ color: '#10B981' }} /> Paid Receipts
                                 </h3>
@@ -234,7 +223,7 @@ export default function StudentFeesPage() {
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                         {payments.map((p: any) => (
-                                            <div key={p.id} style={{ padding: '16px', background: '#F8F9FD', borderRadius: '16px', border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div key={p.id} style={{ padding: '16px', background: '#F8F9FD', borderRadius: '16px', border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                                                 <div>
                                                     <div style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B' }}>{p.receipt_number}</div>
                                                     <div style={{ fontSize: '12px', color: '#8F92A1', fontWeight: 500, marginTop: '4px' }}>
@@ -253,14 +242,14 @@ export default function StudentFeesPage() {
                                         ))}
                                     </div>
                                 )}
-                            </div>
+                            </ResponsiveCard>
 
-                        </div>
+                        </ResponsiveGrid>
 
                     </div>
                 )}
 
-            </div>
+            </ResponsivePageContainer>
         </DashboardLayout>
     );
 }
