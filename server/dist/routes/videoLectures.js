@@ -341,6 +341,20 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
+// 10. Sync Logs endpoint
+router.get('/sync-logs', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
+    try {
+        const logs = await database_1.default.googleSheetSyncLog.findMany({
+            where: { sync_type: 'video_lectures' },
+            orderBy: { start_time: 'desc' },
+            take: 50
+        });
+        res.json({ success: true, data: logs });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: `Failed to retrieve sync logs: ${error.message}` });
+    }
+});
 // 3. Get Single
 router.get('/:id', auth_1.authenticateToken, async (req, res) => {
     try {
@@ -399,6 +413,55 @@ router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', '
     }
     catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+// 7. Test connection
+router.post('/test-connection', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
+    try {
+        const { spreadsheetId } = req.body;
+        let resolvedId = spreadsheetId;
+        if (!resolvedId) {
+            const settings = await database_1.default.systemSetting.findUnique({ where: { id: 'global' } });
+            resolvedId = settings?.google_spreadsheet_id || process.env.GOOGLE_SPREADSHEET_ID;
+        }
+        if (!resolvedId) {
+            res.status(400).json({ success: false, message: 'Spreadsheet ID not provided' });
+            return;
+        }
+        const { GoogleSheetsService } = await Promise.resolve().then(() => __importStar(require('../services/googleSheetsService')));
+        await GoogleSheetsService.testConnection(resolvedId);
+        res.json({ success: true, message: 'Connection to Google Sheet successful! Credentials verified.' });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: `Connection failed: ${error.message}` });
+    }
+});
+// 8. Manual Sync trigger from UI
+router.post('/sync', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
+    try {
+        const { GoogleSheetSyncJob } = await Promise.resolve().then(() => __importStar(require('../jobs/googleSheetSyncJob')));
+        const result = await GoogleSheetSyncJob.sync(true); // force = true
+        res.json({ success: true, message: 'Google Sheets synchronization completed successfully.', ...result });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: `Synchronization failed: ${error.message}` });
+    }
+});
+// 9. Cron/Webhook Sync trigger
+router.post('/sync/cron', async (req, res) => {
+    try {
+        const cronSecret = process.env.CRON_SECRET || process.env.VERCEL_CRON_SECRET;
+        const authHeader = req.headers.authorization;
+        if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+            res.status(401).json({ success: false, message: 'Unauthorized cron trigger' });
+            return;
+        }
+        const { GoogleSheetSyncJob } = await Promise.resolve().then(() => __importStar(require('../jobs/googleSheetSyncJob')));
+        const result = await GoogleSheetSyncJob.sync(false); // force = false (respects settings toggles)
+        res.json({ success: true, message: 'Automated sync job executed successfully.', ...result });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: `Automated sync job failed: ${error.message}` });
     }
 });
 exports.default = router;

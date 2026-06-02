@@ -8,12 +8,13 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
 const sendMail_1 = require("../services/mail/sendMail");
+const cache_1 = require("../middleware/cache");
 const router = (0, express_1.Router)();
 const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 const generateEmployeeId = () => `EMP${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
 const paramId = (req) => String(req.params.id);
 // GET /api/teachers
-router.get('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher', 'student'), async (req, res) => {
+router.get('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher', 'student'), (0, cache_1.cacheMiddleware)(15), async (req, res) => {
     try {
         const { search, subject, status } = req.query;
         let where = {};
@@ -47,7 +48,7 @@ router.get('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordi
     }
 });
 // GET /api/teachers/:id
-router.get('/:id', auth_1.authenticateToken, async (req, res) => {
+router.get('/:id', auth_1.authenticateToken, (0, cache_1.cacheMiddleware)(15), async (req, res) => {
     try {
         const id = paramId(req);
         const teacher = isUUID(id)
@@ -111,6 +112,9 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), async
             tempPass: password,
             role: role_type || 'subject_teacher'
         });
+        (0, cache_1.invalidateCache)('/api/teachers');
+        (0, cache_1.invalidateCache)('/api/classes');
+        (0, cache_1.invalidateCache)('/api/dashboard');
         res.status(201).json({
             success: true,
             data: { teacher: { ...teacher, id: teacher.id }, credentials: { email, password } },
@@ -138,6 +142,9 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), asy
             const password_hash = await bcryptjs_1.default.hash(password, salt);
             await database_1.default.user.update({ where: { id: teacher.user_id }, data: { password_hash } });
         }
+        (0, cache_1.invalidateCache)('/api/teachers');
+        (0, cache_1.invalidateCache)('/api/classes');
+        (0, cache_1.invalidateCache)('/api/dashboard');
         res.json({ success: true, data: { ...teacher, id: teacher.id } });
     }
     catch (error) {
@@ -149,7 +156,7 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), asy
     }
 });
 // GET /api/teachers/:id/classes
-router.get('/:id/classes', auth_1.authenticateToken, async (req, res) => {
+router.get('/:id/classes', auth_1.authenticateToken, (0, cache_1.cacheMiddleware)(15), async (req, res) => {
     try {
         const id = paramId(req);
         let teacher = null;
@@ -211,6 +218,9 @@ router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin'), 
         if (teacher.user_id) {
             await database_1.default.user.delete({ where: { id: teacher.user_id } });
         }
+        (0, cache_1.invalidateCache)('/api/teachers');
+        (0, cache_1.invalidateCache)('/api/classes');
+        (0, cache_1.invalidateCache)('/api/dashboard');
         res.json({ success: true, message: 'Teacher deleted successfully' });
     }
     catch (error) {

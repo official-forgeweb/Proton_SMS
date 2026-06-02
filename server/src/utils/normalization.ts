@@ -27,17 +27,18 @@ export const getNormalizedKey = (name: string): string => {
     'biology': 'biology',
     'bio': 'biology',
     'science': 'science',
-    'social studies': 'sst',
-    'social study': 'sst',
-    'social science': 'sst',
-    'sst': 'sst',
+    'social studies': 'socialscience',
+    'social study': 'socialscience',
+    'social science': 'socialscience',
+    'sst': 'socialscience',
     'english': 'english',
     'eng': 'english',
     'hindi': 'hindi',
-    'computer': 'computer',
-    'comp': 'computer',
-    'computer science': 'computer',
-    'cs': 'computer'
+    'computer': 'computerscience',
+    'computers': 'computerscience',
+    'comp': 'computerscience',
+    'computer science': 'computerscience',
+    'cs': 'computerscience'
   };
 
   return mappings[clean] || clean.replace(/\s+/g, '');
@@ -87,10 +88,10 @@ export const resolveCanonicalSubject = async (rawName: string): Promise<string> 
     'physics': 'Physics',
     'chemistry': 'Chemistry',
     'biology': 'Biology',
-    'sst': 'SST',
+    'socialscience': 'Social Science',
     'english': 'English',
     'hindi': 'Hindi',
-    'computer': 'Computer',
+    'computerscience': 'Computer Science',
     'science': 'Science'
   };
 

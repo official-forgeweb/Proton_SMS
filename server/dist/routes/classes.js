@@ -6,11 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
+const cache_1 = require("../middleware/cache");
+const normalization_1 = require("../utils/normalization");
 const router = (0, express_1.Router)();
 const generateClassCode = () => `CLS${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
 const paramId = (req) => String(req.params.id);
 // GET /api/classes
-router.get('/', auth_1.authenticateToken, async (req, res) => {
+router.get('/', auth_1.authenticateToken, (0, cache_1.cacheMiddleware)(15), async (req, res) => {
     try {
         const { subject, grade_level, status, batch_type, academic_year } = req.query;
         let where = {};
@@ -60,7 +62,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
     }
 });
 // GET /api/classes/:id
-router.get('/:id', auth_1.authenticateToken, async (req, res) => {
+router.get('/:id', auth_1.authenticateToken, (0, cache_1.cacheMiddleware)(15), async (req, res) => {
     try {
         const id = paramId(req);
         const cls = await database_1.default.class.findUnique({
@@ -118,6 +120,128 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
+// POST /api/classes/bulk-create
+router.post('/bulk-create', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
+    try {
+        const { classes } = req.body;
+        if (!classes || !Array.isArray(classes)) {
+            res.status(400).json({ success: false, message: 'Classes array is required' });
+            return;
+        }
+        const createdClasses = [];
+        const skippedClasses = [];
+        // Fetch existing classes to perform duplication check
+        const existingClasses = await database_1.default.class.findMany({
+            select: { class_name: true }
+        });
+        const existingClassNames = new Set(existingClasses.map(c => (c.class_name || '').toLowerCase().trim()));
+        // Filter which classes need to be created
+        const classesToCreate = classes.filter(c => {
+            const nameNorm = String(c.className || c.class_name).toLowerCase().trim();
+            if (existingClassNames.has(nameNorm)) {
+                skippedClasses.push(c.className || c.class_name);
+                return false;
+            }
+            return true;
+        });
+        if (classesToCreate.length === 0) {
+            res.json({
+                success: true,
+                summary: {
+                    created: 0,
+                    skipped: skippedClasses.length,
+                    total: classes.length,
+                    classesCreated: [],
+                    classesSkipped: skippedClasses
+                },
+                message: 'All specified classes already exist in the database. No new classes were created.'
+            });
+            return;
+        }
+        // Perform database transaction for atomic safety
+        const result = await database_1.default.$transaction(async (tx) => {
+            const createdResults = [];
+            for (const item of classesToCreate) {
+                const className = item.className || item.class_name;
+                const subjects = item.subjects;
+                // Ensure all subjects exist and resolve their canonical names
+                const canonicalSubjects = [];
+                if (subjects && Array.isArray(subjects)) {
+                    for (const sub of subjects) {
+                        const resolved = await (0, normalization_1.ensureSubjectExists)(sub);
+                        if (resolved) {
+                            canonicalSubjects.push(resolved);
+                        }
+                    }
+                }
+                // Generate unique class code collision-free
+                let classCode = '';
+                let isCodeUnique = false;
+                while (!isCodeUnique) {
+                    const rand = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+                    classCode = `CLS${new Date().getFullYear()}${rand}`;
+                    const existingCode = await tx.class.findUnique({ where: { class_code: classCode } });
+                    if (!existingCode) {
+                        isCodeUnique = true;
+                    }
+                }
+                // Create the Class record
+                const newClass = await tx.class.create({
+                    data: {
+                        class_code: classCode,
+                        class_name: className,
+                        grade_level: className.includes('12') ? 'Grade 12' : className.includes('11') ? 'Grade 11' : className.includes('10') ? 'Grade 10' : className.includes('9') ? 'Grade 9' : className.includes('8') ? 'Grade 8' : 'Secondary',
+                        academic_year: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+                        batch_type: className.includes('Competition') ? 'competition' : 'regular',
+                        status: 'ongoing',
+                        current_students_count: 0,
+                        max_students: 40,
+                        course_duration_months: 12,
+                        course_fee: className.includes('Competition') ? 45000 : 35000,
+                    }
+                });
+                // Insert ClassSchedule entries for all of the resolved canonical subjects
+                if (canonicalSubjects.length > 0) {
+                    await tx.classSchedule.createMany({
+                        data: canonicalSubjects.map((subjectName) => ({
+                            class_id: newClass.id,
+                            subject: subjectName,
+                            teacher_id: null,
+                            time_start: '09:00',
+                            time_end: '10:00',
+                            days: ['Monday', 'Wednesday', 'Friday']
+                        }))
+                    });
+                }
+                createdClasses.push(className);
+                createdResults.push(newClass);
+            }
+            return createdResults;
+        });
+        // Invalidate Cache for classes dashboard and timetables
+        (0, cache_1.invalidateCache)('/api/classes');
+        (0, cache_1.invalidateCache)('/api/dashboard');
+        (0, cache_1.invalidateCache)('/api/timetable');
+        res.status(201).json({
+            success: true,
+            summary: {
+                created: createdClasses.length,
+                skipped: skippedClasses.length,
+                total: classes.length,
+                classesCreated: createdClasses,
+                classesSkipped: skippedClasses
+            },
+            data: result
+        });
+    }
+    catch (error) {
+        console.error('[Bulk Class Import Utility] Failed:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Server error occurred during bulk class creation.'
+        });
+    }
+});
 // POST /api/classes
 router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator'), async (req, res) => {
     try {
@@ -130,6 +254,9 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
                 status: rest.status || 'upcoming',
             },
         });
+        (0, cache_1.invalidateCache)('/api/classes');
+        (0, cache_1.invalidateCache)('/api/dashboard');
+        (0, cache_1.invalidateCache)('/api/timetable');
         if (schedule && Array.isArray(schedule) && schedule.length > 0) {
             await database_1.default.classSchedule.createMany({
                 data: schedule.map((s) => ({
@@ -162,6 +289,9 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
             where: { id },
             data: rest,
         });
+        (0, cache_1.invalidateCache)('/api/classes');
+        (0, cache_1.invalidateCache)('/api/dashboard');
+        (0, cache_1.invalidateCache)('/api/timetable');
         if (schedule && Array.isArray(schedule)) {
             await database_1.default.classSchedule.deleteMany({ where: { class_id: id } });
             if (schedule.length > 0) {
@@ -192,7 +322,7 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
     }
 });
 // GET /api/classes/:id/attendance
-router.get('/:id/attendance', auth_1.authenticateToken, async (req, res) => {
+router.get('/:id/attendance', auth_1.authenticateToken, (0, cache_1.cacheMiddleware)(15), async (req, res) => {
     try {
         const id = paramId(req);
         const { date } = req.query;
@@ -265,6 +395,8 @@ router.post('/:id/attendance', auth_1.authenticateToken, (0, auth_1.authorize)('
                 savedRecords.push(created);
             }
         }
+        (0, cache_1.invalidateCache)('/api/classes');
+        (0, cache_1.invalidateCache)('/api/dashboard');
         res.json({
             success: true,
             data: savedRecords,
@@ -331,6 +463,9 @@ router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', '
             database_1.default.studentClassEnrollment.deleteMany({ where: { class_id: id } }),
             database_1.default.class.delete({ where: { id } })
         ]);
+        (0, cache_1.invalidateCache)('/api/classes');
+        (0, cache_1.invalidateCache)('/api/dashboard');
+        (0, cache_1.invalidateCache)('/api/timetable');
         res.json({
             success: true,
             message: 'Class batch deleted successfully.'

@@ -77,13 +77,13 @@ router.get('/admin', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'c
         // Fetch dynamic monthly chart data directly from the DB
         const [payments, studentRegistrations, enquiryRegistrations] = await Promise.all([
             database_1.default.feePayment.findMany({
-                where: { payment_status: 'completed' },
+                where: { payment_status: 'completed', created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
                 select: { amount_paid: true, payment_date: true, created_at: true },
             }),
             database_1.default.student.findMany({
                 select: { created_at: true },
             }),
-            database_1.default.enquiry.findMany({
+            database_1.default.enquiry.findMany({ where: { created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
                 select: { created_at: true },
             }),
         ]);
@@ -408,13 +408,13 @@ router.get('/admin/charts', auth_1.authenticateToken, (0, auth_1.authorize)('adm
                 include: { student: { select: { first_name: true, last_name: true, PRO_ID: true } } },
             }),
             database_1.default.feePayment.findMany({
-                where: { payment_status: 'completed' },
+                where: { payment_status: 'completed', created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
                 select: { amount_paid: true, payment_date: true, created_at: true },
             }),
             database_1.default.student.findMany({
                 select: { created_at: true },
             }),
-            database_1.default.enquiry.findMany({
+            database_1.default.enquiry.findMany({ where: { created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
                 select: { created_at: true },
             }),
         ]);

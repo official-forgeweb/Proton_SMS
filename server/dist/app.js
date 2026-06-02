@@ -94,6 +94,15 @@ app.use('/api/messages', messages_1.default);
 app.use('/api/search', search_1.default);
 app.use('/api/coordinators', coordinators_1.default);
 app.use('/api/subjects', subjects_1.default);
+// Root Welcome Route
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Welcome to Proton LMS Server API',
+        status: 'operational',
+        healthCheck: '/api/health'
+    });
+});
 // Health check
 app.get('/api/health', dbHealth_1.dbHealthCheck, (req, res) => {
     res.json({

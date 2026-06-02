@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { cacheMiddleware, invalidateCache } from '../middleware/cache';
+import { ensureSubjectExists } from '../utils/normalization';
 
 const router = Router();
 
@@ -122,6 +123,171 @@ router.get('/:id', authenticateToken, cacheMiddleware(15), async (req: Request, 
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/classes/bulk-create
+router.post('/bulk-create', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { classes } = req.body;
+    if (!classes || !Array.isArray(classes)) {
+      res.status(400).json({ success: false, message: 'Classes array is required' });
+      return;
+    }
+
+    const createdClasses: string[] = [];
+    const skippedClasses: string[] = [];
+
+    // Fetch existing classes to perform duplication check
+    const existingClasses = await prisma.class.findMany({
+      select: { class_name: true }
+    });
+    const existingClassNames = new Set(
+      existingClasses.map(c => (c.class_name || '').toLowerCase().trim())
+    );
+
+    // Filter which classes need to be created
+    const classesToCreate = classes.filter(c => {
+      const nameNorm = String(c.className || c.class_name).toLowerCase().trim();
+      if (existingClassNames.has(nameNorm)) {
+        skippedClasses.push(c.className || c.class_name);
+        return false;
+      }
+      return true;
+    });
+
+    if (classesToCreate.length === 0) {
+      res.json({
+        success: true,
+        summary: {
+          created: 0,
+          skipped: skippedClasses.length,
+          total: classes.length,
+          classesCreated: [],
+          classesSkipped: skippedClasses
+        },
+        message: 'All specified classes already exist in the database. No new classes were created.'
+      });
+      return;
+    }
+
+    // Pre-resolve and ensure all subject masters exist *outside* the transaction to prevent transaction timeouts
+    const uniqueRawSubjects = new Set<string>();
+    for (const item of classesToCreate) {
+      const subjects = item.subjects;
+      if (subjects && Array.isArray(subjects)) {
+        subjects.forEach(sub => {
+          if (sub && typeof sub === 'string' && sub.trim()) {
+            uniqueRawSubjects.add(sub.trim());
+          }
+        });
+      }
+    }
+
+    const subjectResolutionMap = new Map<string, string>();
+    await Promise.all(
+      Array.from(uniqueRawSubjects).map(async (sub) => {
+        const resolved = await ensureSubjectExists(sub);
+        if (resolved) {
+          subjectResolutionMap.set(sub, resolved);
+        }
+      })
+    );
+
+    // Perform database transaction for atomic safety
+    const result = await prisma.$transaction(async (tx) => {
+      const createdResults = [];
+
+      for (const item of classesToCreate) {
+        const className = item.className || item.class_name;
+        const subjects = item.subjects;
+
+        // Ensure all subjects exist and resolve their canonical names from our pre-resolved map
+        const canonicalSubjects: string[] = [];
+        if (subjects && Array.isArray(subjects)) {
+          for (const sub of subjects) {
+            const resolved = subjectResolutionMap.get(sub.trim());
+            if (resolved) {
+              canonicalSubjects.push(resolved);
+            }
+          }
+        }
+
+        // Generate unique class code collision-free
+        let classCode = '';
+        let isCodeUnique = false;
+        while (!isCodeUnique) {
+          const rand = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+          classCode = `CLS${new Date().getFullYear()}${rand}`;
+          const existingCode = await tx.class.findUnique({ where: { class_code: classCode } });
+          if (!existingCode) {
+            isCodeUnique = true;
+          }
+        }
+
+        // Create the Class record
+        const newClass = await tx.class.create({
+          data: {
+            class_code: classCode,
+            class_name: className,
+            grade_level: className.includes('12') ? 'Grade 12' : className.includes('11') ? 'Grade 11' : className.includes('10') ? 'Grade 10' : className.includes('9') ? 'Grade 9' : className.includes('8') ? 'Grade 8' : 'Secondary',
+            academic_year: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+            batch_type: className.includes('Competition') ? 'competition' : 'regular',
+            status: 'ongoing',
+            current_students_count: 0,
+            max_students: 40,
+            course_duration_months: 12,
+            course_fee: className.includes('Competition') ? 45000 : 35000,
+          }
+        });
+
+        // Insert ClassSchedule entries for all of the resolved canonical subjects
+        if (canonicalSubjects.length > 0) {
+          await tx.classSchedule.createMany({
+            data: canonicalSubjects.map((subjectName) => ({
+              class_id: newClass.id,
+              subject: subjectName,
+              teacher_id: null,
+              time_start: '09:00',
+              time_end: '10:00',
+              days: ['Monday', 'Wednesday', 'Friday']
+            }))
+          });
+        }
+
+        createdClasses.push(className);
+        createdResults.push(newClass);
+      }
+
+      return createdResults;
+    }, {
+      maxWait: 5000,
+      timeout: 30000 // 30s timeout failsafe to allow for potential DB Cold Starts (Neon)
+    });
+
+    // Invalidate Cache for classes dashboard and timetables
+    invalidateCache('/api/classes');
+    invalidateCache('/api/dashboard');
+    invalidateCache('/api/timetable');
+
+    res.status(201).json({
+      success: true,
+      summary: {
+        created: createdClasses.length,
+        skipped: skippedClasses.length,
+        total: classes.length,
+        classesCreated: createdClasses,
+        classesSkipped: skippedClasses
+      },
+      data: result
+    });
+
+  } catch (error: any) {
+    console.error('[Bulk Class Import Utility] Failed:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error occurred during bulk class creation.'
+    });
   }
 });
 
@@ -311,13 +477,9 @@ router.delete('/:id', authenticateToken, authorize('admin', 'coordinator'), asyn
   try {
     const id = paramId(req);
 
-    // 1. Fetch class details to check validations
+    // 1. Fetch class details to verify it exists
     const cls = await prisma.class.findUnique({
-      where: { id },
-      include: {
-        schedule: true,
-        timetable_entries: true,
-      }
+      where: { id }
     });
 
     if (!cls) {
@@ -325,47 +487,48 @@ router.delete('/:id', authenticateToken, authorize('admin', 'coordinator'), asyn
       return;
     }
 
-    // 2. Check if students are assigned (active enrollments)
-    const activeEnrollmentsCount = await prisma.studentClassEnrollment.count({
-      where: {
-        class_id: id,
-        enrollment_status: 'active'
-      }
+    // 2. Perform atomic forced cascade-deletion of all relations in a single transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete subject and class enrollments
+      await tx.studentSubjectEnrollment.deleteMany({ where: { class_id: id } });
+      await tx.studentClassEnrollment.deleteMany({ where: { class_id: id } });
+      
+      // Delete attendance records
+      await tx.attendance.deleteMany({ where: { class_id: id } });
+      
+      // Delete test results and tests
+      await tx.testResult.deleteMany({
+        where: { test: { class_id: id } }
+      });
+      await tx.test.deleteMany({ where: { class_id: id } });
+      
+      // Delete homework submissions and homeworks
+      await tx.homeworkSubmission.deleteMany({
+        where: { homework: { class_id: id } }
+      });
+      await tx.homework.deleteMany({ where: { class_id: id } });
+
+      // Delete fee assignments and fee structures
+      // Note: FeeInstallment and FeeAuditLog have onDelete: Cascade referencing StudentFeeAssignment
+      await tx.studentFeeAssignment.deleteMany({
+        where: { fee_structure: { class_id: id } }
+      });
+      await tx.feeStructure.deleteMany({ where: { class_id: id } });
+
+      // Delete demo classes linked to this class
+      await tx.demoClass.deleteMany({ where: { class_id: id } });
+
+      // Delete video lectures and study materials
+      await tx.videoLecture.deleteMany({ where: { class_id: id } });
+      await tx.studyMaterial.deleteMany({ where: { class_id: id } });
+
+      // Delete schedules and timetables
+      await tx.classSchedule.deleteMany({ where: { class_id: id } });
+      await tx.timetable.deleteMany({ where: { class_id: id } });
+
+      // Finally, delete the Class itself
+      await tx.class.delete({ where: { id } });
     });
-
-    if (activeEnrollmentsCount > 0) {
-      res.status(400).json({
-        success: false,
-        message: `Cannot delete class. There are currently ${activeEnrollmentsCount} active student(s) enrolled. Please unassign students first.`
-      });
-      return;
-    }
-
-    // 3. Check if teachers are linked
-    const hasPrimaryTeacher = cls.primary_teacher_id !== null && cls.primary_teacher_id !== '';
-    const assignedSchedulesCount = cls.schedule.filter((s: any) => s.teacher_id).length;
-    const assignedTimetablesCount = cls.timetable_entries.filter((t: any) => t.teacher_id).length;
-
-    if (hasPrimaryTeacher || assignedSchedulesCount > 0 || assignedTimetablesCount > 0) {
-      const reasons: string[] = [];
-      if (hasPrimaryTeacher) reasons.push('Primary instructor is assigned');
-      if (assignedSchedulesCount > 0) reasons.push(`${assignedSchedulesCount} schedule slot(s) link to a teacher`);
-      if (assignedTimetablesCount > 0) reasons.push(`${assignedTimetablesCount} session(s) in timetable link to a teacher`);
-
-      res.status(400).json({
-        success: false,
-        message: `Cannot delete class. Teacher(s) are linked to this class: ${reasons.join(', ')}. Please unassign teachers first.`
-      });
-      return;
-    }
-
-    // 4. Safe delete the class cohort
-    await prisma.$transaction([
-      prisma.classSchedule.deleteMany({ where: { class_id: id } }),
-      prisma.timetable.deleteMany({ where: { class_id: id } }),
-      prisma.studentClassEnrollment.deleteMany({ where: { class_id: id } }),
-      prisma.class.delete({ where: { id } })
-    ]);
 
     invalidateCache('/api/classes');
     invalidateCache('/api/dashboard');
@@ -373,11 +536,11 @@ router.delete('/:id', authenticateToken, authorize('admin', 'coordinator'), asyn
 
     res.json({
       success: true,
-      message: 'Class batch deleted successfully.'
+      message: 'Class and all its associated data (schedules, timetables, test scores, homework, and fee metrics) have been force-deleted successfully.'
     });
   } catch (error) {
-    console.error('Error deleting class:', error);
-    res.status(500).json({ success: false, message: 'Server error occurred while deleting the class.' });
+    console.error('Error force-deleting class:', error);
+    res.status(500).json({ success: false, message: 'Server error occurred while force-deleting the class.' });
   }
 });
 
