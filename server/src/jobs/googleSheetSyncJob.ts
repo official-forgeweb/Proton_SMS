@@ -94,32 +94,37 @@ function resolveCanonicalSubjectCached(
 async function ensureSubjectExistsCached(
   name: string,
   subjectCache: Map<string, string>,
+  subjectIdCache: Map<string, string>,
   existingSubjectKeys: Set<string>
-): Promise<string> {
-  if (!name || name.trim() === '') return '';
+): Promise<{ canonical: string; id: string }> {
+  if (!name || name.trim() === '') return { canonical: '', id: '' };
   
   // Resolve canonical name completely in-memory!
   const canonical = resolveCanonicalSubjectCached(name, subjectCache);
   const key = getNormalizedKey(canonical);
 
+  let id = subjectIdCache.get(key) || '';
+
   if (!existingSubjectKeys.has(key)) {
     try {
-      await prisma.subject.create({
+      const created = await prisma.subject.create({
         data: {
           canonical_name: canonical,
           normalized_key: key,
           is_active: true,
         },
       });
+      id = created.id;
       existingSubjectKeys.add(key);
       subjectCache.set(key, canonical);
+      subjectIdCache.set(key, created.id);
       console.log(`✨ [Normalization Engine] Cache inline auto-created new subject: "${canonical}"`);
     } catch (err: any) {
       // Gracefully ignore race conditions
     }
   }
 
-  return canonical;
+  return { canonical, id };
 }
 
 /**
@@ -226,14 +231,19 @@ export class GoogleSheetSyncJob {
       const existingSubjectKeys = new Set(allSubjects.map((s) => s.normalized_key));
       
       const subjectCache = new Map<string, string>();
+      const subjectIdCache = new Map<string, string>();
       allSubjects.forEach(s => {
         subjectCache.set(s.normalized_key, s.canonical_name);
         subjectCache.set(s.canonical_name.toLowerCase().trim(), s.canonical_name);
+        subjectIdCache.set(s.normalized_key, s.id);
+        subjectIdCache.set(s.canonical_name.toLowerCase().trim(), s.id);
       });
       allAliases.forEach(a => {
         if (a.subject) {
           subjectCache.set(a.normalized_key, a.subject.canonical_name);
           subjectCache.set(a.alias.toLowerCase().trim(), a.subject.canonical_name);
+          subjectIdCache.set(a.normalized_key, a.subject.id);
+          subjectIdCache.set(a.alias.toLowerCase().trim(), a.subject.id);
         }
       });
 
@@ -336,9 +346,11 @@ export class GoogleSheetSyncJob {
             continue;
           }
         }
-
+        
         // Normalize and auto-create Subject in Master via in-memory cache
-        const canonicalSubject = await ensureSubjectExistsCached(subjectName, subjectCache, existingSubjectKeys);
+        const subRes = await ensureSubjectExistsCached(subjectName, subjectCache, subjectIdCache, existingSubjectKeys);
+        const canonicalSubject = subRes.canonical;
+        const subject_id = subRes.id;
 
         // Generate dynamic unique row ID (incorporating tab name to prevent duplicate row index conflicts)
         let sheet_row_id = explicitId ? `${tabSource}_${explicitId}` : '';
@@ -359,7 +371,7 @@ export class GoogleSheetSyncJob {
             date,
             time,
             class_id,
-            subject: canonicalSubject,
+            subject_id,
             video_url: validUrl,
             title: titleVal,
             sheet_row_id,
@@ -371,7 +383,7 @@ export class GoogleSheetSyncJob {
             existingRecord.date !== date ||
             existingRecord.time !== time ||
             existingRecord.class_id !== class_id ||
-            existingRecord.subject !== canonicalSubject ||
+            existingRecord.subject_id !== subject_id ||
             existingRecord.video_url !== validUrl ||
             existingRecord.title !== titleVal;
 
@@ -383,7 +395,7 @@ export class GoogleSheetSyncJob {
                   date,
                   time,
                   class_id,
-                  subject: canonicalSubject,
+                  subject_id,
                   video_url: validUrl,
                   title: titleVal,
                 },

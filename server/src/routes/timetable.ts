@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { mailEventEmitter } from '../services/mail/sendMail';
+import { resolveSubjectRecord } from '../utils/normalization';
 
 const router = Router();
 
@@ -72,7 +73,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
                 },
                 subject_enrollments: { 
                     where: { status: 'active' },
-                    select: { class_id: true, subject: true }
+                    select: { class_id: true, subject_id: true }
                 }
             }
         });
@@ -88,7 +89,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         const subjectsByClass: Record<string, string[]> = {};
         subjectEnrolls.forEach(e => {
             if (!subjectsByClass[e.class_id]) subjectsByClass[e.class_id] = [];
-            subjectsByClass[e.class_id].push(e.subject);
+            subjectsByClass[e.class_id].push(e.subject_id);
         });
 
         const orConditions = classIds.map(cid => {
@@ -97,7 +98,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
                 return { 
                     class_id: cid, 
                     OR: subjects.map(s => ({
-                        subject: { contains: s.trim(), mode: 'insensitive' as const }
+                        subject_id: s
                     }))
                 };
             }
@@ -130,6 +131,9 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         },
         teacher: {
             select: { first_name: true, last_name: true }
+        },
+        subject: {
+            select: { canonical_name: true }
         }
       }
     });
@@ -164,13 +168,16 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 
     const tests = await prisma.test.findMany({
         where: testWhere,
-        include: { class: { select: { class_name: true, class_code: true } } }
+        include: { 
+            class: { select: { class_name: true, class_code: true } },
+            subject: { select: { canonical_name: true } }
+        }
     });
 
     const mappedTests = tests.map(t => ({
         id: t.id,
         class_id: t.class_id,
-        subject: `TEST: ${t.test_name} (${t.subject})`,
+        subject: `TEST: ${t.test_name} (${t.subject?.canonical_name || 'General'})`,
         teacher_id: t.created_by,
         date: t.test_date,
         start_time: t.start_time || '00:00',
@@ -183,7 +190,10 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         teacher: null // Could fetch teacher info if needed
     }));
 
-    const combinedData = [...timetable.map(i => ({ ...i, type: 'class' })), ...mappedTests].sort((a: any, b: any) => {
+    const combinedData = [
+        ...timetable.map(i => ({ ...i, subject: i.subject.canonical_name, type: 'class' })), 
+        ...mappedTests
+    ].sort((a: any, b: any) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return a.start_time.localeCompare(b.start_time);
     });
@@ -243,10 +253,11 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
             for (const sched of c.schedule) {
                 // The user explicitly requested to generate timetable for all days including Saturday and Sunday
                 // Check if entry already exists to avoid duplicates
+                if (!sched.subject_id) continue;
                 const existing = await prisma.timetable.findFirst({
                     where: {
                         class_id: c.id,
-                        subject: sched.subject || '',
+                        subject_id: sched.subject_id,
                         date: dateStr,
                         start_time: sched.time_start || '09:00'
                     }
@@ -256,7 +267,7 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
                     await prisma.timetable.create({
                         data: {
                             class_id: c.id,
-                            subject: sched.subject || '',
+                            subject_id: sched.subject_id,
                             teacher_id: sched.teacher_id,
                             date: dateStr,
                             start_time: sched.time_start || '09:00',
@@ -292,10 +303,12 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
         finalTeacherId = teacher.id;
     }
 
+    const subRec = await resolveSubjectRecord(subject);
+
     const entry = await prisma.timetable.create({
       data: {
         class_id,
-        subject,
+        subject_id: subRec.id,
         teacher_id: finalTeacherId,
         date,
         start_time,
@@ -306,7 +319,8 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
         status: 'scheduled'
       },
       include: {
-        class_ref: { select: { class_name: true } }
+        class_ref: { select: { class_name: true } },
+        subject: { select: { canonical_name: true } }
       }
     });
 
@@ -316,8 +330,8 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
         req.user!.id,
         'schedule_create',
         null,
-        JSON.stringify({ subject, date, start_time, room, online_link }),
-        `Class session for ${entry.class_ref.class_name}: ${subject}`,
+        JSON.stringify({ subject: subRec.canonical_name, date, start_time, room, online_link }),
+        `Class session for ${entry.class_ref.class_name}: ${subRec.canonical_name}`,
         req
       );
     }
@@ -327,11 +341,11 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
       class_id,
       finalTeacherId,
       date,
-      `New class session scheduled: ${subject} in Room ${room || 'N/A'} at ${start_time} - ${end_time || 'N/A'}.`,
+      `New class session scheduled: ${subRec.canonical_name} in Room ${room || 'N/A'} at ${start_time} - ${end_time || 'N/A'}.`,
       entry.id
     );
 
-    res.status(201).json({ success: true, data: entry });
+    res.status(201).json({ success: true, data: { ...entry, subject: entry.subject.canonical_name } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -346,7 +360,10 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
 
     const existing = await prisma.timetable.findUnique({ 
       where: { id },
-      include: { class_ref: { select: { class_name: true } } }
+      include: { 
+        class_ref: { select: { class_name: true } },
+        subject: { select: { canonical_name: true } }
+      }
     });
     if (!existing) {
         res.status(404).json({ success: false, message: 'Entry not found' });
@@ -365,11 +382,13 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
         }
     }
 
+    const subRec = subject ? await resolveSubjectRecord(subject) : undefined;
+
     const entry = await prisma.timetable.update({
       where: { id },
       data: {
         class_id,
-        subject,
+        subject_id: subRec ? subRec.id : undefined,
         teacher_id: req.user!.role === 'teacher' ? existing.teacher_id : teacher_id,
         date,
         start_time,
@@ -380,14 +399,15 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
         status
       },
       include: {
-        class_ref: { select: { class_name: true } }
+        class_ref: { select: { class_name: true } },
+        subject: { select: { canonical_name: true } }
       }
     });
 
     if (req.user!.role === 'teacher' || req.user!.role === 'coordinator') {
       const { logTeacherActivity } = require('../utils/activityLogger');
       const prevVal = {
-        subject: existing.subject,
+        subject: existing.subject.canonical_name,
         date: existing.date,
         start_time: existing.start_time,
         room: existing.room,
@@ -395,7 +415,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
         status: existing.status
       };
       const newVal = {
-        subject: entry.subject,
+        subject: entry.subject.canonical_name,
         date: entry.date,
         start_time: entry.start_time,
         room: entry.room,
@@ -407,24 +427,24 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
         'schedule_update',
         JSON.stringify(prevVal),
         JSON.stringify(newVal),
-        `Class session for ${entry.class_ref.class_name}: ${entry.subject}`,
+        `Class session for ${entry.class_ref.class_name}: ${entry.subject.canonical_name}`,
         req
       );
     }
 
     // Notify affected teacher and students asynchronously of schedule adjustment
-    const hasChanged = existing.date !== date || existing.start_time !== start_time || existing.room !== room || existing.subject !== subject;
+    const hasChanged = existing.date !== date || existing.start_time !== start_time || existing.room !== room || (subRec && existing.subject_id !== subRec.id);
     if (hasChanged) {
       notifyTimetableChange(
         entry.class_id,
         entry.teacher_id,
         entry.date,
-        `Class session adjusted: ${entry.subject} in Room ${entry.room || 'N/A'} at ${entry.start_time} - ${entry.end_time || 'N/A'}.`,
+        `Class session adjusted: ${entry.subject.canonical_name} in Room ${entry.room || 'N/A'} at ${entry.start_time} - ${entry.end_time || 'N/A'}.`,
         entry.id
       );
     }
 
-    res.json({ success: true, data: entry });
+    res.json({ success: true, data: { ...entry, subject: entry.subject.canonical_name } });
   } catch (error: any) {
     if (error.code === 'P2025') {
         res.status(404).json({ success: false, message: 'Entry not found' });
@@ -442,7 +462,10 @@ router.delete('/:id', authenticateToken, authorize('admin', 'coordinator', 'teac
 
     const existing = await prisma.timetable.findUnique({ 
       where: { id },
-      include: { class_ref: { select: { class_name: true } } }
+      include: { 
+        class_ref: { select: { class_name: true } },
+        subject: { select: { canonical_name: true } }
+      }
     });
     if (!existing) {
         res.status(404).json({ success: false, message: 'Entry not found' });
@@ -469,14 +492,14 @@ router.delete('/:id', authenticateToken, authorize('admin', 'coordinator', 'teac
         req.user!.id,
         'schedule_delete',
         JSON.stringify({
-          subject: existing.subject,
+          subject: existing.subject.canonical_name,
           date: existing.date,
           start_time: existing.start_time,
           room: existing.room,
           online_link: existing.online_link
         }),
         null,
-        `Class session for ${existing.class_ref.class_name}: ${existing.subject}`,
+        `Class session for ${existing.class_ref.class_name}: ${existing.subject.canonical_name}`,
         req
       );
     }

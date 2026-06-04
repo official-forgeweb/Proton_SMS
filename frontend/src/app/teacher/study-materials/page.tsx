@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import axios from 'axios';
 import { BookOpen, Upload, Trash2, Search, FileText, Eye, X, BookMarked, Download, Sparkles } from 'lucide-react';
 import { customAlert, customConfirm } from '@/utils/dialog';
+import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function TeacherStudyMaterialsPage() {
@@ -380,23 +381,14 @@ export default function TeacherStudyMaterialsPage() {
                                         </div>
                                         <div>
                                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Subject</label>
-                                            <select 
-                                                required 
-                                                value={uploadData.subject}
-                                                onChange={e => setUploadData({...uploadData, subject: e.target.value})}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid rgba(226, 232, 240, 0.8)', outline: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', background: !uploadData.class_id ? '#F8F9FD' : 'white' }}
-                                                disabled={isUploading || !uploadData.class_id}
-                                                onFocus={e => e.currentTarget.style.borderColor = '#E53935'}
-                                                onBlur={e => e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 0.8)'}
-                                            >
-                                                <option value="">{uploadData.class_id ? "Select Subject" : "Choose Class First"}</option>
-                                                {uploadData.class_id && Array.from(new Set([
-                                                    classes.find(c => c.id === uploadData.class_id)?.subject,
-                                                    ...(classes.find(c => c.id === uploadData.class_id)?.schedule || []).map((s: any) => s.subject)
-                                                ].filter(Boolean))).map((subj: any) => (
-                                                    <option key={subj} value={subj}>{subj}</option>
-                                                ))}
-                                            </select>
+                                            <ClassSubjectSelector 
+                                                classId={uploadData.class_id}
+                                                value={uploadData.subject} 
+                                                onChange={val => setUploadData({...uploadData, subject: val})} 
+                                                placeholder="Select subject..."
+                                                required
+                                                disabled={isUploading}
+                                            />
                                         </div>
                                     </div>
                                     <div>

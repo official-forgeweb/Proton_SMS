@@ -139,3 +139,46 @@ export const ensureSubjectExists = async (name: string, createdByUserId?: string
 
   return canonical;
 };
+
+/**
+ * Resolves a raw subject identifier (which could be a UUID subject_id or a raw name string)
+ * to a database Subject record, creating it if it doesn't exist.
+ */
+export const resolveSubjectRecord = async (identifier: string): Promise<{ id: string; canonical_name: string }> => {
+  if (!identifier || identifier.trim() === '') {
+    throw new Error('Subject identifier is required');
+  }
+
+  // 1. If it's a UUID, look it up by ID
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+  if (isUUID) {
+    const subject = await prisma.subject.findUnique({
+      where: { id: identifier }
+    });
+    if (subject) return subject;
+  }
+
+  // 2. Otherwise normalize the string
+  const canonical = await resolveCanonicalSubject(identifier);
+  const key = getNormalizedKey(canonical);
+
+  // Check if it exists
+  let subject = await prisma.subject.findUnique({
+    where: { normalized_key: key }
+  });
+
+  if (!subject) {
+    // Auto-create subject master record
+    subject = await prisma.subject.create({
+      data: {
+        canonical_name: canonical,
+        normalized_key: key,
+        is_active: true
+      }
+    });
+    console.log(`✨ [Normalization Engine] Inline auto-created new subject master: "${canonical}"`);
+  }
+
+  return subject;
+};
+

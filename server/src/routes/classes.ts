@@ -2,7 +2,23 @@ import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { cacheMiddleware, invalidateCache } from '../middleware/cache';
-import { ensureSubjectExists } from '../utils/normalization';
+import { ensureSubjectExists, resolveCanonicalSubject, getNormalizedKey } from '../utils/normalization';
+
+const isUUID = (str: string): boolean =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
+const syncClassSubjects = async (tx: any, classId: string, subjectIds: string[]) => {
+  await tx.classSubject.deleteMany({ where: { class_id: classId } });
+  const distinctIds = Array.from(new Set(subjectIds.filter(Boolean)));
+  if (distinctIds.length > 0) {
+    await tx.classSubject.createMany({
+      data: distinctIds.map(subId => ({
+        class_id: classId,
+        subject_id: subId
+      }))
+    });
+  }
+};
 
 const router = Router();
 
@@ -37,7 +53,7 @@ router.get('/', authenticateToken, cacheMiddleware(15), async (req: Request, res
       where,
       include: {
         primary_teacher: true,
-        schedule: { include: { teacher: true } },
+        schedule: { include: { teacher: true, subject: true } },
       },
     });
 
@@ -48,6 +64,7 @@ router.get('/', authenticateToken, cacheMiddleware(15), async (req: Request, res
       id: c.id,
       schedule: c.schedule?.map((s: any) => ({
         ...s,
+        subject: s.subject?.canonical_name || s.subject_id,
         teacher_name: s.teacher ? `${s.teacher.first_name || ''} ${s.teacher.last_name || ''}`.trim() : 'Unassigned',
         teacher_id: s.teacher?.id || s.teacher_id,
       })),
@@ -69,7 +86,7 @@ router.get('/:id', authenticateToken, cacheMiddleware(15), async (req: Request, 
       where: { id },
       include: {
         primary_teacher: true,
-        schedule: { include: { teacher: true } },
+        schedule: { include: { teacher: true, subject: true } },
       },
     });
 
@@ -86,11 +103,13 @@ router.get('/:id', authenticateToken, cacheMiddleware(15), async (req: Request, 
     // Get subject enrollment counts
     const subjectEnrollments = await prisma.studentSubjectEnrollment.findMany({
       where: { class_id: cls.id, status: 'active' },
+      include: { subject: true }
     });
 
     const subjectCounts: Record<string, number> = {};
     subjectEnrollments.forEach((se: any) => {
-      subjectCounts[se.subject] = (subjectCounts[se.subject] || 0) + 1;
+      const subjName = se.subject?.canonical_name || se.subject_id;
+      subjectCounts[subjName] = (subjectCounts[subjName] || 0) + 1;
     });
 
     const students = enrollments
@@ -98,7 +117,7 @@ router.get('/:id', authenticateToken, cacheMiddleware(15), async (req: Request, 
       .map(e => {
         const studentSubjects = subjectEnrollments
           .filter(se => se.student_id === e.student.id)
-          .map(se => se.subject);
+          .map(se => se.subject?.canonical_name || se.subject_id);
         return {
           ...e.student,
           id: e.student.id,
@@ -118,8 +137,35 @@ router.get('/:id', authenticateToken, cacheMiddleware(15), async (req: Request, 
         primary_teacher: undefined,
         students,
         subject_counts: subjectCounts,
+        schedule: cls.schedule?.map((s: any) => ({
+          ...s,
+          subject: s.subject?.canonical_name || s.subject_id,
+          teacher_name: s.teacher ? `${s.teacher.first_name || ''} ${s.teacher.last_name || ''}`.trim() : 'Unassigned',
+          teacher_id: s.teacher?.id || s.teacher_id,
+        })),
       },
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// GET /api/classes/:id/subjects
+router.get('/:id/subjects', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = paramId(req);
+    const mappings = await prisma.classSubject.findMany({
+      where: { class_id: id },
+      include: { subject: true }
+    });
+
+    const subjects = mappings
+      .map(m => m.subject)
+      .filter(Boolean)
+      .sort((a, b) => a.canonical_name.localeCompare(b.canonical_name));
+
+    res.json({ success: true, data: subjects });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -243,16 +289,34 @@ router.post('/bulk-create', authenticateToken, authorize('admin', 'coordinator')
 
         // Insert ClassSchedule entries for all of the resolved canonical subjects
         if (canonicalSubjects.length > 0) {
+          // Resolve subject IDs for canonical names
+          const subjectRecords = await Promise.all(
+            canonicalSubjects.map(async (name) => {
+              const key = getNormalizedKey(name);
+              let rec = await tx.subject.findUnique({ where: { normalized_key: key } });
+              if (!rec) {
+                rec = await tx.subject.create({
+                  data: { canonical_name: name, normalized_key: key, is_active: true }
+                });
+              }
+              return rec;
+            })
+          );
+          const subjectIds = subjectRecords.map(r => r.id);
+
           await tx.classSchedule.createMany({
-            data: canonicalSubjects.map((subjectName) => ({
+            data: subjectIds.map((subId) => ({
               class_id: newClass.id,
-              subject: subjectName,
+              subject_id: subId,
               teacher_id: null,
               time_start: '09:00',
               time_end: '10:00',
               days: ['Monday', 'Wednesday', 'Friday']
             }))
           });
+
+          // Sync mappings
+          await syncClassSubjects(tx, newClass.id, subjectIds);
         }
 
         createdClasses.push(className);
@@ -310,21 +374,45 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator'), async (re
     invalidateCache('/api/timetable');
 
     if (schedule && Array.isArray(schedule) && schedule.length > 0) {
-      await prisma.classSchedule.createMany({
-        data: schedule.map((s: any) => ({
-          class_id: newClass.id,
-          subject: s.subject,
-          teacher_id: s.teacher_id,
-          time_start: s.time_start,
-          time_end: s.time_end,
-          days: s.days || [],
-        })),
-      });
+      const resolvedSchedules = [];
+      const subjectIds: string[] = [];
+      for (const s of schedule) {
+        let subjectId = s.subject_id || s.subject;
+        if (subjectId && !isUUID(subjectId)) {
+          const canonicalName = await resolveCanonicalSubject(subjectId);
+          const key = getNormalizedKey(canonicalName);
+          let subjectRecord = await prisma.subject.findUnique({ where: { normalized_key: key } });
+          if (!subjectRecord) {
+            subjectRecord = await prisma.subject.create({
+              data: { canonical_name: canonicalName, normalized_key: key, is_active: true }
+            });
+          }
+          subjectId = subjectRecord.id;
+        }
+        if (subjectId) {
+          subjectIds.push(subjectId);
+          resolvedSchedules.push({
+            class_id: newClass.id,
+            subject_id: subjectId,
+            teacher_id: s.teacher_id || null,
+            time_start: s.time_start || '09:00',
+            time_end: s.time_end || '10:00',
+            days: s.days || [],
+          });
+        }
+      }
+
+      if (resolvedSchedules.length > 0) {
+        await prisma.classSchedule.createMany({
+          data: resolvedSchedules,
+        });
+        await syncClassSubjects(prisma, newClass.id, subjectIds);
+      }
     }
 
     const result = await prisma.class.findUnique({
       where: { id: newClass.id },
-      include: { schedule: true },
+      include: { schedule: { include: { subject: true } } },
     });
 
     res.status(201).json({ success: true, data: { ...result, id: result!.id } });
@@ -352,22 +440,48 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator'), async (
     if (schedule && Array.isArray(schedule)) {
       await prisma.classSchedule.deleteMany({ where: { class_id: id } });
       if (schedule.length > 0) {
-        await prisma.classSchedule.createMany({
-          data: schedule.map((s: any) => ({
-            class_id: id,
-            subject: s.subject,
-            teacher_id: s.teacher_id,
-            time_start: s.time_start,
-            time_end: s.time_end,
-            days: s.days || [],
-          })),
-        });
+        const resolvedSchedules = [];
+        const subjectIds: string[] = [];
+        for (const s of schedule) {
+          let subjectId = s.subject_id || s.subject;
+          if (subjectId && !isUUID(subjectId)) {
+            const canonicalName = await resolveCanonicalSubject(subjectId);
+            const key = getNormalizedKey(canonicalName);
+            let subjectRecord = await prisma.subject.findUnique({ where: { normalized_key: key } });
+            if (!subjectRecord) {
+              subjectRecord = await prisma.subject.create({
+                data: { canonical_name: canonicalName, normalized_key: key, is_active: true }
+              });
+            }
+            subjectId = subjectRecord.id;
+          }
+          if (subjectId) {
+            subjectIds.push(subjectId);
+            resolvedSchedules.push({
+              class_id: id,
+              subject_id: subjectId,
+              teacher_id: s.teacher_id || null,
+              time_start: s.time_start || '09:00',
+              time_end: s.time_end || '10:00',
+              days: s.days || [],
+            });
+          }
+        }
+
+        if (resolvedSchedules.length > 0) {
+          await prisma.classSchedule.createMany({
+            data: resolvedSchedules,
+          });
+          await syncClassSubjects(prisma, id, subjectIds);
+        }
+      } else {
+        await syncClassSubjects(prisma, id, []);
       }
     }
 
     const result = await prisma.class.findUnique({
       where: { id },
-      include: { schedule: true },
+      include: { schedule: { include: { subject: true } } },
     });
 
     res.json({ success: true, data: { ...result, id: result!.id } });

@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { PenTool } from 'lucide-react';
-import SubjectSelector from '@/components/SubjectSelector';
+import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 
 export default function CoordinatorAssignHomeworkPage() {
     const router = useRouter();
@@ -51,26 +51,29 @@ export default function CoordinatorAssignHomeworkPage() {
                         Assignment Metadata
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
-                        <div>
+                        <div style={{ gridColumn: 'span 2' }}>
                             <label className="form-label">Homework Title *</label>
                             <input required className="form-input" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. Chapter 5 Exercises" />
                         </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '24px' }}>
+                        <div>
+                            <label className="form-label">Target Batch / Class *</label>
+                            <select required className="form-input" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value, subject: '' })}>
+                                <option value="">Choose a class...</option>
+                                {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
+                            </select>
+                        </div>
                         <div>
                             <label className="form-label">Associated Subject *</label>
-                            <SubjectSelector 
+                            <ClassSubjectSelector 
+                                classId={formData.class_id}
                                 value={formData.subject} 
                                 onChange={val => setFormData({ ...formData, subject: val })} 
-                                placeholder="Search or select subject..."
+                                placeholder="Select subject..."
                                 required
                             />
                         </div>
-                    </div>
-                    <div style={{ marginTop: '24px' }}>
-                        <label className="form-label">Target Batch / Class *</label>
-                        <select required className="form-input" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value })}>
-                            <option value="">Choose a class...</option>
-                            {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                        </select>
                     </div>
                     <div style={{ marginTop: '24px' }}>
                         <label className="form-label">Detailed Instructions *</label>

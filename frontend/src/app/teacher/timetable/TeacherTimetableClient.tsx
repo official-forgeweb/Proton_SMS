@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import {
@@ -693,13 +694,12 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                                 
                                 <div style={{ gridColumn: 'span 2' }}>
                                     <label style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '10px', display: 'block' }}>Subject <span style={{ color: 'var(--primary)' }}>*</span></label>
-                                    <select required value={formData.subject} onChange={(e) => setFormData({ ...formData, subject: e.target.value })} style={{ width: '100%', padding: '15px', borderRadius: '16px', border: '2px solid var(--border-secondary)', outline: 'none', background: !formData.class_id ? 'var(--bg-secondary)' : '#FFFFFF', fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)', transition: 'all 0.2s', cursor: 'pointer' }} disabled={!formData.class_id}
-                                        onFocus={e => e.currentTarget.style.borderColor = 'var(--primary)'}
-                                        onBlur={e => e.currentTarget.style.borderColor = 'var(--border-secondary)'}
-                                    >
-                                        <option value="">{formData.class_id ? "Select a Subject" : "Select a Class first"}</option>
-                                        {formData.class_id && classes.find(c => c.id === formData.class_id) && Array.from(new Set([classes.find(c => c.id === formData.class_id)?.subject, ...(classes.find(c => c.id === formData.class_id)?.schedule || []).map((s: any) => s.subject)].filter(Boolean))).map(subject => <option key={subject as string} value={subject as string}>{subject as string}</option>)}
-                                    </select>
+                                    <ClassSubjectSelector
+                                        classId={formData.class_id}
+                                        value={formData.subject}
+                                        onChange={(subject) => setFormData({ ...formData, subject })}
+                                        required
+                                    />
                                 </div>
                                 
                                 <div>

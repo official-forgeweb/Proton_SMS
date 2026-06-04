@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { sendNotification, getStudentUserIdsForClass } from './notifications';
+import { resolveSubjectRecord } from '../utils/normalization';
 
 const router = Router();
 
@@ -60,6 +61,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
       orderBy: { assigned_date: 'desc' },
       include: {
         class: true,
+        subject: true,
         creator: {
           select: {
             id: true,
@@ -131,6 +133,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         id: h.id,
         class_id: h.class?.id || h.class_id,
         class_name: h.class?.class_name || '',
+        subject: h.subject?.canonical_name || h.subject_id || '',
         total_students: studentCountMap[h.class?.id || ''] || 0,
         submitted: stats.submitted,
         pending: stats.pending,
@@ -153,10 +156,19 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
   try {
     const createdBy = req.user!.id; // Store User.id universally
 
+    const { subject, subject_id, ...otherFields } = req.body;
+    let finalSubjectId: string | null = null;
+    const subjectQuery = subject_id || subject;
+    if (subjectQuery) {
+      const subRec = await resolveSubjectRecord(subjectQuery);
+      finalSubjectId = subRec.id;
+    }
+
     const hw = await prisma.homework.create({
       data: {
         homework_code: generateHomeworkCode(),
-        ...req.body,
+        ...otherFields,
+        subject_id: finalSubjectId,
         created_by: createdBy,
       },
     });
@@ -199,7 +211,10 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
 router.get('/:id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
-    const hw = await prisma.homework.findUnique({ where: { id } });
+    const hw = await prisma.homework.findUnique({
+      where: { id },
+      include: { subject: true }
+    });
     if (!hw) {
       res.status(404).json({ success: false, message: 'Homework not found' });
       return;
@@ -222,7 +237,15 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
       };
     });
 
-    res.json({ success: true, data: { ...hw, id: hw.id, submissions: mappedSubmissions } });
+    res.json({
+      success: true,
+      data: {
+        ...hw,
+        id: hw.id,
+        subject: hw.subject?.canonical_name || hw.subject_id || '',
+        submissions: mappedSubmissions
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }

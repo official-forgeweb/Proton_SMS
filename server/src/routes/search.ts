@@ -217,8 +217,11 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
           where: {
             OR: [
               { title: { contains: q, mode: 'insensitive' } },
-              { subject: { contains: q, mode: 'insensitive' } }
+              { subject: { canonical_name: { contains: q, mode: 'insensitive' } } }
             ]
+          },
+          include: {
+            subject: { select: { canonical_name: true } }
           },
           take: 5
         })
@@ -240,7 +243,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 
       materials.forEach(m => results.push({
         title: m.title || 'Material',
-        subtitle: m.subject || '',
+        subtitle: m.subject?.canonical_name || '',
         type: 'material',
         href: `/student/materials`
       }));

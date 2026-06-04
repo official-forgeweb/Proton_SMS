@@ -8,6 +8,8 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ClipboardList } from 'lucide-react';
 
+import ClassSubjectSelector from '@/components/ClassSubjectSelector';
+
 export default function CreateTestPage() {
     const router = useRouter();
     const [classes, setClasses] = useState<any[]>([]);
@@ -95,11 +97,11 @@ export default function CreateTestPage() {
                         <div>
                             <label className="form-label">Examination Category *</label>
                             <select className="form-input" value={formData.test_type} onChange={e => setFormData({ ...formData, test_type: e.target.value })}>
-                                <option value="weekly_test">ðŸ“… Weekly Assessment</option>
-                                <option value="monthly_test">ðŸ“Š Monthly Test</option>
-                                <option value="mock_test">ðŸ§ª Mock Examination</option>
-                                <option value="term_exam">ðŸ›ï¸ Term Exam</option>
-                                <option value="final_exam">ðŸŽ“ Final Semester Exam</option>
+                                <option value="weekly_test">📅 Weekly Assessment</option>
+                                <option value="monthly_test">📊 Monthly Test</option>
+                                <option value="mock_test">🧪 Mock Examination</option>
+                                <option value="term_exam">🏛️ Term Exam</option>
+                                <option value="final_exam">🎓 Final Semester Exam</option>
                             </select>
                         </div>
                     </div>
@@ -110,14 +112,20 @@ export default function CreateTestPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
                             <label className="form-label">Target Batch / Class *</label>
-                            <select required className="form-input" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value })}>
+                            <select required className="form-input" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value, subject: '' })}>
                                 <option value="">Select Target Audience...</option>
                                 {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="form-label">Academic Subject *</label>
-                            <input required className="form-input" placeholder="e.g. Theoretical Physics" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} />
+                            <ClassSubjectSelector 
+                                classId={formData.class_id}
+                                value={formData.subject} 
+                                onChange={val => setFormData({ ...formData, subject: val })} 
+                                placeholder="Select subject..."
+                                required
+                            />
                         </div>
                     </div>
                 </div>

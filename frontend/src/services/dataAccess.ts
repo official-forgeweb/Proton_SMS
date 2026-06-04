@@ -526,12 +526,14 @@ export async function getClassDetailData(classId: string): Promise<ClassDetailDa
       }),
       prisma.studentSubjectEnrollment.findMany({
         where: { class_id: classId, status: 'active' },
+        include: { subject: true }
       }),
       prisma.attendance.findMany({
         where: { class_id: classId }
       }),
       prisma.test.findMany({
-        where: { class_id: classId }
+        where: { class_id: classId },
+        include: { subject: true }
       }),
       prisma.attendance.findMany({
         where: { class_id: classId },
@@ -545,7 +547,8 @@ export async function getClassDetailData(classId: string): Promise<ClassDetailDa
 
     const subjectCounts: Record<string, number> = {};
     subjectEnrollments.forEach((se: any) => {
-      subjectCounts[se.subject] = (subjectCounts[se.subject] || 0) + 1;
+      const subjectName = se.subject?.canonical_name || se.subject_id;
+      subjectCounts[subjectName] = (subjectCounts[subjectName] || 0) + 1;
     });
 
     const students = enrollments
@@ -553,7 +556,7 @@ export async function getClassDetailData(classId: string): Promise<ClassDetailDa
       .map(e => {
         const studentSubjects = subjectEnrollments
           .filter(se => se.student_id === e.student.id)
-          .map(se => se.subject);
+          .map(se => se.subject?.canonical_name || se.subject_id);
         return {
           ...e.student,
           id: e.student.id,
@@ -626,7 +629,7 @@ export async function getClassDetailData(classId: string): Promise<ClassDetailDa
     recentTests.forEach(t => {
       recentActivity.push({
         type: 'test',
-        message: `Test "${t.test_name || t.test_code}" (${t.subject}) scheduled.`,
+        message: `Test "${t.test_name || t.test_code}" (${t.subject?.canonical_name || 'General'}) scheduled.`,
         time: t.test_date || 'Recent',
       });
     });
@@ -838,7 +841,11 @@ async function getStudentsList(where: any) {
         },
         subject_enrollments: {
           where: { status: 'active' },
-          select: { subject: true, class_id: true, status: true },
+          select: {
+            subject: { select: { canonical_name: true } },
+            class_id: true,
+            status: true
+          },
         },
         test_results: {
           select: { percentage: true },
@@ -857,7 +864,7 @@ async function getStudentsList(where: any) {
         id: e.class?.id, name: e.class?.class_name, code: e.class?.class_code,
       })),
       subjects: s.subject_enrollments.map((se: any) => ({
-        subject: se.subject, class_id: se.class_id, status: se.status,
+        subject: se.subject?.canonical_name || '', class_id: se.class_id, status: se.status,
       })),
       attendance_percentage: s.class_enrollments[0]?.overall_attendance_percentage || 0,
       avg_marks: s.test_results && s.test_results.length > 0 

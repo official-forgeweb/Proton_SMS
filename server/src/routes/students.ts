@@ -4,6 +4,7 @@ import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { cacheMiddleware, invalidateCache } from '../middleware/cache';
 import { mailEventEmitter } from '../services/mail/sendMail';
+import { resolveSubjectRecord } from '../utils/normalization';
 
 const router = Router();
 
@@ -67,8 +68,9 @@ router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'),
 
     // Filter by subject within a batch
     if (class_id && subject) {
+      const subRec = await resolveSubjectRecord(subject);
       const subjectEnrollments = await prisma.studentSubjectEnrollment.findMany({
-        where: { class_id, subject, status: 'active' },
+        where: { class_id, subject_id: subRec.id, status: 'active' },
         select: { student_id: true },
       });
       const studentIds = subjectEnrollments.map(e => e.student_id);
@@ -449,11 +451,14 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
       if (Array.isArray(subjects) && subjects.length > 0 && allClassIds.length > 0) {
         // Legacy flat array - apply to first class
         const targetClassId = class_id || allClassIds[0];
+        const subjectRecords = await Promise.all(
+          subjects.map((subj: string) => resolveSubjectRecord(subj))
+        );
         await prisma.studentSubjectEnrollment.createMany({
-          data: subjects.map((subj: string) => ({
+          data: subjectRecords.map(sub => ({
             student_id: student.id,
             class_id: targetClassId,
-            subject: subj,
+            subject_id: sub.id,
             enrollment_date: new Date().toISOString(),
             status: 'active',
           })),
@@ -463,11 +468,14 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
         // Per-class subject map
         for (const [cid, subjectList] of Object.entries(subjects)) {
           if (Array.isArray(subjectList) && subjectList.length > 0) {
+            const subjectRecords = await Promise.all(
+              (subjectList as string[]).map((subj: string) => resolveSubjectRecord(subj))
+            );
             await prisma.studentSubjectEnrollment.createMany({
-              data: (subjectList as string[]).map((subj: string) => ({
+              data: subjectRecords.map(sub => ({
                 student_id: student.id,
                 class_id: cid,
-                subject: subj,
+                subject_id: sub.id,
                 enrollment_date: new Date().toISOString(),
                 status: 'active',
               })),
@@ -559,11 +567,14 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
         await prisma.studentSubjectEnrollment.deleteMany({ where: { student_id: id, class_id: cid } });
         // Create new ones
         if ((subjectList as string[]).length > 0) {
+          const subjectRecords = await Promise.all(
+            (subjectList as string[]).map((subj: string) => resolveSubjectRecord(subj))
+          );
           await prisma.studentSubjectEnrollment.createMany({
-            data: (subjectList as string[]).map((subj: string) => ({
+            data: subjectRecords.map(sub => ({
               student_id: id,
               class_id: cid,
-              subject: subj,
+              subject_id: sub.id,
               enrollment_date: new Date().toISOString(),
               status: 'active',
             })),
@@ -620,11 +631,14 @@ router.post('/:id/enroll', authenticateToken, authorize('admin', 'coordinator', 
 
     // Enroll in specific subjects if provided
     if (subjects && Array.isArray(subjects) && subjects.length > 0) {
+      const subjectRecords = await Promise.all(
+        subjects.map((subj: string) => resolveSubjectRecord(subj))
+      );
       await prisma.studentSubjectEnrollment.createMany({
-        data: subjects.map((subj: string) => ({
+        data: subjectRecords.map(sub => ({
           student_id: student.id,
           class_id,
-          subject: subj,
+          subject_id: sub.id,
           enrollment_date: new Date().toISOString(),
           status: 'active',
         })),
@@ -943,11 +957,14 @@ router.put('/:id/subjects', authenticateToken, authorize('admin', 'coordinator')
 
     // Create new subject enrollments
     if (subjects.length > 0) {
+      const subjectRecords = await Promise.all(
+        subjects.map((subj: string) => resolveSubjectRecord(subj))
+      );
       await prisma.studentSubjectEnrollment.createMany({
-        data: subjects.map((subj: string) => ({
+        data: subjectRecords.map(sub => ({
           student_id: student.id,
           class_id,
-          subject: subj,
+          subject_id: sub.id,
           enrollment_date: new Date().toISOString(),
           status: 'active',
         })),

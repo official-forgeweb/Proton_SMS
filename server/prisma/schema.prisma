@@ -190,6 +190,7 @@ model Class {
   demo_classes         DemoClass[]
   video_lectures       VideoLecture[]
   study_materials      StudyMaterial[]
+  class_subjects       ClassSubject[]
 
   @@index([status])
   @@index([primary_teacher_id])
@@ -203,7 +204,7 @@ model Class {
 model Timetable {
   id          String   @id @default(uuid())
   class_id    String
-  subject     String
+  subject_id  String
   teacher_id  String?
   date        String                // e.g. "2026-04-08"
   start_time  String                // e.g. "17:00"
@@ -218,6 +219,7 @@ model Timetable {
   // Relations
   class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
   teacher     Teacher? @relation("TimetableTeacher", fields: [teacher_id], references: [id])
+  subject     Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
   attendance  Attendance[]
 
   @@index([class_id, date])
@@ -229,7 +231,7 @@ model Timetable {
 model ClassSchedule {
   id         String  @id @default(uuid())
   class_id   String
-  subject    String?
+  subject_id String?
   teacher_id String?
   time_start String?
   time_end   String?
@@ -238,6 +240,7 @@ model ClassSchedule {
   // Relations
   class_ref Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
   teacher   Teacher? @relation(fields: [teacher_id], references: [id])
+  subject   Subject? @relation(fields: [subject_id], references: [id], onDelete: Cascade)
 
   @@index([class_id])
   @@map("class_schedules")
@@ -266,7 +269,7 @@ model StudentSubjectEnrollment {
   id              String   @id @default(uuid())
   student_id      String
   class_id        String
-  subject         String
+  subject_id      String
   enrollment_date String?
   status          String   @default("active")
   created_at      DateTime @default(now())
@@ -275,9 +278,10 @@ model StudentSubjectEnrollment {
   // Relations
   student Student @relation(fields: [student_id], references: [id])
   class   Class   @relation(fields: [class_id], references: [id])
+  subject Subject @relation(fields: [subject_id], references: [id], onDelete: Cascade)
 
-  @@unique([student_id, class_id, subject])
-  @@index([class_id, subject])
+  @@unique([student_id, class_id, subject_id])
+  @@index([class_id, subject_id])
   @@index([student_id])
   @@map("student_subject_enrollments")
 }
@@ -342,7 +346,7 @@ model DemoClass {
   enquiry_id  String
   demo_date   String?
   demo_time   String?
-  subject     String?
+  subject_id  String?
   topic       String?
   class_id    String?
   teacher_id  String?
@@ -355,6 +359,7 @@ model DemoClass {
   enquiry Enquiry  @relation(fields: [enquiry_id], references: [id])
   class   Class?   @relation(fields: [class_id], references: [id])
   teacher Teacher? @relation(fields: [teacher_id], references: [id])
+  subject Subject? @relation(fields: [subject_id], references: [id], onDelete: SetNull)
 
   @@index([enquiry_id])
   @@index([teacher_id])
@@ -372,7 +377,7 @@ model Attendance {
   student_id      String
   class_id        String
   timetable_id    String?          // Link to specific session
-  subject         String?          // Explicit subject
+  subject_id      String?          // Explicit subject
   attendance_date String
   status          AttendanceStatus
   marked_by       String?
@@ -384,6 +389,7 @@ model Attendance {
   class     Class      @relation(fields: [class_id], references: [id])
   timetable Timetable? @relation(fields: [timetable_id], references: [id])
   user      User?      @relation(fields: [marked_by], references: [id])
+  subject   Subject?   @relation(fields: [subject_id], references: [id], onDelete: SetNull)
 
   @@index([student_id, attendance_date])
   @@index([class_id, attendance_date])
@@ -396,7 +402,7 @@ model Test {
   test_code         String   @unique
   test_name         String?
   class_id          String
-  subject           String?
+  subject_id        String?
   test_type         String?
   test_date         String?
   start_time        String?
@@ -415,6 +421,7 @@ model Test {
   // Relations
   class     Class        @relation(fields: [class_id], references: [id])
   creator   User?        @relation(fields: [created_by], references: [id])
+  subject   Subject?     @relation(fields: [subject_id], references: [id], onDelete: SetNull)
   results   TestResult[]
 
   @@index([class_id])
@@ -455,6 +462,7 @@ model Homework {
   title         String?
   description   String?
   class_id      String
+  subject_id    String?
   assigned_date String?
   due_date      String?
   total_marks   Float?
@@ -467,6 +475,7 @@ model Homework {
   // Relations
   class       Class                @relation(fields: [class_id], references: [id])
   creator     User?                @relation(fields: [created_by], references: [id])
+  subject     Subject?             @relation(fields: [subject_id], references: [id], onDelete: SetNull)
   submissions HomeworkSubmission[]
 
   @@index([class_id])
@@ -700,7 +709,7 @@ model VideoLecture {
   date        String                  // e.g. "2026-04-10"
   time        String                  // e.g. "17:00"
   class_id    String
-  subject     String
+  subject_id  String
   video_url   String                  // YouTube URL
   title       String?                 // Optional title
   status      String   @default("active")  // active | inactive
@@ -711,11 +720,12 @@ model VideoLecture {
 
   // Relations
   class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  subject     Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
 
-  @@unique([date, time, class_id, subject])
+  @@unique([date, time, class_id, subject_id])
   @@index([class_id, date])
   @@index([date])
-  @@index([subject])
+  @@index([subject_id])
   @@map("video_lectures")
 }
 
@@ -726,7 +736,7 @@ model VideoLecture {
 model StudyMaterial {
   id          String   @id @default(uuid())
   title       String
-  subject     String
+  subject_id  String
   class_id    String
   pdf_url     String
   uploaded_by String
@@ -737,9 +747,10 @@ model StudyMaterial {
   // Relations
   class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
   uploader    User     @relation("UploaderMaterial", fields: [uploaded_by], references: [id])
+  subject     Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
 
   @@index([class_id])
-  @@index([subject])
+  @@index([subject_id])
   @@index([uploaded_by])
   @@map("study_materials")
 }
@@ -978,7 +989,30 @@ model Subject {
   updated_at     DateTime       @updatedAt
   aliases        SubjectAlias[]
 
+  // Reverse Relations
+  class_subjects              ClassSubject[]
+  class_schedules             ClassSchedule[]
+  student_subject_enrollments StudentSubjectEnrollment[]
+  timetable_entries           Timetable[]
+  demo_classes                DemoClass[]
+  attendance_records          Attendance[]
+  tests                       Test[]
+  homeworks                   Homework[]
+  video_lectures              VideoLecture[]
+  study_materials             StudyMaterial[]
+
   @@map("subjects")
+}
+
+model ClassSubject {
+  class_id   String
+  subject_id String
+  
+  class      Class   @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  subject    Subject @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@id([class_id, subject_id])
+  @@map("class_subjects")
 }
 
 model SubjectAlias {

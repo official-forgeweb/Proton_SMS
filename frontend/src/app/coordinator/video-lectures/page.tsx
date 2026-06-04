@@ -6,6 +6,7 @@ import { Video, Upload, Trash2, Search, Edit3, X, FileSpreadsheet, Plus, AlertTr
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { customAlert, customConfirm } from '@/utils/dialog';
+import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 
 export default function CoordinatorVideoLecturesPage() {
     const [lectures, setLectures] = useState<any[]>([]);
@@ -378,7 +379,13 @@ export default function CoordinatorVideoLecturesPage() {
                         <div style={{ display: 'grid', gap: '16px', marginBottom: '24px' }}>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 700, color: '#1A1D3B' }}>Subject Subject</label>
-                                <input type="text" value={editEntry.subject} onChange={e => setEditEntry({...editEntry, subject: e.target.value})} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />
+                                <ClassSubjectSelector 
+                                    classId={editEntry.class_id}
+                                    value={editEntry.subject} 
+                                    onChange={val => setEditEntry({...editEntry, subject: val})} 
+                                    placeholder="Select subject..."
+                                    required
+                                />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                 <div>

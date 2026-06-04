@@ -53,6 +53,7 @@ model User {
   attendance_marked    Attendance[]
   fee_payments_received FeePayment[]
   fee_audit_logs       FeeAuditLog[]
+  installment_date_histories InstallmentDateHistory[]
   queries_created    StudentQuery[]   @relation("QueryCreatedBy")
   queries_resolved   StudentQuery[]   @relation("QueryResolvedBy")
   query_replies        QueryReply[]
@@ -63,6 +64,8 @@ model User {
   notifications_sent     Notification[] @relation("NotificationSender")
   messages_sent          Message[]      @relation("SentMessages")
   messages_received      Message[]      @relation("ReceivedMessages")
+  tests_created            Test[]
+  homework_created         Homework[]
 
   @@map("users")
 }
@@ -136,8 +139,6 @@ model Teacher {
   class_schedules   ClassSchedule[]
   timetable_entries Timetable[]       @relation("TimetableTeacher")
   demo_classes      DemoClass[]
-  tests_created     Test[]
-  homework_created  Homework[]
   queries_targeted  StudentQuery[]    @relation("QueryTargetTeacher")
   remarks           StudentRemark[]
   activity_logs     TeacherActivityLog[]
@@ -189,6 +190,7 @@ model Class {
   demo_classes         DemoClass[]
   video_lectures       VideoLecture[]
   study_materials      StudyMaterial[]
+  class_subjects       ClassSubject[]
 
   @@index([status])
   @@index([primary_teacher_id])
@@ -202,7 +204,7 @@ model Class {
 model Timetable {
   id          String   @id @default(uuid())
   class_id    String
-  subject     String
+  subject_id  String
   teacher_id  String?
   date        String                // e.g. "2026-04-08"
   start_time  String                // e.g. "17:00"
@@ -217,6 +219,7 @@ model Timetable {
   // Relations
   class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
   teacher     Teacher? @relation("TimetableTeacher", fields: [teacher_id], references: [id])
+  subject     Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
   attendance  Attendance[]
 
   @@index([class_id, date])
@@ -228,7 +231,7 @@ model Timetable {
 model ClassSchedule {
   id         String  @id @default(uuid())
   class_id   String
-  subject    String?
+  subject_id String?
   teacher_id String?
   time_start String?
   time_end   String?
@@ -237,6 +240,7 @@ model ClassSchedule {
   // Relations
   class_ref Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
   teacher   Teacher? @relation(fields: [teacher_id], references: [id])
+  subject   Subject? @relation(fields: [subject_id], references: [id], onDelete: Cascade)
 
   @@index([class_id])
   @@map("class_schedules")
@@ -265,7 +269,7 @@ model StudentSubjectEnrollment {
   id              String   @id @default(uuid())
   student_id      String
   class_id        String
-  subject         String
+  subject_id      String
   enrollment_date String?
   status          String   @default("active")
   created_at      DateTime @default(now())
@@ -274,9 +278,10 @@ model StudentSubjectEnrollment {
   // Relations
   student Student @relation(fields: [student_id], references: [id])
   class   Class   @relation(fields: [class_id], references: [id])
+  subject Subject @relation(fields: [subject_id], references: [id], onDelete: Cascade)
 
-  @@unique([student_id, class_id, subject])
-  @@index([class_id, subject])
+  @@unique([student_id, class_id, subject_id])
+  @@index([class_id, subject_id])
   @@index([student_id])
   @@map("student_subject_enrollments")
 }
@@ -341,7 +346,7 @@ model DemoClass {
   enquiry_id  String
   demo_date   String?
   demo_time   String?
-  subject     String?
+  subject_id  String?
   topic       String?
   class_id    String?
   teacher_id  String?
@@ -354,6 +359,7 @@ model DemoClass {
   enquiry Enquiry  @relation(fields: [enquiry_id], references: [id])
   class   Class?   @relation(fields: [class_id], references: [id])
   teacher Teacher? @relation(fields: [teacher_id], references: [id])
+  subject Subject? @relation(fields: [subject_id], references: [id], onDelete: SetNull)
 
   @@index([enquiry_id])
   @@index([teacher_id])
@@ -371,7 +377,7 @@ model Attendance {
   student_id      String
   class_id        String
   timetable_id    String?          // Link to specific session
-  subject         String?          // Explicit subject
+  subject_id      String?          // Explicit subject
   attendance_date String
   status          AttendanceStatus
   marked_by       String?
@@ -383,6 +389,7 @@ model Attendance {
   class     Class      @relation(fields: [class_id], references: [id])
   timetable Timetable? @relation(fields: [timetable_id], references: [id])
   user      User?      @relation(fields: [marked_by], references: [id])
+  subject   Subject?   @relation(fields: [subject_id], references: [id], onDelete: SetNull)
 
   @@index([student_id, attendance_date])
   @@index([class_id, attendance_date])
@@ -395,7 +402,7 @@ model Test {
   test_code         String   @unique
   test_name         String?
   class_id          String
-  subject           String?
+  subject_id        String?
   test_type         String?
   test_date         String?
   start_time        String?
@@ -413,7 +420,8 @@ model Test {
 
   // Relations
   class     Class        @relation(fields: [class_id], references: [id])
-  creator   Teacher?     @relation(fields: [created_by], references: [id])
+  creator   User?        @relation(fields: [created_by], references: [id])
+  subject   Subject?     @relation(fields: [subject_id], references: [id], onDelete: SetNull)
   results   TestResult[]
 
   @@index([class_id])
@@ -454,6 +462,7 @@ model Homework {
   title         String?
   description   String?
   class_id      String
+  subject_id    String?
   assigned_date String?
   due_date      String?
   total_marks   Float?
@@ -465,7 +474,8 @@ model Homework {
 
   // Relations
   class       Class                @relation(fields: [class_id], references: [id])
-  creator     Teacher?             @relation(fields: [created_by], references: [id])
+  creator     User?                @relation(fields: [created_by], references: [id])
+  subject     Subject?             @relation(fields: [subject_id], references: [id], onDelete: SetNull)
   submissions HomeworkSubmission[]
 
   @@index([class_id])
@@ -534,6 +544,7 @@ model StudentFeeAssignment {
   total_paid            Float    @default(0)
   total_pending         Float?
   payment_status        String   @default("pending")  // pending, partial, paid, overdue — auto-computed
+  risk_level            String   @default("normal")   // normal, watchlist, high_risk_defaulter
   payment_mode          String   @default("one_time") // one_time | installment
   installment_strategy  String   @default("auto_equal") // auto_equal | manual_custom
   installment_count     Int?     @default(1)          // Number of installments (1-12)
@@ -567,14 +578,16 @@ model FeeInstallment {
   paid_date           String?                // When it was actually paid
   status              String    @default("upcoming") // upcoming, due, paid, overdue, partially_paid
   payment_id          String?                // Links to FeePayment when fully paid
+  date_change_count   Int       @default(0)
   is_deleted          Boolean   @default(false)
   deleted_at          DateTime?
   created_at          DateTime  @default(now())
   updated_at          DateTime  @updatedAt
 
   // Relations
-  assignment  StudentFeeAssignment @relation(fields: [assignment_id], references: [id], onDelete: Cascade)
-  payment     FeePayment?          @relation(fields: [payment_id], references: [id])
+  assignment     StudentFeeAssignment     @relation(fields: [assignment_id], references: [id], onDelete: Cascade)
+  payment        FeePayment?              @relation(fields: [payment_id], references: [id])
+  date_histories InstallmentDateHistory[]
 
   @@unique([assignment_id, installment_number])
   @@index([assignment_id])
@@ -631,6 +644,23 @@ model FeeAuditLog {
   @@map("fee_audit_logs")
 }
 
+model InstallmentDateHistory {
+  id                    String   @id @default(uuid())
+  installment_id        String
+  previous_due_date     String
+  new_due_date          String
+  changed_by            String
+  change_reason         String?
+  created_at            DateTime @default(now())
+
+  installment FeeInstallment @relation(fields: [installment_id], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [changed_by], references: [id])
+
+  @@index([installment_id])
+  @@index([changed_by])
+  @@map("installment_date_histories")
+}
+
 // ──────────────────────────────────────────────
 // Student Queries (Support / Requests)
 // ──────────────────────────────────────────────
@@ -679,21 +709,23 @@ model VideoLecture {
   date        String                  // e.g. "2026-04-10"
   time        String                  // e.g. "17:00"
   class_id    String
-  subject     String
+  subject_id  String
   video_url   String                  // YouTube URL
   title       String?                 // Optional title
   status      String   @default("active")  // active | inactive
   uploaded_by String?                 // User ID who uploaded
+  sheet_row_id String?  @unique             // Google Sheet Row ID/Hash
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   // Relations
   class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  subject     Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
 
-  @@unique([date, time, class_id, subject])
+  @@unique([date, time, class_id, subject_id])
   @@index([class_id, date])
   @@index([date])
-  @@index([subject])
+  @@index([subject_id])
   @@map("video_lectures")
 }
 
@@ -704,7 +736,7 @@ model VideoLecture {
 model StudyMaterial {
   id          String   @id @default(uuid())
   title       String
-  subject     String
+  subject_id  String
   class_id    String
   pdf_url     String
   uploaded_by String
@@ -715,9 +747,10 @@ model StudyMaterial {
   // Relations
   class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
   uploader    User     @relation("UploaderMaterial", fields: [uploaded_by], references: [id])
+  subject     Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
 
   @@index([class_id])
-  @@index([subject])
+  @@index([subject_id])
   @@index([uploaded_by])
   @@map("study_materials")
 }
@@ -765,6 +798,12 @@ model SystemSetting {
   
   email_notifications        Boolean  @default(true)
   sms_notifications          Boolean  @default(true)
+
+  // Google Sheets Auto-Sync Settings
+  google_sheets_enabled      Boolean  @default(false)
+  google_spreadsheet_id      String?
+  google_sheet_name          String   @default("Videos")
+  google_sync_interval_minutes Int    @default(5)
 
   updated_at                 DateTime @updatedAt
 
@@ -917,6 +956,88 @@ model Coordinator {
 
   @@index([status])
   @@map("coordinators")
+}
+
+// ──────────────────────────────────────────────
+// Email Logs for operational tracking
+// ──────────────────────────────────────────────
+
+model EmailLog {
+  id             String   @id @default(uuid())
+  recipient      String
+  mail_type      String
+  status         String   // sent | failed
+  sent_at        DateTime @default(now())
+  failure_reason String?  @db.Text
+
+  @@map("email_logs")
+}
+
+// ──────────────────────────────────────────────
+// Subjects Master Data
+// ──────────────────────────────────────────────
+
+model Subject {
+  id             String         @id @default(uuid())
+  canonical_name String         @unique
+  normalized_key String         @unique
+  short_name     String?
+  code           String?
+  description    String?
+  is_active      Boolean        @default(true)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+  aliases        SubjectAlias[]
+
+  // Reverse Relations
+  class_subjects              ClassSubject[]
+  class_schedules             ClassSchedule[]
+  student_subject_enrollments StudentSubjectEnrollment[]
+  timetable_entries           Timetable[]
+  demo_classes                DemoClass[]
+  attendance_records          Attendance[]
+  tests                       Test[]
+  homeworks                   Homework[]
+  video_lectures              VideoLecture[]
+  study_materials             StudyMaterial[]
+
+  @@map("subjects")
+}
+
+model ClassSubject {
+  class_id   String
+  subject_id String
+  
+  class      Class   @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  subject    Subject @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@id([class_id, subject_id])
+  @@map("class_subjects")
+}
+
+model SubjectAlias {
+  id             String   @id @default(uuid())
+  subject_id     String
+  alias          String   @unique
+  normalized_key String   @unique
+  subject        Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@map("subject_aliases")
+}
+
+model GoogleSheetSyncLog {
+  id             String    @id @default(uuid())
+  sync_type      String    @default("video_lectures")
+  start_time     DateTime  @default(now())
+  end_time       DateTime?
+  rows_processed Int       @default(0)
+  rows_created   Int       @default(0)
+  rows_updated   Int       @default(0)
+  rows_deleted   Int       @default(0)
+  status         String    // "success" | "failed"
+  error_message  String?   @db.Text
+
+  @@map("google_sheet_sync_logs")
 }
 
 

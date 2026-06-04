@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
+import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 import { useAuthStore } from '@/stores/authStore';
 import { customAlert, customConfirm } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
@@ -822,11 +823,10 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                                 </div>
                                 <div style={{ gridColumn: 'span 2' }}>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Subject</label>
-                                    <select 
-                                        required
+                                    <ClassSubjectSelector
+                                        classId={formData.class_id}
                                         value={formData.subject}
-                                        onChange={(e) => {
-                                            const subject = e.target.value;
+                                        onChange={(subject) => {
                                             const selectedClass = classes.find(c => c.id === formData.class_id);
                                             let newTeacherId = formData.teacher_id;
                                             let newStartTime = formData.start_time;
@@ -849,19 +849,8 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                                                 end_time: newEndTime
                                             });
                                         }}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', background: !formData.class_id ? '#F8F9FD' : '#FFFFFF' }}
-                                        disabled={!formData.class_id}
-                                    >
-                                        <option value="">{formData.class_id ? "Select a Subject" : "Select a Class first"}</option>
-                                        {formData.class_id && classes.find(c => c.id === formData.class_id) && 
-                                            Array.from(new Set([
-                                                classes.find(c => c.id === formData.class_id)?.subject,
-                                                ...(classes.find(c => c.id === formData.class_id)?.schedule || []).map((s: any) => s.subject)
-                                            ].filter(Boolean))).map(subject => (
-                                                <option key={subject as string} value={subject as string}>{subject as string}</option>
-                                            ))
-                                        }
-                                    </select>
+                                        required
+                                    />
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Teacher</label>

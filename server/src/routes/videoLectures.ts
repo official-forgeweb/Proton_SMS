@@ -4,6 +4,7 @@ import { authenticateToken, authorize } from '../middleware/auth';
 import multer from 'multer';
 import * as xlsx from 'xlsx';
 import express from 'express';
+import { resolveSubjectRecord } from '../utils/normalization';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -93,13 +94,14 @@ router.post('/upload', authenticateToken, authorize('admin', 'coordinator', 'tea
         continue;
       }
 
+      const subRec = await resolveSubjectRecord(subject);
       recordsToInsert.push({
         date,
         time,
         class_id,
-        subject,
+        subject_id: subRec.id,
         video_url: validUrl,
-        title: `${subject} - ${date}`,
+        title: `${subRec.canonical_name} - ${date}`,
         uploaded_by: req.user!.id,
         status: 'active'
       });
@@ -169,12 +171,18 @@ router.post('/confirm-upload', authenticateToken, authorize('admin', 'coordinato
 
     for (let i = 0; i < records.length; i++) {
         try {
-            await prisma.videoLecture.create({ data: records[i] });
+            const record = records[i];
+            if (record.subject && !record.subject_id) {
+                const subRec = await resolveSubjectRecord(record.subject);
+                record.subject_id = subRec.id;
+                delete record.subject;
+            }
+            await prisma.videoLecture.create({ data: record });
             inserted++;
         } catch (err: any) {
             skipped++;
             if (err.code === 'P2002') {
-                errors.push({ reason: `Duplicate entry for ${records[i].subject} - ${records[i].date}` });
+                errors.push({ reason: `Duplicate entry for ${records[i].title || 'Video'} - ${records[i].date}` });
             } else {
                 errors.push({ reason: `Database error: ${err.message}` });
             }
@@ -197,7 +205,10 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
     let where: any = {};
 
     if (class_id) where.class_id = String(class_id);
-    if (subject) where.subject = { contains: String(subject), mode: 'insensitive' };
+    if (subject) {
+        const subRec = await resolveSubjectRecord(String(subject));
+        where.subject_id = subRec.id;
+    }
     if (date) where.date = String(date);
 
     // If student, restrict to their enrolled classes and OPTED SUBJECTS
@@ -211,7 +222,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
                 },
                 subject_enrollments: { 
                     where: { status: 'active' },
-                    select: { class_id: true, subject: true }
+                    select: { class_id: true, subject_id: true }
                 }
             }
         });
@@ -228,7 +239,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
             const subjectsByClass: Record<string, string[]> = {};
             subjectEnrolls.forEach(e => {
                 if (!subjectsByClass[e.class_id]) subjectsByClass[e.class_id] = [];
-                subjectsByClass[e.class_id].push(e.subject);
+                subjectsByClass[e.class_id].push(e.subject_id);
             });
 
             const orConditions = classIds.map(cid => {
@@ -237,7 +248,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
                     return { 
                         class_id: cid, 
                         OR: subjects.map(s => ({
-                            subject: { contains: s.trim(), mode: 'insensitive' }
+                            subject_id: s
                         }))
                     };
                 }
@@ -273,7 +284,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         // 2. Class-Subject combinations from schedules
         const schedules = await prisma.classSchedule.findMany({
           where: { teacher_id: teacher.id },
-          select: { class_id: true, subject: true }
+          select: { class_id: true, subject_id: true }
         });
 
         const teacherOrConditions: any[] = [];
@@ -283,10 +294,10 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         }
 
         schedules.forEach(sched => {
-          if (sched.class_id && sched.subject) {
+          if (sched.class_id && sched.subject_id) {
             teacherOrConditions.push({
               class_id: sched.class_id,
-              subject: { equals: sched.subject, mode: 'insensitive' }
+              subject_id: sched.subject_id
             });
           }
         });
@@ -295,16 +306,16 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
         teacherOrConditions.push({ uploaded_by: req.user!.id });
 
         const currentClassId = where.class_id;
-        const currentSubject = where.subject;
+        const currentSubjectId = where.subject_id;
         delete where.class_id;
-        delete where.subject;
+        delete where.subject_id;
 
         const andConditions: any[] = [{ OR: teacherOrConditions }];
         if (currentClassId) {
           andConditions.push({ class_id: currentClassId });
         }
-        if (currentSubject) {
-          andConditions.push({ subject: currentSubject });
+        if (currentSubjectId) {
+          andConditions.push({ subject_id: currentSubjectId });
         }
 
         where.AND = andConditions;
@@ -316,16 +327,18 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
       orderBy: [
         { date: 'desc' },
         { time: 'desc' },
-        { subject: 'asc' }
+        { subject: { canonical_name: 'asc' } }
       ],
       include: {
-        class_ref: { select: { class_name: true } }
+        class_ref: { select: { class_name: true } },
+        subject: { select: { canonical_name: true } }
       }
     });
 
     const formatted = lectures.map(l => ({
         ...l,
-        class_name: l.class_ref?.class_name
+        class_name: l.class_ref?.class_name,
+        subject: l.subject.canonical_name
     }));
 
     res.json({ success: true, data: formatted });
@@ -352,12 +365,18 @@ router.get('/sync-logs', authenticateToken, authorize('admin', 'coordinator'), a
 router.get('/:id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
     try {
         const id = paramId(req);
-        const lecture = await prisma.videoLecture.findUnique({ where: { id }, include: { class_ref: { select: { class_name: true }} } });
+        const lecture = await prisma.videoLecture.findUnique({ 
+            where: { id }, 
+            include: { 
+                class_ref: { select: { class_name: true }},
+                subject: { select: { canonical_name: true } }
+            } 
+        });
         if (!lecture) {
             res.status(404).json({ success: false, message: 'Video lecture not found' });
             return;
         }
-        res.json({ success: true, data: { ...lecture, class_name: lecture.class_ref?.class_name } });
+        res.json({ success: true, data: { ...lecture, class_name: lecture.class_ref?.class_name, subject: lecture.subject.canonical_name } });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
     }
@@ -369,10 +388,16 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
         const id = paramId(req);
         const { date, time, subject, video_url, class_id } = req.body;
         
+        const subRec = subject ? await resolveSubjectRecord(subject) : undefined;
+
         await prisma.videoLecture.update({
             where: { id },
             data: {
-                date, time, subject, video_url: encodeYouTubeUrl(video_url), class_id
+                date, 
+                time, 
+                subject_id: subRec ? subRec.id : undefined, 
+                video_url: encodeYouTubeUrl(video_url), 
+                class_id
             }
         });
 

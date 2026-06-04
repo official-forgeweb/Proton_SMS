@@ -1,0 +1,1358 @@
+{
+  "classes": [
+    {
+      "id": "76ad4f3c-8ac8-4fa3-85f7-88273b372e97",
+      "class_code": "CLS20264826",
+      "class_name": "Class 12",
+      "grade_level": "Grade 12",
+      "academic_year": "2026-2027",
+      "batch_type": "regular",
+      "start_date": null,
+      "end_date": null,
+      "max_students": 40,
+      "current_students_count": 0,
+      "room_number": null,
+      "status": "ongoing",
+      "course_fee": 35000,
+      "course_duration_months": 12,
+      "subject": null,
+      "primary_teacher_id": null,
+      "class_days": [],
+      "class_time_start": null,
+      "class_time_end": null,
+      "created_at": "2026-06-02T14:43:53.569Z",
+      "updated_at": "2026-06-02T14:43:53.569Z",
+      "schedule": [
+        {
+          "id": "79d64c49-9921-4548-aa1f-dccca87eee48",
+          "class_id": "76ad4f3c-8ac8-4fa3-85f7-88273b372e97",
+          "subject": "Physics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "0d2d4642-c784-4e5c-afec-28a88e309f3b",
+          "class_id": "76ad4f3c-8ac8-4fa3-85f7-88273b372e97",
+          "subject": "Chemistry",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "46844f57-dfcc-4ddd-abfd-754eed760634",
+          "class_id": "76ad4f3c-8ac8-4fa3-85f7-88273b372e97",
+          "subject": "Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "56d6f816-c832-4768-a652-d0cad98077af",
+          "class_id": "76ad4f3c-8ac8-4fa3-85f7-88273b372e97",
+          "subject": "Biology",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "e375b3ee-1263-4fb7-bb5a-14a7c0bc367a",
+          "class_id": "76ad4f3c-8ac8-4fa3-85f7-88273b372e97",
+          "subject": "Economics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "1bbd89cb-c5ce-4423-b219-db93338ce595",
+          "class_id": "76ad4f3c-8ac8-4fa3-85f7-88273b372e97",
+          "subject": "Accounts",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9037a96e-18fa-4477-9367-680f99ed82e3",
+      "class_code": "CLS20264812",
+      "class_name": "Class 12 + Competition",
+      "grade_level": "Grade 12",
+      "academic_year": "2026-2027",
+      "batch_type": "competition",
+      "start_date": null,
+      "end_date": null,
+      "max_students": 40,
+      "current_students_count": 0,
+      "room_number": null,
+      "status": "ongoing",
+      "course_fee": 45000,
+      "course_duration_months": 12,
+      "subject": null,
+      "primary_teacher_id": null,
+      "class_days": [],
+      "class_time_start": null,
+      "class_time_end": null,
+      "created_at": "2026-06-02T14:43:54.332Z",
+      "updated_at": "2026-06-02T14:43:54.332Z",
+      "schedule": [
+        {
+          "id": "512e328f-5307-4d87-96f0-fd1f4ca7e7ee",
+          "class_id": "9037a96e-18fa-4477-9367-680f99ed82e3",
+          "subject": "Physics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "5071c25c-98d3-479b-be87-f4f6bef599d1",
+          "class_id": "9037a96e-18fa-4477-9367-680f99ed82e3",
+          "subject": "Chemistry",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "4ce08b96-89f3-4221-83cc-e6ad9337183f",
+          "class_id": "9037a96e-18fa-4477-9367-680f99ed82e3",
+          "subject": "Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "e40193ad-3409-4e3f-be6b-1500dc404fa7",
+          "class_id": "9037a96e-18fa-4477-9367-680f99ed82e3",
+          "subject": "Biology",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "365825ce-e8fa-448d-bb52-0dd9d4a590b7",
+          "class_id": "9037a96e-18fa-4477-9367-680f99ed82e3",
+          "subject": "Economics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "0097abc9-8dfa-49f2-8661-0e15ea63aec1",
+          "class_id": "9037a96e-18fa-4477-9367-680f99ed82e3",
+          "subject": "Accounts",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "350afa7f-6f68-4e85-b72c-28d324d59e3f",
+          "class_id": "9037a96e-18fa-4477-9367-680f99ed82e3",
+          "subject": "Competition Preparation",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ef63fbca-4d32-4cb6-8326-b6937ff0d356",
+      "class_code": "CLS20261164",
+      "class_name": "Class 11",
+      "grade_level": "Grade 11",
+      "academic_year": "2026-2027",
+      "batch_type": "regular",
+      "start_date": null,
+      "end_date": null,
+      "max_students": 40,
+      "current_students_count": 0,
+      "room_number": null,
+      "status": "ongoing",
+      "course_fee": 35000,
+      "course_duration_months": 12,
+      "subject": null,
+      "primary_teacher_id": null,
+      "class_days": [],
+      "class_time_start": null,
+      "class_time_end": null,
+      "created_at": "2026-06-02T14:43:55.054Z",
+      "updated_at": "2026-06-02T14:43:55.054Z",
+      "schedule": [
+        {
+          "id": "274194de-c168-4c9a-9879-77f78dc1dbcd",
+          "class_id": "ef63fbca-4d32-4cb6-8326-b6937ff0d356",
+          "subject": "Physics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "88c2b1c6-f8fd-4624-8ec7-0e591c255b9a",
+          "class_id": "ef63fbca-4d32-4cb6-8326-b6937ff0d356",
+          "subject": "Chemistry",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "e7e51fcd-cc3a-4af7-a8a1-dca78e8aec23",
+          "class_id": "ef63fbca-4d32-4cb6-8326-b6937ff0d356",
+          "subject": "Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "e26f75b0-e516-4bfa-ba61-a776be156b6e",
+          "class_id": "ef63fbca-4d32-4cb6-8326-b6937ff0d356",
+          "subject": "Biology",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "2737eb2a-35cd-4e03-b8c6-58aae6caa461",
+          "class_id": "ef63fbca-4d32-4cb6-8326-b6937ff0d356",
+          "subject": "Economics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "f8af9633-9b27-4129-8975-bafc7e83a7e4",
+          "class_id": "ef63fbca-4d32-4cb6-8326-b6937ff0d356",
+          "subject": "Accounts",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e9b70372-7b2d-4e8d-aca1-e282d4d687cf",
+      "class_code": "CLS20269258",
+      "class_name": "Class 11 + Competition",
+      "grade_level": "Grade 11",
+      "academic_year": "2026-2027",
+      "batch_type": "competition",
+      "start_date": null,
+      "end_date": null,
+      "max_students": 40,
+      "current_students_count": 0,
+      "room_number": null,
+      "status": "ongoing",
+      "course_fee": 45000,
+      "course_duration_months": 12,
+      "subject": null,
+      "primary_teacher_id": null,
+      "class_days": [],
+      "class_time_start": null,
+      "class_time_end": null,
+      "created_at": "2026-06-02T14:43:55.770Z",
+      "updated_at": "2026-06-02T14:43:55.770Z",
+      "schedule": [
+        {
+          "id": "f338323c-ca17-4f0a-9915-c91e9fbacaad",
+          "class_id": "e9b70372-7b2d-4e8d-aca1-e282d4d687cf",
+          "subject": "Physics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "9d911ac0-3131-4410-802f-e7636b648156",
+          "class_id": "e9b70372-7b2d-4e8d-aca1-e282d4d687cf",
+          "subject": "Chemistry",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "c2199e73-cbf2-4331-841b-2110c300141b",
+          "class_id": "e9b70372-7b2d-4e8d-aca1-e282d4d687cf",
+          "subject": "Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "c4bc2254-3d9b-44b5-a9b8-a3d13938e31b",
+          "class_id": "e9b70372-7b2d-4e8d-aca1-e282d4d687cf",
+          "subject": "Biology",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "c4b16b91-9243-416a-a931-8d54eb2e16e7",
+          "class_id": "e9b70372-7b2d-4e8d-aca1-e282d4d687cf",
+          "subject": "Economics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "4cea40ce-82e8-4aba-804d-00ca4699a5f6",
+          "class_id": "e9b70372-7b2d-4e8d-aca1-e282d4d687cf",
+          "subject": "Accounts",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "25aea2c5-9197-4c1e-be40-e0f07ed5f34e",
+          "class_id": "e9b70372-7b2d-4e8d-aca1-e282d4d687cf",
+          "subject": "Competition Preparation",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1e585687-319c-49e0-acfb-a2f1de279c9b",
+      "class_code": "CLS20268119",
+      "class_name": "Class 10",
+      "grade_level": "Grade 10",
+      "academic_year": "2026-2027",
+      "batch_type": "regular",
+      "start_date": null,
+      "end_date": null,
+      "max_students": 40,
+      "current_students_count": 0,
+      "room_number": null,
+      "status": "ongoing",
+      "course_fee": 35000,
+      "course_duration_months": 12,
+      "subject": null,
+      "primary_teacher_id": null,
+      "class_days": [],
+      "class_time_start": null,
+      "class_time_end": null,
+      "created_at": "2026-06-02T14:43:56.473Z",
+      "updated_at": "2026-06-02T14:43:56.473Z",
+      "schedule": [
+        {
+          "id": "bf0c1d62-0661-419a-8063-d164402f3ac5",
+          "class_id": "1e585687-319c-49e0-acfb-a2f1de279c9b",
+          "subject": "English",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "c6b01d6f-44b6-421f-804b-e39a3b059bb2",
+          "class_id": "1e585687-319c-49e0-acfb-a2f1de279c9b",
+          "subject": "Hindi",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "cac6805b-46ab-4912-950b-c7386f4250c9",
+          "class_id": "1e585687-319c-49e0-acfb-a2f1de279c9b",
+          "subject": "Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "2ea96bf2-6a8c-48d2-aa06-d5341cf54712",
+          "class_id": "1e585687-319c-49e0-acfb-a2f1de279c9b",
+          "subject": "Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "22183068-855b-4cd9-b420-6c07079d1d7e",
+          "class_id": "1e585687-319c-49e0-acfb-a2f1de279c9b",
+          "subject": "Social Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "0a4b872e-70ca-4279-8f9e-55681716d1a0",
+          "class_id": "1e585687-319c-49e0-acfb-a2f1de279c9b",
+          "subject": "Computer Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a47e84a1-8d30-4a11-a233-446d5ebfc027",
+      "class_code": "CLS20261316",
+      "class_name": "Class 10 Advanced",
+      "grade_level": "Grade 10",
+      "academic_year": "2026-2027",
+      "batch_type": "regular",
+      "start_date": null,
+      "end_date": null,
+      "max_students": 40,
+      "current_students_count": 0,
+      "room_number": null,
+      "status": "ongoing",
+      "course_fee": 35000,
+      "course_duration_months": 12,
+      "subject": null,
+      "primary_teacher_id": null,
+      "class_days": [],
+      "class_time_start": null,
+      "class_time_end": null,
+      "created_at": "2026-06-02T14:43:57.183Z",
+      "updated_at": "2026-06-02T14:43:57.183Z",
+      "schedule": [
+        {
+          "id": "61cfb487-7192-4794-ab3d-2bb3c73c943e",
+          "class_id": "a47e84a1-8d30-4a11-a233-446d5ebfc027",
+          "subject": "English",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "e331437f-4d0a-48ca-b756-cea82b701594",
+          "class_id": "a47e84a1-8d30-4a11-a233-446d5ebfc027",
+          "subject": "Hindi",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "2f9cb6c8-a4a1-427e-8348-b2a5c6ffa50e",
+          "class_id": "a47e84a1-8d30-4a11-a233-446d5ebfc027",
+          "subject": "Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "0f3c37c0-8284-4630-ad9b-64cef49b87c8",
+          "class_id": "a47e84a1-8d30-4a11-a233-446d5ebfc027",
+          "subject": "Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "765a8a5f-b5bf-440d-924e-0cf46ceafb1f",
+          "class_id": "a47e84a1-8d30-4a11-a233-446d5ebfc027",
+          "subject": "Social Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "e0682260-32ec-481f-b099-62db0811853e",
+          "class_id": "a47e84a1-8d30-4a11-a233-446d5ebfc027",
+          "subject": "Computer Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "718e799c-22a8-41f5-b782-ca7b9dad1505",
+          "class_id": "a47e84a1-8d30-4a11-a233-446d5ebfc027",
+          "subject": "Advanced Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "e19f8cb1-f215-46b4-a2d0-651688854961",
+          "class_id": "a47e84a1-8d30-4a11-a233-446d5ebfc027",
+          "subject": "Advanced Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d6de639a-33e2-4e50-bc0e-43843095173d",
+      "class_code": "CLS20261673",
+      "class_name": "Class 9",
+      "grade_level": "Grade 9",
+      "academic_year": "2026-2027",
+      "batch_type": "regular",
+      "start_date": null,
+      "end_date": null,
+      "max_students": 40,
+      "current_students_count": 0,
+      "room_number": null,
+      "status": "ongoing",
+      "course_fee": 35000,
+      "course_duration_months": 12,
+      "subject": null,
+      "primary_teacher_id": null,
+      "class_days": [],
+      "class_time_start": null,
+      "class_time_end": null,
+      "created_at": "2026-06-02T14:43:58.093Z",
+      "updated_at": "2026-06-02T14:43:58.093Z",
+      "schedule": [
+        {
+          "id": "7d3b345c-9aed-44ea-8e71-16088d15cbb9",
+          "class_id": "d6de639a-33e2-4e50-bc0e-43843095173d",
+          "subject": "English",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "3db7eaea-8441-4fc7-a11f-4cc93d96fd9b",
+          "class_id": "d6de639a-33e2-4e50-bc0e-43843095173d",
+          "subject": "Hindi",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "27fc1a3a-6289-47b7-99e2-937463bc85a8",
+          "class_id": "d6de639a-33e2-4e50-bc0e-43843095173d",
+          "subject": "Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "76ddc634-39c4-4303-98f9-d61c65bf35b6",
+          "class_id": "d6de639a-33e2-4e50-bc0e-43843095173d",
+          "subject": "Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "c0c7d465-1643-45c8-9cb1-6c10d8d30af0",
+          "class_id": "d6de639a-33e2-4e50-bc0e-43843095173d",
+          "subject": "Social Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "5297bada-3c22-4e4d-b83a-4c520f8834be",
+          "class_id": "d6de639a-33e2-4e50-bc0e-43843095173d",
+          "subject": "Computer Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "038f6f86-63cd-4a9e-aaab-f3f1a3cd6be5",
+      "class_code": "CLS20266548",
+      "class_name": "Class 9 Advanced",
+      "grade_level": "Grade 9",
+      "academic_year": "2026-2027",
+      "batch_type": "regular",
+      "start_date": null,
+      "end_date": null,
+      "max_students": 40,
+      "current_students_count": 0,
+      "room_number": null,
+      "status": "ongoing",
+      "course_fee": 35000,
+      "course_duration_months": 12,
+      "subject": null,
+      "primary_teacher_id": null,
+      "class_days": [],
+      "class_time_start": null,
+      "class_time_end": null,
+      "created_at": "2026-06-02T14:43:58.799Z",
+      "updated_at": "2026-06-02T14:43:58.799Z",
+      "schedule": [
+        {
+          "id": "c01bf5b6-4ede-43f2-abe5-661ebec8dcda",
+          "class_id": "038f6f86-63cd-4a9e-aaab-f3f1a3cd6be5",
+          "subject": "English",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "12f00d70-990b-4d66-bd16-687e6ba9a0be",
+          "class_id": "038f6f86-63cd-4a9e-aaab-f3f1a3cd6be5",
+          "subject": "Hindi",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "3d9047cf-5a50-4d28-83cf-d90d23d82b68",
+          "class_id": "038f6f86-63cd-4a9e-aaab-f3f1a3cd6be5",
+          "subject": "Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "657f77b1-d1bf-4245-8f8e-f16be9e8fb61",
+          "class_id": "038f6f86-63cd-4a9e-aaab-f3f1a3cd6be5",
+          "subject": "Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "d07550c6-0869-41cf-ab65-c1cf39e4d0b5",
+          "class_id": "038f6f86-63cd-4a9e-aaab-f3f1a3cd6be5",
+          "subject": "Social Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "47a2d42e-9902-43ca-b986-b7b536918be0",
+          "class_id": "038f6f86-63cd-4a9e-aaab-f3f1a3cd6be5",
+          "subject": "Computer Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "788c269e-5070-4478-bda2-76f02dbdfd1f",
+          "class_id": "038f6f86-63cd-4a9e-aaab-f3f1a3cd6be5",
+          "subject": "Advanced Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "949a4040-a601-4dcb-a0bf-009a641c649c",
+          "class_id": "038f6f86-63cd-4a9e-aaab-f3f1a3cd6be5",
+          "subject": "Advanced Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "0c3a018d-06ef-47bb-84c3-573e507a0692",
+      "class_code": "CLS20268991",
+      "class_name": "Class 8 CBSE",
+      "grade_level": "Grade 8",
+      "academic_year": "2026-2027",
+      "batch_type": "regular",
+      "start_date": null,
+      "end_date": null,
+      "max_students": 40,
+      "current_students_count": 0,
+      "room_number": null,
+      "status": "ongoing",
+      "course_fee": 35000,
+      "course_duration_months": 12,
+      "subject": null,
+      "primary_teacher_id": null,
+      "class_days": [],
+      "class_time_start": null,
+      "class_time_end": null,
+      "created_at": "2026-06-02T14:43:59.524Z",
+      "updated_at": "2026-06-02T14:43:59.524Z",
+      "schedule": [
+        {
+          "id": "4bc2c83a-8d8d-4faa-bce8-4e23fc54ccce",
+          "class_id": "0c3a018d-06ef-47bb-84c3-573e507a0692",
+          "subject": "English",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "0d4f82ba-0f11-4728-b1ad-32e2608cf18b",
+          "class_id": "0c3a018d-06ef-47bb-84c3-573e507a0692",
+          "subject": "Hindi",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "030bf8d8-fac7-4928-a7dc-6588afd9793a",
+          "class_id": "0c3a018d-06ef-47bb-84c3-573e507a0692",
+          "subject": "Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "ba1dc0b2-c358-47e1-9bb5-452e41c56d12",
+          "class_id": "0c3a018d-06ef-47bb-84c3-573e507a0692",
+          "subject": "Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "ab079cc3-67e8-4350-8d80-79db06670c59",
+          "class_id": "0c3a018d-06ef-47bb-84c3-573e507a0692",
+          "subject": "Social Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "dd712ca0-d2ec-43bb-bde0-bfe2b0264eca",
+          "class_id": "0c3a018d-06ef-47bb-84c3-573e507a0692",
+          "subject": "Computer Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7824dd0c-151e-41a7-a790-70e430bbadf5",
+      "class_code": "CLS20263833",
+      "class_name": "Class 8 CBSE Advanced",
+      "grade_level": "Grade 8",
+      "academic_year": "2026-2027",
+      "batch_type": "regular",
+      "start_date": null,
+      "end_date": null,
+      "max_students": 40,
+      "current_students_count": 0,
+      "room_number": null,
+      "status": "ongoing",
+      "course_fee": 35000,
+      "course_duration_months": 12,
+      "subject": null,
+      "primary_teacher_id": null,
+      "class_days": [],
+      "class_time_start": null,
+      "class_time_end": null,
+      "created_at": "2026-06-02T14:44:00.292Z",
+      "updated_at": "2026-06-02T14:44:00.292Z",
+      "schedule": [
+        {
+          "id": "63b84523-a6bc-4dd8-89c9-2b2d85275dd9",
+          "class_id": "7824dd0c-151e-41a7-a790-70e430bbadf5",
+          "subject": "English",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "ccc8b1a1-c874-4015-99fb-9e48a0afc45f",
+          "class_id": "7824dd0c-151e-41a7-a790-70e430bbadf5",
+          "subject": "Hindi",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "c07953c5-a269-4832-87b5-e9169c349ee7",
+          "class_id": "7824dd0c-151e-41a7-a790-70e430bbadf5",
+          "subject": "Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "e18791d5-aaf5-425e-b15c-683f993e447b",
+          "class_id": "7824dd0c-151e-41a7-a790-70e430bbadf5",
+          "subject": "Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "7fda10c6-83a3-435d-8573-501f4d3fa41d",
+          "class_id": "7824dd0c-151e-41a7-a790-70e430bbadf5",
+          "subject": "Social Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "06e22d3d-cab0-4010-b249-35a46aba6ade",
+          "class_id": "7824dd0c-151e-41a7-a790-70e430bbadf5",
+          "subject": "Computer Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "42981365-38a6-408b-bbfa-5083cfcce459",
+          "class_id": "7824dd0c-151e-41a7-a790-70e430bbadf5",
+          "subject": "Advanced Mathematics",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        },
+        {
+          "id": "12925832-4d69-46a4-9a6c-375f3024068f",
+          "class_id": "7824dd0c-151e-41a7-a790-70e430bbadf5",
+          "subject": "Advanced Science",
+          "teacher_id": null,
+          "time_start": "09:00",
+          "time_end": "10:00",
+          "days": [
+            "Monday",
+            "Wednesday",
+            "Friday"
+          ]
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "id": "d147a5b9-4ed2-473d-947f-243bef19ec1b",
+      "canonical_name": "Mathematics",
+      "normalized_key": "mathematics",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-05-29T10:08:32.004Z",
+      "updated_at": "2026-05-29T10:08:32.004Z",
+      "aliases": []
+    },
+    {
+      "id": "51cfedff-7140-4e2e-9fba-edd2b74d972b",
+      "canonical_name": "Physics",
+      "normalized_key": "physics",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-05-29T10:08:32.238Z",
+      "updated_at": "2026-05-29T10:08:32.238Z",
+      "aliases": []
+    },
+    {
+      "id": "a99425e7-7b95-484e-8ae5-8008c21b601f",
+      "canonical_name": "Chemistry",
+      "normalized_key": "chemistry",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-05-29T10:08:32.391Z",
+      "updated_at": "2026-05-29T10:08:32.391Z",
+      "aliases": []
+    },
+    {
+      "id": "2f9ce20b-a08f-42f1-a481-2b85f326df4b",
+      "canonical_name": "Biology",
+      "normalized_key": "biology",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-05-29T10:08:32.543Z",
+      "updated_at": "2026-05-29T10:08:32.543Z",
+      "aliases": []
+    },
+    {
+      "id": "ed03be44-978a-447c-af18-9e3859a651e8",
+      "canonical_name": "Science",
+      "normalized_key": "science",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-05-29T10:08:32.702Z",
+      "updated_at": "2026-05-29T10:08:32.702Z",
+      "aliases": []
+    },
+    {
+      "id": "89ad1a3b-d889-4c23-bb05-ea2a7acffdc6",
+      "canonical_name": "SST",
+      "normalized_key": "sst",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-05-29T10:08:32.856Z",
+      "updated_at": "2026-05-29T10:08:32.856Z",
+      "aliases": []
+    },
+    {
+      "id": "edda53b4-7f64-4b42-922a-472da9e05fb4",
+      "canonical_name": "English",
+      "normalized_key": "english",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-05-29T10:08:33.006Z",
+      "updated_at": "2026-05-29T10:08:33.006Z",
+      "aliases": []
+    },
+    {
+      "id": "4e1b9949-561b-4f38-9e1e-2bc77e73ee62",
+      "canonical_name": "Hindi",
+      "normalized_key": "hindi",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-05-29T10:08:33.163Z",
+      "updated_at": "2026-05-29T10:08:33.163Z",
+      "aliases": []
+    },
+    {
+      "id": "229a4431-4eda-4848-9a00-a536546076f0",
+      "canonical_name": "Computer",
+      "normalized_key": "computer",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-05-29T10:08:33.319Z",
+      "updated_at": "2026-05-29T10:08:33.319Z",
+      "aliases": []
+    },
+    {
+      "id": "3130ae72-b7c0-423d-9065-11ebb09cd7e8",
+      "canonical_name": "College",
+      "normalized_key": "college",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-06-01T07:15:36.234Z",
+      "updated_at": "2026-06-01T07:15:36.234Z",
+      "aliases": []
+    },
+    {
+      "id": "599a606d-0c79-4461-aa73-f34a0ca271e4",
+      "canonical_name": "Economics",
+      "normalized_key": "economics",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-06-02T14:35:19.887Z",
+      "updated_at": "2026-06-02T14:35:19.887Z",
+      "aliases": []
+    },
+    {
+      "id": "56434dab-4d35-437e-b269-7e1cedad1b6d",
+      "canonical_name": "Accounts",
+      "normalized_key": "accounts",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-06-02T14:35:21.731Z",
+      "updated_at": "2026-06-02T14:35:21.731Z",
+      "aliases": []
+    },
+    {
+      "id": "e7fcf7a9-356c-4666-a9d0-c322232e57f5",
+      "canonical_name": "Competition Preparation",
+      "normalized_key": "competitionpreparation",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-06-02T14:37:15.226Z",
+      "updated_at": "2026-06-02T14:37:15.226Z",
+      "aliases": []
+    },
+    {
+      "id": "a1d880e6-2694-4b91-be52-ba91e3a17884",
+      "canonical_name": "Social Science",
+      "normalized_key": "socialscience",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-06-02T14:43:45.359Z",
+      "updated_at": "2026-06-02T14:43:45.359Z",
+      "aliases": []
+    },
+    {
+      "id": "dce5c5fe-d90b-43f9-902c-c4a78c9b7312",
+      "canonical_name": "Computer Science",
+      "normalized_key": "computerscience",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-06-02T14:43:47.804Z",
+      "updated_at": "2026-06-02T14:43:47.804Z",
+      "aliases": []
+    },
+    {
+      "id": "e45ef2fc-8257-4ce5-a329-30c20ce555ee",
+      "canonical_name": "Advanced Mathematics",
+      "normalized_key": "advancedmathematics",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-06-02T14:43:50.198Z",
+      "updated_at": "2026-06-02T14:43:50.198Z",
+      "aliases": []
+    },
+    {
+      "id": "e508d91b-9538-411b-a4be-b4e1bc0c1887",
+      "canonical_name": "Advanced Science",
+      "normalized_key": "advancedscience",
+      "short_name": null,
+      "code": null,
+      "description": null,
+      "is_active": true,
+      "created_at": "2026-06-02T14:43:52.548Z",
+      "updated_at": "2026-06-02T14:43:52.548Z",
+      "aliases": []
+    }
+  ],
+  "users": [
+    {
+      "id": "297aaae7-e3cf-4a91-9c8a-906904b46662",
+      "email": "decentthakur24@gmail.com",
+      "role": "student"
+    },
+    {
+      "id": "6b5ebd19-cbab-47eb-8548-e8b907e2cefc",
+      "email": "admin@protoncoaching.com",
+      "role": "admin"
+    }
+  ],
+  "teachers": [],
+  "students": []
+}
