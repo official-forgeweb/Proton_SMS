@@ -243,40 +243,103 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
             continue;
         }
 
+        const dateStrStart = start_date.split('T')[0];
+        const dateStrEnd = end_date.split('T')[0];
+
+        // Fetch all existing timetable entries for this class in this date range
+        const existingEntries = await prisma.timetable.findMany({
+            where: {
+                class_id: c.id,
+                date: { gte: dateStrStart, lte: dateStrEnd }
+            },
+            include: {
+                attendance: { select: { id: true } }
+            }
+        });
+
+        const targetSlots: {
+            date: string;
+            start_time: string;
+            end_time: string;
+            subject_id: string;
+            teacher_id: string | null;
+        }[] = [];
+
         // Use UTC to avoid timezone boundary issues
-        const startUTC = new Date(startDate.toISOString().split('T')[0] + 'T00:00:00Z');
-        const endUTC = new Date(endDate.toISOString().split('T')[0] + 'T00:00:00Z');
+        const startUTC = new Date(dateStrStart + 'T00:00:00Z');
+        const endUTC = new Date(dateStrEnd + 'T00:00:00Z');
 
         for (let d = new Date(startUTC); d <= endUTC; d.setUTCDate(d.getUTCDate() + 1)) {
             const dayOfWeek = daysMap[d.getUTCDay()];
             const dateStr = d.toISOString().split('T')[0];
 
             for (const sched of c.schedule) {
-                // The user explicitly requested to generate timetable for all days including Saturday and Sunday
-                // Check if entry already exists to avoid duplicates
                 if (!sched.subject_id) continue;
-                const existing = await prisma.timetable.findFirst({
-                    where: {
-                        class_id: c.id,
-                        subject_id: sched.subject_id,
-                        date: dateStr,
-                        start_time: sched.time_start || '09:00'
-                    }
-                });
 
-                if (!existing) {
-                    await prisma.timetable.create({
+                // Match day of week case-insensitively
+                const scheduleDays = (sched.days || []).map((day: string) => day.toLowerCase());
+                if (scheduleDays.includes(dayOfWeek)) {
+                    targetSlots.push({
+                        date: dateStr,
+                        start_time: sched.time_start || '09:00',
+                        end_time: sched.time_end || '10:00',
+                        subject_id: sched.subject_id,
+                        teacher_id: sched.teacher_id
+                    });
+                }
+            }
+        }
+
+        const reconciledIds = new Set<string>();
+
+        for (const slot of targetSlots) {
+            // Find existing entry with the same class, date, and start_time
+            const existing = existingEntries.find(e => e.date === slot.date && e.start_time === slot.start_time);
+
+            if (existing) {
+                reconciledIds.add(existing.id);
+                // Update if subject_id, teacher_id, or end_time differs
+                if (
+                    existing.subject_id !== slot.subject_id ||
+                    existing.teacher_id !== slot.teacher_id ||
+                    existing.end_time !== slot.end_time
+                ) {
+                    await prisma.timetable.update({
+                        where: { id: existing.id },
                         data: {
-                            class_id: c.id,
-                            subject_id: sched.subject_id,
-                            teacher_id: sched.teacher_id,
-                            date: dateStr,
-                            start_time: sched.time_start || '09:00',
-                            end_time: sched.time_end || '10:00',
+                            subject_id: slot.subject_id,
+                            teacher_id: slot.teacher_id,
+                            end_time: slot.end_time,
                             status: 'scheduled'
                         }
                     });
                     createdCount++;
+                }
+            } else {
+                // Create new entry
+                await prisma.timetable.create({
+                    data: {
+                        class_id: c.id,
+                        subject_id: slot.subject_id,
+                        teacher_id: slot.teacher_id,
+                        date: slot.date,
+                        start_time: slot.start_time,
+                        end_time: slot.end_time,
+                        status: 'scheduled'
+                    }
+                });
+                createdCount++;
+            }
+        }
+
+        // Cleanup obsolete entries (those that exist in the DB but are not in targetSlots)
+        for (const existing of existingEntries) {
+            if (!reconciledIds.has(existing.id)) {
+                // Safe to delete if it is 'scheduled' and has no marked attendance
+                if (existing.status === 'scheduled' && existing.attendance.length === 0) {
+                    await prisma.timetable.delete({
+                        where: { id: existing.id }
+                    });
                 }
             }
         }
