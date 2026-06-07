@@ -89,6 +89,10 @@ model Student {
   enrollment_date   String?
   enrollment_number String?
   admission_type    String?
+  father_name       String?
+  father_phone      String?
+  mother_name       String?
+  mother_phone      String?
   academic_status   String   @default("active")
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt

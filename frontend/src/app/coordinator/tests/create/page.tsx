@@ -95,11 +95,11 @@ export default function CoordinatorCreateTestPage() {
                         <div>
                             <label className="form-label">Examination Category *</label>
                             <select className="form-input" value={formData.test_type} onChange={e => setFormData({ ...formData, test_type: e.target.value })}>
-                                <option value="weekly_test">📅 Weekly Assessment</option>
-                                <option value="monthly_test">📊 Monthly Test</option>
-                                <option value="mock_test">🧪 Mock Examination</option>
-                                <option value="term_exam">🏛️ Term Exam</option>
-                                <option value="final_exam">🎓 Final Semester Exam</option>
+                                <option value="weekly_test">Weekly Assessment</option>
+                                <option value="monthly_test">Monthly Test</option>
+                                <option value="mock_test">Mock Examination</option>
+                                <option value="term_exam">Term Exam</option>
+                                <option value="final_exam">Final Semester Exam</option>
                             </select>
                         </div>
                     </div>

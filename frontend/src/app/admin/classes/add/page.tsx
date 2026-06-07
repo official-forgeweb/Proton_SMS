@@ -186,9 +186,9 @@ export default function AddClassPage() {
                         <div>
                             <label className="form-label">Current Operational Status</label>
                             <select className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
-                                <option value="upcoming">🗓️ Upcoming / Registration Open</option>
-                                <option value="ongoing">🟢 Ongoing / In-Session</option>
-                                <option value="completed">⚪ Completed</option>
+                                <option value="upcoming">Upcoming / Registration Open</option>
+                                <option value="ongoing">Ongoing / In-Session</option>
+                                <option value="completed">Completed</option>
                             </select>
                         </div>
                         {formData.status === 'upcoming' && (

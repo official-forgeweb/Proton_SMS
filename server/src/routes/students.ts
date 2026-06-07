@@ -258,7 +258,7 @@ router.post('/bulk', authenticateToken, authorize('admin', 'coordinator'), async
     for (let i = 0; i < students.length; i++) {
       const student = students[i];
       try {
-        const { first_name, last_name, date_of_birth, gender, email, phone, school_name, class_id, admission_type } = student;
+        const { first_name, last_name, date_of_birth, gender, email, phone, school_name, class_id, admission_type, father_name, father_phone, mother_name, mother_phone } = student;
 
         if (!first_name || !phone) {
           errors.push(`Row ${i + 1}: Missing required fields (first_name or phone)`);
@@ -299,6 +299,10 @@ router.post('/bulk', authenticateToken, authorize('admin', 'coordinator'), async
             enrollment_date: new Date().toISOString(),
             enrollment_number: `ENR${proId}`,
             admission_type: admission_type || 'fresh',
+            father_name: father_name || null,
+            father_phone: father_phone || null,
+            mother_name: mother_name || null,
+            mother_phone: mother_phone || null,
           },
         });
 
@@ -344,7 +348,7 @@ router.post('/bulk', authenticateToken, authorize('admin', 'coordinator'), async
 // POST /api/students
 router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { first_name, last_name, date_of_birth, gender, email, phone, school_name, class_id, admission_type } = req.body;
+    const { first_name, last_name, date_of_birth, gender, email, phone, school_name, class_id, admission_type, father_name, father_phone, mother_name, mother_phone } = req.body;
 
     // Check if email already exists
     if (email) {
@@ -415,6 +419,10 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
         enrollment_date: new Date().toISOString(),
         enrollment_number: `ENR${proId}`,
         admission_type: admission_type || 'fresh',
+        father_name,
+        father_phone,
+        mother_name,
+        mother_phone,
       },
     });
 

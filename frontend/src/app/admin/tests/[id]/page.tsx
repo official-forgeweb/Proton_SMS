@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { 
-  ClipboardList, Users, CheckCircle, BarChart2, Info, 
+  ClipboardList, Users, CheckCircle, XCircle, Trophy, BarChart2, Info, 
   ArrowLeft, Search, FileSpreadsheet, Percent, AlertCircle,
   TrendingUp, Award, Clock, ArrowUpRight, ShieldAlert
 } from 'lucide-react';
@@ -288,17 +288,17 @@ export default function TestProfilePage() {
                                     <button onClick={() => setStatusFilter('all')} className={`filter-badge ${statusFilter === 'all' ? 'active' : ''}`}>
                                         All Candidates ({results.length})
                                     </button>
-                                    <button onClick={() => setStatusFilter('toppers')} className={`filter-badge ${statusFilter === 'toppers' ? 'active' : ''}`}>
-                                        🏆 Toppers (Top 3)
+                                    <button onClick={() => setStatusFilter('toppers')} className={`filter-badge ${statusFilter === 'toppers' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Trophy size={14} /> Toppers (Top 3)
                                     </button>
-                                    <button onClick={() => setStatusFilter('pass')} className={`filter-badge ${statusFilter === 'pass' ? 'active' : ''}`}>
-                                        ✅ Passed Candidates ({results.filter((r: any) => r.pass_fail === 'pass').length})
+                                    <button onClick={() => setStatusFilter('pass')} className={`filter-badge ${statusFilter === 'pass' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <CheckCircle size={14} /> Passed Candidates ({results.filter((r: any) => r.pass_fail === 'pass').length})
                                     </button>
-                                    <button onClick={() => setStatusFilter('fail')} className={`filter-badge ${statusFilter === 'fail' ? 'active' : ''}`}>
-                                        ❌ Failed Candidates ({results.filter((r: any) => r.pass_fail === 'fail').length})
+                                    <button onClick={() => setStatusFilter('fail')} className={`filter-badge ${statusFilter === 'fail' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <XCircle size={14} /> Failed Candidates ({results.filter((r: any) => r.pass_fail === 'fail').length})
                                     </button>
-                                    <button onClick={() => setStatusFilter('absent')} className={`filter-badge ${statusFilter === 'absent' ? 'active' : ''}`}>
-                                        ⚠️ Absent Candidates ({totalAbsent})
+                                    <button onClick={() => setStatusFilter('absent')} className={`filter-badge ${statusFilter === 'absent' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <AlertCircle size={14} /> Absent Candidates ({totalAbsent})
                                     </button>
                                 </div>
                             </div>
@@ -374,7 +374,7 @@ export default function TestProfilePage() {
                                                         alignItems: 'center',
                                                         gap: '4px'
                                                     }}>
-                                                        {isTop3 ? '🏆 ' : ''}#{r.rank_in_class}
+                                                        {isTop3 ? <Trophy size={14} style={{ color: r.rank_in_class === 1 ? '#F59E0B' : r.rank_in_class === 2 ? '#94A3B8' : '#B45309', marginRight: '4px' }} /> : ''}#{r.rank_in_class}
                                                     </span>
                                                 </td>
                                                 <td style={{ padding: '16px 24px' }}>

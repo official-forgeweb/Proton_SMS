@@ -64,12 +64,12 @@ export default function TeacherEnquiryRemarkPage() {
                                 value={remarkType} 
                                 onChange={(e) => setRemarkType(e.target.value)}
                             >
-                                <option value="call">📞 Phone Call</option>
-                                <option value="meeting">🤝 In-Person Meeting</option>
-                                <option value="whatsapp">💬 WhatsApp Message</option>
-                                <option value="email">📧 Email Sent</option>
-                                <option value="follow_up">🔄 Follow Up</option>
-                                <option value="other">📝 Other</option>
+                                <option value="call">Phone Call</option>
+                                <option value="meeting">In-Person Meeting</option>
+                                <option value="whatsapp">WhatsApp Message</option>
+                                <option value="email">Email Sent</option>
+                                <option value="follow_up">Follow Up</option>
+                                <option value="other">Other</option>
                             </select>
                         </div>
                         <div>

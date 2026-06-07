@@ -132,10 +132,10 @@ export default function RecordPaymentPage() {
                                         Payment Method *
                                     </label>
                                     <select required className="form-input" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '14px' }} value={formData.payment_method} onChange={e => setFormData({ ...formData, payment_method: e.target.value })}>
-                                        <option value="cash">🏦 Cash Payment</option>
-                                        <option value="online">📱 Online / UPI / QR</option>
-                                        <option value="bank_transfer">🏛️ Bank Transfer (NEFT/IMPS)</option>
-                                        <option value="cheque">📝 Cheque / Draft</option>
+                                        <option value="cash">Cash Payment</option>
+                                        <option value="online">Online / UPI / QR</option>
+                                        <option value="bank_transfer">Bank Transfer (NEFT/IMPS)</option>
+                                        <option value="cheque">Cheque / Draft</option>
                                     </select>
                                 </div>
                             </div>

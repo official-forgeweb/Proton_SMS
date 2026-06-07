@@ -15,6 +15,7 @@ export default function AddStudentPage() {
     const emptyForm = {
         first_name: '', last_name: '', email: '', phone: '', date_of_birth: '',
         gender: 'male', school_name: '', admission_type: 'fresh',
+        father_name: '', father_phone: '', mother_name: '', mother_phone: '',
         class_ids: [] as string[],
         subjects: {} as Record<string, string[]>,  // { classId: ["Physics", "Maths"] }
     };
@@ -185,6 +186,31 @@ export default function AddStudentPage() {
 
                 <div className="form-section">
                     <div className="form-section-title">
+                        <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} />
+                        Parent / Guardian Details
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                        <div>
+                            <label className="form-label">Father's Name</label>
+                            <input className="form-input" value={formData.father_name} onChange={e => setFormData({ ...formData, father_name: e.target.value })} placeholder="Enter father's name" />
+                        </div>
+                        <div>
+                            <label className="form-label">Father's Mobile Number</label>
+                            <input className="form-input" value={formData.father_phone} onChange={e => setFormData({ ...formData, father_phone: e.target.value })} placeholder="Enter father's mobile number" />
+                        </div>
+                        <div>
+                            <label className="form-label">Mother's Name</label>
+                            <input className="form-input" value={formData.mother_name} onChange={e => setFormData({ ...formData, mother_name: e.target.value })} placeholder="Enter mother's name" />
+                        </div>
+                        <div>
+                            <label className="form-label">Mother's Mobile Number</label>
+                            <input className="form-input" value={formData.mother_phone} onChange={e => setFormData({ ...formData, mother_phone: e.target.value })} placeholder="Enter mother's mobile number" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="form-section">
+                    <div className="form-section-title">
                         <BookOpen size={16} strokeWidth={2.5} style={{ color: '#E53935' }} />
                         Academic Details
                     </div>
@@ -196,99 +222,138 @@ export default function AddStudentPage() {
                                     ({formData.class_ids.length} selected)
                                 </span>
                             </label>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {classes.map(cls => {
-                                    const isSelected = formData.class_ids.includes(cls.id);
-                                    const classSubjects = getClassSubjects(cls.id);
-                                    const selectedCount = (formData.subjects[cls.id] || []).length;
-                                    return (
-                                        <div key={cls.id} style={{
-                                            border: `2px solid ${isSelected ? '#E53935' : '#E2E8F0'}`,
-                                            borderRadius: '16px', overflow: 'hidden',
-                                            transition: 'all 0.2s',
-                                            background: isSelected ? '#FFFBFB' : '#FFFFFF'
-                                        }}>
-                                            <div
-                                                onClick={() => toggleClass(cls.id)}
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                    padding: '14px 18px', cursor: 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <div style={{
-                                                        width: '22px', height: '22px', borderRadius: '6px',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        background: isSelected ? '#E53935' : '#E2E8F0',
-                                                        color: 'white', transition: 'all 0.2s', flexShrink: 0,
-                                                    }}>
-                                                        {isSelected && <Check size={14} strokeWidth={3} />}
-                                                    </div>
+                            
+                            {/* Dropdown for class selection */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <select 
+                                    className="form-input" 
+                                    value="" 
+                                    onChange={e => {
+                                        const classId = e.target.value;
+                                        if (classId) {
+                                            if (!formData.class_ids.includes(classId)) {
+                                                const classSubjects = getClassSubjects(classId);
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    class_ids: [...prev.class_ids, classId],
+                                                    subjects: {
+                                                        ...prev.subjects,
+                                                        [classId]: [...classSubjects] // auto-select all subjects by default
+                                                    }
+                                                }));
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <option value="">Choose a class / batch to add...</option>
+                                    {classes.map(cls => (
+                                        <option key={cls.id} value={cls.id} disabled={formData.class_ids.includes(cls.id)}>
+                                            {cls.class_name} {cls.class_code ? `(${cls.class_code})` : ''} {formData.class_ids.includes(cls.id) ? '— Already Added' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* List of Enrolled Classes & Subjects */}
+                            {formData.class_ids.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px' }}>
+                                    {formData.class_ids.map(classId => {
+                                        const cls = classes.find(c => c.id === classId);
+                                        if (!cls) return null;
+                                        const classSubjects = getClassSubjects(classId);
+                                        const selectedSubjects = formData.subjects[classId] || [];
+
+                                        return (
+                                            <div key={classId} style={{
+                                                border: '1px solid #E2E8F0',
+                                                borderRadius: '16px',
+                                                background: '#F8F9FD',
+                                                padding: '16px',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '12px'
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                     <div>
-                                                        <span style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B' }}>{cls.class_name}</span>
+                                                        <span style={{ fontWeight: 800, fontSize: '14px', color: '#1A1D3B' }}>{cls.class_name}</span>
                                                         <span style={{ fontSize: '12px', color: '#8F92A1', marginLeft: '8px', fontFamily: 'monospace' }}>{cls.class_code}</span>
                                                     </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFormData(prev => {
+                                                                const nextClassIds = prev.class_ids.filter(id => id !== classId);
+                                                                const nextSubjects = { ...prev.subjects };
+                                                                delete nextSubjects[classId];
+                                                                return {
+                                                                    ...prev,
+                                                                    class_ids: nextClassIds,
+                                                                    subjects: nextSubjects
+                                                                };
+                                                            });
+                                                        }}
+                                                        style={{
+                                                            background: '#FEE2E2',
+                                                            color: '#EF4444',
+                                                            border: 'none',
+                                                            padding: '6px 12px',
+                                                            borderRadius: '8px',
+                                                            fontSize: '11px',
+                                                            fontWeight: 700,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        Remove Class
+                                                    </button>
                                                 </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    {isSelected && classSubjects.length > 0 && (
-                                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#E53935', background: '#FFF0F1', padding: '3px 8px', borderRadius: '6px' }}>
-                                                            {selectedCount}/{classSubjects.length} subjects
-                                                        </span>
-                                                    )}
-                                                    {cls.grade_level && (
-                                                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#8F92A1', background: '#F4F5F9', padding: '3px 8px', borderRadius: '6px' }}>
-                                                            {cls.grade_level}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
 
-                                            {/* Subject selection for this class */}
-                                            {isSelected && classSubjects.length > 0 && (
-                                                <div style={{ padding: '0 18px 16px', borderTop: '1px solid #F1F2F6' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0 8px' }}>
-                                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#5E6278' }}>Select Subjects</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => selectAllSubjects(cls.id)}
-                                                            style={{
-                                                                background: 'none', border: 'none', cursor: 'pointer',
-                                                                fontSize: '12px', fontWeight: 700, color: '#E53935',
-                                                            }}
-                                                        >
-                                                            {(formData.subjects[cls.id]?.length || 0) === classSubjects.length ? 'Deselect All' : 'Select All'}
-                                                        </button>
+                                                {classSubjects.length > 0 ? (
+                                                    <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '10px' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                            <span style={{ fontSize: '12px', fontWeight: 700, color: '#5E6278' }}>Enrolled Subjects</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => selectAllSubjects(classId)}
+                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#E53935' }}
+                                                            >
+                                                                {selectedSubjects.length === classSubjects.length ? 'Deselect All' : 'Select All'}
+                                                            </button>
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                            {classSubjects.map(subject => {
+                                                                const isActive = selectedSubjects.includes(subject);
+                                                                return (
+                                                                    <button
+                                                                        key={subject}
+                                                                        type="button"
+                                                                        onClick={() => toggleSubject(classId, subject)}
+                                                                        style={getSubjectStyle(subject, isActive)}
+                                                                    >
+                                                                        <div style={{
+                                                                            width: '18px', height: '18px', borderRadius: '5px',
+                                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                            background: isActive ? (subjectColors[subject]?.color || '#5E6278') : '#E2E8F0',
+                                                                            color: 'white', transition: 'all 0.2s', flexShrink: 0,
+                                                                        }}>
+                                                                            {isActive && <Check size={11} strokeWidth={3} />}
+                                                                        </div>
+                                                                        {subject}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
-                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                                        {classSubjects.map(subject => {
-                                                            const isActive = (formData.subjects[cls.id] || []).includes(subject);
-                                                            return (
-                                                                <button
-                                                                    key={subject}
-                                                                    type="button"
-                                                                    onClick={() => toggleSubject(cls.id, subject)}
-                                                                    style={getSubjectStyle(subject, isActive)}
-                                                                >
-                                                                    <div style={{
-                                                                        width: '18px', height: '18px', borderRadius: '5px',
-                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                        background: isActive ? (subjectColors[subject]?.color || '#5E6278') : '#E2E8F0',
-                                                                        color: 'white', transition: 'all 0.2s', flexShrink: 0,
-                                                                    }}>
-                                                                        {isActive && <Check size={11} strokeWidth={3} />}
-                                                                    </div>
-                                                                    {subject}
-                                                                </button>
-                                                            );
-                                                        })}
+                                                ) : (
+                                                    <div style={{ fontSize: '12px', color: '#8F92A1', fontStyle: 'italic' }}>
+                                                        No subjects registered for this class.
                                                     </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                         <div>
                             <label className="form-label">Previous School Name</label>

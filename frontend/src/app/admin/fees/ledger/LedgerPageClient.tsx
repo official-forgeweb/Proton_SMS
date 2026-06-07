@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
     IndianRupee, Calendar, CreditCard, History, Trash2, 
-    Edit3, Check, X, AlertCircle, Info, ArrowLeft, Printer,
+    Edit3, Check, X, AlertCircle, AlertTriangle, Info, ArrowLeft, Printer,
     DollarSign, User, TrendingUp, Sparkles, ReceiptText
 } from 'lucide-react';
 import api from '@/lib/api';
@@ -841,7 +841,7 @@ export default function LedgerPageClient({ assignmentId, role }: LedgerPageClien
                                             {/* Reversal Confirmation Box nested inside receipt item */}
                                             {deletingPaymentId === payment.id && (
                                                 <div className="no-print" style={{ marginTop: '12px', background: '#FEF2F2', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                    <p style={{ fontSize: '12px', color: '#991B1B', fontWeight: 700, margin: 0 }}>⚠️ Confirm Receipt Reversal</p>
+                                                    <p style={{ fontSize: '12px', color: '#991B1B', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={14} /> Confirm Receipt Reversal</p>
                                                     <p style={{ fontSize: '11.5px', color: '#B91C1C', margin: 0, fontWeight: 500 }}>Reversing this payment will subtract the amount from the student's settled balance and restore their outstanding dues. An audit log will be permanently recorded.</p>
                                                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                                         <input 
@@ -950,7 +950,7 @@ export default function LedgerPageClient({ assignmentId, role }: LedgerPageClien
 
                         {assignment.total_paid > 0 || (payments && payments.length > 0) ? (
                             <div style={{ background: '#FEF2F2', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '16px', padding: '16px' }}>
-                                <p style={{ fontSize: '14px', color: '#991B1B', fontWeight: 700, margin: '0 0 8px' }}>⚠️ Warning: Payment History Exists</p>
+                                <p style={{ fontSize: '14px', color: '#991B1B', fontWeight: 700, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={16} /> Warning: Payment History Exists</p>
                                 <p style={{ fontSize: '13px', color: '#B91C1C', fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
                                     This student already has payment history. Deleting this fee assignment will permanently remove:
                                     <br />• installments

@@ -178,11 +178,11 @@ export default function AddEnquiryPage() {
                                 value={formData.source}
                                 onChange={(e) => setFormData(p => ({ ...p, source: e.target.value }))}
                             >
-                                <option value="offline_publicity">📰 Offline Publicity</option>
-                                <option value="social_media">📱 Social Media</option>
-                                <option value="google">🌐 Google</option>
-                                <option value="referral">🤝 Referral through Student/Parent</option>
-                                <option value="other">💬 Other</option>
+                                <option value="offline_publicity">Offline Publicity</option>
+                                <option value="social_media">Social Media</option>
+                                <option value="google">Google</option>
+                                <option value="referral">Referral through Student/Parent</option>
+                                <option value="other">Other</option>
                             </select>
                         </div>
                         <div>
@@ -192,10 +192,10 @@ export default function AddEnquiryPage() {
                                 value={formData.priority}
                                 onChange={(e) => setFormData(p => ({ ...p, priority: e.target.value }))}
                             >
-                                <option value="low">🟢 Low</option>
-                                <option value="medium">🟡 Medium</option>
-                                <option value="high">🟠 High</option>
-                                <option value="urgent">🔴 Critical</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Critical</option>
                             </select>
                         </div>
                     </div>

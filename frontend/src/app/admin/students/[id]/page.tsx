@@ -671,7 +671,28 @@ export default function StudentProfilePage() {
                                     ))}
                                 </div>
 
-                                {student.parent && (
+                                {(student.father_name || student.father_phone || student.mother_name || student.mother_phone) ? (
+                                    <>
+                                        <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #F1F2F6' }} />
+                                        <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1A1D3B', marginBottom: '12px' }}>Parent / Guardian Details</h4>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            {(student.father_name || student.father_phone) && (
+                                                <div style={{ background: '#F8F9FD', padding: '14px', borderRadius: '12px' }}>
+                                                    <p style={{ fontSize: '10px', textTransform: 'uppercase', color: '#A1A5B7', fontWeight: 700, letterSpacing: '0.05em' }}>Father</p>
+                                                    <p style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B', marginTop: '2px' }}>{student.father_name || 'N/A'}</p>
+                                                    {student.father_phone && <p style={{ fontSize: '12px', color: '#8F92A1', marginTop: '4px' }}>{student.father_phone}</p>}
+                                                </div>
+                                            )}
+                                            {(student.mother_name || student.mother_phone) && (
+                                                <div style={{ background: '#F8F9FD', padding: '14px', borderRadius: '12px' }}>
+                                                    <p style={{ fontSize: '10px', textTransform: 'uppercase', color: '#A1A5B7', fontWeight: 700, letterSpacing: '0.05em' }}>Mother</p>
+                                                    <p style={{ fontWeight: 700, fontSize: '14px', color: '#1A1D3B', marginTop: '2px' }}>{student.mother_name || 'N/A'}</p>
+                                                    {student.mother_phone && <p style={{ fontSize: '12px', color: '#8F92A1', marginTop: '4px' }}>{student.mother_phone}</p>}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                ) : student.parent ? (
                                     <>
                                         <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #F1F2F6' }} />
                                         <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1A1D3B', marginBottom: '12px' }}>Parent / Guardian</h4>
@@ -680,7 +701,7 @@ export default function StudentProfilePage() {
                                             <p style={{ fontSize: '12px', color: '#8F92A1', marginTop: '4px' }}>{student.parent.phone}</p>
                                         </div>
                                     </>
-                                )}
+                                ) : null}
                             </div>
 
                             {/* Enrolled Subjects */}

@@ -1082,6 +1082,11 @@ router.get('/student', authenticateToken, authorize('student'), cacheMiddleware(
         tests: { upcoming: upcomingTests, ongoing: ongoingTests, completed: completedTests },
         pending_homework: pendingHomework.map(s => ({ ...s, homework: s.homework })),
         fee: feeAssignment ? { total: feeAssignment.final_fee, paid: feeAssignment.total_paid, pending: feeAssignment.total_pending, status: feeAssignment.payment_status } : null,
+        parents: {
+          father_name: student.father_name || 'N/A',
+          mother_name: student.mother_name || 'N/A',
+          phone: student.father_phone || student.mother_phone || 'N/A'
+        },
         charts: { performance: performanceData, attendance: attendanceTrend },
       },
     });

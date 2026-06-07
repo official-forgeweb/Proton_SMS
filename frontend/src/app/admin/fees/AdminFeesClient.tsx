@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { 
     CreditCard, Search, Plus, DollarSign, Download, Clock, 
-    CheckCircle, Wallet, AlertCircle, TrendingUp, Filter, 
+    CheckCircle, Wallet, AlertCircle, AlertTriangle, TrendingUp, Filter, 
     IndianRupee, User, Calendar, ReceiptText, X, Edit3, Trash2, 
     History, Landmark, ClipboardList, Info, Undo2, Check 
 } from 'lucide-react';
@@ -934,7 +934,7 @@ export default function AdminFeesClient({ initialData }: { initialData: FeesPage
 
                         {drawerData?.assignment?.total_paid > 0 || (drawerData?.payments && drawerData.payments.length > 0) ? (
                             <div style={{ background: '#FEF2F2', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '16px', padding: '16px' }}>
-                                <p style={{ fontSize: '14px', color: '#991B1B', fontWeight: 700, margin: '0 0 8px' }}>⚠️ Warning: Payment History Exists</p>
+                                <p style={{ fontSize: '14px', color: '#991B1B', fontWeight: 700, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={16} /> Warning: Payment History Exists</p>
                                 <p style={{ fontSize: '13px', color: '#B91C1C', fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
                                     This student already has payment history. Deleting this fee assignment will permanently remove:
                                     <br />• installments

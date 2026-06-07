@@ -16,6 +16,10 @@ interface StudentRow {
     school_name: string;
     admission_type: string;
     class_id: string;
+    father_name?: string;
+    father_phone?: string;
+    mother_name?: string;
+    mother_phone?: string;
     error?: string;
     isValid?: boolean;
 }
@@ -31,12 +35,16 @@ const fieldLabels: Record<string, string> = {
     school_name: 'School Name',
     admission_type: 'Admission Type',
     class_id: 'Class ID',
+    father_name: "Father's Name",
+    father_phone: "Father's Phone",
+    mother_name: "Mother's Name",
+    mother_phone: "Mother's Phone",
 };
 
-const sampleCsv = `first_name,last_name,email,phone,date_of_birth,gender,school_name,admission_type
-John,Doe,john.doe@email.com,+919876543210,2010-05-15,male,Springfield School,fresh
-Jane,Smith,jane.smith@email.com,+919876543211,2010-07-22,female,Oak Valley Academy,other
-Rahul,Sharma,rahul.sharma@email.com,+919876543212,2009-03-10,male,Riverside High,fresh`;
+const sampleCsv = `first_name,last_name,email,phone,date_of_birth,gender,school_name,admission_type,father_name,father_phone,mother_name,mother_phone
+John,Doe,john.doe@email.com,+919876543210,2010-05-15,male,Springfield School,fresh,Robert Doe,+919876543219,Sarah Doe,+919876543218
+Jane,Smith,jane.smith@email.com,+919876543211,2010-07-22,female,Oak Valley Academy,other,William Smith,+919876543217,Mary Smith,+919876543216
+Rahul,Sharma,rahul.sharma@email.com,+919876543212,2009-03-10,male,Riverside High,fresh,Vijay Sharma,+919876543215,Priya Sharma,+919876543214`;
 
 export default function ImportStudentsPage() {
     const router = useRouter();
@@ -191,6 +199,10 @@ export default function ImportStudentsPage() {
                 school_name: s.school_name,
                 admission_type: s.admission_type,
                 class_id: s.class_id || undefined,
+                father_name: s.father_name,
+                father_phone: s.father_phone,
+                mother_name: s.mother_name,
+                mother_phone: s.mother_phone,
             })) });
 
             setImportResult({
@@ -443,7 +455,7 @@ export default function ImportStudentsPage() {
                             <ul style={{ fontSize: '13px', color: '#5E6278', lineHeight: 1.8, paddingLeft: '20px' }}>
                                 <li>File must be in <strong>.csv</strong> format</li>
                                 <li>Required columns: <strong>first_name</strong>, <strong>phone</strong></li>
-                                <li>Optional columns: last_name, email, date_of_birth, gender, school_name, admission_type</li>
+                                <li>Optional columns: last_name, email, date_of_birth, gender, school_name, admission_type, father_name, father_phone, mother_name, mother_phone</li>
                                 <li>Date format: YYYY-MM-DD (e.g., 2010-05-15)</li>
                                 <li>Gender values: male, female, other</li>
                                 <li>Admission type values: fresh, other</li>
@@ -512,6 +524,10 @@ export default function ImportStudentsPage() {
                                         <th>Gender</th>
                                         <th>School</th>
                                         <th>Admission</th>
+                                        <th>Father's Name</th>
+                                        <th>Father's Phone</th>
+                                        <th>Mother's Name</th>
+                                        <th>Mother's Phone</th>
                                         <th style={{ width: '80px' }}>Actions</th>
                                     </tr>
                                 </thead>
@@ -679,6 +695,82 @@ export default function ImportStudentsPage() {
                                                         style={{ cursor: 'pointer', padding: '4px', textTransform: 'capitalize' }}
                                                     >
                                                         {student.admission_type || 'fresh'}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td>
+                                                {editingId === student.id && editField === 'father_name' ? (
+                                                    <input
+                                                        className="cell-input"
+                                                        value={editValue}
+                                                        onChange={e => setEditValue(e.target.value)}
+                                                        onBlur={saveEdit}
+                                                        onKeyDown={e => e.key === 'Enter' && saveEdit()}
+                                                        autoFocus
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        onClick={() => startEdit(student.id, 'father_name', student.father_name || '')}
+                                                        style={{ cursor: 'pointer', padding: '4px' }}
+                                                    >
+                                                        {student.father_name || '-'}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td>
+                                                {editingId === student.id && editField === 'father_phone' ? (
+                                                    <input
+                                                        className="cell-input"
+                                                        value={editValue}
+                                                        onChange={e => setEditValue(e.target.value)}
+                                                        onBlur={saveEdit}
+                                                        onKeyDown={e => e.key === 'Enter' && saveEdit()}
+                                                        autoFocus
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        onClick={() => startEdit(student.id, 'father_phone', student.father_phone || '')}
+                                                        style={{ cursor: 'pointer', padding: '4px' }}
+                                                    >
+                                                        {student.father_phone || '-'}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td>
+                                                {editingId === student.id && editField === 'mother_name' ? (
+                                                    <input
+                                                        className="cell-input"
+                                                        value={editValue}
+                                                        onChange={e => setEditValue(e.target.value)}
+                                                        onBlur={saveEdit}
+                                                        onKeyDown={e => e.key === 'Enter' && saveEdit()}
+                                                        autoFocus
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        onClick={() => startEdit(student.id, 'mother_name', student.mother_name || '')}
+                                                        style={{ cursor: 'pointer', padding: '4px' }}
+                                                    >
+                                                        {student.mother_name || '-'}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td>
+                                                {editingId === student.id && editField === 'mother_phone' ? (
+                                                    <input
+                                                        className="cell-input"
+                                                        value={editValue}
+                                                        onChange={e => setEditValue(e.target.value)}
+                                                        onBlur={saveEdit}
+                                                        onKeyDown={e => e.key === 'Enter' && saveEdit()}
+                                                        autoFocus
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        onClick={() => startEdit(student.id, 'mother_phone', student.mother_phone || '')}
+                                                        style={{ cursor: 'pointer', padding: '4px' }}
+                                                    >
+                                                        {student.mother_phone || '-'}
                                                     </div>
                                                 )}
                                             </td>
