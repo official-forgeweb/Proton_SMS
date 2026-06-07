@@ -171,7 +171,11 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
         setRetrying(false);
     }, [checkAuth]);
 
-    if (!mounted || isLoading) {
+    if (!mounted) {
+        return <div style={{ minHeight: '100vh', background: '#F8F9FD' }} />;
+    }
+
+    if (isLoading) {
         return (
             <div 
                 suppressHydrationWarning

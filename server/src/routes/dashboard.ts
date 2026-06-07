@@ -26,6 +26,9 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
       totalPresentCount,
       totalTestScore,
       totalTestCount,
+      payments, studentRegistrations, enquiryRegistrations,
+      monthlyPerformance,
+      monthlyAttendance
     ] = await Promise.all([
       prisma.student.count(),
       prisma.student.count({ where: { academic_status: 'active' } }),
@@ -68,33 +71,6 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
       prisma.attendance.count({ where: { status: 'present' } }),
       prisma.testResult.aggregate({ _sum: { percentage: true } }),
       prisma.testResult.count(),
-    ]);
-
-    // Monthly performance and attendance (use raw queries for month extraction)
-    const monthlyPerformance: any[] = await prisma.$queryRaw`
-      SELECT EXTRACT(MONTH FROM created_at) as month, AVG(percentage) as "avgScore"
-      FROM test_results
-      WHERE created_at IS NOT NULL
-      GROUP BY EXTRACT(MONTH FROM created_at)
-      ORDER BY month
-    `;
-
-    const monthlyAttendance: any[] = await prisma.$queryRaw`
-      SELECT
-        EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD')) as month,
-        SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as "presentCount",
-        COUNT(*) as "totalCount"
-      FROM attendance
-      WHERE attendance_date IS NOT NULL AND attendance_date != ''
-      GROUP BY EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD'))
-      ORDER BY month
-    `;
-
-    const totalRevenue = revenueAgg._sum.amount_paid || 0;
-    const totalPending = pendingAgg._sum.total_pending || 0;
-
-    // Fetch dynamic monthly chart data directly from the DB
-    const [payments, studentRegistrations, enquiryRegistrations] = await Promise.all([
       prisma.feePayment.findMany({
         where: { payment_status: 'completed', created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
         select: { amount_paid: true, payment_date: true, created_at: true },
@@ -105,7 +81,27 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
       prisma.enquiry.findMany({ where: { created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
         select: { created_at: true },
       }),
-    ]);
+      prisma.$queryRaw`
+        SELECT EXTRACT(MONTH FROM created_at) as month, AVG(percentage) as "avgScore"
+        FROM test_results
+        WHERE created_at IS NOT NULL
+        GROUP BY EXTRACT(MONTH FROM created_at)
+        ORDER BY month
+      `,
+      prisma.$queryRaw`
+        SELECT
+          EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD')) as month,
+          SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as "presentCount",
+          COUNT(*) as "totalCount"
+        FROM attendance
+        WHERE attendance_date IS NOT NULL AND attendance_date != ''
+        GROUP BY EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD'))
+        ORDER BY month
+      `
+    ]) as [number, number, number, number, number, number, number, number, number, number, number, number, number, number, any, any, any[], any[], any[], any[], any[], number, number, number, number, number, any, number, any[], any[], any[], any[], any[]];
+
+    const totalRevenue = revenueAgg._sum.amount_paid || 0;
+    const totalPending = pendingAgg._sum.total_pending || 0;
 
     const recentActivity = [
       ...recentStudents.map(s => ({ type: 'enrollment', message: `New enrollment: ${s.first_name} ${s.last_name} (${s.PRO_ID})`, time: s.created_at })),
@@ -167,10 +163,20 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
     }));
 
     // Generate Smart Alerts
-    const alerts: any[] = [];
-    
-    // 1. Critical Student Attendance Alert (< 60% overall attendance)
-    const lowAttendanceEnrollments = await prisma.studentClassEnrollment.findMany({
+    const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const pendingDemosCount = totalDemos - completedDemos;
+
+    const [
+      lowAttendanceEnrollments,
+      lowAverageEnrollments,
+      recentAttendances,
+      recentResults,
+      topPerformers,
+      riskyAssignments
+    ] = await Promise.all([
+      prisma.studentClassEnrollment.findMany({
         where: {
             enrollment_status: 'active',
             overall_attendance_percentage: { lt: 60, gt: 0 }
@@ -181,8 +187,69 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
         },
         orderBy: { overall_attendance_percentage: 'asc' },
         take: 3
-    });
+      }),
+      prisma.studentClassEnrollment.findMany({
+        where: {
+            enrollment_status: 'active',
+            average_marks: { lt: 40, gt: 0 }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        },
+        orderBy: { average_marks: 'asc' },
+        take: 3
+      }),
+      prisma.attendance.findMany({
+        where: {
+          attendance_date: { gte: fifteenDaysAgo }
+        },
+        orderBy: { attendance_date: 'desc' },
+        take: 300,
+        select: {
+            student_id: true,
+            status: true,
+            attendance_date: true,
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        }
+      }),
+      prisma.testResult.findMany({
+        where: {
+          created_at: { gte: thirtyDaysAgo }
+        },
+        orderBy: { created_at: 'desc' },
+        take: 150,
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            test: { select: { test_name: true, subject: true, class: { select: { class_name: true, class_code: true } } } }
+        }
+      }),
+      prisma.studentClassEnrollment.findMany({
+        where: {
+            enrollment_status: 'active',
+            average_marks: { gte: 90 }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        },
+        orderBy: { average_marks: 'desc' },
+        take: 3
+      }),
+      prisma.studentFeeAssignment.findMany({
+        where: {
+            risk_level: { in: ['watchlist', 'high_risk_defaulter'] }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } }
+        }
+      })
+    ]);
 
+    const alerts: any[] = [];
+    
+    // 1. Critical Student Attendance Alert (< 60% overall attendance)
     lowAttendanceEnrollments.forEach(e => {
         if (e.student) {
             alerts.push({
@@ -195,19 +262,6 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
     });
 
     // 2. Academic Failure Alert (Average score < 40%)
-    const lowAverageEnrollments = await prisma.studentClassEnrollment.findMany({
-        where: {
-            enrollment_status: 'active',
-            average_marks: { lt: 40, gt: 0 }
-        },
-        include: {
-            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
-            class: { select: { class_name: true, class_code: true } }
-        },
-        orderBy: { average_marks: 'asc' },
-        take: 3
-    });
-
     lowAverageEnrollments.forEach(e => {
         if (e.student) {
             alerts.push({
@@ -220,18 +274,6 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
     });
 
     // 3. Consecutive Absences Warning (Absent for 3+ sessions)
-    const recentAttendances = await prisma.attendance.findMany({
-        orderBy: { attendance_date: 'desc' },
-        take: 1000,
-        select: {
-            student_id: true,
-            status: true,
-            attendance_date: true,
-            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
-            class: { select: { class_name: true, class_code: true } }
-        }
-    });
-
     const attendancesByStudent: Record<string, any[]> = {};
     recentAttendances.forEach(att => {
         if (!attendancesByStudent[att.student_id]) {
@@ -270,15 +312,6 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
     }
 
     // 4. Sudden Performance Drop (Drop of >= 20% in latest exam compared to prior)
-    const recentResults = await prisma.testResult.findMany({
-        orderBy: { created_at: 'desc' },
-        take: 500,
-        include: {
-            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
-            test: { select: { test_name: true, subject: true, class: { select: { class_name: true, class_code: true } } } }
-        }
-    });
-
     const resultsByStudent: Record<string, any[]> = {};
     recentResults.forEach(r => {
         if (!resultsByStudent[r.student_id]) {
@@ -315,19 +348,6 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
     }
 
     // 5. Academic Star Performer (Average score >= 90%)
-    const topPerformers = await prisma.studentClassEnrollment.findMany({
-        where: {
-            enrollment_status: 'active',
-            average_marks: { gte: 90 }
-        },
-        include: {
-            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
-            class: { select: { class_name: true, class_code: true } }
-        },
-        orderBy: { average_marks: 'desc' },
-        take: 3
-    });
-
     topPerformers.forEach(e => {
         if (e.student) {
             alerts.push({
@@ -349,7 +369,6 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
         });
     }
 
-    const pendingDemosCount = totalDemos - completedDemos;
     if (pendingDemosCount > 0) {
         alerts.push({
             type: 'warning',
@@ -369,15 +388,6 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
     }
 
     // 7. Internal Risky Fee Behavior Alerts
-    const riskyAssignments = await prisma.studentFeeAssignment.findMany({
-        where: {
-            risk_level: { in: ['watchlist', 'high_risk_defaulter'] }
-        },
-        include: {
-            student: { select: { first_name: true, last_name: true, PRO_ID: true } }
-        }
-    });
-
     riskyAssignments.forEach(a => {
         if (a.student) {
             alerts.push({
@@ -452,7 +462,9 @@ router.get('/admin/charts', authenticateToken, authorize('admin', 'coordinator')
     const [
       genderAgg,
       topStudents,
-      payments, studentRegistrations, enquiryRegistrations
+      payments, studentRegistrations, enquiryRegistrations,
+      monthlyPerformance,
+      monthlyAttendance
     ] = await Promise.all([
       prisma.student.groupBy({ by: ['gender'], _count: true }),
       prisma.testResult.findMany({
@@ -470,26 +482,24 @@ router.get('/admin/charts', authenticateToken, authorize('admin', 'coordinator')
       prisma.enquiry.findMany({ where: { created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
         select: { created_at: true },
       }),
+      prisma.$queryRaw`
+        SELECT EXTRACT(MONTH FROM created_at) as month, AVG(percentage) as "avgScore"
+        FROM test_results
+        WHERE created_at IS NOT NULL
+        GROUP BY EXTRACT(MONTH FROM created_at)
+        ORDER BY month
+      ` as Promise<any[]>,
+      prisma.$queryRaw`
+        SELECT
+          EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD')) as month,
+          SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as "presentCount",
+          COUNT(*) as "totalCount"
+        FROM attendance
+        WHERE attendance_date IS NOT NULL AND attendance_date != ''
+        GROUP BY EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD'))
+        ORDER BY month
+      ` as Promise<any[]>
     ]);
-
-    const monthlyPerformance: any[] = await prisma.$queryRaw`
-      SELECT EXTRACT(MONTH FROM created_at) as month, AVG(percentage) as "avgScore"
-      FROM test_results
-      WHERE created_at IS NOT NULL
-      GROUP BY EXTRACT(MONTH FROM created_at)
-      ORDER BY month
-    `;
-
-    const monthlyAttendance: any[] = await prisma.$queryRaw`
-      SELECT
-        EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD')) as month,
-        SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as "presentCount",
-        COUNT(*) as "totalCount"
-      FROM attendance
-      WHERE attendance_date IS NOT NULL AND attendance_date != ''
-      GROUP BY EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD'))
-      ORDER BY month
-    `;
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const chartData = monthNames.map((name, index) => {
@@ -570,39 +580,26 @@ router.get('/admin/charts', authenticateToken, authorize('admin', 'coordinator')
 // GET /api/dashboard/admin/alerts
 router.get('/admin/alerts', authenticateToken, authorize('admin', 'coordinator'), cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
   try {
+    const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
     const [
-      totalStudents,
-      totalTeachers,
-      totalClasses,
-      totalEnquiries,
-      totalDemos, completedDemos,
-      revenueAgg, pendingAgg,
+      pendingDemosCount,
+      pendingAgg,
       totalAttendanceCount,
       totalPresentCount,
+      lowAttendanceEnrollments,
+      lowAverageEnrollments,
+      recentAttendances,
+      recentResults,
+      topPerformers,
+      riskyAssignments
     ] = await Promise.all([
-      prisma.student.count(),
-      prisma.teacher.count(),
-      prisma.class.count(),
-      prisma.enquiry.count(),
-      prisma.demoClass.count(),
-      prisma.demoClass.count({ where: { status: 'completed' } }),
-      prisma.feePayment.aggregate({
-        where: { payment_status: 'completed' },
-        _sum: { amount_paid: true },
-      }),
-      prisma.studentFeeAssignment.aggregate({
-        _sum: { total_pending: true },
-      }),
+      prisma.demoClass.count({ where: { status: { not: 'completed' } } }),
+      prisma.studentFeeAssignment.aggregate({ _sum: { total_pending: true } }),
       prisma.attendance.count(),
       prisma.attendance.count({ where: { status: 'present' } }),
-    ]);
-
-    const totalPending = pendingAgg._sum.total_pending || 0;
-
-    const alerts: any[] = [];
-    
-    // 1. Critical Student Attendance Alert (< 60% overall attendance)
-    const lowAttendanceEnrollments = await prisma.studentClassEnrollment.findMany({
+      prisma.studentClassEnrollment.findMany({
         where: {
             enrollment_status: 'active',
             overall_attendance_percentage: { lt: 60, gt: 0 }
@@ -613,8 +610,71 @@ router.get('/admin/alerts', authenticateToken, authorize('admin', 'coordinator')
         },
         orderBy: { overall_attendance_percentage: 'asc' },
         take: 3
-    });
+      }),
+      prisma.studentClassEnrollment.findMany({
+        where: {
+            enrollment_status: 'active',
+            average_marks: { lt: 40, gt: 0 }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        },
+        orderBy: { average_marks: 'asc' },
+        take: 3
+      }),
+      prisma.attendance.findMany({
+        where: {
+          attendance_date: { gte: fifteenDaysAgo }
+        },
+        orderBy: { attendance_date: 'desc' },
+        take: 300,
+        select: {
+            student_id: true,
+            status: true,
+            attendance_date: true,
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        }
+      }),
+      prisma.testResult.findMany({
+        where: {
+          created_at: { gte: thirtyDaysAgo }
+        },
+        orderBy: { created_at: 'desc' },
+        take: 150,
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            test: { select: { test_name: true, subject: true, class: { select: { class_name: true, class_code: true } } } }
+        }
+      }),
+      prisma.studentClassEnrollment.findMany({
+        where: {
+            enrollment_status: 'active',
+            average_marks: { gte: 90 }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
+            class: { select: { class_name: true, class_code: true } }
+        },
+        orderBy: { average_marks: 'desc' },
+        take: 3
+      }),
+      prisma.studentFeeAssignment.findMany({
+        where: {
+            risk_level: { in: ['watchlist', 'high_risk_defaulter'] }
+        },
+        include: {
+            student: { select: { first_name: true, last_name: true, PRO_ID: true } }
+        }
+      })
+    ]) as [number, any, number, number, any[], any[], any[], any[], any[], any[]];
 
+    const totalPending = pendingAgg._sum.total_pending || 0;
+
+    const alerts: any[] = [];
+    
+    // 1. Critical Student Attendance Alert (< 60% overall attendance)
     lowAttendanceEnrollments.forEach(e => {
         if (e.student) {
             alerts.push({
@@ -627,19 +687,6 @@ router.get('/admin/alerts', authenticateToken, authorize('admin', 'coordinator')
     });
 
     // 2. Academic Failure Alert (Average score < 40%)
-    const lowAverageEnrollments = await prisma.studentClassEnrollment.findMany({
-        where: {
-            enrollment_status: 'active',
-            average_marks: { lt: 40, gt: 0 }
-        },
-        include: {
-            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
-            class: { select: { class_name: true, class_code: true } }
-        },
-        orderBy: { average_marks: 'asc' },
-        take: 3
-    });
-
     lowAverageEnrollments.forEach(e => {
         if (e.student) {
             alerts.push({
@@ -652,18 +699,6 @@ router.get('/admin/alerts', authenticateToken, authorize('admin', 'coordinator')
     });
 
     // 3. Consecutive Absences Warning (Absent for 3+ sessions)
-    const recentAttendances = await prisma.attendance.findMany({
-        orderBy: { attendance_date: 'desc' },
-        take: 1000,
-        select: {
-            student_id: true,
-            status: true,
-            attendance_date: true,
-            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
-            class: { select: { class_name: true, class_code: true } }
-        }
-    });
-
     const attendancesByStudent: Record<string, any[]> = {};
     recentAttendances.forEach(att => {
         if (!attendancesByStudent[att.student_id]) {
@@ -702,15 +737,6 @@ router.get('/admin/alerts', authenticateToken, authorize('admin', 'coordinator')
     }
 
     // 4. Sudden Performance Drop (Drop of >= 20% in latest exam compared to prior)
-    const recentResults = await prisma.testResult.findMany({
-        orderBy: { created_at: 'desc' },
-        take: 500,
-        include: {
-            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
-            test: { select: { test_name: true, subject: true, class: { select: { class_name: true, class_code: true } } } }
-        }
-    });
-
     const resultsByStudent: Record<string, any[]> = {};
     recentResults.forEach(r => {
         if (!resultsByStudent[r.student_id]) {
@@ -747,19 +773,6 @@ router.get('/admin/alerts', authenticateToken, authorize('admin', 'coordinator')
     }
 
     // 5. Academic Star Performer (Average score >= 90%)
-    const topPerformers = await prisma.studentClassEnrollment.findMany({
-        where: {
-            enrollment_status: 'active',
-            average_marks: { gte: 90 }
-        },
-        include: {
-            student: { select: { first_name: true, last_name: true, PRO_ID: true } },
-            class: { select: { class_name: true, class_code: true } }
-        },
-        orderBy: { average_marks: 'desc' },
-        take: 3
-    });
-
     topPerformers.forEach(e => {
         if (e.student) {
             alerts.push({
@@ -781,7 +794,6 @@ router.get('/admin/alerts', authenticateToken, authorize('admin', 'coordinator')
         });
     }
 
-    const pendingDemosCount = totalDemos - completedDemos;
     if (pendingDemosCount > 0) {
         alerts.push({
             type: 'warning',
@@ -801,15 +813,6 @@ router.get('/admin/alerts', authenticateToken, authorize('admin', 'coordinator')
     }
 
     // 7. Internal Risky Fee Behavior Alerts
-    const riskyAssignments = await prisma.studentFeeAssignment.findMany({
-        where: {
-            risk_level: { in: ['watchlist', 'high_risk_defaulter'] }
-        },
-        include: {
-            student: { select: { first_name: true, last_name: true, PRO_ID: true } }
-        }
-    });
-
     riskyAssignments.forEach(a => {
         if (a.student) {
             alerts.push({

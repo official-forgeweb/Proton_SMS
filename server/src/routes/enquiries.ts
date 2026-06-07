@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { mailEventEmitter } from '../services/mail/sendMail';
+import { cacheMiddleware, invalidateCache } from '../middleware/cache';
 
 const router = Router();
 
@@ -60,6 +61,9 @@ router.put('/demos/:id', authenticateToken, authorize('admin', 'coordinator', 't
       });
     }
 
+    invalidateCache('/api/enquiries');
+    invalidateCache('/api/dashboard');
+
     res.json({ success: true, data: { ...demo, id: demo.id } });
   } catch (error: any) {
     if (error.code === 'P2025') {
@@ -71,7 +75,7 @@ router.put('/demos/:id', authenticateToken, authorize('admin', 'coordinator', 't
 });
 
 // GET /api/enquiries
-router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'), cacheMiddleware(10), async (req: Request, res: Response): Promise<void> => {
   try {
     const { search, status, source, priority, assigned_to, page = '1', limit = '50' } = req.query as Record<string, string>;
     let where: any = {};
@@ -128,7 +132,7 @@ router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'),
 });
 
 // GET /api/enquiries/stats
-router.get('/stats', authenticateToken, authorize('admin', 'coordinator', 'teacher'), async (req: Request, res: Response): Promise<void> => {
+router.get('/stats', authenticateToken, authorize('admin', 'coordinator', 'teacher'), cacheMiddleware(15), async (req: Request, res: Response): Promise<void> => {
   try {
     const [total, statusGroups, sourceGroups, enrolled] = await Promise.all([
       prisma.enquiry.count(),
@@ -197,6 +201,9 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       },
     });
 
+    invalidateCache('/api/enquiries');
+    invalidateCache('/api/dashboard');
+
     res.status(201).json({ success: true, data: { ...enquiry, id: enquiry.id }, message: `Enquiry created: ${enquiry.enquiry_number}` });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -240,6 +247,9 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
       }
     }
 
+    invalidateCache('/api/enquiries');
+    invalidateCache('/api/dashboard');
+
     res.json({ success: true, data: { ...updated, id: updated.id } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -276,6 +286,9 @@ router.post('/:id/remarks', authenticateToken, authorize('admin', 'coordinator',
       prisma.teacher.findFirst({ where: { user_id: req.user!.id } }),
       prisma.user.findUnique({ where: { id: req.user!.id } }),
     ]);
+
+    invalidateCache('/api/enquiries');
+    invalidateCache('/api/dashboard');
 
     res.status(201).json({
       success: true,
@@ -320,6 +333,9 @@ router.post('/:id/schedule-demo', authenticateToken, authorize('admin', 'coordin
       where: { id: enquiry.id },
       data: { status: 'demo_scheduled' },
     });
+
+    invalidateCache('/api/enquiries');
+    invalidateCache('/api/dashboard');
 
     res.status(201).json({ success: true, data: { ...demo, id: demo.id } });
   } catch (error) {

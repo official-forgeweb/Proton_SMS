@@ -34,16 +34,17 @@ router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher', 
     const teachers = await prisma.teacher.findMany({ where });
     const teacherIds = teachers.map(t => t.id);
 
-    // Bulk query primary classes and schedules to avoid N+1 query waterfall
-    const primaryClasses = await prisma.class.findMany({
-      where: { primary_teacher_id: { in: teacherIds } },
-      select: { id: true, primary_teacher_id: true }
-    });
-
-    const schedules = await prisma.classSchedule.findMany({
-      where: { teacher_id: { in: teacherIds } },
-      select: { class_id: true, teacher_id: true }
-    });
+    // Bulk query primary classes and schedules in parallel to avoid sequential N+1 query waterfalls
+    const [primaryClasses, schedules] = await Promise.all([
+      prisma.class.findMany({
+        where: { primary_teacher_id: { in: teacherIds } },
+        select: { id: true, primary_teacher_id: true }
+      }),
+      prisma.classSchedule.findMany({
+        where: { teacher_id: { in: teacherIds } },
+        select: { class_id: true, teacher_id: true }
+      })
+    ]);
 
     // Aggregate unique classes taught by each teacher
     const teacherClassMap = new Map<string, Set<string>>();

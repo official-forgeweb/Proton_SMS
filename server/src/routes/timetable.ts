@@ -4,6 +4,7 @@ import prisma from '../config/database';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { mailEventEmitter } from '../services/mail/sendMail';
 import { resolveSubjectRecord } from '../utils/normalization';
+import { cacheMiddleware, invalidateCache } from '../middleware/cache';
 
 const router = Router();
 
@@ -51,7 +52,7 @@ const notifyTimetableChange = async (classId: string, teacherId: string | null, 
 
 // GET /api/timetable
 // Admins see all, Teachers see their own, Students see their class+subjects
-router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, cacheMiddleware(10), async (req: Request, res: Response): Promise<void> => {
   try {
     const { date, class_id, teacher_id, start_date, end_date } = req.query as Record<string, string>;
     let where: any = {};
@@ -281,6 +282,9 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
         }
     }
 
+    invalidateCache('/api/timetable');
+    invalidateCache('/api/dashboard');
+
     res.json({ success: true, message: `Successfully generated ${createdCount} schedule entries.`, count: createdCount });
   } catch (error) {
     console.error(error);
@@ -344,6 +348,9 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
       `New class session scheduled: ${subRec.canonical_name} in Room ${room || 'N/A'} at ${start_time} - ${end_time || 'N/A'}.`,
       entry.id
     );
+
+    invalidateCache('/api/timetable');
+    invalidateCache('/api/dashboard');
 
     res.status(201).json({ success: true, data: { ...entry, subject: entry.subject.canonical_name } });
   } catch (error) {
@@ -444,6 +451,9 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
       );
     }
 
+    invalidateCache('/api/timetable');
+    invalidateCache('/api/dashboard');
+
     res.json({ success: true, data: { ...entry, subject: entry.subject.canonical_name } });
   } catch (error: any) {
     if (error.code === 'P2025') {
@@ -503,6 +513,9 @@ router.delete('/:id', authenticateToken, authorize('admin', 'coordinator', 'teac
         req
       );
     }
+
+    invalidateCache('/api/timetable');
+    invalidateCache('/api/dashboard');
 
     res.json({ success: true, message: 'Entry deleted' });
   } catch (error: any) {

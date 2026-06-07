@@ -124,26 +124,24 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
 
 router.get('/me', authenticateToken, cacheMiddleware(10), async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
-    }
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const userEmail = req.user!.email;
 
     let profile: any = {};
-    if (user.role === 'student') {
-      profile = await prisma.student.findUnique({ where: { user_id: user.id } }) || {};
-    } else if (user.role === 'teacher') {
-      const t = await prisma.teacher.findUnique({ where: { user_id: user.id } });
+    if (userRole === 'student') {
+      profile = await prisma.student.findUnique({ where: { user_id: userId } }) || {};
+    } else if (userRole === 'teacher') {
+      const t = await prisma.teacher.findUnique({ where: { user_id: userId } });
       profile = t ? { ...t, permissions: t.permissions || [] } : {};
-    } else if (user.role === 'coordinator') {
-      const c = await prisma.coordinator.findUnique({ where: { user_id: user.id } });
+    } else if (userRole === 'coordinator') {
+      const c = await prisma.coordinator.findUnique({ where: { user_id: userId } });
       profile = c ? { first_name: c.full_name?.split(' ')[0] || '', last_name: c.full_name?.split(' ').slice(1).join(' ') || '', full_name: c.full_name, email: c.email, phone: c.phone, coordinator_id: c.coordinator_id, gender: c.gender, profile_image: c.profile_image } : {};
-    } else if (user.role === 'admin') {
-      profile = { first_name: 'Admin', last_name: 'User', email: user.email };
+    } else if (userRole === 'admin') {
+      profile = { first_name: 'Admin', last_name: 'User', email: userEmail };
     }
 
-    res.json({ success: true, data: { id: user.id, email: user.email, role: user.role, profile } });
+    res.json({ success: true, data: { id: userId, email: userEmail, role: userRole, profile } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
