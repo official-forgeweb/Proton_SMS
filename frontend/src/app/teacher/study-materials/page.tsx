@@ -7,6 +7,7 @@ import { BookOpen, Upload, Trash2, Search, FileText, Eye, X, BookMarked, Downloa
 import { customAlert, customConfirm } from '@/utils/dialog';
 import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 import { useAuthStore } from '@/stores/authStore';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function TeacherStudyMaterialsPage() {
     const [materials, setMaterials] = useState<any[]>([]);
@@ -237,14 +238,17 @@ export default function TeacherStudyMaterialsPage() {
                             ))}
                         </datalist>
                     </div>
-                    <select 
-                        value={filters.class_id} 
-                        onChange={e => setFilters({ ...filters, class_id: e.target.value, subject: '' })}
-                        style={{ padding: '11px 16px', borderRadius: '12px', border: '1.5px solid rgba(226, 232, 240, 0.8)', outline: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', background: 'white', minWidth: '160px' }}
-                    >
-                        <option value="">All Classes</option>
-                        {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                    </select>
+                    <div style={{ minWidth: '160px' }}>
+                        <CustomSelect
+                            value={filters.class_id}
+                            onChange={val => setFilters({ ...filters, class_id: val, subject: '' })}
+                            placeholder="All Classes"
+                            options={[
+                                { value: '', label: 'All Classes' },
+                                ...classes.map(c => ({ value: c.id, label: c.class_name }))
+                            ]}
+                        />
+                    </div>
                 </div>
 
                 {/* Content Grid */}
@@ -366,18 +370,14 @@ export default function TeacherStudyMaterialsPage() {
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                                         <div>
                                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Class</label>
-                                            <select 
-                                                required 
+                                            <CustomSelect
+                                                required
                                                 value={uploadData.class_id}
-                                                onChange={e => setUploadData({...uploadData, class_id: e.target.value, subject: ''})}
-                                                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid rgba(226, 232, 240, 0.8)', outline: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', background: 'white' }}
+                                                onChange={val => setUploadData({...uploadData, class_id: val, subject: ''})}
+                                                placeholder="Select Class"
+                                                options={classes.map(c => ({ value: c.id, label: c.class_name }))}
                                                 disabled={isUploading}
-                                                onFocus={e => e.currentTarget.style.borderColor = '#E53935'}
-                                                onBlur={e => e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 0.8)'}
-                                            >
-                                                <option value="">Select Class</option>
-                                                {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                                            </select>
+                                            />
                                         </div>
                                         <div>
                                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Subject</label>

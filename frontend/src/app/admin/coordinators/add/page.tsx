@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import { Shield, Copy, Check } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AddCoordinatorPage() {
     const router = useRouter();
@@ -149,11 +150,15 @@ export default function AddCoordinatorPage() {
                         </div>
                         <div>
                             <label className="form-label">Gender</label>
-                            <select className="form-input" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
+                            <CustomSelect
+                                value={formData.gender}
+                                onChange={val => setFormData({ ...formData, gender: val })}
+                                options={[
+                                    { value: 'male', label: 'Male' },
+                                    { value: 'female', label: 'Female' },
+                                    { value: 'other', label: 'Other' }
+                                ]}
+                            />
                         </div>
                     </div>
                 </div>
@@ -166,10 +171,14 @@ export default function AddCoordinatorPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', maxWidth: '50%' }}>
                         <div>
                             <label className="form-label">Status</label>
-                            <select className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
+                            <CustomSelect
+                                value={formData.status}
+                                onChange={val => setFormData({ ...formData, status: val })}
+                                options={[
+                                    { value: 'active', label: 'Active' },
+                                    { value: 'inactive', label: 'Inactive' }
+                                ]}
+                            />
                         </div>
                     </div>
                 </div>

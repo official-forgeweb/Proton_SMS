@@ -7,6 +7,7 @@ import {
     Phone, Clock, Calendar, MessageSquare, Target, CheckCircle, 
     User, Mail, Info, ArrowRight, Plus
 } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function TeacherEnquiryDetailPage() {
     const params = useParams();
@@ -268,25 +269,22 @@ export default function TeacherEnquiryDetailPage() {
 
                         <div style={{ borderTop: '1.5px solid #F1F2F7', marginTop: '28px', paddingTop: '28px' }}>
                             <label className="form-label" style={{ fontSize: '10px' }}>Assigned Consultant</label>
-                            <select
-                                className="form-input"
-                                style={{ padding: '10px 14px', fontSize: '13px', background: '#F4F5F9', border: '1px solid #E2E8F0' }}
+                            <CustomSelect
                                 value={enquiry.assigned_to || ''}
-                                onChange={async (e) => {
-                                    const newAssignee = e.target.value;
+                                onChange={async (val) => {
                                     try {
-                                        await api.put(`/enquiries/${enquiry.id}`, { assigned_to: newAssignee || null });
+                                        await api.put(`/enquiries/${enquiry.id}`, { assigned_to: val || null });
                                         fetchEnquiryDetail();
                                     } catch (err) {
                                         console.error("Failed to reassign", err);
                                     }
                                 }}
-                            >
-                                <option value="">Select Staff...</option>
-                                {teachers.map(t => (
-                                    <option key={t.id} value={t.user_id}>{t.first_name} {t.last_name}</option>
-                                ))}
-                            </select>
+                                placeholder="Select Staff..."
+                                options={teachers.map(t => ({
+                                    value: t.user_id,
+                                    label: `${t.first_name} ${t.last_name}`
+                                }))}
+                            />
                         </div>
                     </div>
 

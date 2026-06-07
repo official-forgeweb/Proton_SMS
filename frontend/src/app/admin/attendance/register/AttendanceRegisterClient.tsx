@@ -9,6 +9,7 @@ import {
   X, AlertCircle, Save, Printer, ArrowLeft, Clock,
   BookOpen, Edit3, Sparkles
 } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface AttendanceRegisterClientProps {
   classes: any[];
@@ -200,14 +201,14 @@ export default function AttendanceRegisterClient({
           {/* Class Select */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '12px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Select Batch</label>
-            <select 
-              value={selectedClassId} 
-              onChange={e => handleClassChange(e.target.value)}
-              disabled={isPending}
-              style={{ padding: '12px', borderRadius: '12px', border: '1px solid #E2E8F0', fontWeight: 700, color: '#1E293B', minWidth: '220px', background: '#F8FAFC' }}
-            >
-              {classes.map(c => <option key={c.id} value={c.id}>{c.class_name} ({c.class_code})</option>)}
-            </select>
+            <div style={{ minWidth: '220px' }}>
+              <CustomSelect
+                value={selectedClassId}
+                onChange={val => handleClassChange(val)}
+                disabled={isPending}
+                options={classes.map(c => ({ value: c.id, label: `${c.class_name} (${c.class_code})` }))}
+              />
+            </div>
           </div>
 
           {/* Month Input */}

@@ -8,6 +8,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Layers, Plus, Clock } from 'lucide-react';
 import SubjectSelector from '@/components/SubjectSelector';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AddClassPage() {
     const router = useRouter();
@@ -65,7 +66,7 @@ export default function AddClassPage() {
             backLabel="Back to Classes"
             requiredRole="admin"
             icon={<Layers size={20} strokeWidth={2.5} />}
-            maxWidth="900px"
+            maxWidth="1200px"
         >
             <form onSubmit={handleSubmit}>
                 <div className="form-section">
@@ -146,10 +147,14 @@ export default function AddClassPage() {
                                     </div>
                                     <div>
                                         <label className="form-label" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>Assigned Faculty</label>
-                                        <select required className="form-input" value={session.teacher_id?._id || session.teacher_id} onChange={e => updateSession(i, 'teacher_id', e.target.value)}>
-                                            <option value="">Choose Teacher...</option>
-                                            {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
-                                        </select>
+                                        <CustomSelect
+                                            options={[
+                                                { value: '', label: 'Choose Teacher...' },
+                                                ...teachers.map(t => ({ value: t.id, label: `${t.first_name} ${t.last_name}` }))
+                                            ]}
+                                            value={session.teacher_id?._id || session.teacher_id || ''}
+                                            onChange={val => updateSession(i, 'teacher_id', val)}
+                                        />
                                     </div>
                                     <div>
                                         <label className="form-label" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>Start Time</label>
@@ -185,11 +190,15 @@ export default function AddClassPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
                             <label className="form-label">Current Operational Status</label>
-                            <select className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
-                                <option value="upcoming">Upcoming / Registration Open</option>
-                                <option value="ongoing">Ongoing / In-Session</option>
-                                <option value="completed">Completed</option>
-                            </select>
+                            <CustomSelect
+                                options={[
+                                    { value: 'upcoming', label: 'Upcoming / Registration Open' },
+                                    { value: 'ongoing', label: 'Ongoing / In-Session' },
+                                    { value: 'completed', label: 'Completed' }
+                                ]}
+                                value={formData.status}
+                                onChange={val => setFormData({ ...formData, status: val })}
+                            />
                         </div>
                         {formData.status === 'upcoming' && (
                             <div>

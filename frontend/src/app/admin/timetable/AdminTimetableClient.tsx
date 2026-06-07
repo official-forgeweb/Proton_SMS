@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 import { useAuthStore } from '@/stores/authStore';
+import CustomSelect from '@/components/ui/CustomSelect';
 import { customAlert, customConfirm } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -382,42 +383,39 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
 
                     {/* Filters */}
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <select
-                            value={filterSubject}
-                            onChange={e => setFilterSubject(e.target.value)}
-                            style={{
-                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
-                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
-                                background: filterSubject ? '#EEF2FF' : 'white', color: '#1A1D3B',
-                            }}
-                        >
-                            <option value="">All Subjects</option>
-                            {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                        <select
-                            value={filterClass}
-                            onChange={e => setFilterClass(e.target.value)}
-                            style={{
-                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
-                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
-                                background: filterClass ? '#EEF2FF' : 'white', color: '#1A1D3B',
-                            }}
-                        >
-                            <option value="">All Classes</option>
-                            {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                        </select>
-                        <select
-                            value={filterTeacher}
-                            onChange={e => setFilterTeacher(e.target.value)}
-                            style={{
-                                padding: '8px 14px', borderRadius: '10px', border: '1.5px solid #E2E8F0',
-                                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
-                                background: filterTeacher ? '#EEF2FF' : 'white', color: '#1A1D3B',
-                            }}
-                        >
-                            <option value="">All Teachers</option>
-                            {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
-                        </select>
+                        <div style={{ minWidth: '150px' }}>
+                            <CustomSelect
+                                value={filterSubject}
+                                onChange={setFilterSubject}
+                                placeholder="All Subjects"
+                                options={[
+                                    { value: '', label: 'All Subjects' },
+                                    ...subjects.map(s => ({ value: s, label: s }))
+                                ]}
+                            />
+                        </div>
+                        <div style={{ minWidth: '150px' }}>
+                            <CustomSelect
+                                value={filterClass}
+                                onChange={setFilterClass}
+                                placeholder="All Classes"
+                                options={[
+                                    { value: '', label: 'All Classes' },
+                                    ...classes.map(c => ({ value: c.id, label: c.class_name }))
+                                ]}
+                            />
+                        </div>
+                        <div style={{ minWidth: '180px' }}>
+                            <CustomSelect
+                                value={filterTeacher}
+                                onChange={setFilterTeacher}
+                                placeholder="All Teachers"
+                                options={[
+                                    { value: '', label: 'All Teachers' },
+                                    ...teachers.map(t => ({ value: t.id, label: `${t.first_name} ${t.last_name}` }))
+                                ]}
+                            />
+                        </div>
                         {hasActiveFilters && (
                             <button
                                 onClick={() => { setFilterSubject(''); setFilterClass(''); setFilterTeacher(''); }}
@@ -806,11 +804,10 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                                 <div style={{ gridColumn: 'span 2' }}>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Class</label>
-                                    <select 
+                                    <CustomSelect 
                                         required
                                         value={formData.class_id}
-                                        onChange={(e) => {
-                                            const classId = e.target.value;
+                                        onChange={(classId) => {
                                             setFormData({ 
                                                 ...formData, 
                                                 class_id: classId, 
@@ -820,11 +817,9 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                                                 end_time: '10:00'
                                             });
                                         }}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
-                                    >
-                                        <option value="">Select a Class</option>
-                                        {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                                    </select>
+                                        placeholder="Select a Class"
+                                        options={classes.map(c => ({ value: c.id, label: c.class_name }))}
+                                    />
                                 </div>
                                 <div style={{ gridColumn: 'span 2' }}>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Subject</label>
@@ -859,14 +854,15 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Teacher</label>
-                                    <select 
+                                    <CustomSelect 
                                         value={formData.teacher_id}
-                                        onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
-                                    >
-                                        <option value="">Unassigned</option>
-                                        {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
-                                    </select>
+                                        onChange={(val) => setFormData({ ...formData, teacher_id: val })}
+                                        placeholder="Unassigned"
+                                        options={[
+                                            { value: '', label: 'Unassigned' },
+                                            ...teachers.map(t => ({ value: t.id, label: `${t.first_name} ${t.last_name}` }))
+                                        ]}
+                                    />
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Date</label>
@@ -962,14 +958,15 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
                                 <div>
                                     <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Target Class (Optional)</label>
-                                    <select 
+                                    <CustomSelect 
                                         value={generateData.class_id}
-                                        onChange={(e) => setGenerateData({ ...generateData, class_id: e.target.value })}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }}
-                                    >
-                                        <option value="">All Active Classes</option>
-                                        {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                                    </select>
+                                        onChange={(val) => setGenerateData({ ...generateData, class_id: val })}
+                                        placeholder="All Active Classes"
+                                        options={[
+                                            { value: '', label: 'All Active Classes' },
+                                            ...classes.map(c => ({ value: c.id, label: c.class_name }))
+                                        ]}
+                                    />
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                     <div>

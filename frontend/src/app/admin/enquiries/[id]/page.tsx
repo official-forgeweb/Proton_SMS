@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function EnquiryDetailPage() {
     const params = useParams();
@@ -246,19 +247,20 @@ export default function EnquiryDetailPage() {
                             <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1A1D3B', marginBottom: '16px' }}>Account Ownership</h3>
                             <div style={{ marginBottom: '20px' }}>
                                 <label style={{ fontSize: '12px', color: '#A1A5B7', fontWeight: 700, display: 'block', marginBottom: '6px' }}>Assigned staff</label>
-                                <select
-                                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #E2E8F0', background: '#F8F9FD', fontSize: '13px', outline: 'none' }}
+                                <CustomSelect
                                     value={enquiry.assigned_to || ''}
-                                    onChange={async (e) => {
+                                    onChange={async (val) => {
                                         try {
-                                            await api.put(`/enquiries/${enquiry.id}`, { assigned_to: e.target.value || null });
+                                            await api.put(`/enquiries/${enquiry.id}`, { assigned_to: val || null });
                                             fetchEnquiryDetail();
                                         } catch (err) { console.error(err); }
                                     }}
-                                >
-                                    <option value="">-- Unassigned --</option>
-                                    {teachers.map(t => <option key={t.id} value={t.user_id}>{t.first_name} {t.last_name}</option>)}
-                                </select>
+                                    placeholder="-- Unassigned --"
+                                    options={teachers.map(t => ({
+                                        value: t.user_id,
+                                        label: `${t.first_name} ${t.last_name}`
+                                    }))}
+                                />
                             </div>
                             <div style={{ background: '#F8F9FD', padding: '16px', borderRadius: '16px' }}>
                                 <div style={{ fontSize: '12px', color: '#A1A5B7', fontWeight: 700, marginBottom: '4px' }}>Lead priority</div>

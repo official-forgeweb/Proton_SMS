@@ -8,6 +8,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { Plus, IndianRupee, AlertCircle, Users, BookOpen, Settings, Eye, Check, CalendarDays, ClipboardList, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'react-hot-toast';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AssignFeePage() {
     const router = useRouter();
@@ -395,23 +396,31 @@ export default function AssignFeePage() {
                                         <label className="form-label">
                                             Search & Select Student *
                                         </label>
-                                        <select required className="form-input" value={selectedStudent} onChange={e => setSelectedStudent(e.target.value)}>
-                                            <option value="">Type to search student directory...</option>
-                                            {students.filter(s => !assignments.find(a => a.student_id === s.id)).map(s => (
-                                                <option key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.PRO_ID})</option>
-                                            ))}
-                                        </select>
+                                        <CustomSelect
+                                            required
+                                            placeholder="Type to search student directory..."
+                                            options={
+                                                students
+                                                    .filter(s => !assignments.find(a => a.student_id === s.id) || s.id === selectedStudent)
+                                                    .map(s => ({ value: s.id, label: `${s.first_name} ${s.last_name} (${s.PRO_ID})` }))
+                                            }
+                                            value={selectedStudent}
+                                            onChange={val => setSelectedStudent(val)}
+                                        />
                                     </div>
                                     <div>
                                         <label className="form-label">
                                             Apply Fee Template (Optional)
                                         </label>
-                                        <select className="form-input" value={selectedStructure} onChange={e => handleStructureChange(e.target.value)}>
-                                            <option value="">Manual Setup (No Template)</option>
-                                            {structures.map(s => (
-                                                <option key={s.id} value={s.id}>{s.structure_name} ({s.academic_year})</option>
-                                            ))}
-                                        </select>
+                                        <CustomSelect
+                                            placeholder="Manual Setup (No Template)"
+                                            options={[
+                                                { value: '', label: 'Manual Setup (No Template)' },
+                                                ...structures.map(s => ({ value: s.id, label: `${s.structure_name} (${s.academic_year})` }))
+                                            ]}
+                                            value={selectedStructure}
+                                            onChange={val => handleStructureChange(val)}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -472,10 +481,14 @@ export default function AssignFeePage() {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                                     <div>
                                         <label className="form-label">Payment Mode *</label>
-                                        <select className="form-input" value={paymentMode} onChange={e => setPaymentMode(e.target.value as any)}>
-                                            <option value="one_time">One-Time (Fully paid at once)</option>
-                                            <option value="installment">Installment Structure</option>
-                                        </select>
+                                        <CustomSelect 
+                                            value={paymentMode} 
+                                            onChange={val => setPaymentMode(val as any)}
+                                            options={[
+                                                { value: 'one_time', label: 'One-Time (Fully paid at once)' },
+                                                { value: 'installment', label: 'Installment Structure' }
+                                            ]}
+                                        />
                                     </div>
                                     
                                     <div>
@@ -490,10 +503,14 @@ export default function AssignFeePage() {
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                             <div>
                                                 <label className="form-label" style={{ color: '#475569' }}>Installment Strategy</label>
-                                                <select className="form-input" style={{ background: '#FFFFFF' }} value={installmentStrategy} onChange={e => setInstallmentStrategy(e.target.value as any)}>
-                                                    <option value="auto_equal">Auto-Calculated Equal Dues</option>
-                                                    <option value="manual_custom">Manually Customize Schedule</option>
-                                                </select>
+                                                <CustomSelect 
+                                                    value={installmentStrategy} 
+                                                    onChange={val => setInstallmentStrategy(val as any)}
+                                                    options={[
+                                                        { value: 'auto_equal', label: 'Auto-Calculated Equal Dues' },
+                                                        { value: 'manual_custom', label: 'Manually Customize Schedule' }
+                                                    ]}
+                                                />
                                             </div>
                                             <div>
                                                 <label className="form-label" style={{ color: '#475569' }}>Installment Count (1-12)</label>

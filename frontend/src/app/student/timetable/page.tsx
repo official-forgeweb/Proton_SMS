@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { Calendar, Clock, MapPin, User, ChevronLeft, ChevronRight, BookOpen, Layers } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 const SUBJECT_PALETTES: Record<string, { bg: string; border: string; text: string; dot: string }> = {
     'Physics':     { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF', dot: '#3B82F6' },
@@ -246,47 +247,41 @@ export default function StudentTimetablePage() {
 
                         {/* Filters */}
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <select
-                                value={filterSubject}
-                                onChange={e => setFilterSubject(e.target.value)}
-                                style={{
-                                    padding: '10px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0',
-                                    fontSize: '13px', fontWeight: 700, cursor: 'pointer', outline: 'none',
-                                    background: filterSubject ? 'rgba(229, 57, 53, 0.06)' : 'white', color: '#1A1D3B',
-                                    transition: 'all 0.2s',
-                                }}
-                            >
-                                <option value="">All Subjects</option>
-                                {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                            <select
-                                value={filterStatus}
-                                onChange={e => setFilterStatus(e.target.value)}
-                                style={{
-                                    padding: '10px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0',
-                                    fontSize: '13px', fontWeight: 700, cursor: 'pointer', outline: 'none',
-                                    background: filterStatus ? 'rgba(229, 57, 53, 0.06)' : 'white', color: '#1A1D3B',
-                                    transition: 'all 0.2s',
-                                }}
-                            >
-                                <option value="">All Status</option>
-                                <option value="scheduled">Scheduled</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
-                            </select>
-                            <select
-                                value={filterTeacher}
-                                onChange={e => setFilterTeacher(e.target.value)}
-                                style={{
-                                    padding: '10px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0',
-                                    fontSize: '13px', fontWeight: 700, cursor: 'pointer', outline: 'none',
-                                    background: filterTeacher ? 'rgba(229, 57, 53, 0.06)' : 'white', color: '#1A1D3B',
-                                    transition: 'all 0.2s',
-                                }}
-                            >
-                                <option value="">All Teachers</option>
-                                {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                            </select>
+                            <div style={{ minWidth: '150px' }}>
+                                <CustomSelect
+                                    value={filterSubject}
+                                    onChange={setFilterSubject}
+                                    placeholder="All Subjects"
+                                    options={[
+                                        { value: '', label: 'All Subjects' },
+                                        ...subjects.map(s => ({ value: s, label: s }))
+                                    ]}
+                                />
+                            </div>
+                            <div style={{ minWidth: '150px' }}>
+                                <CustomSelect
+                                    value={filterStatus}
+                                    onChange={setFilterStatus}
+                                    placeholder="All Status"
+                                    options={[
+                                        { value: '', label: 'All Status' },
+                                        { value: 'scheduled', label: 'Scheduled' },
+                                        { value: 'completed', label: 'Completed' },
+                                        { value: 'cancelled', label: 'Cancelled' }
+                                    ]}
+                                />
+                            </div>
+                            <div style={{ minWidth: '180px' }}>
+                                <CustomSelect
+                                    value={filterTeacher}
+                                    onChange={setFilterTeacher}
+                                    placeholder="All Teachers"
+                                    options={[
+                                        { value: '', label: 'All Teachers' },
+                                        ...teachers.map(t => ({ value: t.id, label: t.name }))
+                                    ]}
+                                />
+                            </div>
                             {hasActiveFilters && (
                                 <button
                                     onClick={() => { setFilterSubject(''); setFilterStatus(''); setFilterTeacher(''); }}

@@ -7,6 +7,7 @@ import { customAlert } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Edit2, Plus, Clock } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function EditClassPage() {
     const params = useParams();
@@ -82,7 +83,7 @@ export default function EditClassPage() {
             backLabel="Back to Class"
             requiredRole="admin"
             icon={<Edit2 size={20} strokeWidth={2.5} />}
-            maxWidth="900px"
+            maxWidth="1200px"
         >
             {isLoading ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
@@ -132,10 +133,14 @@ export default function EditClassPage() {
                                         </div>
                                         <div>
                                             <label className="form-label" style={{ fontSize: '12px' }}>Teacher</label>
-                                            <select required className="form-input" value={session.teacher_id?._id || session.teacher_id || ''} onChange={e => updateSession(i, 'teacher_id', e.target.value)}>
-                                                <option value="">Select Teacher...</option>
-                                                {teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
-                                            </select>
+                                            <CustomSelect
+                                                options={[
+                                                    { value: '', label: 'Select Teacher...' },
+                                                    ...teachers.map(t => ({ value: t.id, label: `${t.first_name} ${t.last_name}` }))
+                                                ]}
+                                                value={session.teacher_id?._id || session.teacher_id || ''}
+                                                onChange={val => updateSession(i, 'teacher_id', val)}
+                                            />
                                         </div>
                                         <div>
                                             <label className="form-label" style={{ fontSize: '12px' }}>Start Time</label>
@@ -169,11 +174,15 @@ export default function EditClassPage() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                             <div>
                                 <label className="form-label">Batch Status</label>
-                                <select className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
-                                    <option value="upcoming">Upcoming</option>
-                                    <option value="ongoing">Ongoing</option>
-                                    <option value="completed">Completed</option>
-                                </select>
+                                <CustomSelect
+                                    options={[
+                                        { value: 'upcoming', label: 'Upcoming' },
+                                        { value: 'ongoing', label: 'Ongoing' },
+                                        { value: 'completed', label: 'Completed' }
+                                    ]}
+                                    value={formData.status}
+                                    onChange={val => setFormData({ ...formData, status: val })}
+                                />
                             </div>
                             {formData.status === 'upcoming' && (
                                 <div>

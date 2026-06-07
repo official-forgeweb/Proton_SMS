@@ -5,6 +5,7 @@ import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import { GraduationCap } from 'lucide-react';
 import toast from 'react-hot-toast';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function EnrollStudentPage() {
     const params = useParams();
@@ -69,14 +70,16 @@ export default function EnrollStudentPage() {
                             Choose a class to enroll <strong>{student?.first_name}</strong> in.
                             {student?.classes?.length > 0 && ` Currently enrolled in ${student.classes.length} class(es).`}
                         </p>
-                        <select required className="form-input" value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
-                            <option value="">Select a batch...</option>
-                            {availableClasses.map((c: any, idx: number) => (
-                                <option key={c.id || c._id || `opt-${idx}`} value={c.id}>
-                                    {c.class_name} | {c.subject} | {c.class_time_start}
-                                </option>
-                            ))}
-                        </select>
+                        <CustomSelect
+                            required
+                            value={selectedClass}
+                            onChange={setSelectedClass}
+                            placeholder="Select a batch..."
+                            options={availableClasses.map((c: any) => ({
+                                value: c.id,
+                                label: `${c.class_name} | ${c.subject || 'N/A'} | ${c.class_time_start || 'N/A'}`
+                            }))}
+                        />
                     </div>
 
                     <div className="form-actions">

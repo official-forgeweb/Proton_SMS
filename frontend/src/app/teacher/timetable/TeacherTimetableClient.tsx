@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import CustomSelect from '@/components/ui/CustomSelect';
 import {
     Calendar as CalendarIcon, Plus, Clock, Trash2, Edit2,
     X, MapPin, User, ChevronLeft, ChevronRight, Filter, BookOpen, Layers, Video, ExternalLink, Sparkles, BarChart3
@@ -416,31 +417,29 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                     </div>
 
                     {/* Filters */}
-                    <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-                        <select
-                            value={filterClass} onChange={e => setFilterClass(e.target.value)}
-                            className="tt-filter-select"
-                            style={{
-                                border: `1.5px solid ${filterClass ? 'var(--primary)' : 'var(--border-secondary)'}`,
-                                background: filterClass ? 'var(--primary-light)' : '#FFFFFF',
-                                color: filterClass ? 'var(--primary)' : 'var(--text-secondary)'
-                            }}
-                        >
-                            <option value="">All Classes</option>
-                            {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                        </select>
-                        <select
-                            value={filterSubject} onChange={e => setFilterSubject(e.target.value)}
-                            className="tt-filter-select"
-                            style={{
-                                border: `1.5px solid ${filterSubject ? 'var(--primary)' : 'var(--border-secondary)'}`,
-                                background: filterSubject ? 'var(--primary-light)' : '#FFFFFF',
-                                color: filterSubject ? 'var(--primary)' : 'var(--text-secondary)'
-                            }}
-                        >
-                            <option value="">All Subjects</option>
-                            {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
+                    <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <div style={{ minWidth: '160px' }}>
+                            <CustomSelect
+                                value={filterClass}
+                                onChange={setFilterClass}
+                                placeholder="All Classes"
+                                options={[
+                                    { value: '', label: 'All Classes' },
+                                    ...classes.map(c => ({ value: c.id, label: c.class_name }))
+                                ]}
+                            />
+                        </div>
+                        <div style={{ minWidth: '160px' }}>
+                            <CustomSelect
+                                value={filterSubject}
+                                onChange={setFilterSubject}
+                                placeholder="All Subjects"
+                                options={[
+                                    { value: '', label: 'All Subjects' },
+                                    ...subjects.map(s => ({ value: s, label: s }))
+                                ]}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -688,13 +687,13 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '22px', marginBottom: '32px' }}>
                                 <div style={{ gridColumn: 'span 2' }}>
                                     <label style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '10px', display: 'block' }}>Class Target <span style={{ color: 'var(--primary)' }}>*</span></label>
-                                    <select required value={formData.class_id} onChange={(e) => setFormData({ ...formData, class_id: e.target.value, subject: '' })} style={{ width: '100%', padding: '15px', borderRadius: '16px', border: '2px solid var(--border-secondary)', outline: 'none', fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)', transition: 'all 0.2s', cursor: 'pointer' }}
-                                        onFocus={e => e.currentTarget.style.borderColor = 'var(--primary)'}
-                                        onBlur={e => e.currentTarget.style.borderColor = 'var(--border-secondary)'}
-                                    >
-                                        <option value="">Select a Class</option>
-                                        {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                                    </select>
+                                    <CustomSelect
+                                        required
+                                        value={formData.class_id}
+                                        onChange={(val) => setFormData({ ...formData, class_id: val, subject: '' })}
+                                        placeholder="Select a Class"
+                                        options={classes.map(c => ({ value: c.id, label: c.class_name }))}
+                                    />
                                 </div>
                                 
                                 <div style={{ gridColumn: 'span 2' }}>

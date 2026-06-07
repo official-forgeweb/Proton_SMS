@@ -8,6 +8,7 @@ import {
     GraduationCap, Users, Filter, BookOpen, ChevronDown, X, Eye, TrendingUp, Download, Upload, LayoutGrid, List
 } from 'lucide-react';
 import { customAlert, customConfirm } from '@/utils/dialog';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 const INLINE_STYLES = (
     <style dangerouslySetInnerHTML={{__html: `
@@ -527,66 +528,62 @@ export default function AdminStudentsClient({ initialData }: Props) {
                         {showFilters && (
                             <div className="animate-fade-in" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', animationDelay: '0ms' }}>
                                 {/* Batch Filter */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '160px' }}>
                                     <label style={{ fontSize: '11px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Batch / Class</label>
-                                    <select
-                                        className={`filter-select ${selectedBatch ? 'active' : ''}`}
+                                    <CustomSelect
+                                        options={[
+                                            { value: '', label: 'All Batches' },
+                                            ...classes.map(c => ({ value: c.id, label: `${c.class_name} (${c.class_code})` }))
+                                        ]}
                                         value={selectedBatch}
-                                        onChange={e => setSelectedBatch(e.target.value)}
-                                    >
-                                        <option value="">All Batches</option>
-                                        {classes.map(c => (
-                                            <option key={c.id} value={c.id}>{c.class_name} ({c.class_code})</option>
-                                        ))}
-                                    </select>
+                                        onChange={val => setSelectedBatch(val)}
+                                    />
                                 </div>
 
                                 {/* Subject Filter - Only show when batch is selected */}
                                 {selectedBatch && batchSubjects.length > 0 && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '150px' }}>
                                         <label style={{ fontSize: '11px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subject</label>
-                                        <select
-                                            className={`filter-select ${selectedSubject ? 'active' : ''}`}
+                                        <CustomSelect
+                                            options={[
+                                                { value: '', label: 'All Subjects' },
+                                                ...batchSubjects.map(s => ({ value: s, label: s }))
+                                            ]}
                                             value={selectedSubject}
-                                            onChange={e => setSelectedSubject(e.target.value)}
-                                        >
-                                            <option value="">All Subjects</option>
-                                            {batchSubjects.map(s => (
-                                                <option key={s} value={s}>{s}</option>
-                                            ))}
-                                        </select>
+                                            onChange={val => setSelectedSubject(val)}
+                                        />
                                     </div>
                                 )}
 
                                 {/* Status Filter */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '140px' }}>
                                     <label style={{ fontSize: '11px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</label>
-                                    <select
-                                        className={`filter-select ${selectedStatus ? 'active' : ''}`}
+                                    <CustomSelect
+                                        options={[
+                                            { value: '', label: 'All Status' },
+                                            { value: 'active', label: 'Active' },
+                                            { value: 'inactive', label: 'Inactive' },
+                                            { value: 'graduated', label: 'Graduated' }
+                                        ]}
                                         value={selectedStatus}
-                                        onChange={e => setSelectedStatus(e.target.value)}
-                                    >
-                                        <option value="">All Status</option>
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                        <option value="graduated">Graduated</option>
-                                    </select>
+                                        onChange={val => setSelectedStatus(val)}
+                                    />
                                 </div>
 
                                 {/* Fee Status Filter */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '150px' }}>
                                     <label style={{ fontSize: '11px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fee Status</label>
-                                    <select
-                                        className={`filter-select ${selectedFeeStatus ? 'active' : ''}`}
+                                    <CustomSelect
+                                        options={[
+                                            { value: '', label: 'All Fee Status' },
+                                            { value: 'paid', label: 'Paid' },
+                                            { value: 'partial', label: 'Partial' },
+                                            { value: 'pending', label: 'Pending' },
+                                            { value: 'overdue', label: 'Overdue' }
+                                        ]}
                                         value={selectedFeeStatus}
-                                        onChange={e => setSelectedFeeStatus(e.target.value)}
-                                    >
-                                        <option value="">All Fee Status</option>
-                                        <option value="paid">Paid</option>
-                                        <option value="partial">Partial</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="overdue">Overdue</option>
-                                    </select>
+                                        onChange={val => setSelectedFeeStatus(val)}
+                                    />
                                 </div>
 
                                 {/* Clear All */}

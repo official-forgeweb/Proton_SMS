@@ -11,6 +11,7 @@ import { useParams, useRouter } from 'next/navigation';
 import StudentAttendanceCalendar from '@/components/StudentAttendanceCalendar';
 import StudentProfileEnquiries from '@/components/StudentProfileEnquiries';
 import ResponsiveTabs from '@/components/ui/ResponsiveTabs';
+import CustomSelect from '@/components/ui/CustomSelect';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -589,18 +590,16 @@ export default function TeacherStudentProfilePage() {
                             <form onSubmit={handleAddRemark} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                                 <div className="input-group">
                                     <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>Remark Classification</label>
-                                    <select
+                                    <CustomSelect
                                         value={remarkType}
-                                        onChange={(e) => setRemarkType(e.target.value)}
-                                        style={{
-                                            padding: '12px', borderRadius: '12px', border: '1px solid var(--border-secondary)',
-                                            background: '#FAFAFC', color: '#1A1D3B', fontSize: '13.5px', fontWeight: 600, outline: 'none'
-                                        }}
-                                    >
-                                        <option value="general">General Notice</option>
-                                        <option value="performance">Academic Performance</option>
-                                        <option value="improvement">Improvement Required</option>
-                                    </select>
+                                        onChange={setRemarkType}
+                                        placeholder="General Notice"
+                                        options={[
+                                            { value: 'general', label: 'General Notice' },
+                                            { value: 'performance', label: 'Academic Performance' },
+                                            { value: 'improvement', label: 'Improvement Required' }
+                                        ]}
+                                    />
                                 </div>
 
                                 <div className="input-group">

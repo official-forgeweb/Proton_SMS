@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Users, BookOpen, Check, ChevronDown, X } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AddStudentPage() {
     const router = useRouter();
@@ -175,11 +176,15 @@ export default function AddStudentPage() {
                         </div>
                         <div>
                             <label className="form-label">Gender</label>
-                            <select className="form-input" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
+                            <CustomSelect
+                                value={formData.gender}
+                                onChange={val => setFormData({ ...formData, gender: val })}
+                                options={[
+                                    { value: 'male', label: 'Male' },
+                                    { value: 'female', label: 'Female' },
+                                    { value: 'other', label: 'Other' }
+                                ]}
+                            />
                         </div>
                     </div>
                 </div>
@@ -225,11 +230,9 @@ export default function AddStudentPage() {
                             
                             {/* Dropdown for class selection */}
                             <div style={{ marginBottom: '16px' }}>
-                                <select 
-                                    className="form-input" 
+                                <CustomSelect 
                                     value="" 
-                                    onChange={e => {
-                                        const classId = e.target.value;
+                                    onChange={classId => {
                                         if (classId) {
                                             if (!formData.class_ids.includes(classId)) {
                                                 const classSubjects = getClassSubjects(classId);
@@ -244,14 +247,14 @@ export default function AddStudentPage() {
                                             }
                                         }
                                     }}
-                                >
-                                    <option value="">Choose a class / batch to add...</option>
-                                    {classes.map(cls => (
-                                        <option key={cls.id} value={cls.id} disabled={formData.class_ids.includes(cls.id)}>
-                                            {cls.class_name} {cls.class_code ? `(${cls.class_code})` : ''} {formData.class_ids.includes(cls.id) ? '— Already Added' : ''}
-                                        </option>
-                                    ))}
-                                </select>
+                                    placeholder="Choose a class / batch to add..."
+                                    options={classes
+                                        .filter(cls => !formData.class_ids.includes(cls.id))
+                                        .map(cls => ({
+                                            value: cls.id,
+                                            label: `${cls.class_name} ${cls.class_code ? `(${cls.class_code})` : ''}`
+                                        }))}
+                                />
                             </div>
 
                             {/* List of Enrolled Classes & Subjects */}

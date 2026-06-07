@@ -8,6 +8,7 @@ import {
   Check, X, AlertCircle, ChevronDown, RefreshCw, Key, Info, HelpCircle
 } from 'lucide-react';
 import { customAlert, customConfirm } from '@/utils/dialog';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface Alias {
   id: string;
@@ -795,37 +796,31 @@ export default function SubjectManagementPage() {
                 {/* Source Subject Dropdown */}
                 <div>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px' }}>Source Subject (Duplicate to remove) *</label>
-                  <select
+                  <CustomSelect
                     required
                     value={sourceId}
-                    onChange={e => setSourceId(e.target.value)}
-                    style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '14px', fontWeight: 600, background: '#FFF' }}
-                  >
-                    <option value="">Select source subject...</option>
-                    {subjects.map(s => (
-                      <option key={s.id} value={s.id}>
-                        {s.canonical_name} ({s.total_usage} links)
-                      </option>
-                    ))}
-                  </select>
+                    onChange={val => setSourceId(val)}
+                    placeholder="Select source subject..."
+                    options={subjects.map(s => ({
+                      value: s.id,
+                      label: `${s.canonical_name} (${s.total_usage} links)`
+                    }))}
+                  />
                 </div>
 
                 {/* Target Subject Dropdown */}
                 <div>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px' }}>Target Subject (Canonical record to keep) *</label>
-                  <select
+                  <CustomSelect
                     required
                     value={targetId}
-                    onChange={e => setTargetId(e.target.value)}
-                    style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '14px', fontWeight: 600, background: '#FFF' }}
-                  >
-                    <option value="">Select target subject...</option>
-                    {subjects.map(s => (
-                      <option key={s.id} value={s.id} disabled={s.id === sourceId}>
-                        {s.canonical_name} ({s.total_usage} links)
-                      </option>
-                    ))}
-                  </select>
+                    onChange={val => setTargetId(val)}
+                    placeholder="Select target subject..."
+                    options={subjects.filter(s => s.id !== sourceId).map(s => ({
+                      value: s.id,
+                      label: `${s.canonical_name} (${s.total_usage} links)`
+                    }))}
+                  />
                 </div>
 
               </div>

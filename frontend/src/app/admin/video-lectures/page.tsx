@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
+import CustomSelect from '@/components/ui/CustomSelect';
 import { 
   Video, Trash2, Search, AlertTriangle, Database, 
   RefreshCw, Settings, FileSpreadsheet, CheckCircle, 
@@ -446,14 +447,17 @@ export default function AdminVideoLecturesPage() {
                                 </datalist>
                             </div>
                             
-                            <select 
-                                value={filters.class_id} 
-                                onChange={e => setFilters({ ...filters, class_id: e.target.value, subject: '' })}
-                                style={{ padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '14px', fontWeight: 600, minWidth: '150px' }}
-                            >
-                                <option value="">All Classes</option>
-                                {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                            </select>
+                            <div style={{ minWidth: '160px' }}>
+                                <CustomSelect
+                                    value={filters.class_id}
+                                    onChange={val => setFilters({ ...filters, class_id: val, subject: '' })}
+                                    placeholder="All Classes"
+                                    options={[
+                                        { value: '', label: 'All Classes' },
+                                        ...classes.map(c => ({ value: c.id, label: c.class_name }))
+                                    ]}
+                                />
+                            </div>
                             
                             <div style={{ flexShrink: 0, width: '180px' }}>
                                 <DatePicker

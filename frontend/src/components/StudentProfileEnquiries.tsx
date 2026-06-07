@@ -4,6 +4,7 @@ import {
     Plus, Send, Paperclip, Trash2, Edit, RefreshCw, X, AlertOctagon, User, BookOpen, FileText, Check, ExternalLink, Info, AlertTriangle, XCircle
 } from 'lucide-react';
 import api from '@/lib/api';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface StudentProfileEnquiriesProps {
     studentId?: string; // Optional: If provided, filters by student. If not provided or 'all', shows all queries.
@@ -713,21 +714,19 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
                                 <CheckCircle2 size={20} color="#059669" /> Resolved Queries
                             </h3>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <select
-                                    value={resolvedDateFilter}
-                                    onChange={(e) => setResolvedDateFilter(e.target.value)}
-                                    style={{
-                                        padding: '4px 8px', borderRadius: '8px', border: '1px solid #A7F3D0',
-                                        fontSize: '11px', fontWeight: 700, color: '#065F46', background: 'white',
-                                        outline: 'none', cursor: 'pointer'
-                                    }}
-                                >
-                                    <option value="all">All Dates</option>
-                                    <option value="today">Resolved Today</option>
-                                    <option value="yesterday">Resolved Yesterday</option>
-                                    <option value="week">Past 7 Days</option>
-                                    <option value="month">This Month</option>
-                                </select>
+                                <div style={{ minWidth: '150px' }}>
+                                    <CustomSelect
+                                        value={resolvedDateFilter}
+                                        onChange={val => setResolvedDateFilter(val)}
+                                        options={[
+                                            { value: 'all', label: 'All Dates' },
+                                            { value: 'today', label: 'Resolved Today' },
+                                            { value: 'yesterday', label: 'Resolved Yesterday' },
+                                            { value: 'week', label: 'Past 7 Days' },
+                                            { value: 'month', label: 'This Month' }
+                                        ]}
+                                    />
+                                </div>
                                 <span className="crm-count-badge resolved">{filteredResolvedQueries.length}</span>
                             </div>
                         </div>
@@ -820,48 +819,47 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
                             {(!studentId || studentId === 'all') && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     <label style={{ fontSize: '12px', fontWeight: 800, color: '#64748B' }}>Select Student</label>
-                                    <select
+                                    <CustomSelect
                                         value={newQueryStudentId}
-                                        onChange={(e) => setNewQueryStudentId(e.target.value)}
-                                        style={{ padding: '10px 12px', border: '1.5px solid #E2E8F0', borderRadius: '10px', fontSize: '13.5px', outline: 'none', fontWeight: 600 }}
+                                        onChange={val => setNewQueryStudentId(val)}
+                                        placeholder="-- Choose Student --"
                                         required
-                                    >
-                                        <option value="">-- Choose Student --</option>
-                                        {studentsList.map(s => (
-                                            <option key={s.id} value={s.id}>{`${s.first_name} ${s.last_name} (${s.PRO_ID})`}</option>
-                                        ))}
-                                    </select>
+                                        options={studentsList.map(s => ({
+                                            value: s.id,
+                                            label: `${s.first_name} ${s.last_name} (${s.PRO_ID})`
+                                        }))}
+                                    />
                                 </div>
                             )}
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                 <label style={{ fontSize: '12px', fontWeight: 800, color: '#64748B' }}>Query Category</label>
-                                <select
+                                <CustomSelect
                                     value={newQueryType}
-                                    onChange={(e) => setNewQueryType(e.target.value)}
-                                    style={{ padding: '10px 12px', border: '1.5px solid #E2E8F0', borderRadius: '10px', fontSize: '13.5px', outline: 'none', fontWeight: 600 }}
-                                >
-                                    <option value="academic">Academic</option>
-                                    <option value="fees">Fees</option>
-                                    <option value="facilities">Facilities</option>
-                                    <option value="admissions">Admissions</option>
-                                    <option value="operations">Operations</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                    onChange={val => setNewQueryType(val)}
+                                    options={[
+                                        { value: 'academic', label: 'Academic' },
+                                        { value: 'fees', label: 'Fees' },
+                                        { value: 'facilities', label: 'Facilities' },
+                                        { value: 'admissions', label: 'Admissions' },
+                                        { value: 'operations', label: 'Operations' },
+                                        { value: 'other', label: 'Other' }
+                                    ]}
+                                />
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                 <label style={{ fontSize: '12px', fontWeight: 800, color: '#64748B' }}>Urgency Priority</label>
-                                <select
+                                <CustomSelect
                                     value={newQueryPriority}
-                                    onChange={(e) => setNewQueryPriority(e.target.value)}
-                                    style={{ padding: '10px 12px', border: '1.5px solid #E2E8F0', borderRadius: '10px', fontSize: '13.5px', outline: 'none', fontWeight: 600 }}
-                                >
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                    <option value="urgent">Urgent</option>
-                                </select>
+                                    onChange={val => setNewQueryPriority(val)}
+                                    options={[
+                                        { value: 'low', label: 'Low' },
+                                        { value: 'medium', label: 'Medium' },
+                                        { value: 'high', label: 'High' },
+                                        { value: 'urgent', label: 'Urgent' }
+                                    ]}
+                                />
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -892,16 +890,15 @@ export default function StudentProfileEnquiries({ studentId, role }: StudentProf
                             {(role === 'admin' || role === 'coordinator') && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     <label style={{ fontSize: '12px', fontWeight: 800, color: '#64748B' }}>Assign Teacher (Optional)</label>
-                                    <select
+                                    <CustomSelect
                                         value={newQueryTargetTeacher}
-                                        onChange={(e) => setNewQueryTargetTeacher(e.target.value)}
-                                        style={{ padding: '10px 12px', border: '1.5px solid #E2E8F0', borderRadius: '10px', fontSize: '13.5px', outline: 'none', fontWeight: 600 }}
-                                    >
-                                        <option value="">Unassigned</option>
-                                        {teachers.map(t => (
-                                            <option key={t.id} value={t.id}>{`${t.first_name} ${t.last_name}`}</option>
-                                        ))}
-                                    </select>
+                                        onChange={val => setNewQueryTargetTeacher(val)}
+                                        placeholder="Unassigned"
+                                        options={teachers.map(t => ({
+                                            value: t.id,
+                                            label: `${t.first_name} ${t.last_name}`
+                                        }))}
+                                    />
                                 </div>
                             )}
 

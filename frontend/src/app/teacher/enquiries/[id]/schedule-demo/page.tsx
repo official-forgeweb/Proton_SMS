@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Target, Calendar, Clock, User, Book } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function TeacherEnquiryDemoPage() {
     const params = useParams();
@@ -131,33 +132,27 @@ export default function TeacherEnquiryDemoPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
                         <div>
                             <label className="form-label">Assign Teacher</label>
-                            <select 
-                                className="form-input" 
+                            <CustomSelect 
                                 value={formData.teacher_id} 
-                                onChange={(e) => setFormData(p => ({ ...p, teacher_id: e.target.value }))}
-                            >
-                                <option value="">Select individual...</option>
-                                {teachers.map((t: any) => (
-                                    <option key={t.id} value={t.id}>
-                                        {t.first_name} {t.last_name} ({t.EMP_ID})
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={val => setFormData(p => ({ ...p, teacher_id: val }))}
+                                placeholder="Select individual..."
+                                options={teachers.map((t: any) => ({
+                                    value: t.id,
+                                    label: `${t.first_name} ${t.last_name} (${t.EMP_ID})`
+                                }))}
+                            />
                         </div>
                         <div>
                             <label className="form-label">Batch / Target Class</label>
-                            <select 
-                                className="form-input" 
+                            <CustomSelect 
                                 value={formData.class_id} 
-                                onChange={(e) => setFormData(p => ({ ...p, class_id: e.target.value }))}
-                            >
-                                <option value="">Select class...</option>
-                                {classes.map((c: any) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.class_name} • {c.batch_type?.toUpperCase()}
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={val => setFormData(p => ({ ...p, class_id: val }))}
+                                placeholder="Select class..."
+                                options={classes.map((c: any) => ({
+                                    value: c.id,
+                                    label: `${c.class_name} • ${c.batch_type?.toUpperCase()}`
+                                }))}
+                            />
                         </div>
                     </div>
                 </div>

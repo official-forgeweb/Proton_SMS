@@ -9,6 +9,8 @@ import {
     Activity, ClipboardList, ExternalLink
 } from 'lucide-react';
 
+import CustomSelect from '@/components/ui/CustomSelect';
+
 const QUERY_TYPES = [
     { value: 'phone_change_student', label: 'Phone Number Change (My Number)', icon: Smartphone, needsSubtype: false },
     { value: 'phone_change_parent', label: 'Phone Number Change (Parent)', icon: PhoneCall, needsSubtype: false },
@@ -445,19 +447,20 @@ export default function StudentQueriesPage() {
                                         {currentQueryType.subtypeLabel} *
                                     </label>
                                     {currentQueryType.needsTeacher ? (
-                                        <div style={{ position: 'relative' }}>
-                                            <select required value={formData.target_teacher_id}
-                                                onChange={e => setFormData({ ...formData, target_teacher_id: e.target.value, query_subtype: e.target.options[e.target.selectedIndex].text })}
-                                                className="custom-input custom-select"
-                                                style={{ width: '100%', padding: '14px', borderRadius: '14px', fontSize: '14px', fontWeight: 600, color: '#1A1D3B' }}>
-                                                <option value="">Select Target Instructor</option>
-                                                {teachers.map((t: any) => (
-                                                    <option key={t.id} value={t.id}>
-                                                        {t.first_name} {t.last_name} ({t.email?.split('@')[0]})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                        <CustomSelect 
+                                            required 
+                                            value={formData.target_teacher_id}
+                                            onChange={val => {
+                                                const t = teachers.find(item => item.id === val);
+                                                const label = t ? `${t.first_name} ${t.last_name} (${t.email?.split('@')[0]})` : '';
+                                                setFormData({ ...formData, target_teacher_id: val, query_subtype: label });
+                                            }}
+                                            placeholder="Select Target Instructor"
+                                            options={teachers.map((t: any) => ({
+                                                value: t.id,
+                                                label: `${t.first_name} ${t.last_name} (${t.email?.split('@')[0]})`
+                                            }))}
+                                        />
                                     ) : (
                                         <input type="text" required placeholder="Specify assignment details or details..."
                                             value={formData.query_subtype}

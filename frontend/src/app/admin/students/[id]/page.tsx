@@ -18,6 +18,7 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid';
 import ResponsiveCard from '@/components/ui/ResponsiveCard';
 import ResponsiveTabs from '@/components/ui/ResponsiveTabs';
 import ResponsiveModal from '@/components/ui/ResponsiveModal';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function StudentProfilePage() {
     const params = useParams();
@@ -979,43 +980,50 @@ export default function StudentProfilePage() {
                                         {/* Subject Filter */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             <Filter size={12} color="#8F92A1" />
-                                            <select 
-                                                value={testSubjectFilter}
-                                                onChange={e => setTestSubjectFilter(e.target.value)}
-                                                className="filter-select"
-                                            >
-                                                <option value="all">All Subjects</option>
-                                                {uniqueTestSubjects.map(s => (
-                                                    <option key={s} value={s}>{s}</option>
-                                                ))}
-                                            </select>
+                                            <div style={{ minWidth: '140px' }}>
+                                                <CustomSelect 
+                                                    value={testSubjectFilter}
+                                                    onChange={setTestSubjectFilter}
+                                                    placeholder="All Subjects"
+                                                    options={[
+                                                        { value: 'all', label: 'All Subjects' },
+                                                        ...uniqueTestSubjects.map(s => ({ value: s, label: s }))
+                                                    ]}
+                                                />
+                                            </div>
                                         </div>
 
                                         {/* Status Filter */}
-                                        <select 
-                                            value={testStatusFilter}
-                                            onChange={e => setTestStatusFilter(e.target.value)}
-                                            className="filter-select"
-                                        >
-                                            <option value="all">All Status</option>
-                                            <option value="pass">Passed</option>
-                                            <option value="fail">Failed</option>
-                                        </select>
+                                        <div style={{ minWidth: '130px' }}>
+                                            <CustomSelect 
+                                                value={testStatusFilter}
+                                                onChange={setTestStatusFilter}
+                                                placeholder="All Status"
+                                                options={[
+                                                    { value: 'all', label: 'All Status' },
+                                                    { value: 'pass', label: 'Passed' },
+                                                    { value: 'fail', label: 'Failed' }
+                                                ]}
+                                            />
+                                        </div>
 
                                         {/* Sorting order */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             <ArrowUpDown size={12} color="#8F92A1" />
-                                            <select 
-                                                value={testSortOrder}
-                                                onChange={e => setTestSortOrder(e.target.value)}
-                                                className="filter-select"
-                                            >
-                                                <option value="latest">Latest First</option>
-                                                <option value="oldest">Oldest First</option>
-                                                <option value="highest_score">Highest Score</option>
-                                                <option value="lowest_score">Lowest Score</option>
-                                                <option value="rank">Class Rank</option>
-                                            </select>
+                                            <div style={{ minWidth: '150px' }}>
+                                                <CustomSelect 
+                                                    value={testSortOrder}
+                                                    onChange={setTestSortOrder}
+                                                    placeholder="Latest First"
+                                                    options={[
+                                                        { value: 'latest', label: 'Latest First' },
+                                                        { value: 'oldest', label: 'Oldest First' },
+                                                        { value: 'highest_score', label: 'Highest Score' },
+                                                        { value: 'lowest_score', label: 'Lowest Score' },
+                                                        { value: 'rank', label: 'Class Rank' }
+                                                    ]}
+                                                />
+                                            </div>
                                         </div>
 
                                         {/* Clear */}

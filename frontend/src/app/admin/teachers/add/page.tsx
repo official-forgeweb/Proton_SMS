@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import { Users } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AddTeacherPage() {
     const router = useRouter();
@@ -69,11 +70,15 @@ export default function AddTeacherPage() {
                         </div>
                         <div>
                             <label className="form-label">Gender</label>
-                            <select className="form-input" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
+                            <CustomSelect
+                                value={formData.gender}
+                                onChange={val => setFormData({ ...formData, gender: val })}
+                                options={[
+                                    { value: 'male', label: 'Male' },
+                                    { value: 'female', label: 'Female' },
+                                    { value: 'other', label: 'Other' }
+                                ]}
+                            />
                         </div>
                     </div>
                 </div>

@@ -7,6 +7,7 @@ import {
     Calendar, Award, MessageSquare, LogIn, Laptop, Globe, User, ShieldAlert, CheckCircle, Trash2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AdminActivityPage() {
     const router = useRouter();
@@ -319,19 +320,13 @@ export default function AdminActivityPage() {
                         {/* Dropdown selector for filters */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Operation Type:</span>
-                            <select
-                                value={filter}
-                                onChange={(e) => setFilter(e.target.value)}
-                                style={{
-                                    padding: '12px 20px', borderRadius: '12.5px', border: '1px solid var(--border-secondary)',
-                                    background: '#FFFFFF', color: '#1A1D3B', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
-                                    outline: 'none', boxShadow: 'var(--shadow-sm)'
-                                }}
-                            >
-                                {actionFilters.map(f => (
-                                    <option key={f.id} value={f.id}>{f.label}</option>
-                                ))}
-                            </select>
+                            <div style={{ minWidth: '180px' }}>
+                                <CustomSelect
+                                    value={filter}
+                                    onChange={val => setFilter(val)}
+                                    options={actionFilters.map(f => ({ value: f.id, label: f.label }))}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

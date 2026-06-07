@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import { Calendar, Users, BookOpen, Clock, Filter, Search, ChevronRight, UserCheck, UserX, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AdminAttendancePage() {
     const router = useRouter();
@@ -103,14 +104,17 @@ export default function AdminAttendancePage() {
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <Filter size={18} color="#6366F1" />
-                            <select 
-                                value={selectedClassId} 
-                                onChange={(e) => setSelectedClassId(e.target.value)}
-                                style={{ padding: '10px', borderRadius: '10px', border: '1px solid #E2E8F0', fontWeight: 600, color: '#1E293B', minWidth: '150px' }}
-                            >
-                                <option value="">All Batches</option>
-                                {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                            </select>
+                            <div style={{ minWidth: '150px' }}>
+                                <CustomSelect
+                                    value={selectedClassId}
+                                    onChange={val => setSelectedClassId(val)}
+                                    placeholder="All Batches"
+                                    options={[
+                                        { value: '', label: 'All Batches' },
+                                        ...classes.map(c => ({ value: c.id, label: c.class_name }))
+                                    ]}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

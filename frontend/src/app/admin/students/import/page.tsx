@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import { Upload, FileSpreadsheet, Users, X, Check, AlertCircle, Trash2, Edit2, Download } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface StudentRow {
     id: string;
@@ -638,17 +639,15 @@ export default function ImportStudentsPage() {
                                             </td>
                                             <td>
                                                 {editingId === student.id && editField === 'gender' ? (
-                                                    <select
-                                                        className="cell-input"
+                                                    <CustomSelect
                                                         value={editValue}
-                                                        onChange={e => { setEditValue(e.target.value); updateStudent(student.id, 'gender', e.target.value); cancelEdit(); }}
-                                                        onBlur={cancelEdit}
-                                                        autoFocus
-                                                    >
-                                                        <option value="male">Male</option>
-                                                        <option value="female">Female</option>
-                                                        <option value="other">Other</option>
-                                                    </select>
+                                                        onChange={val => { setEditValue(val); updateStudent(student.id, 'gender', val); cancelEdit(); }}
+                                                        options={[
+                                                            { value: 'male', label: 'Male' },
+                                                            { value: 'female', label: 'Female' },
+                                                            { value: 'other', label: 'Other' }
+                                                        ]}
+                                                    />
                                                 ) : (
                                                     <div
                                                         onClick={() => startEdit(student.id, 'gender', student.gender)}
@@ -679,16 +678,14 @@ export default function ImportStudentsPage() {
                                             </td>
                                             <td>
                                                 {editingId === student.id && editField === 'admission_type' ? (
-                                                    <select
-                                                        className="cell-input"
+                                                    <CustomSelect
                                                         value={editValue}
-                                                        onChange={e => { setEditValue(e.target.value); updateStudent(student.id, 'admission_type', e.target.value); cancelEdit(); }}
-                                                        onBlur={cancelEdit}
-                                                        autoFocus
-                                                    >
-                                                        <option value="fresh">Fresh</option>
-                                                        <option value="other">Other</option>
-                                                    </select>
+                                                        onChange={val => { setEditValue(val); updateStudent(student.id, 'admission_type', val); cancelEdit(); }}
+                                                        options={[
+                                                            { value: 'fresh', label: 'Fresh' },
+                                                            { value: 'other', label: 'Other' }
+                                                        ]}
+                                                    />
                                                 ) : (
                                                     <div
                                                         onClick={() => startEdit(student.id, 'admission_type', student.admission_type)}

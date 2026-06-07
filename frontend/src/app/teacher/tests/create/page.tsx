@@ -10,6 +10,8 @@ import { ClipboardList } from 'lucide-react';
 
 import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 
+import CustomSelect from '@/components/ui/CustomSelect';
+
 export default function CreateTestPage() {
     const router = useRouter();
     const [classes, setClasses] = useState<any[]>([]);
@@ -96,13 +98,17 @@ export default function CreateTestPage() {
                         </div>
                         <div>
                             <label className="form-label">Examination Category *</label>
-                            <select className="form-input" value={formData.test_type} onChange={e => setFormData({ ...formData, test_type: e.target.value })}>
-                                <option value="weekly_test">Weekly Assessment</option>
-                                <option value="monthly_test">Monthly Test</option>
-                                <option value="mock_test">Mock Examination</option>
-                                <option value="term_exam">Term Exam</option>
-                                <option value="final_exam">Final Semester Exam</option>
-                            </select>
+                            <CustomSelect 
+                                value={formData.test_type} 
+                                onChange={val => setFormData({ ...formData, test_type: val })}
+                                options={[
+                                    { value: 'weekly_test', label: 'Weekly Assessment' },
+                                    { value: 'monthly_test', label: 'Monthly Test' },
+                                    { value: 'mock_test', label: 'Mock Examination' },
+                                    { value: 'term_exam', label: 'Term Exam' },
+                                    { value: 'final_exam', label: 'Final Semester Exam' }
+                                ]}
+                            />
                         </div>
                     </div>
                 </div>
@@ -112,10 +118,16 @@ export default function CreateTestPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
                             <label className="form-label">Target Batch / Class *</label>
-                            <select required className="form-input" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value, subject: '' })}>
-                                <option value="">Select Target Audience...</option>
-                                {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                            </select>
+                            <CustomSelect 
+                                required 
+                                value={formData.class_id} 
+                                onChange={val => setFormData({ ...formData, class_id: val, subject: '' })}
+                                placeholder="Select Target Audience..."
+                                options={classes.map(c => ({ 
+                                    value: c.id, 
+                                    label: `${c.class_name}${c.batch_type ? ` • ${c.batch_type.toUpperCase()} BATCH` : ''}` 
+                                }))}
+                            />
                         </div>
                         <div>
                             <label className="form-label">Academic Subject *</label>

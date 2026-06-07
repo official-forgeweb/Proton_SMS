@@ -5,6 +5,7 @@ import FormPageLayout from '@/components/FormPageLayout';
 import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 import { Phone, User, Mail, MapPin, Target, MessageSquare, Users } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AddEnquiryPage() {
     const router = useRouter();
@@ -173,30 +174,30 @@ export default function AddEnquiryPage() {
                         </div>
                         <div>
                             <label className="form-label">Lead Source</label>
-                            <select
-                                className="form-input"
-                                value={formData.source}
-                                onChange={(e) => setFormData(p => ({ ...p, source: e.target.value }))}
-                            >
-                                <option value="offline_publicity">Offline Publicity</option>
-                                <option value="social_media">Social Media</option>
-                                <option value="google">Google</option>
-                                <option value="referral">Referral through Student/Parent</option>
-                                <option value="other">Other</option>
-                            </select>
+                            <CustomSelect 
+                                value={formData.source} 
+                                onChange={val => setFormData(p => ({ ...p, source: val }))}
+                                options={[
+                                    { value: 'offline_publicity', label: 'Offline Publicity' },
+                                    { value: 'social_media', label: 'Social Media' },
+                                    { value: 'google', label: 'Google' },
+                                    { value: 'referral', label: 'Referral through Student/Parent' },
+                                    { value: 'other', label: 'Other' }
+                                ]}
+                            />
                         </div>
                         <div>
                             <label className="form-label">Priority</label>
-                            <select
-                                className="form-input"
-                                value={formData.priority}
-                                onChange={(e) => setFormData(p => ({ ...p, priority: e.target.value }))}
-                            >
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                                <option value="urgent">Critical</option>
-                            </select>
+                            <CustomSelect 
+                                value={formData.priority} 
+                                onChange={val => setFormData(p => ({ ...p, priority: val }))}
+                                options={[
+                                    { value: 'low', label: 'Low' },
+                                    { value: 'medium', label: 'Medium' },
+                                    { value: 'high', label: 'High' },
+                                    { value: 'urgent', label: 'Critical' }
+                                ]}
+                            />
                         </div>
                     </div>
                     

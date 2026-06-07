@@ -7,6 +7,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Target, Calendar, Clock, BookOpen, User, Layers } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function ScheduleDemoPage() {
     const params = useParams();
@@ -128,17 +129,21 @@ export default function ScheduleDemoPage() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                             <div>
                                 <label className="form-label">Target Class / Batch</label>
-                                <select className="form-input" value={formData.class_id} onChange={(e) => setFormData(p => ({ ...p, class_id: e.target.value }))}>
-                                    <option value="">Select class...</option>
-                                    {classes.map((c: any) => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                                </select>
+                                <CustomSelect 
+                                    value={formData.class_id} 
+                                    onChange={val => setFormData(p => ({ ...p, class_id: val }))}
+                                    placeholder="Select class..."
+                                    options={classes.map((c: any) => ({ value: c.id, label: c.class_name }))}
+                                />
                             </div>
                             <div>
                                 <label className="form-label">Teacher / Instructor</label>
-                                <select className="form-input" value={formData.teacher_id} onChange={(e) => setFormData(p => ({ ...p, teacher_id: e.target.value }))}>
-                                    <option value="">Select teacher...</option>
-                                    {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)}
-                                </select>
+                                <CustomSelect 
+                                    value={formData.teacher_id} 
+                                    onChange={val => setFormData(p => ({ ...p, teacher_id: val }))}
+                                    placeholder="Select teacher..."
+                                    options={teachers.map((t: any) => ({ value: t.id, label: `${t.first_name} ${t.last_name}` }))}
+                                />
                             </div>
                         </div>
                     </div>

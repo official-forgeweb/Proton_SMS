@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Settings, Shield, Bell, Database, Globe, Building, Save } from 'lucide-react';
 import api from '@/lib/api';
 import { customAlert } from '@/utils/dialog';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function SettingsPage() {
     const [activeNav, setActiveNav] = useState('General Info');
@@ -236,11 +237,15 @@ export default function SettingsPage() {
                                         </div>
                                         <div>
                                             <label style={labelStyle}>Currency</label>
-                                            <select style={inputStyle} value={settings.currency || 'INR'} onChange={e => handleChange('currency', e.target.value)}>
-                                                <option value="INR">Indian Rupee (₹)</option>
-                                                <option value="USD">US Dollar ($)</option>
-                                                <option value="EUR">Euro (€)</option>
-                                            </select>
+                                            <CustomSelect
+                                                value={settings.currency || 'INR'}
+                                                onChange={val => handleChange('currency', val)}
+                                                options={[
+                                                    { value: 'INR', label: 'Indian Rupee (₹)' },
+                                                    { value: 'USD', label: 'US Dollar ($)' },
+                                                    { value: 'EUR', label: 'Euro (€)' }
+                                                ]}
+                                            />
                                         </div>
                                         <div style={{ gridColumn: 'span 2' }}>
                                             <label style={labelStyle}>Physical Address</label>

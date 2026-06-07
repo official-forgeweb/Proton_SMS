@@ -5,6 +5,8 @@ import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import { MessageSquare } from 'lucide-react';
 
+import CustomSelect from '@/components/ui/CustomSelect';
+
 export default function TeacherEnquiryRemarkPage() {
     const params = useParams();
     const router = useRouter();
@@ -59,18 +61,18 @@ export default function TeacherEnquiryRemarkPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
                         <div>
                             <label className="form-label">Type of Interaction</label>
-                            <select 
-                                className="form-input" 
+                            <CustomSelect 
                                 value={remarkType} 
-                                onChange={(e) => setRemarkType(e.target.value)}
-                            >
-                                <option value="call">Phone Call</option>
-                                <option value="meeting">In-Person Meeting</option>
-                                <option value="whatsapp">WhatsApp Message</option>
-                                <option value="email">Email Sent</option>
-                                <option value="follow_up">Follow Up</option>
-                                <option value="other">Other</option>
-                            </select>
+                                onChange={val => setRemarkType(val)}
+                                options={[
+                                    { value: 'call', label: 'Phone Call' },
+                                    { value: 'meeting', label: 'In-Person Meeting' },
+                                    { value: 'whatsapp', label: 'WhatsApp Message' },
+                                    { value: 'email', label: 'Email Sent' },
+                                    { value: 'follow_up', label: 'Follow Up' },
+                                    { value: 'other', label: 'Other' }
+                                ]}
+                            />
                         </div>
                         <div>
                             <label className="form-label">Remark / Feedback *</label>

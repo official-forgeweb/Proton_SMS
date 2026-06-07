@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import { Edit2 } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function EditTeacherPage() {
     const params = useParams();
@@ -90,10 +91,15 @@ export default function EditTeacherPage() {
                             </div>
                             <div>
                                 <label className="form-label">Gender</label>
-                                <select className="form-input" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                </select>
+                                <CustomSelect
+                                    value={formData.gender}
+                                    onChange={val => setFormData({ ...formData, gender: val })}
+                                    options={[
+                                        { value: 'male', label: 'Male' },
+                                        { value: 'female', label: 'Female' },
+                                        { value: 'other', label: 'Other' }
+                                    ]}
+                                />
                             </div>
                             <div>
                                 <label className="form-label">Password</label>

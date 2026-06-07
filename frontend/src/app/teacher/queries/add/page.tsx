@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { Search, Loader2, CheckCircle, Hash, BookOpen, Phone, ChevronLeft, Smartphone, PhoneCall, MessageCircle, FileText, Users, GraduationCap, Mail, HelpCircle, XCircle, X } from 'lucide-react';
 import Link from 'next/link';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 const QUERY_TYPES = [
     { value: 'phone_change_student', label: 'Phone Number Change (Student)', icon: Smartphone, needsSubtype: false },
@@ -256,17 +257,20 @@ export default function AddQueryPage() {
                                     {currentQueryType.subtypeLabel} <span style={{ color: '#E53935' }}>*</span>
                                 </label>
                                 {currentQueryType.needsTeacher ? (
-                                    <select
+                                    <CustomSelect
                                         required
                                         value={formData.target_teacher_id}
-                                        onChange={e => setFormData({ ...formData, target_teacher_id: e.target.value, query_subtype: e.target.options[e.target.selectedIndex].text })}
-                                        style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '15px' }}
-                                    >
-                                        <option value="">Select Teacher</option>
-                                        {teachers.map((t: any) => (
-                                            <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
-                                        ))}
-                                    </select>
+                                        onChange={val => {
+                                            const t = teachers.find(item => item.id === val);
+                                            const label = t ? `${t.first_name} ${t.last_name}` : '';
+                                            setFormData({ ...formData, target_teacher_id: val, query_subtype: label });
+                                        }}
+                                        placeholder="Select Teacher"
+                                        options={teachers.map((t: any) => ({
+                                            value: t.id,
+                                            label: `${t.first_name} ${t.last_name}`
+                                        }))}
+                                    />
                                 ) : (
                                     <input
                                         type="text"

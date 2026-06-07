@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { CreditCard, IndianRupee, User, Info, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'react-hot-toast';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function RecordPaymentPage() {
     const router = useRouter();
@@ -96,17 +97,24 @@ export default function RecordPaymentPage() {
                                 <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', color: '#475569', display: 'block', marginBottom: '6px' }}>
                                     Search Student Financial Account *
                                 </label>
-                                <select required className="form-input" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '14px' }} value={formData.student_id} onChange={e => {
-                                    const assignment = assignments.find(a => a.student_id === e.target.value);
-                                    setFormData({ ...formData, student_id: e.target.value, amount_paid: assignment ? assignment.total_pending : 0 });
-                                }}>
-                                    <option value="">Select Account...</option>
-                                    {assignments.filter(a => a.total_pending > 0 || a.student_id === queryStudentId).map(a => (
-                                        <option key={a.id} value={a.student_id}>
-                                            {a.student_name} ({a.pro_id.toUpperCase()}) — Dues: ₹{a.total_pending.toLocaleString()}
-                                        </option>
-                                    ))}
-                                </select>
+                                <CustomSelect
+                                    required
+                                    placeholder="Select payee student directory..."
+                                    options={
+                                        assignments
+                                            .filter(a => a.total_pending > 0 || a.student_id === queryStudentId)
+                                            .map(a => ({ value: a.student_id, label: `${a.student_name} (${a.pro_id})` }))
+                                    }
+                                    value={formData.student_id}
+                                    onChange={val => {
+                                        const assignment = assignments.find(a => a.student_id === val);
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            student_id: val,
+                                            amount_paid: assignment ? (assignment.total_pending || 0) : 0
+                                        }));
+                                    }}
+                                />
                             </div>
                         </div>
 
@@ -131,12 +139,17 @@ export default function RecordPaymentPage() {
                                     <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', color: '#475569', display: 'block', marginBottom: '6px' }}>
                                         Payment Method *
                                     </label>
-                                    <select required className="form-input" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '14px' }} value={formData.payment_method} onChange={e => setFormData({ ...formData, payment_method: e.target.value })}>
-                                        <option value="cash">Cash Payment</option>
-                                        <option value="online">Online / UPI / QR</option>
-                                        <option value="bank_transfer">Bank Transfer (NEFT/IMPS)</option>
-                                        <option value="cheque">Cheque / Draft</option>
-                                    </select>
+                                    <CustomSelect 
+                                        required 
+                                        value={formData.payment_method} 
+                                        onChange={val => setFormData({ ...formData, payment_method: val })}
+                                        options={[
+                                            { value: 'cash', label: 'Cash Payment' },
+                                            { value: 'online', label: 'Online / UPI / QR' },
+                                            { value: 'bank_transfer', label: 'Bank Transfer (NEFT/IMPS)' },
+                                            { value: 'cheque', label: 'Cheque / Draft' }
+                                        ]}
+                                    />
                                 </div>
                             </div>
 

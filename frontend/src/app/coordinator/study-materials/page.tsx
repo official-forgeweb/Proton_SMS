@@ -6,6 +6,7 @@ import axios from 'axios';
 import { BookOpen, Upload, Trash2, Search, FileText, Eye, X, BookMarked, Download } from 'lucide-react';
 import { customAlert, customConfirm } from '@/utils/dialog';
 import ClassSubjectSelector from '@/components/ClassSubjectSelector';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function CoordinatorStudyMaterialsPage() {
     const [materials, setMaterials] = useState<any[]>([]);
@@ -193,11 +194,14 @@ export default function CoordinatorStudyMaterialsPage() {
                         ))}
                     </datalist>
                 </div>
-                <select value={filters.class_id} onChange={e => setFilters({ ...filters, class_id: e.target.value, subject: '' })}
-                    style={{ padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '14px', fontWeight: 600, minWidth: '150px' }}>
-                    <option value="">All Classes</option>
-                    {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                </select>
+                <div style={{ minWidth: '180px' }}>
+                    <CustomSelect 
+                        value={filters.class_id} 
+                        onChange={val => setFilters({ ...filters, class_id: val, subject: '' })}
+                        placeholder="All Classes"
+                        options={classes.map(c => ({ value: c.id, label: c.class_name }))}
+                    />
+                </div>
             </div>
 
             {/* Content List */}
@@ -304,16 +308,14 @@ export default function CoordinatorStudyMaterialsPage() {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                     <div>
                                         <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 700, color: '#1A1D3B' }}>Target Class</label>
-                                        <select 
+                                        <CustomSelect 
                                             required 
                                             value={uploadData.class_id}
-                                            onChange={e => setUploadData({...uploadData, class_id: e.target.value, subject: ''})}
-                                            style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '14px', fontWeight: 500 }}
+                                            onChange={val => setUploadData({...uploadData, class_id: val, subject: ''})}
+                                            placeholder="Select Class"
+                                            options={classes.map(c => ({ value: c.id, label: c.class_name }))}
                                             disabled={isUploading}
-                                        >
-                                            <option value="">Select Class</option>
-                                            {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                                        </select>
+                                        />
                                     </div>
                                     <div>
                                         <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 700, color: '#1A1D3B' }}>Subject *</label>

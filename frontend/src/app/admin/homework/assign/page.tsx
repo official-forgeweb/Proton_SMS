@@ -7,6 +7,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { PenTool } from 'lucide-react';
 import ClassSubjectSelector from '@/components/ClassSubjectSelector';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AssignHomeworkPage() {
     const router = useRouter();
@@ -59,10 +60,13 @@ export default function AssignHomeworkPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '24px' }}>
                         <div>
                             <label className="form-label">Target Batch / Class *</label>
-                            <select required className="form-input" value={formData.class_id} onChange={e => setFormData({ ...formData, class_id: e.target.value, subject: '' })}>
-                                <option value="">Choose a class...</option>
-                                {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
-                            </select>
+                            <CustomSelect 
+                                required 
+                                value={formData.class_id} 
+                                onChange={val => setFormData({ ...formData, class_id: val, subject: '' })}
+                                placeholder="Choose a class..."
+                                options={classes.map(c => ({ value: c.id, label: c.class_name }))}
+                            />
                         </div>
                         <div>
                             <label className="form-label">Associated Subject *</label>
