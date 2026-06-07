@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, X } from 'lucide-react';
 
 import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 
@@ -199,8 +199,25 @@ export default function CreateTestPage() {
                                             <button 
                                                 type="button"
                                                 onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
-                                                style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                            >Ã—</button>
+                                                style={{ 
+                                                    position: 'absolute', 
+                                                    top: '-8px', 
+                                                    right: '-8px', 
+                                                    background: 'red', 
+                                                    color: 'white', 
+                                                    border: 'none', 
+                                                    borderRadius: '50%', 
+                                                    width: '20px', 
+                                                    height: '20px', 
+                                                    cursor: 'pointer', 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center',
+                                                    padding: 0
+                                                }}
+                                            >
+                                                <X size={12} strokeWidth={3} />
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
