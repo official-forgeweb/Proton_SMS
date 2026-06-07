@@ -13,12 +13,14 @@ interface DashboardLayoutProps {
     requiredRole?: string | string[];
 }
 
+let isFirstLoad = true;
+
 export default function DashboardLayout({ children, requiredRole }: DashboardLayoutProps) {
     const router = useRouter();
     const pathname = usePathname();
     const { user, isAuthenticated, isLoading, serverError, checkAuth } = useAuthStore();
     const [retrying, setRetrying] = useState(false);
-    const [mounted, setMounted] = useState(false);
+    const [mounted, setMounted] = useState(!isFirstLoad);
 
     // Global layout reactive states
     const { isSidebarOpen, isSidebarCollapsed, toggleSidebar, setSidebarCollapsed } = useLayoutStore();
@@ -48,6 +50,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
 
     useEffect(() => {
         setMounted(true);
+        isFirstLoad = false;
     }, []);
     
     // Notifications State

@@ -15,26 +15,69 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
       include: { aliases: true }
     });
 
-    // Compute dynamic module usages in parallel for clean dashboards
-    const enriched = await Promise.all(
-      subjects.map(async (subj: any) => {
-        const [timetableCount, testCount, materialCount, homeworkCount] = await Promise.all([
-          prisma.timetable.count({ where: { subject: subj.canonical_name } }),
-          prisma.test.count({ where: { subject: subj.canonical_name } }),
-          prisma.studyMaterial.count({ where: { subject: subj.canonical_name } }),
-          prisma.homework.count({ where: { class: { subject: subj.canonical_name } } }) // fallback class level
-        ]);
-
-        return {
-          ...subj,
-          timetable_usage: timetableCount,
-          test_usage: testCount,
-          material_usage: materialCount,
-          homework_usage: homeworkCount,
-          total_usage: timetableCount + testCount + materialCount + homeworkCount
-        };
+    // Bulk query usage statistics in parallel to avoid N+1 query waterfall
+    const [timetableCounts, testCounts, materialCounts, homeworkCounts, legacyHomeworks] = await Promise.all([
+      prisma.timetable.groupBy({
+        by: ['subject_id'],
+        _count: { _all: true }
+      }),
+      prisma.test.groupBy({
+        by: ['subject_id'],
+        _count: { _all: true }
+      }),
+      prisma.studyMaterial.groupBy({
+        by: ['subject_id'],
+        _count: { _all: true }
+      }),
+      prisma.homework.groupBy({
+        by: ['subject_id'],
+        _count: { _all: true }
+      }),
+      prisma.homework.findMany({
+        where: { subject_id: null },
+        select: { class: { select: { subject: true } } }
       })
-    );
+    ]);
+
+    // Build lookup maps for fast memory aggregation
+    const timetableMap: Record<string, number> = {};
+    timetableCounts.forEach(c => { if (c.subject_id) timetableMap[c.subject_id] = c._count._all; });
+
+    const testMap: Record<string, number> = {};
+    testCounts.forEach(c => { if (c.subject_id) testMap[c.subject_id] = c._count._all; });
+
+    const materialMap: Record<string, number> = {};
+    materialCounts.forEach(c => { if (c.subject_id) materialMap[c.subject_id] = c._count._all; });
+
+    const homeworkMap: Record<string, number> = {};
+    homeworkCounts.forEach(c => { if (c.subject_id) homeworkMap[c.subject_id] = c._count._all; });
+
+    const legacyHomeworkCounts: Record<string, number> = {};
+    legacyHomeworks.forEach(hw => {
+      const subjName = hw.class?.subject;
+      if (subjName) {
+        legacyHomeworkCounts[subjName] = (legacyHomeworkCounts[subjName] || 0) + 1;
+      }
+    });
+
+    const enriched = subjects.map((subj: any) => {
+      const timetableCount = timetableMap[subj.id] || 0;
+      const testCount = testMap[subj.id] || 0;
+      const materialCount = materialMap[subj.id] || 0;
+      
+      const modernHomeworkCount = homeworkMap[subj.id] || 0;
+      const legacyHwCount = legacyHomeworkCounts[subj.canonical_name] || 0;
+      const homeworkCount = modernHomeworkCount + legacyHwCount;
+
+      return {
+        ...subj,
+        timetable_usage: timetableCount,
+        test_usage: testCount,
+        material_usage: materialCount,
+        homework_usage: homeworkCount,
+        total_usage: timetableCount + testCount + materialCount + homeworkCount
+      };
+    });
 
     res.json({ success: true, data: enriched });
   } catch (error) {

@@ -32,20 +32,39 @@ router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher', 
     if (status) where.employment_status = status;
 
     const teachers = await prisma.teacher.findMany({ where });
+    const teacherIds = teachers.map(t => t.id);
 
-    const enriched = await Promise.all(
-      teachers.map(async (t) => {
-        const classCount = await prisma.class.count({ 
-            where: { 
-                OR: [
-                    { primary_teacher_id: t.id },
-                    { schedule: { some: { teacher_id: t.id } } }
-                ]
-            } 
-        });
-        return { ...t, id: t.id, class_count: classCount };
-      })
-    );
+    // Bulk query primary classes and schedules to avoid N+1 query waterfall
+    const primaryClasses = await prisma.class.findMany({
+      where: { primary_teacher_id: { in: teacherIds } },
+      select: { id: true, primary_teacher_id: true }
+    });
+
+    const schedules = await prisma.classSchedule.findMany({
+      where: { teacher_id: { in: teacherIds } },
+      select: { class_id: true, teacher_id: true }
+    });
+
+    // Aggregate unique classes taught by each teacher
+    const teacherClassMap = new Map<string, Set<string>>();
+    teacherIds.forEach(id => teacherClassMap.set(id, new Set<string>()));
+
+    primaryClasses.forEach(c => {
+      if (c.primary_teacher_id) {
+        teacherClassMap.get(c.primary_teacher_id)?.add(c.id);
+      }
+    });
+
+    schedules.forEach(s => {
+      if (s.teacher_id && s.class_id) {
+        teacherClassMap.get(s.teacher_id)?.add(s.class_id);
+      }
+    });
+
+    const enriched = teachers.map(t => {
+      const classCount = teacherClassMap.get(t.id)?.size || 0;
+      return { ...t, id: t.id, class_count: classCount };
+    });
 
     res.json({ success: true, data: enriched });
   } catch (error) {
@@ -203,14 +222,28 @@ router.get('/:id/classes', authenticateToken, cacheMiddleware(15), async (req: R
       },
     });
 
-    const enriched = await Promise.all(
-      classes.map(async (c) => {
-        const student_count = await prisma.studentClassEnrollment.count({
-          where: { class_id: c.id, enrollment_status: 'active' },
-        });
-        return { ...c, id: c.id, student_count };
-      })
-    );
+    // Bulk query student counts to avoid N+1 query waterfall
+    const enrollments = await prisma.studentClassEnrollment.groupBy({
+      by: ['class_id'],
+      where: {
+        class_id: { in: classes.map(c => c.id) },
+        enrollment_status: 'active'
+      },
+      _count: {
+        _all: true
+      }
+    });
+
+    const countMap: Record<string, number> = {};
+    enrollments.forEach(e => {
+      countMap[e.class_id] = e._count._all;
+    });
+
+    const enriched = classes.map(c => ({
+      ...c,
+      id: c.id,
+      student_count: countMap[c.id] || 0
+    }));
 
     res.json({ success: true, data: enriched });
   } catch (error) {
