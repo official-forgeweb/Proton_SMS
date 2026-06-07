@@ -186,6 +186,7 @@ export class GoogleSheetSyncJob {
     });
 
     for (const source of sources) {
+      console.log(`ℹ️ [Sync Engine] Creating sync log for source ${source.id}...`);
       const syncLog = await prisma.googleSheetSyncLog.create({
         data: {
           sync_type: 'video_lectures',
@@ -195,6 +196,7 @@ export class GoogleSheetSyncJob {
           start_time: new Date(),
         },
       });
+      console.log(`ℹ️ [Sync Engine] Created sync log with ID: ${syncLog.id}`);
 
       const errors: string[] = [];
       let rowsProcessed = 0;
@@ -473,6 +475,10 @@ export class GoogleSheetSyncJob {
           });
           rowsDeleted = idsToDelete.length;
         }
+
+        // Check if log still exists in DB
+        const checkLog = await prisma.googleSheetSyncLog.findUnique({ where: { id: syncLog.id } });
+        console.log(`ℹ️ [Sync Engine] Log check before update: ${checkLog ? 'FOUND' : 'NOT FOUND'}`);
 
         // Update Log (Success)
         await prisma.googleSheetSyncLog.update({

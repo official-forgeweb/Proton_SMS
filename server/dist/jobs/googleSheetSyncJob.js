@@ -176,6 +176,7 @@ class GoogleSheetSyncJob {
             classSubjectSet.add(`${cs.class_id}_${cs.subject_id}`);
         });
         for (const source of sources) {
+            console.log(`ℹ️ [Sync Engine] Creating sync log for source ${source.id}...`);
             const syncLog = await database_1.default.googleSheetSyncLog.create({
                 data: {
                     sync_type: 'video_lectures',
@@ -185,6 +186,7 @@ class GoogleSheetSyncJob {
                     start_time: new Date(),
                 },
             });
+            console.log(`ℹ️ [Sync Engine] Created sync log with ID: ${syncLog.id}`);
             const errors = [];
             let rowsProcessed = 0;
             let rowsCreated = 0;
@@ -422,6 +424,9 @@ class GoogleSheetSyncJob {
                     });
                     rowsDeleted = idsToDelete.length;
                 }
+                // Check if log still exists in DB
+                const checkLog = await database_1.default.googleSheetSyncLog.findUnique({ where: { id: syncLog.id } });
+                console.log(`ℹ️ [Sync Engine] Log check before update: ${checkLog ? 'FOUND' : 'NOT FOUND'}`);
                 // Update Log (Success)
                 await database_1.default.googleSheetSyncLog.update({
                     where: { id: syncLog.id },
