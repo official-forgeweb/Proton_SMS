@@ -189,7 +189,7 @@ export default function TeacherSessionAttendancePage() {
                             <ArrowLeft size={14} /> Back to Timetable
                         </button>
                         <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Poppins, sans-serif' }}>
-                            Roll Call: {sessionData?.subject}
+                            Roll Call: {sessionData?.subject?.canonical_name || sessionData?.subject || 'N/A'}
                         </h1>
                         <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px', fontWeight: 600 }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

@@ -87,7 +87,7 @@ export default function AdminSessionAttendancePage() {
                         <h1 style={{ fontSize: '32px', fontWeight: 900, color: '#1E293B' }}>Edit Attendance</h1>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', color: '#64748B', fontSize: '15px', marginTop: '12px', fontWeight: 600 }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#F1F5F9', padding: '6px 12px', borderRadius: '8px' }}>
-                                <BookOpen size={18} color="#6366F1" /> {sessionData?.subject}
+                                <BookOpen size={18} color="#6366F1" /> {sessionData?.subject?.canonical_name || sessionData?.subject || 'N/A'}
                             </span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#F1F5F9', padding: '6px 12px', borderRadius: '8px' }}>
                                 <Users size={18} color="#6366F1" /> {sessionData?.class_ref?.class_name}
