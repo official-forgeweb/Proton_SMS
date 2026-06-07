@@ -38,7 +38,11 @@ export const getNormalizedKey = (name: string): string => {
     'computers': 'computerscience',
     'comp': 'computerscience',
     'computer science': 'computerscience',
-    'cs': 'computerscience'
+    'cs': 'computerscience',
+    'eco': 'economics',
+    'economics': 'economics',
+    'accounts': 'accounts',
+    'acc': 'accounts'
   };
 
   return mappings[clean] || clean.replace(/\s+/g, '');

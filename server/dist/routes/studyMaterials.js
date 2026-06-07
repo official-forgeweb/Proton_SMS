@@ -7,6 +7,7 @@ const express_1 = require("express");
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
 const crypto_1 = __importDefault(require("crypto"));
+const normalization_1 = require("../utils/normalization");
 const router = (0, express_1.Router)();
 // Get Cloudinary Signature for Direct Frontend Uploads
 router.get('/signature', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), (req, res) => {
@@ -44,10 +45,11 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
         if (!title || !subject || !class_id || !pdf_url) {
             return res.status(400).json({ success: false, message: 'All fields are required.' });
         }
+        const subRec = await (0, normalization_1.resolveSubjectRecord)(subject);
         const material = await database_1.default.studyMaterial.create({
             data: {
                 title,
-                subject,
+                subject_id: subRec.id,
                 class_id,
                 pdf_url,
                 uploaded_by: uploaderId
@@ -70,8 +72,10 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
         // Prefill class_id and subject if passed
         if (class_id)
             filters.class_id = String(class_id);
-        if (subject)
-            filters.subject = String(subject);
+        if (subject) {
+            const subRec = await (0, normalization_1.resolveSubjectRecord)(String(subject));
+            filters.subject_id = subRec.id;
+        }
         // If Student, restrict to their class subjects
         if (userRole === 'student') {
             const student = await database_1.default.student.findUnique({
@@ -83,7 +87,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                     },
                     subject_enrollments: {
                         where: { status: 'active' },
-                        select: { class_id: true, subject: true }
+                        select: { class_id: true, subject_id: true }
                     }
                 }
             });
@@ -98,7 +102,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                 subjectEnrolls.forEach(e => {
                     if (!subjectsByClass[e.class_id])
                         subjectsByClass[e.class_id] = [];
-                    subjectsByClass[e.class_id].push(e.subject);
+                    subjectsByClass[e.class_id].push(e.subject_id);
                 });
                 const orConditions = classIds.map(cid => {
                     const subjects = subjectsByClass[cid];
@@ -106,7 +110,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                         return {
                             class_id: cid,
                             OR: subjects.map(s => ({
-                                subject: { contains: s.trim(), mode: 'insensitive' }
+                                subject_id: s
                             }))
                         };
                     }
@@ -138,32 +142,32 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                 // 2. Class-Subject combinations from schedules
                 const schedules = await database_1.default.classSchedule.findMany({
                     where: { teacher_id: teacher.id },
-                    select: { class_id: true, subject: true }
+                    select: { class_id: true, subject_id: true }
                 });
                 const teacherOrConditions = [];
                 if (primaryClassIds.length > 0) {
                     teacherOrConditions.push({ class_id: { in: primaryClassIds } });
                 }
                 schedules.forEach(sched => {
-                    if (sched.class_id && sched.subject) {
+                    if (sched.class_id && sched.subject_id) {
                         teacherOrConditions.push({
                             class_id: sched.class_id,
-                            subject: { equals: sched.subject, mode: 'insensitive' }
+                            subject_id: sched.subject_id
                         });
                     }
                 });
                 // 3. Fallback: study materials uploaded by this teacher
                 teacherOrConditions.push({ uploaded_by: userId });
                 const currentClassId = filters.class_id;
-                const currentSubject = filters.subject;
+                const currentSubjectId = filters.subject_id;
                 delete filters.class_id;
-                delete filters.subject;
+                delete filters.subject_id;
                 const andConditions = [{ OR: teacherOrConditions }];
                 if (currentClassId) {
                     andConditions.push({ class_id: currentClassId });
                 }
-                if (currentSubject) {
-                    andConditions.push({ subject: { contains: String(currentSubject), mode: 'insensitive' } });
+                if (currentSubjectId) {
+                    andConditions.push({ subject_id: currentSubjectId });
                 }
                 filters.AND = andConditions;
             }
@@ -172,11 +176,16 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
             where: filters,
             include: {
                 class_ref: { select: { class_name: true } },
-                uploader: { select: { email: true, role: true } }
+                uploader: { select: { email: true, role: true } },
+                subject: { select: { canonical_name: true } }
             },
             orderBy: { created_at: 'desc' }
         });
-        res.json({ success: true, data: materials });
+        const formatted = materials.map(m => ({
+            ...m,
+            subject: m.subject.canonical_name
+        }));
+        res.json({ success: true, data: formatted });
     }
     catch (error) {
         console.error(error);

@@ -7,6 +7,7 @@ const express_1 = require("express");
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
 const sendMail_1 = require("../services/mail/sendMail");
+const normalization_1 = require("../utils/normalization");
 const router = (0, express_1.Router)();
 const notifyTimetableChange = async (classId, teacherId, date, details, scheduleId) => {
     try {
@@ -73,7 +74,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                     },
                     subject_enrollments: {
                         where: { status: 'active' },
-                        select: { class_id: true, subject: true }
+                        select: { class_id: true, subject_id: true }
                     }
                 }
             });
@@ -87,7 +88,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
             subjectEnrolls.forEach(e => {
                 if (!subjectsByClass[e.class_id])
                     subjectsByClass[e.class_id] = [];
-                subjectsByClass[e.class_id].push(e.subject);
+                subjectsByClass[e.class_id].push(e.subject_id);
             });
             const orConditions = classIds.map(cid => {
                 const subjects = subjectsByClass[cid];
@@ -95,7 +96,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                     return {
                         class_id: cid,
                         OR: subjects.map(s => ({
-                            subject: { contains: s.trim(), mode: 'insensitive' }
+                            subject_id: s
                         }))
                     };
                 }
@@ -128,6 +129,9 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                 },
                 teacher: {
                     select: { first_name: true, last_name: true }
+                },
+                subject: {
+                    select: { canonical_name: true }
                 }
             }
         });
@@ -162,12 +166,15 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
         }
         const tests = await database_1.default.test.findMany({
             where: testWhere,
-            include: { class: { select: { class_name: true, class_code: true } } }
+            include: {
+                class: { select: { class_name: true, class_code: true } },
+                subject: { select: { canonical_name: true } }
+            }
         });
         const mappedTests = tests.map(t => ({
             id: t.id,
             class_id: t.class_id,
-            subject: `TEST: ${t.test_name} (${t.subject})`,
+            subject: `TEST: ${t.test_name} (${t.subject?.canonical_name || 'General'})`,
             teacher_id: t.created_by,
             date: t.test_date,
             start_time: t.start_time || '00:00',
@@ -179,7 +186,10 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
             class_ref: t.class,
             teacher: null // Could fetch teacher info if needed
         }));
-        const combinedData = [...timetable.map(i => ({ ...i, type: 'class' })), ...mappedTests].sort((a, b) => {
+        const combinedData = [
+            ...timetable.map(i => ({ ...i, subject: i.subject.canonical_name, type: 'class' })),
+            ...mappedTests
+        ].sort((a, b) => {
             if (a.date !== b.date)
                 return a.date.localeCompare(b.date);
             return a.start_time.localeCompare(b.start_time);
@@ -229,10 +239,12 @@ router.post('/generate', auth_1.authenticateToken, (0, auth_1.authorize)('admin'
                 for (const sched of c.schedule) {
                     // The user explicitly requested to generate timetable for all days including Saturday and Sunday
                     // Check if entry already exists to avoid duplicates
+                    if (!sched.subject_id)
+                        continue;
                     const existing = await database_1.default.timetable.findFirst({
                         where: {
                             class_id: c.id,
-                            subject: sched.subject || '',
+                            subject_id: sched.subject_id,
                             date: dateStr,
                             start_time: sched.time_start || '09:00'
                         }
@@ -241,7 +253,7 @@ router.post('/generate', auth_1.authenticateToken, (0, auth_1.authorize)('admin'
                         await database_1.default.timetable.create({
                             data: {
                                 class_id: c.id,
-                                subject: sched.subject || '',
+                                subject_id: sched.subject_id,
                                 teacher_id: sched.teacher_id,
                                 date: dateStr,
                                 start_time: sched.time_start || '09:00',
@@ -274,10 +286,11 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
             }
             finalTeacherId = teacher.id;
         }
+        const subRec = await (0, normalization_1.resolveSubjectRecord)(subject);
         const entry = await database_1.default.timetable.create({
             data: {
                 class_id,
-                subject,
+                subject_id: subRec.id,
                 teacher_id: finalTeacherId,
                 date,
                 start_time,
@@ -288,16 +301,17 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
                 status: 'scheduled'
             },
             include: {
-                class_ref: { select: { class_name: true } }
+                class_ref: { select: { class_name: true } },
+                subject: { select: { canonical_name: true } }
             }
         });
         if (req.user.role === 'teacher' || req.user.role === 'coordinator') {
             const { logTeacherActivity } = require('../utils/activityLogger');
-            await logTeacherActivity(req.user.id, 'schedule_create', null, JSON.stringify({ subject, date, start_time, room, online_link }), `Class session for ${entry.class_ref.class_name}: ${subject}`, req);
+            await logTeacherActivity(req.user.id, 'schedule_create', null, JSON.stringify({ subject: subRec.canonical_name, date, start_time, room, online_link }), `Class session for ${entry.class_ref.class_name}: ${subRec.canonical_name}`, req);
         }
         // Notify affected teacher and students asynchronously
-        notifyTimetableChange(class_id, finalTeacherId, date, `New class session scheduled: ${subject} in Room ${room || 'N/A'} at ${start_time} - ${end_time || 'N/A'}.`, entry.id);
-        res.status(201).json({ success: true, data: entry });
+        notifyTimetableChange(class_id, finalTeacherId, date, `New class session scheduled: ${subRec.canonical_name} in Room ${room || 'N/A'} at ${start_time} - ${end_time || 'N/A'}.`, entry.id);
+        res.status(201).json({ success: true, data: { ...entry, subject: entry.subject.canonical_name } });
     }
     catch (error) {
         console.error(error);
@@ -311,7 +325,10 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
         const { class_id, subject, teacher_id, date, start_time, end_time, room, online_link, notes, status } = req.body;
         const existing = await database_1.default.timetable.findUnique({
             where: { id },
-            include: { class_ref: { select: { class_name: true } } }
+            include: {
+                class_ref: { select: { class_name: true } },
+                subject: { select: { canonical_name: true } }
+            }
         });
         if (!existing) {
             res.status(404).json({ success: false, message: 'Entry not found' });
@@ -328,11 +345,12 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
                 return;
             }
         }
+        const subRec = subject ? await (0, normalization_1.resolveSubjectRecord)(subject) : undefined;
         const entry = await database_1.default.timetable.update({
             where: { id },
             data: {
                 class_id,
-                subject,
+                subject_id: subRec ? subRec.id : undefined,
                 teacher_id: req.user.role === 'teacher' ? existing.teacher_id : teacher_id,
                 date,
                 start_time,
@@ -343,13 +361,14 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
                 status
             },
             include: {
-                class_ref: { select: { class_name: true } }
+                class_ref: { select: { class_name: true } },
+                subject: { select: { canonical_name: true } }
             }
         });
         if (req.user.role === 'teacher' || req.user.role === 'coordinator') {
             const { logTeacherActivity } = require('../utils/activityLogger');
             const prevVal = {
-                subject: existing.subject,
+                subject: existing.subject.canonical_name,
                 date: existing.date,
                 start_time: existing.start_time,
                 room: existing.room,
@@ -357,21 +376,21 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
                 status: existing.status
             };
             const newVal = {
-                subject: entry.subject,
+                subject: entry.subject.canonical_name,
                 date: entry.date,
                 start_time: entry.start_time,
                 room: entry.room,
                 online_link: entry.online_link,
                 status: entry.status
             };
-            await logTeacherActivity(req.user.id, 'schedule_update', JSON.stringify(prevVal), JSON.stringify(newVal), `Class session for ${entry.class_ref.class_name}: ${entry.subject}`, req);
+            await logTeacherActivity(req.user.id, 'schedule_update', JSON.stringify(prevVal), JSON.stringify(newVal), `Class session for ${entry.class_ref.class_name}: ${entry.subject.canonical_name}`, req);
         }
         // Notify affected teacher and students asynchronously of schedule adjustment
-        const hasChanged = existing.date !== date || existing.start_time !== start_time || existing.room !== room || existing.subject !== subject;
+        const hasChanged = existing.date !== date || existing.start_time !== start_time || existing.room !== room || (subRec && existing.subject_id !== subRec.id);
         if (hasChanged) {
-            notifyTimetableChange(entry.class_id, entry.teacher_id, entry.date, `Class session adjusted: ${entry.subject} in Room ${entry.room || 'N/A'} at ${entry.start_time} - ${entry.end_time || 'N/A'}.`, entry.id);
+            notifyTimetableChange(entry.class_id, entry.teacher_id, entry.date, `Class session adjusted: ${entry.subject.canonical_name} in Room ${entry.room || 'N/A'} at ${entry.start_time} - ${entry.end_time || 'N/A'}.`, entry.id);
         }
-        res.json({ success: true, data: entry });
+        res.json({ success: true, data: { ...entry, subject: entry.subject.canonical_name } });
     }
     catch (error) {
         if (error.code === 'P2025') {
@@ -388,7 +407,10 @@ router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', '
         const id = req.params.id;
         const existing = await database_1.default.timetable.findUnique({
             where: { id },
-            include: { class_ref: { select: { class_name: true } } }
+            include: {
+                class_ref: { select: { class_name: true } },
+                subject: { select: { canonical_name: true } }
+            }
         });
         if (!existing) {
             res.status(404).json({ success: false, message: 'Entry not found' });
@@ -409,12 +431,12 @@ router.delete('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', '
         if (req.user.role === 'teacher' || req.user.role === 'coordinator') {
             const { logTeacherActivity } = require('../utils/activityLogger');
             await logTeacherActivity(req.user.id, 'schedule_delete', JSON.stringify({
-                subject: existing.subject,
+                subject: existing.subject.canonical_name,
                 date: existing.date,
                 start_time: existing.start_time,
                 room: existing.room,
                 online_link: existing.online_link
-            }), null, `Class session for ${existing.class_ref.class_name}: ${existing.subject}`, req);
+            }), null, `Class session for ${existing.class_ref.class_name}: ${existing.subject.canonical_name}`, req);
         }
         res.json({ success: true, message: 'Entry deleted' });
     }

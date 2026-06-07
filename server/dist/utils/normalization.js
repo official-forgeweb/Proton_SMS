@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ensureSubjectExists = exports.resolveCanonicalSubject = exports.getNormalizedKey = void 0;
+exports.resolveSubjectRecord = exports.ensureSubjectExists = exports.resolveCanonicalSubject = exports.getNormalizedKey = void 0;
 const database_1 = __importDefault(require("../config/database"));
 /**
  * Standardizes a raw input subject name into a lowercased, trimmed, punctuation-free key.
@@ -41,7 +41,11 @@ const getNormalizedKey = (name) => {
         'computers': 'computerscience',
         'comp': 'computerscience',
         'computer science': 'computerscience',
-        'cs': 'computerscience'
+        'cs': 'computerscience',
+        'eco': 'economics',
+        'economics': 'economics',
+        'accounts': 'accounts',
+        'acc': 'accounts'
     };
     return mappings[clean] || clean.replace(/\s+/g, '');
 };
@@ -136,4 +140,42 @@ const ensureSubjectExists = async (name, createdByUserId) => {
     return canonical;
 };
 exports.ensureSubjectExists = ensureSubjectExists;
+/**
+ * Resolves a raw subject identifier (which could be a UUID subject_id or a raw name string)
+ * to a database Subject record, creating it if it doesn't exist.
+ */
+const resolveSubjectRecord = async (identifier) => {
+    if (!identifier || identifier.trim() === '') {
+        throw new Error('Subject identifier is required');
+    }
+    // 1. If it's a UUID, look it up by ID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    if (isUUID) {
+        const subject = await database_1.default.subject.findUnique({
+            where: { id: identifier }
+        });
+        if (subject)
+            return subject;
+    }
+    // 2. Otherwise normalize the string
+    const canonical = await (0, exports.resolveCanonicalSubject)(identifier);
+    const key = (0, exports.getNormalizedKey)(canonical);
+    // Check if it exists
+    let subject = await database_1.default.subject.findUnique({
+        where: { normalized_key: key }
+    });
+    if (!subject) {
+        // Auto-create subject master record
+        subject = await database_1.default.subject.create({
+            data: {
+                canonical_name: canonical,
+                normalized_key: key,
+                is_active: true
+            }
+        });
+        console.log(`✨ [Normalization Engine] Inline auto-created new subject master: "${canonical}"`);
+    }
+    return subject;
+};
+exports.resolveSubjectRecord = resolveSubjectRecord;
 //# sourceMappingURL=normalization.js.map

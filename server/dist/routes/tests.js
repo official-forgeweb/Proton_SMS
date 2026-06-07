@@ -7,6 +7,7 @@ const express_1 = require("express");
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
 const notifications_1 = require("./notifications");
+const normalization_1 = require("../utils/normalization");
 const router = (0, express_1.Router)();
 const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 const paramId = (req) => String(req.params.id);
@@ -34,17 +35,17 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                 // 2. Class-Subject combinations from schedules
                 const schedules = await database_1.default.classSchedule.findMany({
                     where: { teacher_id: teacher.id },
-                    select: { class_id: true, subject: true }
+                    select: { class_id: true, subject_id: true }
                 });
                 const teacherOrConditions = [];
                 if (primaryClassIds.length > 0) {
                     teacherOrConditions.push({ class_id: { in: primaryClassIds } });
                 }
                 schedules.forEach(sched => {
-                    if (sched.class_id && sched.subject) {
+                    if (sched.class_id && sched.subject_id) {
                         teacherOrConditions.push({
                             class_id: sched.class_id,
-                            subject: { equals: sched.subject, mode: 'insensitive' }
+                            subject_id: sched.subject_id
                         });
                     }
                 });
@@ -70,6 +71,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
             orderBy: { test_date: 'desc' },
             include: {
                 class: true,
+                subject: { select: { canonical_name: true } },
                 creator: {
                     select: {
                         id: true,
@@ -115,6 +117,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                 id: t.id,
                 class_id: t.class?.id || t.class_id,
                 class_name: t.class?.class_name || '',
+                subject: t.subject?.canonical_name || '',
                 results_count: stats.count,
                 average_marks: stats.count > 0 ? stats.avgMarks.toFixed(1) : 0,
                 creator_name: creatorName,
@@ -138,6 +141,7 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
                 where: { id },
                 include: {
                     class: true,
+                    subject: { select: { canonical_name: true } },
                     creator: {
                         select: {
                             id: true,
@@ -153,6 +157,7 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
                 where: { test_code: id },
                 include: {
                     class: true,
+                    subject: { select: { canonical_name: true } },
                     creator: {
                         select: {
                             id: true,
@@ -213,6 +218,7 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
                 ...test,
                 id: test.id,
                 class_name: test.class?.class_name,
+                subject: test.subject?.canonical_name || '',
                 results: mappedResults,
                 stats,
                 creator_name: creatorName,
@@ -230,15 +236,12 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
 router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const { test_name, class_id, subject, test_type, test_date, start_time, duration_minutes, total_marks, passing_marks, description, images, status } = req.body;
-        if (!class_id || !subject) {
-            res.status(400).json({ success: false, message: 'Class ID and Subject are required.' });
-            return;
-        }
+        const subRec = await (0, normalization_1.resolveSubjectRecord)(subject);
         // Validate that a subject teacher is assigned to this class and subject in ClassSchedule
         const mapping = await database_1.default.classSchedule.findFirst({
             where: {
                 class_id,
-                subject: { equals: subject.trim(), mode: 'insensitive' },
+                subject_id: subRec.id,
                 teacher_id: { not: null }
             }
         });
@@ -255,7 +258,7 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
                 test_code: generateTestCode(),
                 test_name,
                 class_id,
-                subject,
+                subject_id: subRec.id,
                 test_type,
                 test_date,
                 start_time: start_time || '09:00',
@@ -273,9 +276,9 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
         // Send notifications to all students in the class
         const studentUserIds = await (0, notifications_1.getStudentUserIdsForClass)(test.class_id);
         if (studentUserIds.length > 0) {
-            await (0, notifications_1.sendNotification)(studentUserIds, req.user.id, 'test_scheduled', `New Test Scheduled: ${test.test_name}`, `A new ${test.test_type?.replace('_', ' ') || 'test'} "${test.test_name}" has been scheduled for ${test.test_date || 'TBD'}. Subject: ${test.subject || 'N/A'}. Total Marks: ${test.total_marks || 'N/A'}.`, test.id);
+            await (0, notifications_1.sendNotification)(studentUserIds, req.user.id, 'test_scheduled', `New Test Scheduled: ${test.test_name}`, `A new ${test.test_type?.replace('_', ' ') || 'test'} "${test.test_name}" has been scheduled for ${test.test_date || 'TBD'}. Subject: ${subRec.canonical_name}. Total Marks: ${test.total_marks || 'N/A'}.`, test.id);
         }
-        res.status(201).json({ success: true, data: { ...test, id: test.id } });
+        res.status(201).json({ success: true, data: { ...test, id: test.id, subject: subRec.canonical_name } });
     }
     catch (error) {
         console.error('Create test error:', error);
@@ -291,16 +294,24 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
             res.status(404).json({ success: false, message: 'Test not found' });
             return;
         }
-        const { description, images, ...restBody } = req.body;
+        const { description, images, subject, ...restBody } = req.body;
+        let subRec;
+        if (subject) {
+            subRec = await (0, normalization_1.resolveSubjectRecord)(subject);
+        }
         const test = await database_1.default.test.update({
             where: { id },
             data: {
                 ...restBody,
+                subject_id: subRec ? subRec.id : undefined,
                 description: description !== undefined ? description : existing.description,
                 images: images !== undefined ? images : existing.images,
             },
+            include: {
+                subject: { select: { canonical_name: true } }
+            }
         });
-        res.json({ success: true, data: { ...test, id: test.id } });
+        res.json({ success: true, data: { ...test, id: test.id, subject: test.subject?.canonical_name } });
     }
     catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
@@ -310,7 +321,10 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
 router.post('/:id/results', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const id = paramId(req);
-        const test = await database_1.default.test.findUnique({ where: { id } });
+        const test = await database_1.default.test.findUnique({
+            where: { id },
+            include: { subject: { select: { canonical_name: true } } }
+        });
         if (!test) {
             res.status(404).json({ success: false, message: 'Test not found' });
             return;
@@ -381,7 +395,7 @@ router.post('/:id/results', auth_1.authenticateToken, (0, auth_1.authorize)('adm
         // Send notification to students that marks have been uploaded
         const studentUserIds = await (0, notifications_1.getStudentUserIdsForClass)(test.class_id);
         if (studentUserIds.length > 0) {
-            await (0, notifications_1.sendNotification)(studentUserIds, req.user.id, 'marks_uploaded', `Results Published: ${test.test_name}`, `Results for "${test.test_name}" (${test.subject || 'N/A'}) have been published. Check your performance now!`, test.id);
+            await (0, notifications_1.sendNotification)(studentUserIds, req.user.id, 'marks_uploaded', `Results Published: ${test.test_name}`, `Results for "${test.test_name}" (${test.subject?.canonical_name || 'N/A'}) have been published. Check your performance now!`, test.id);
         }
         if (req.user.role === 'teacher' || req.user.role === 'coordinator') {
             const classInfo = await database_1.default.class.findUnique({
@@ -392,10 +406,10 @@ router.post('/:id/results', auth_1.authenticateToken, (0, auth_1.authorize)('adm
             await logTeacherActivity(req.user.id, 'marks_upload', null, JSON.stringify({
                 test_id: test.id,
                 test_name: test.test_name,
-                subject: test.subject,
+                subject: test.subject?.canonical_name || 'N/A',
                 total_students: savedResults.length,
                 present_students: presentCount
-            }), `Uploaded marks for ${test.test_name} (${test.subject || 'N/A'}) - ${classInfo?.class_name || 'Class'}`, req);
+            }), `Uploaded marks for ${test.test_name} (${test.subject?.canonical_name || 'N/A'}) - ${classInfo?.class_name || 'Class'}`, req);
         }
         res.json({ success: true, data: savedResults, message: 'Results saved successfully' });
     }

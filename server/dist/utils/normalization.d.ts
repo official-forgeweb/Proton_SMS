@@ -14,4 +14,12 @@ export declare const resolveCanonicalSubject: (rawName: string) => Promise<strin
  * Ensures duplicates are checked via normalization matches first.
  */
 export declare const ensureSubjectExists: (name: string, createdByUserId?: string) => Promise<string>;
+/**
+ * Resolves a raw subject identifier (which could be a UUID subject_id or a raw name string)
+ * to a database Subject record, creating it if it doesn't exist.
+ */
+export declare const resolveSubjectRecord: (identifier: string) => Promise<{
+    id: string;
+    canonical_name: string;
+}>;
 //# sourceMappingURL=normalization.d.ts.map

@@ -7,6 +7,7 @@ const express_1 = require("express");
 const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
 const notifications_1 = require("./notifications");
+const normalization_1 = require("../utils/normalization");
 const router = (0, express_1.Router)();
 const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 const paramId = (req) => String(req.params.id);
@@ -54,6 +55,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
             orderBy: { assigned_date: 'desc' },
             include: {
                 class: true,
+                subject: true,
                 creator: {
                     select: {
                         id: true,
@@ -121,6 +123,7 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
                 id: h.id,
                 class_id: h.class?.id || h.class_id,
                 class_name: h.class?.class_name || '',
+                subject: h.subject?.canonical_name || h.subject_id || '',
                 total_students: studentCountMap[h.class?.id || ''] || 0,
                 submitted: stats.submitted,
                 pending: stats.pending,
@@ -141,10 +144,18 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
 router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordinator', 'teacher'), async (req, res) => {
     try {
         const createdBy = req.user.id; // Store User.id universally
+        const { subject, subject_id, ...otherFields } = req.body;
+        let finalSubjectId = null;
+        const subjectQuery = subject_id || subject;
+        if (subjectQuery) {
+            const subRec = await (0, normalization_1.resolveSubjectRecord)(subjectQuery);
+            finalSubjectId = subRec.id;
+        }
         const hw = await database_1.default.homework.create({
             data: {
                 homework_code: generateHomeworkCode(),
-                ...req.body,
+                ...otherFields,
+                subject_id: finalSubjectId,
                 created_by: createdBy,
             },
         });
@@ -176,7 +187,10 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
 router.get('/:id', auth_1.authenticateToken, async (req, res) => {
     try {
         const id = paramId(req);
-        const hw = await database_1.default.homework.findUnique({ where: { id } });
+        const hw = await database_1.default.homework.findUnique({
+            where: { id },
+            include: { subject: true }
+        });
         if (!hw) {
             res.status(404).json({ success: false, message: 'Homework not found' });
             return;
@@ -196,7 +210,15 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
                 student: undefined,
             };
         });
-        res.json({ success: true, data: { ...hw, id: hw.id, submissions: mappedSubmissions } });
+        res.json({
+            success: true,
+            data: {
+                ...hw,
+                id: hw.id,
+                subject: hw.subject?.canonical_name || hw.subject_id || '',
+                submissions: mappedSubmissions
+            }
+        });
     }
     catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });

@@ -64,7 +64,12 @@ router.get('/batch-performance', auth_1.authenticateToken, (0, auth_1.authorize)
     try {
         const results = await database_1.default.testResult.findMany({
             include: {
-                test: { include: { class: true } },
+                test: {
+                    include: {
+                        class: true,
+                        subject: { select: { canonical_name: true } }
+                    }
+                },
                 student: { select: { first_name: true, last_name: true, PRO_ID: true } },
             },
         });
@@ -72,7 +77,7 @@ router.get('/batch-performance', auth_1.authenticateToken, (0, auth_1.authorize)
             Test_ID: r.test?.test_code || 'N/A',
             Test_Name: r.test?.test_name || 'N/A',
             Class_Name: r.test?.class?.class_name || 'N/A',
-            Subject: r.test?.subject || 'N/A',
+            Subject: r.test?.subject?.canonical_name || 'N/A',
             Student_ID: r.student?.PRO_ID || 'N/A',
             Student_Name: r.student ? `${r.student.first_name} ${r.student.last_name}` : 'N/A',
             Marks_Obtained: r.marks_obtained || 0,

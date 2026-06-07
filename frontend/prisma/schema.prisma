@@ -66,6 +66,7 @@ model User {
   messages_received      Message[]      @relation("ReceivedMessages")
   tests_created            Test[]
   homework_created         Homework[]
+  google_sheet_sync_logs   GoogleSheetSyncLog[]
 
   @@map("users")
 }
@@ -705,22 +706,29 @@ model StudentQuery {
 // ──────────────────────────────────────────────
 
 model VideoLecture {
-  id          String   @id @default(uuid())
-  date        String                  // e.g. "2026-04-10"
-  time        String                  // e.g. "17:00"
-  class_id    String
-  subject_id  String
-  video_url   String                  // YouTube URL
-  title       String?                 // Optional title
-  status      String   @default("active")  // active | inactive
-  uploaded_by String?                 // User ID who uploaded
-  sheet_row_id String?  @unique             // Google Sheet Row ID/Hash
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id             String             @id @default(uuid())
+  date           String                  // e.g. "2026-04-10"
+  time           String                  // e.g. "17:00"
+  class_id       String
+  subject_id     String
+  video_url      String                  // YouTube URL
+  title          String?                 // Optional title
+  status         String             @default("active")  // active | inactive
+  uploaded_by    String?                 // User ID who uploaded
+  sheet_row_id   String?            @unique             // Google Sheet Row ID/Hash
+  teacher_name   String?
+  description    String?
+  topic          String?
+  chapter        String?
+  notes          String?
+  sync_source_id String?
+  created_at     DateTime           @default(now())
+  updated_at     DateTime           @updatedAt
 
   // Relations
-  class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
-  subject     Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  class_ref      Class              @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  subject        Subject            @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  sync_source    GoogleSheetSource? @relation(fields: [sync_source_id], references: [id], onDelete: SetNull)
 
   @@unique([date, time, class_id, subject_id])
   @@index([class_id, date])
@@ -1026,18 +1034,42 @@ model SubjectAlias {
 }
 
 model GoogleSheetSyncLog {
-  id             String    @id @default(uuid())
-  sync_type      String    @default("video_lectures")
-  start_time     DateTime  @default(now())
+  id             String             @id @default(uuid())
+  sync_type      String             @default("video_lectures")
+  source_id      String?
+  user_id        String?
+  start_time     DateTime           @default(now())
   end_time       DateTime?
-  rows_processed Int       @default(0)
-  rows_created   Int       @default(0)
-  rows_updated   Int       @default(0)
-  rows_deleted   Int       @default(0)
-  status         String    // "success" | "failed"
-  error_message  String?   @db.Text
+  rows_processed Int                @default(0)
+  rows_created   Int                @default(0)
+  rows_updated   Int                @default(0)
+  rows_deleted   Int                @default(0)
+  rows_failed    Int                @default(0)
+  status         String             // "success" | "failed"
+  error_message  String?            @db.Text
+
+  source         GoogleSheetSource? @relation(fields: [source_id], references: [id], onDelete: Cascade)
+  user           User?              @relation(fields: [user_id], references: [id], onDelete: SetNull)
 
   @@map("google_sheet_sync_logs")
+}
+
+model GoogleSheetSource {
+  id               String               @id @default(uuid())
+  name             String
+  spreadsheet_id   String
+  sheet_name       String               @default("Videos")
+  column_mapping   Json                 // Stores column mappings e.g. { "class": "Class", "subject": "Subject", ... }
+  is_enabled       Boolean              @default(true)
+  last_sync        DateTime?
+  last_sync_status String?              // "success" | "failed"
+  created_at       DateTime             @default(now())
+  updated_at       DateTime             @updatedAt
+  
+  sync_logs        GoogleSheetSyncLog[]
+  video_lectures   VideoLecture[]
+
+  @@map("google_sheet_sources")
 }
 
 

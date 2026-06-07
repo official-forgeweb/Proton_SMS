@@ -1,11 +1,7 @@
-/**
- * Highly Optimized, Production-grade Google Sheet Synchronizer
- */
 export declare class GoogleSheetSyncJob {
     /**
-     * Triggers the full database synchronization against the Google Sheet configuration.
-     * Supports a `force` parameter to override the "google_sheets_enabled" toggle (for Manual Sync).
+     * Triggers the dynamic synchronization engine against a source or all active sources.
      */
-    static sync(force?: boolean): Promise<any>;
+    static sync(sourceId?: string, triggeredByUserId?: string): Promise<any>;
 }
 //# sourceMappingURL=googleSheetSyncJob.d.ts.map

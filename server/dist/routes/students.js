@@ -9,6 +9,7 @@ const database_1 = __importDefault(require("../config/database"));
 const auth_1 = require("../middleware/auth");
 const cache_1 = require("../middleware/cache");
 const sendMail_1 = require("../services/mail/sendMail");
+const normalization_1 = require("../utils/normalization");
 const router = (0, express_1.Router)();
 const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 const generateProId = () => `PRO${new Date().getFullYear()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
@@ -62,8 +63,9 @@ router.get('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coordi
             where.academic_status = status;
         // Filter by subject within a batch
         if (class_id && subject) {
+            const subRec = await (0, normalization_1.resolveSubjectRecord)(subject);
             const subjectEnrollments = await database_1.default.studentSubjectEnrollment.findMany({
-                where: { class_id, subject, status: 'active' },
+                where: { class_id, subject_id: subRec.id, status: 'active' },
                 select: { student_id: true },
             });
             const studentIds = subjectEnrollments.map(e => e.student_id);
@@ -419,11 +421,12 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
             if (Array.isArray(subjects) && subjects.length > 0 && allClassIds.length > 0) {
                 // Legacy flat array - apply to first class
                 const targetClassId = class_id || allClassIds[0];
+                const subjectRecords = await Promise.all(subjects.map((subj) => (0, normalization_1.resolveSubjectRecord)(subj)));
                 await database_1.default.studentSubjectEnrollment.createMany({
-                    data: subjects.map((subj) => ({
+                    data: subjectRecords.map(sub => ({
                         student_id: student.id,
                         class_id: targetClassId,
-                        subject: subj,
+                        subject_id: sub.id,
                         enrollment_date: new Date().toISOString(),
                         status: 'active',
                     })),
@@ -434,11 +437,12 @@ router.post('/', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coord
                 // Per-class subject map
                 for (const [cid, subjectList] of Object.entries(subjects)) {
                     if (Array.isArray(subjectList) && subjectList.length > 0) {
+                        const subjectRecords = await Promise.all(subjectList.map((subj) => (0, normalization_1.resolveSubjectRecord)(subj)));
                         await database_1.default.studentSubjectEnrollment.createMany({
-                            data: subjectList.map((subj) => ({
+                            data: subjectRecords.map(sub => ({
                                 student_id: student.id,
                                 class_id: cid,
-                                subject: subj,
+                                subject_id: sub.id,
                                 enrollment_date: new Date().toISOString(),
                                 status: 'active',
                             })),
@@ -521,11 +525,12 @@ router.put('/:id', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 'coo
                 await database_1.default.studentSubjectEnrollment.deleteMany({ where: { student_id: id, class_id: cid } });
                 // Create new ones
                 if (subjectList.length > 0) {
+                    const subjectRecords = await Promise.all(subjectList.map((subj) => (0, normalization_1.resolveSubjectRecord)(subj)));
                     await database_1.default.studentSubjectEnrollment.createMany({
-                        data: subjectList.map((subj) => ({
+                        data: subjectRecords.map(sub => ({
                             student_id: id,
                             class_id: cid,
-                            subject: subj,
+                            subject_id: sub.id,
                             enrollment_date: new Date().toISOString(),
                             status: 'active',
                         })),
@@ -577,11 +582,12 @@ router.post('/:id/enroll', auth_1.authenticateToken, (0, auth_1.authorize)('admi
         });
         // Enroll in specific subjects if provided
         if (subjects && Array.isArray(subjects) && subjects.length > 0) {
+            const subjectRecords = await Promise.all(subjects.map((subj) => (0, normalization_1.resolveSubjectRecord)(subj)));
             await database_1.default.studentSubjectEnrollment.createMany({
-                data: subjects.map((subj) => ({
+                data: subjectRecords.map(sub => ({
                     student_id: student.id,
                     class_id,
-                    subject: subj,
+                    subject_id: sub.id,
                     enrollment_date: new Date().toISOString(),
                     status: 'active',
                 })),
@@ -869,11 +875,12 @@ router.put('/:id/subjects', auth_1.authenticateToken, (0, auth_1.authorize)('adm
         });
         // Create new subject enrollments
         if (subjects.length > 0) {
+            const subjectRecords = await Promise.all(subjects.map((subj) => (0, normalization_1.resolveSubjectRecord)(subj)));
             await database_1.default.studentSubjectEnrollment.createMany({
-                data: subjects.map((subj) => ({
+                data: subjectRecords.map(sub => ({
                     student_id: student.id,
                     class_id,
-                    subject: subj,
+                    subject_id: sub.id,
                     enrollment_date: new Date().toISOString(),
                     status: 'active',
                 })),

@@ -1,1 +1,1 @@
-{"version":3,"file":"googleSheetSyncJob.d.ts","sourceRoot":"","sources":["../../src/jobs/googleSheetSyncJob.ts"],"names":[],"mappings":"AAgKA;;GAEG;AACH,qBAAa,kBAAkB;IAC7B;;;OAGG;WACiB,IAAI,CAAC,KAAK,UAAQ,GAAG,OAAO,CAAC,GAAG,CAAC;CAmTtD"}
+{"version":3,"file":"googleSheetSyncJob.d.ts","sourceRoot":"","sources":["../../src/jobs/googleSheetSyncJob.ts"],"names":[],"mappings":"AA2JA,qBAAa,kBAAkB;IAC7B;;OAEG;WACiB,IAAI,CAAC,QAAQ,CAAC,EAAE,MAAM,EAAE,iBAAiB,CAAC,EAAE,MAAM,GAAG,OAAO,CAAC,GAAG,CAAC;CAqYtF"}

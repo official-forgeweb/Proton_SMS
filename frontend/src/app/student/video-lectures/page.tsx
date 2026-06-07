@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
-import { Video, Search, PlayCircle, X, Clock, ChevronLeft, Folder, Play, Monitor, Calendar, ChevronRight } from 'lucide-react';
+import { Video, Search, PlayCircle, X, Clock, ChevronLeft, Folder, Play, Monitor, Calendar, ChevronRight, ExternalLink } from 'lucide-react';
 
 export default function StudentVideoLecturesPage() {
     const [lectures, setLectures] = useState<any[]>([]);
@@ -791,13 +791,49 @@ export default function StudentVideoLecturesPage() {
                                                         </span>
                                                     </div>
 
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                        <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                            Session Information & Study Guide
-                                                        </h4>
-                                                        <p style={{ margin: 0, color: '#5E6278', fontSize: '14px', lineHeight: 1.6, fontWeight: 400 }}>
-                                                            This recorded session covers the core concepts, practical questions, and class exercises conducted on {new Date(activeLecture.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. Please review the corresponding study materials and homework assignments in your academic lounge. Use this video recording to clarify complex subjects and prep for upcoming assessments.
-                                                        </p>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                                                        {activeLecture.teacher_name && (
+                                                            <div>
+                                                                <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 700, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Instructor</h4>
+                                                                <span style={{ fontSize: '14px', color: '#5E6278', fontWeight: 500 }}>{activeLecture.teacher_name}</span>
+                                                            </div>
+                                                        )}
+                                                        {(activeLecture.chapter || activeLecture.topic) && (
+                                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                                                {activeLecture.chapter && (
+                                                                    <div>
+                                                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 700, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chapter</h4>
+                                                                        <span style={{ fontSize: '14px', color: '#5E6278', fontWeight: 500 }}>{activeLecture.chapter}</span>
+                                                                    </div>
+                                                                )}
+                                                                {activeLecture.topic && (
+                                                                    <div>
+                                                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 700, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Topic</h4>
+                                                                        <span style={{ fontSize: '14px', color: '#5E6278', fontWeight: 500 }}>{activeLecture.topic}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 700, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Session Description</h4>
+                                                            <p style={{ margin: 0, color: '#5E6278', fontSize: '14px', lineHeight: 1.6, fontWeight: 400 }}>
+                                                                {activeLecture.description || `This recorded session covers the core concepts, practical questions, and class exercises conducted on ${new Date(activeLecture.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. Use this video recording to clarify complex subjects and prep for upcoming assessments.`}
+                                                            </p>
+                                                        </div>
+                                                        {activeLecture.notes && (
+                                                            <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                                                                <h4 style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 700, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Study Notes & Resources</h4>
+                                                                <p style={{ margin: 0, color: '#4F60FF', fontSize: '13px', fontWeight: 600 }}>
+                                                                    {activeLecture.notes.startsWith('http') ? (
+                                                                        <a href={activeLecture.notes} target="_blank" rel="noreferrer" style={{ color: '#4F60FF', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                            Access Study Materials <ExternalLink size={12} />
+                                                                        </a>
+                                                                    ) : (
+                                                                        <span style={{ color: '#5E6278', fontWeight: 400 }}>{activeLecture.notes}</span>
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </>

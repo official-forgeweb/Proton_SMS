@@ -33,7 +33,7 @@ router.get('/calendar', auth_1.authenticateToken, async (req, res) => {
             }),
             database_1.default.studentSubjectEnrollment.findMany({
                 where: { student_id: targetStudentId, status: 'active' },
-                select: { class_id: true, subject: true }
+                select: { class_id: true, subject: { select: { canonical_name: true } } }
             })
         ]);
         const classIds = classEnrollments.map(e => e.class_id);
@@ -41,7 +41,7 @@ router.get('/calendar', auth_1.authenticateToken, async (req, res) => {
         subjectEnrollments.forEach(se => {
             if (!enrolledSubjectsByClass[se.class_id])
                 enrolledSubjectsByClass[se.class_id] = [];
-            enrolledSubjectsByClass[se.class_id].push(se.subject.trim().toLowerCase());
+            enrolledSubjectsByClass[se.class_id].push(se.subject.canonical_name.trim().toLowerCase());
         });
         // 2. Fetch all timetable entries and filter by enrollment
         const allSessions = await database_1.default.timetable.findMany({
@@ -51,7 +51,8 @@ router.get('/calendar', auth_1.authenticateToken, async (req, res) => {
             },
             include: {
                 class_ref: { select: { class_name: true } },
-                teacher: { select: { first_name: true, last_name: true } }
+                teacher: { select: { first_name: true, last_name: true } },
+                subject: { select: { canonical_name: true } }
             },
             orderBy: { start_time: 'asc' }
         });
@@ -61,7 +62,7 @@ router.get('/calendar', auth_1.authenticateToken, async (req, res) => {
             // If class has specific subject enrollments, check them. 
             // If not, allow all (some classes might be general/mandatory)
             if (enrolledSubjects.length > 0) {
-                return enrolledSubjects.includes(session.subject.trim().toLowerCase());
+                return enrolledSubjects.includes(session.subject.canonical_name.trim().toLowerCase());
             }
             return true;
         });
@@ -72,14 +73,15 @@ router.get('/calendar', auth_1.authenticateToken, async (req, res) => {
                 test_date: { gte: start_date, lte: end_date }
             },
             include: {
-                results: { where: { student_id: targetStudentId } }
+                results: { where: { student_id: targetStudentId } },
+                subject: { select: { canonical_name: true } }
             }
         });
         // Filter tests by subject enrollment too
         const filteredTests = allTests.filter(test => {
             const enrolledSubjects = enrolledSubjectsByClass[test.class_id] || [];
             if (enrolledSubjects.length > 0 && test.subject) {
-                return enrolledSubjects.includes(test.subject.trim().toLowerCase());
+                return enrolledSubjects.includes(test.subject.canonical_name.trim().toLowerCase());
             }
             return true;
         });
@@ -101,7 +103,7 @@ router.get('/calendar', auth_1.authenticateToken, async (req, res) => {
             calendarData[date].push({
                 id: session.id,
                 type: 'class',
-                subject: session.subject,
+                subject: session.subject.canonical_name,
                 start_time: session.start_time,
                 end_time: session.end_time,
                 teacher_name: session.teacher ? `${session.teacher.first_name} ${session.teacher.last_name}` : 'N/A',
@@ -127,7 +129,7 @@ router.get('/calendar', auth_1.authenticateToken, async (req, res) => {
                 id: test.id,
                 type: 'test',
                 test_name: test.test_name,
-                subject: test.subject,
+                subject: test.subject?.canonical_name || 'General',
                 test_type: test.test_type,
                 start_time: test.start_time,
                 status: testStatus,
@@ -168,7 +170,7 @@ router.get('/stats', auth_1.authenticateToken, async (req, res) => {
             }),
             database_1.default.studentSubjectEnrollment.findMany({
                 where: { student_id: targetStudentId, status: 'active' },
-                select: { class_id: true, subject: true }
+                select: { class_id: true, subject: { select: { canonical_name: true } } }
             })
         ]);
         const classIds = classEnrollments.map(e => e.class_id);
@@ -176,7 +178,7 @@ router.get('/stats', auth_1.authenticateToken, async (req, res) => {
         subjectEnrollments.forEach(se => {
             if (!enrolledSubjectsByClass[se.class_id])
                 enrolledSubjectsByClass[se.class_id] = [];
-            enrolledSubjectsByClass[se.class_id].push(se.subject.trim().toLowerCase());
+            enrolledSubjectsByClass[se.class_id].push(se.subject.canonical_name.trim().toLowerCase());
         });
         // 2. Fetch all PAST scheduled sessions for these classes
         const now = new Date();
@@ -185,6 +187,9 @@ router.get('/stats', auth_1.authenticateToken, async (req, res) => {
             where: {
                 class_id: { in: classIds },
                 date: { lte: todayStr }
+            },
+            include: {
+                subject: { select: { canonical_name: true } }
             },
             orderBy: { date: 'desc' }
         });
@@ -200,7 +205,7 @@ router.get('/stats', auth_1.authenticateToken, async (req, res) => {
             }
             const enrolledSubjects = enrolledSubjectsByClass[session.class_id] || [];
             if (enrolledSubjects.length > 0) {
-                return enrolledSubjects.includes(session.subject.trim().toLowerCase());
+                return enrolledSubjects.includes(session.subject.canonical_name.trim().toLowerCase());
             }
             return true;
         });
@@ -213,7 +218,7 @@ router.get('/stats', auth_1.authenticateToken, async (req, res) => {
         let totalClasses = 0;
         let totalPresent = 0;
         validPastSessions.forEach(session => {
-            const sub = session.subject || 'General';
+            const sub = session.subject.canonical_name || 'General';
             if (!subjectStats[sub])
                 subjectStats[sub] = { total: 0, present: 0 };
             subjectStats[sub].total++;
@@ -257,7 +262,8 @@ router.post('/mark', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 't
             return;
         }
         const session = await database_1.default.timetable.findUnique({
-            where: { id: timetable_id }
+            where: { id: timetable_id },
+            include: { subject: { select: { canonical_name: true } } }
         });
         if (!session) {
             res.status(404).json({ success: false, message: 'Session not found' });
@@ -289,7 +295,7 @@ router.post('/mark', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 't
                         student_id: rec.student_id,
                         class_id: session.class_id,
                         timetable_id: timetable_id,
-                        subject: session.subject,
+                        subject_id: session.subject_id,
                         attendance_date: date || session.date,
                         status: rec.status,
                         marked_by: req.user.id
@@ -321,7 +327,7 @@ router.post('/mark', auth_1.authenticateToken, (0, auth_1.authorize)('admin', 't
                 absent: absentCount,
                 late: lateCount,
                 total: records.length
-            }), `Attendance for ${classInfo?.class_name || 'Class'} on ${date || session.date} (Subject: ${session.subject})`, req);
+            }), `Attendance for ${classInfo?.class_name || 'Class'} on ${date || session.date} (Subject: ${session.subject.canonical_name})`, req);
         }
         res.json({ success: true, message: `Attendance marked for ${savedRecords.length} students`, data: savedRecords });
     }
@@ -337,7 +343,7 @@ router.get('/session/:timetable_id', auth_1.authenticateToken, async (req, res) 
         const { timetable_id } = req.params;
         const session = await database_1.default.timetable.findUnique({
             where: { id: timetable_id },
-            include: { class_ref: true }
+            include: { class_ref: true, subject: { select: { canonical_name: true } } }
         });
         if (!session) {
             res.status(404).json({ success: false, message: 'Session not found' });
@@ -352,7 +358,7 @@ router.get('/session/:timetable_id', auth_1.authenticateToken, async (req, res) 
         const subjectEnrollments = await database_1.default.studentSubjectEnrollment.findMany({
             where: {
                 class_id: session.class_id,
-                subject: { equals: session.subject, mode: 'insensitive' },
+                subject_id: session.subject_id,
                 status: 'active'
             },
             select: { student_id: true }

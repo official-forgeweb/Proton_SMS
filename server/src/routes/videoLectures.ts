@@ -347,17 +347,98 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
   }
 });
 
-// 10. Sync Logs endpoint
+// 10. Sync Logs endpoints (GET /sync-logs)
 router.get('/sync-logs', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const logs = await prisma.googleSheetSyncLog.findMany({
       where: { sync_type: 'video_lectures' },
       orderBy: { start_time: 'desc' },
-      take: 50
+      include: {
+        source: { select: { name: true } },
+        user: { select: { email: true, role: true } }
+      },
+      take: 100
     });
     res.json({ success: true, data: logs });
   } catch (error: any) {
     res.status(500).json({ success: false, message: `Failed to retrieve sync logs: ${error.message}` });
+  }
+});
+
+// Sources CRUD endpoints
+router.get('/sources', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const sources = await prisma.googleSheetSource.findMany({
+      orderBy: { created_at: 'desc' }
+    });
+    res.json({ success: true, data: sources });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to retrieve sources: ${error.message}` });
+  }
+});
+
+router.post('/sources', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { name, spreadsheet_id, sheet_name, column_mapping, is_enabled } = req.body;
+    if (!name || !spreadsheet_id) {
+      res.status(400).json({ success: false, message: 'Name and spreadsheet ID are required' });
+      return;
+    }
+    const source = await prisma.googleSheetSource.create({
+      data: {
+        name,
+        spreadsheet_id,
+        sheet_name: sheet_name || 'Videos',
+        column_mapping: column_mapping || {},
+        is_enabled: is_enabled !== undefined ? is_enabled : true
+      }
+    });
+    res.json({ success: true, data: source });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to create source: ${error.message}` });
+  }
+});
+
+router.post('/sources/:id/sync', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const { GoogleSheetSyncJob } = await import('../jobs/googleSheetSyncJob');
+    const result = await GoogleSheetSyncJob.sync(id, req.user!.id);
+    res.json({ success: true, message: 'Google Sheets synchronization completed successfully.', ...result });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Synchronization failed: ${error.message}` });
+  }
+});
+
+router.put('/sources/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const { name, spreadsheet_id, sheet_name, column_mapping, is_enabled } = req.body;
+    const source = await prisma.googleSheetSource.update({
+      where: { id },
+      data: {
+        name,
+        spreadsheet_id,
+        sheet_name,
+        column_mapping,
+        is_enabled
+      }
+    });
+    res.json({ success: true, data: source });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to update source: ${error.message}` });
+  }
+});
+
+router.delete('/sources/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    await prisma.googleSheetSource.delete({
+      where: { id }
+    });
+    res.json({ success: true, message: 'Source deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to delete source: ${error.message}` });
   }
 });
 
@@ -405,6 +486,68 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
     }
+});
+
+// Sync logs deletion endpoints (must be before DELETE /:id)
+router.delete('/sync-logs/all', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    await prisma.googleSheetSyncLog.deleteMany({
+      where: { sync_type: 'video_lectures' }
+    });
+    res.json({ success: true, message: 'All sync logs cleared successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to clear sync logs: ${error.message}` });
+  }
+});
+
+router.delete('/sync-logs/failed', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    await prisma.googleSheetSyncLog.deleteMany({
+      where: { sync_type: 'video_lectures', status: 'failed' }
+    });
+    res.json({ success: true, message: 'Failed sync logs cleared successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to clear failed sync logs: ${error.message}` });
+  }
+});
+
+router.delete('/sync-logs/success', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    await prisma.googleSheetSyncLog.deleteMany({
+      where: { sync_type: 'video_lectures', status: 'success' }
+    });
+    res.json({ success: true, message: 'Successful sync logs cleared successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to clear successful sync logs: ${error.message}` });
+  }
+});
+
+router.delete('/sync-logs/bulk', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ success: false, message: 'No log IDs provided' });
+      return;
+    }
+    await prisma.googleSheetSyncLog.deleteMany({
+      where: { id: { in: ids }, sync_type: 'video_lectures' }
+    });
+    res.json({ success: true, message: 'Selected sync logs deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to bulk delete sync logs: ${error.message}` });
+  }
+});
+
+router.delete('/sync-logs/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    await prisma.googleSheetSyncLog.delete({
+      where: { id }
+    });
+    res.json({ success: true, message: 'Sync log deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Failed to delete sync log: ${error.message}` });
+  }
 });
 
 // 5. Delete bulk
@@ -462,7 +605,7 @@ router.post('/test-connection', authenticateToken, authorize('admin', 'coordinat
 router.post('/sync', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { GoogleSheetSyncJob } = await import('../jobs/googleSheetSyncJob');
-    const result = await GoogleSheetSyncJob.sync(true); // force = true
+    const result = await GoogleSheetSyncJob.sync(undefined, req.user!.id); // force = true, all active sources
     res.json({ success: true, message: 'Google Sheets synchronization completed successfully.', ...result });
   } catch (error: any) {
     res.status(500).json({ success: false, message: `Synchronization failed: ${error.message}` });
@@ -481,13 +624,11 @@ router.post('/sync/cron', async (req: Request, res: Response): Promise<void> => 
     }
 
     const { GoogleSheetSyncJob } = await import('../jobs/googleSheetSyncJob');
-    const result = await GoogleSheetSyncJob.sync(false); // force = false (respects settings toggles)
+    const result = await GoogleSheetSyncJob.sync(undefined, undefined); // force = false (respects settings toggles)
     res.json({ success: true, message: 'Automated sync job executed successfully.', ...result });
   } catch (error: any) {
     res.status(500).json({ success: false, message: `Automated sync job failed: ${error.message}` });
   }
 });
-
-
 
 export default router;
