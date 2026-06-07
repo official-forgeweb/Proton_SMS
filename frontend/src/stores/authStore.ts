@@ -28,10 +28,37 @@ interface AuthState {
     checkAuth: () => Promise<void>;
 }
 
+// ── Synchronous localStorage hydration ──
+// Read cached auth state ONCE at module load so the very first render
+// of DashboardLayout sees isAuthenticated=true and never shows a spinner.
+function getInitialAuthState() {
+    if (typeof window === 'undefined') {
+        return { user: null, isAuthenticated: false, isLoading: true };
+    }
+    try {
+        const token = localStorage.getItem('accessToken');
+        const savedUser = localStorage.getItem('user');
+        if (token && savedUser) {
+            return {
+                user: JSON.parse(savedUser) as User,
+                isAuthenticated: true,
+                isLoading: false, // No spinner needed — we have a cached session
+            };
+        }
+    } catch {}
+    return {
+        user: null,
+        isAuthenticated: false,
+        isLoading: false, // No token → not loading, just unauthenticated
+    };
+}
+
+const initialState = getInitialAuthState();
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-    user: null,
-    isLoading: true,
-    isAuthenticated: false,
+    user: initialState.user,
+    isLoading: initialState.isLoading,
+    isAuthenticated: initialState.isAuthenticated,
     serverError: false,
 
     login: async (email: string, password: string, proId?: string) => {
@@ -111,3 +138,4 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
     },
 }));
+

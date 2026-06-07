@@ -215,7 +215,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
         setRetrying(false);
     }, [checkAuth]);
 
-    if (isLoading) {
+    if (!mounted || isLoading) {
         return (
             <div 
                 suppressHydrationWarning
