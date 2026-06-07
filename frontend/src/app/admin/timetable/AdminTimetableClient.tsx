@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -74,6 +74,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
     const [classes, setClasses] = useState<any[]>(initialClasses);
     const [teachers, setTeachers] = useState<any[]>(initialTeachers);
     const [isLoading, setIsLoading] = useState(false);
+    const isFirstMount = useRef(true);
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
         setMounted(true);
@@ -132,6 +133,10 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
     }, [weekDates]);
 
     useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
         fetchTimetable();
     }, [fetchTimetable]);
 

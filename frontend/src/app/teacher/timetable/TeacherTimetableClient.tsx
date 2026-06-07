@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -71,6 +71,7 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
     const [timetable, setTimetable] = useState<any[]>(initialTimetable);
     const [classes, setClasses] = useState<any[]>(initialClasses);
     const [isLoading, setIsLoading] = useState(false);
+    const isFirstMount = useRef(true);
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
         setMounted(true);
@@ -122,6 +123,10 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
     }, [weekDates]);
 
     useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
         fetchTimetableIfNeeded();
     }, [fetchTimetableIfNeeded]);
 
