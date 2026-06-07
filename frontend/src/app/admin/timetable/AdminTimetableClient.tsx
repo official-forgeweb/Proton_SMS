@@ -909,7 +909,33 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                                     />
                                 </div>
                             </div>
-                            <button className="btn-primary" style={{ width: '100%', padding: '14px', marginTop: '10px' }}>
+                            <button
+                                style={{
+                                    width: '100%',
+                                    padding: '14px',
+                                    marginTop: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '14px',
+                                    fontWeight: 700,
+                                    fontSize: '14px',
+                                    boxShadow: '0 4px 15px rgba(229, 57, 53, 0.3)',
+                                    transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                    cursor: 'pointer'
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(229, 57, 53, 0.4)';
+                                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(229, 57, 53, 0.3)';
+                                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                }}
+                            >
                                 {editingEntry ? 'Update Schedule' : 'Create Schedule'}
                             </button>
                         </form>
@@ -968,7 +994,39 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                                     </div>
                                 </div>
                             </div>
-                            <button disabled={isGenerating} className="btn-primary" style={{ width: '100%', padding: '14px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                            <button
+                                disabled={isGenerating}
+                                style={{
+                                    width: '100%',
+                                    padding: '14px',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '14px',
+                                    fontWeight: 700,
+                                    fontSize: '14px',
+                                    boxShadow: '0 4px 15px rgba(229, 57, 53, 0.3)',
+                                    transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                    cursor: isGenerating ? 'not-allowed' : 'pointer',
+                                    opacity: isGenerating ? 0.8 : 1
+                                }}
+                                onMouseEnter={e => {
+                                    if (!isGenerating) {
+                                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(229, 57, 53, 0.4)';
+                                        e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                                    }
+                                }}
+                                onMouseLeave={e => {
+                                    if (!isGenerating) {
+                                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(229, 57, 53, 0.3)';
+                                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                    }
+                                }}
+                            >
                                 {isGenerating ? 'Generating...' : <><Calendar size={18} /> Generate Schedule</>}
                             </button>
                         </form>

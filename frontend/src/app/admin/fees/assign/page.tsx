@@ -208,6 +208,9 @@ export default function AssignFeePage() {
                         border-color: #3B82F6 !important;
                         box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12) !important;
                     }
+                    .form-input-with-icon {
+                        padding-left: 36px !important;
+                    }
                     select.form-input {
                         appearance: none !important;
                         background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
@@ -403,21 +406,21 @@ export default function AssignFeePage() {
                                         <label className="form-label">Tuition Fee *</label>
                                         <div style={{ position: 'relative' }}>
                                             <IndianRupee size={14} color="#64748B" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 10 }} />
-                                            <input type="number" required min={0} className="form-input" style={{ paddingLeft: '36px' }} value={totalFee || ''} onChange={e => setTotalFee(Number(e.target.value))} placeholder="e.g. 40000" />
+                                            <input type="number" required min={0} className="form-input form-input-with-icon" style={{ paddingLeft: '36px' }} value={totalFee || ''} onChange={e => setTotalFee(Number(e.target.value))} placeholder="e.g. 40000" />
                                         </div>
                                     </div>
                                     <div>
                                         <label className="form-label">Admission Fee</label>
                                         <div style={{ position: 'relative' }}>
                                             <IndianRupee size={14} color="#64748B" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 10 }} />
-                                            <input type="number" min={0} className="form-input" style={{ paddingLeft: '36px' }} value={admissionFee || ''} onChange={e => setAdmissionFee(Number(e.target.value))} placeholder="e.g. 5000" />
+                                            <input type="number" min={0} className="form-input form-input-with-icon" style={{ paddingLeft: '36px' }} value={admissionFee || ''} onChange={e => setAdmissionFee(Number(e.target.value))} placeholder="e.g. 5000" />
                                         </div>
                                     </div>
                                     <div>
                                         <label className="form-label">Registration Fee</label>
                                         <div style={{ position: 'relative' }}>
                                             <IndianRupee size={14} color="#64748B" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 10 }} />
-                                            <input type="number" min={0} className="form-input" style={{ paddingLeft: '36px' }} value={registrationFee || ''} onChange={e => setRegistrationFee(Number(e.target.value))} placeholder="e.g. 2000" />
+                                            <input type="number" min={0} className="form-input form-input-with-icon" style={{ paddingLeft: '36px' }} value={registrationFee || ''} onChange={e => setRegistrationFee(Number(e.target.value))} placeholder="e.g. 2000" />
                                         </div>
                                     </div>
                                 </div>

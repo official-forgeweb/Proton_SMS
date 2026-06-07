@@ -407,17 +407,39 @@ export default function LedgerPageClient({ assignmentId, role }: LedgerPageClien
                     </button>
 
                     <button 
-                        onClick={() => router.push(`/${role}/fees/pay?student_id=${assignment.student_id}`)}
-                        style={{ 
-                            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', color: 'white', border: 'none',
-                            borderRadius: '14px', padding: '10px 20px', fontSize: '13px',
-                            fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px',
-                            cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(16,185,129,0.2)'
+                        onClick={() => {
+                            if ((assignment.total_pending || 0) > 0) {
+                                router.push(`/${role}/fees/pay?student_id=${assignment.student_id}`);
+                            }
                         }}
-                        onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-                        onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+                        disabled={(assignment.total_pending || 0) <= 0}
+                        style={{ 
+                            background: (assignment.total_pending || 0) <= 0 ? '#E2E8F0' : 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                            color: (assignment.total_pending || 0) <= 0 ? '#94A3B8' : 'white',
+                            border: 'none',
+                            borderRadius: '14px',
+                            padding: '10px 20px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: (assignment.total_pending || 0) <= 0 ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: (assignment.total_pending || 0) <= 0 ? 'none' : '0 4px 12px rgba(16,185,129,0.2)'
+                        }}
+                        onMouseEnter={e => {
+                            if ((assignment.total_pending || 0) > 0) {
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                            }
+                        }}
+                        onMouseLeave={e => {
+                            if ((assignment.total_pending || 0) > 0) {
+                                e.currentTarget.style.transform = 'none';
+                            }
+                        }}
                     >
-                        <CreditCard size={15} /> Collect Dues
+                        <CreditCard size={15} /> {(assignment.total_pending || 0) <= 0 ? 'No Dues Outstanding' : 'Collect Dues'}
                     </button>
 
                     <button 

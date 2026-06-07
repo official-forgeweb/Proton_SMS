@@ -101,7 +101,7 @@ export default function RecordPaymentPage() {
                                     setFormData({ ...formData, student_id: e.target.value, amount_paid: assignment ? assignment.total_pending : 0 });
                                 }}>
                                     <option value="">Select Account...</option>
-                                    {assignments.filter(a => a.total_pending > 0).map(a => (
+                                    {assignments.filter(a => a.total_pending > 0 || a.student_id === queryStudentId).map(a => (
                                         <option key={a.id} value={a.student_id}>
                                             {a.student_name} ({a.pro_id.toUpperCase()}) — Dues: ₹{a.total_pending.toLocaleString()}
                                         </option>
@@ -123,7 +123,7 @@ export default function RecordPaymentPage() {
                                     </label>
                                     <div style={{ position: 'relative' }}>
                                         <IndianRupee size={16} color="#A1A5B7" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-                                        <input type="number" required min={1} className="form-input" style={{ paddingLeft: '44px', width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '14px' }} value={formData.amount_paid || ''} onChange={e => setFormData({ ...formData, amount_paid: Number(e.target.value) })} placeholder="Enter received amount" />
+                                        <input type="number" required min={1} className="form-input" style={{ padding: '12px 12px 12px 44px', width: '100%', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '14px' }} value={formData.amount_paid || ''} onChange={e => setFormData({ ...formData, amount_paid: Number(e.target.value) })} placeholder="Enter received amount" />
                                     </div>
                                 </div>
                                 
