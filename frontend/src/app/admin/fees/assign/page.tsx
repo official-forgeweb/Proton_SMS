@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 
 export default function AssignFeePage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { user } = useAuthStore();
     
     const [students, setStudents] = useState<any[]>([]);
@@ -44,18 +45,38 @@ export default function AssignFeePage() {
     // Live installment list
     const [installments, setInstallments] = useState<any[]>([]);
     
+    const queryStudentId = searchParams.get('student_id') || '';
+
     // Load initial data
     useEffect(() => {
         Promise.all([
             api.get('/students'),
             api.get('/fees/assignments'),
             api.get('/fees/structures')
-        ]).then(([studentsRes, assignmentsRes, structuresRes]) => {
-            setStudents(studentsRes.data.data || []);
-            setAssignments(assignmentsRes.data.data || []);
+        ]).then(async ([studentsRes, assignmentsRes, structuresRes]) => {
+            let studentsList = studentsRes.data.data || [];
+            const assignmentsList = assignmentsRes.data.data || [];
+            
+            if (queryStudentId && !studentsList.some((s: any) => s.id === queryStudentId)) {
+                try {
+                    const studentRes = await api.get(`/students/${queryStudentId}`);
+                    if (studentRes.data.success && studentRes.data.data) {
+                        studentsList = [studentRes.data.data, ...studentsList];
+                    }
+                } catch (err) {
+                    console.error('Error fetching preselected student details:', err);
+                }
+            }
+            
+            setStudents(studentsList);
+            setAssignments(assignmentsList);
             setStructures(structuresRes.data.data || []);
+            
+            if (queryStudentId) {
+                setSelectedStudent(queryStudentId);
+            }
         }).catch(console.error).finally(() => setIsLoading(false));
-    }, []);
+    }, [queryStudentId]);
 
     // Calculate live net payable fee
     const calculatedDiscountAmount = discountPercentage > 0 ? (totalFee * discountPercentage) / 100 : discountAmount;

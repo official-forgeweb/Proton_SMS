@@ -10,6 +10,7 @@ import {
     Search, Filter, AlertTriangle, ArrowUpDown, CreditCard, Landmark, Coins, ShieldCheck, Trophy, MessageSquare
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/authStore';
 import StudentAttendanceCalendar from '@/components/StudentAttendanceCalendar';
 import StudentProfileEnquiries from '@/components/StudentProfileEnquiries';
 import ResponsivePageContainer from '@/components/ui/ResponsivePageContainer';
@@ -21,6 +22,8 @@ import ResponsiveModal from '@/components/ui/ResponsiveModal';
 export default function StudentProfilePage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuthStore();
+    const role = user?.role || 'admin';
     const [student, setStudent] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
@@ -335,6 +338,51 @@ export default function StudentProfilePage() {
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
+                        {feeInfo && (
+                            feeInfo.assignment ? (
+                                <button
+                                    onClick={() => router.push(`/${role}/fees/pay?student_id=${params.id}`)}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #10B981 0%, #047857 100%)',
+                                        border: 'none', color: 'white', padding: '10px 18px', borderRadius: '12px',
+                                        fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                        gap: '6px', fontSize: '13px', transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                        boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(16, 185, 129, 0.4)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)';
+                                    }}
+                                >
+                                    <CreditCard size={15} /> Collect Fee
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => router.push(`/${role}/fees/assign?student_id=${params.id}`)}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+                                        border: 'none', color: 'white', padding: '10px 18px', borderRadius: '12px',
+                                        fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                        gap: '6px', fontSize: '13px', transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                        boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.4)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.3)';
+                                    }}
+                                >
+                                    <Coins size={15} /> Assign Fee
+                                </button>
+                            )
+                        )}
                         <button
                             onClick={() => router.push(`/admin/students/${params.id}/edit`)}
                             style={{
@@ -356,7 +404,7 @@ export default function StudentProfilePage() {
                             <Edit2 size={15} /> Edit Student
                         </button>
                         <button
-                            onClick={() => router.push('/admin/students')}
+                            onClick={() => router.push(`/${role}/students`)}
                             style={{
                                 background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
                                 color: 'white', padding: '10px 18px', borderRadius: '12px', fontWeight: 700,
