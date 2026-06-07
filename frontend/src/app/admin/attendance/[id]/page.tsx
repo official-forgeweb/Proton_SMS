@@ -74,7 +74,7 @@ export default function AdminSessionAttendancePage() {
 
     return (
         <DashboardLayout requiredRole="admin">
-            <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ padding: '24px', width: '100%' }}>
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
                     <div>
