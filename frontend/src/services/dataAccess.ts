@@ -123,22 +123,27 @@ export interface AdminDashboardData {
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   return useCache('admin_dashboard_ssr', 60000, async () => {
     return withRetry(async () => {
-      // Split into smaller batches of 4 to prevent Prisma connection pool timeouts
-      const [totalStudents, activeStudents, totalTeachers, activeTeachers] = await Promise.all([
+      // Parallelize all queries into a single Promise.all block to optimize database throughput and reduce network roundtrips
+      const [
+        totalStudents, activeStudents,
+        totalTeachers, activeTeachers,
+        totalClasses, activeClasses,
+        totalEnquiries, newEnquiries,
+        totalDemos, completedDemos,
+        revenueAgg, pendingAgg,
+        recentStudents, recentPayments, recentEnquiries,
+        upcomingTestsCount, todayPresent, todayAbsent,
+        totalAttendanceCount, totalPresentCount, totalTestScore, totalTestCount,
+        totalCoordinators, activeCoordinators, upcomingInstallmentsCount
+      ] = await Promise.all([
         prisma.student.count(),
         prisma.student.count({ where: { academic_status: 'active' } }),
         prisma.teacher.count(),
         prisma.teacher.count({ where: { employment_status: 'active' } }),
-      ]);
-
-      const [totalClasses, activeClasses, totalEnquiries, newEnquiries] = await Promise.all([
         prisma.class.count(),
         prisma.class.count({ where: { status: 'ongoing' } }),
         prisma.enquiry.count(),
         prisma.enquiry.count({ where: { status: 'new' } }),
-      ]);
-
-      const [totalDemos, completedDemos, revenueAgg, pendingAgg] = await Promise.all([
         prisma.demoClass.count(),
         prisma.demoClass.count({ where: { status: 'completed' } }),
         prisma.feePayment.aggregate({
@@ -148,9 +153,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         prisma.studentFeeAssignment.aggregate({
           _sum: { total_pending: true },
         }),
-      ]);
-
-      const [recentStudents, recentPayments, recentEnquiries] = await Promise.all([
         prisma.student.findMany({ orderBy: { created_at: 'desc' }, take: 5 }),
         prisma.feePayment.findMany({
           orderBy: { created_at: 'desc' },
@@ -158,22 +160,13 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
           include: { student: true },
         }),
         prisma.enquiry.findMany({ orderBy: { created_at: 'desc' }, take: 5 }),
-      ]);
-
-      const [upcomingTestsCount, todayPresent, todayAbsent] = await Promise.all([
         prisma.test.count({ where: { test_date: { gt: new Date().toISOString().split('T')[0] } } }),
         prisma.attendance.count({ where: { attendance_date: new Date().toISOString().split('T')[0], status: 'present' } }),
         prisma.attendance.count({ where: { attendance_date: new Date().toISOString().split('T')[0], status: 'absent' } }),
-      ]);
-
-      const [totalAttendanceCount, totalPresentCount, totalTestScore, totalTestCount] = await Promise.all([
         prisma.attendance.count(),
         prisma.attendance.count({ where: { status: 'present' } }),
         prisma.testResult.aggregate({ _sum: { percentage: true } }),
         prisma.testResult.count(),
-      ]);
-
-      const [totalCoordinators, activeCoordinators, upcomingInstallmentsCount] = await Promise.all([
         prisma.coordinator.count(),
         prisma.coordinator.count({ where: { status: 'active' } }),
         prisma.feeInstallment.count({
@@ -425,33 +418,36 @@ export interface TimetableFilters {
 }
 
 export async function getTimetableData(filters: TimetableFilters = {}) {
-  return withRetry(async () => {
-    const where: any = {};
-    if (filters.class_id) where.class_id = filters.class_id;
-    if (filters.start_date && filters.end_date) {
-      where.date = { gte: filters.start_date, lte: filters.end_date };
-    }
+  const cacheKey = `timetable_data_${filters.class_id || 'all'}_${filters.start_date || 'none'}_${filters.end_date || 'none'}`;
+  return useCache(cacheKey, 30000, async () => {
+    return withRetry(async () => {
+      const where: any = {};
+      if (filters.class_id) where.class_id = filters.class_id;
+      if (filters.start_date && filters.end_date) {
+        where.date = { gte: filters.start_date, lte: filters.end_date };
+      }
 
-    const [timetable, classes, teachers] = await Promise.all([
-      prisma.timetable.findMany({
-        where,
-        orderBy: [{ date: 'asc' }, { start_time: 'asc' }],
-        include: {
-          class_ref: { select: { class_name: true, class_code: true } },
-          teacher: { select: { first_name: true, last_name: true } },
-        },
-      }),
-      prisma.class.findMany({
-        where: { status: 'ongoing' },
-        include: { schedule: { include: { teacher: true } } },
-      }),
-      prisma.teacher.findMany({
-        where: { employment_status: 'active' },
-        select: { id: true, first_name: true, last_name: true },
-      }),
-    ]);
+      const [timetable, classes, teachers] = await Promise.all([
+        prisma.timetable.findMany({
+          where,
+          orderBy: [{ date: 'asc' }, { start_time: 'asc' }],
+          include: {
+            class_ref: { select: { class_name: true, class_code: true } },
+            teacher: { select: { first_name: true, last_name: true } },
+          },
+        }),
+        prisma.class.findMany({
+          where: { status: 'ongoing' },
+          include: { schedule: { include: { teacher: true } } },
+        }),
+        prisma.teacher.findMany({
+          where: { employment_status: 'active' },
+          select: { id: true, first_name: true, last_name: true },
+        }),
+      ]);
 
-    return { timetable, classes, teachers };
+      return { timetable, classes, teachers };
+    });
   });
 }
 
@@ -776,7 +772,16 @@ export async function getFeesPageData(): Promise<FeesPageData> {
           _sum: { total_pending: true },
         }),
         prisma.studentFeeAssignment.findMany({
-          include: { student: true },
+          include: {
+            student: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                PRO_ID: true
+              }
+            }
+          },
         }),
       ]);
 
@@ -821,38 +826,40 @@ export async function getFeesPageData(): Promise<FeesPageData> {
 
 async function getStudentsList(where: any) {
   return withRetry(async () => {
-    const total = await prisma.student.count({ where });
-    const students = await prisma.student.findMany({
-      where,
-      take: 20,
-      select: {
-        id: true, PRO_ID: true, first_name: true, last_name: true,
-        email: true, phone: true, gender: true, academic_status: true,
-        fee_assignments: {
-          take: 1,
-          select: { payment_status: true, final_fee: true, total_paid: true },
-        },
-        class_enrollments: {
-          where: { enrollment_status: 'active' },
-          select: {
-            overall_attendance_percentage: true,
-            class: { select: { id: true, class_name: true, class_code: true } },
+    const [total, students] = await Promise.all([
+      prisma.student.count({ where }),
+      prisma.student.findMany({
+        where,
+        take: 20,
+        select: {
+          id: true, PRO_ID: true, first_name: true, last_name: true,
+          email: true, phone: true, gender: true, academic_status: true,
+          fee_assignments: {
+            take: 1,
+            select: { payment_status: true, final_fee: true, total_paid: true },
           },
-        },
-        subject_enrollments: {
-          where: { status: 'active' },
-          select: {
-            subject: { select: { canonical_name: true } },
-            class_id: true,
-            status: true
+          class_enrollments: {
+            where: { enrollment_status: 'active' },
+            select: {
+              overall_attendance_percentage: true,
+              class: { select: { id: true, class_name: true, class_code: true } },
+            },
           },
+          subject_enrollments: {
+            where: { status: 'active' },
+            select: {
+              subject: { select: { canonical_name: true } },
+              class_id: true,
+              status: true
+            },
+          },
+          test_results: {
+            select: { percentage: true },
+          },
+          created_at: true,
         },
-        test_results: {
-          select: { percentage: true },
-        },
-        created_at: true,
-      },
-    });
+      })
+    ]);
 
     const enrichedStudents = students.map(s => ({
       id: s.id, PRO_ID: s.PRO_ID, first_name: s.first_name, last_name: s.last_name,
@@ -880,10 +887,12 @@ async function getStudentsList(where: any) {
 export async function getAdminStudentsData() {
   return useCache('admin_students_data', 60000, async () => {
     return withRetry(async () => {
-      const classes = await prisma.class.findMany({
-        select: { id: true, class_name: true, class_code: true, schedule: true }
-      });
-      const studentsRes = await getStudentsList({});
+      const [classes, studentsRes] = await Promise.all([
+        prisma.class.findMany({
+          select: { id: true, class_name: true, class_code: true, schedule: true }
+        }),
+        getStudentsList({})
+      ]);
       return {
         classes,
         students: studentsRes.data,

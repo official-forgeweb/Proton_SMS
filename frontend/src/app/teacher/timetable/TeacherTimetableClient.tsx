@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import ClassSubjectSelector from '@/components/ClassSubjectSelector';
@@ -69,6 +70,10 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
     const [timetable, setTimetable] = useState<any[]>(initialTimetable);
     const [classes, setClasses] = useState<any[]>(initialClasses);
     const [isLoading, setIsLoading] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     const [showModal, setShowModal] = useState(false);
     const [editingEntry, setEditingEntry] = useState<any>(null);
 
@@ -663,7 +668,7 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
             </div>
 
             {/* ── Modal for adding/editing ── */}
-            {showModal && (
+            {mounted && showModal && createPortal(
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(11,15,35,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px', backdropFilter: 'blur(8px)' }}>
                     <div className="tt-float" style={{ background: '#FFFFFF', width: '100%', maxWidth: '600px', borderRadius: '32px', padding: '40px', position: 'relative', boxShadow: '0 24px 60px rgba(0,0,0,0.15)', border: '1px solid rgba(229, 57, 53, 0.08)', animation: 'modal-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
                         <button onClick={() => setShowModal(false)} style={{ position: 'absolute', top: '28px', right: '28px', background: 'var(--bg-secondary)', border: 'none', cursor: 'pointer', borderRadius: '14px', width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.25s' }}
@@ -755,7 +760,8 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                             </button>
                         </form>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

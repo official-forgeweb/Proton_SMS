@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
@@ -72,6 +73,10 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
     const [classes, setClasses] = useState<any[]>(initialClasses);
     const [teachers, setTeachers] = useState<any[]>(initialTeachers);
     const [isLoading, setIsLoading] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     const [showModal, setShowModal] = useState(false);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -788,7 +793,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
             </div>
 
             {/* Schedule Modal */}
-            {showModal && (
+            {mounted && showModal && createPortal(
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
                     <div style={{ background: '#FFFFFF', width: '100%', maxWidth: '540px', borderRadius: '24px', padding: '32px', position: 'relative' }}>
                         <button onClick={() => setShowModal(false)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -909,11 +914,12 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                             </button>
                         </form>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Auto-Generate Modal */}
-            {showGenerateModal && (
+            {mounted && showGenerateModal && createPortal(
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
                     <div style={{ background: '#FFFFFF', width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '32px', position: 'relative' }}>
                         <button onClick={() => setShowGenerateModal(false)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -967,11 +973,12 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                             </button>
                         </form>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Success Modal */}
-            {generateSuccessMsg && (
+            {mounted && generateSuccessMsg && createPortal(
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
                     <div className="animate-fade-in" style={{ background: '#FFFFFF', width: '100%', maxWidth: '400px', borderRadius: '24px', padding: '32px', textAlign: 'center', position: 'relative', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
                         <div style={{ width: '64px', height: '64px', background: '#DCFCE7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
@@ -987,7 +994,8 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                             Done
                         </button>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );
