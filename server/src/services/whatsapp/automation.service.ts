@@ -164,9 +164,9 @@ export async function onTimetableCreated(timetable: any) {
     const weekDates = timetable.date;
 
     const queueMessages = enrollments
-      .filter((e) => e.student && (e.student.phone || e.student.father_phone))
+      .filter((e) => e.student && (e.student.phone || (e.student as any).father_phone))
       .map((e) => {
-        const student = e.student;
+        const student = e.student as any;
         const name = getStudentName(student);
         const destPhone = student.phone || student.father_phone || '';
         return {
@@ -249,9 +249,9 @@ export async function onTestScheduled(test: any) {
     const room = 'Examination Hall';
 
     const queueMessages = enrollments
-      .filter((e) => e.student && (e.student.phone || e.student.father_phone))
+      .filter((e) => e.student && (e.student.phone || (e.student as any).father_phone))
       .map((e) => {
-        const student = e.student;
+        const student = e.student as any;
         const name = getStudentName(student);
         const destPhone = student.phone || student.father_phone || '';
         return {
@@ -383,9 +383,9 @@ export async function scheduledFeeReminder() {
     });
 
     const queueMessages = outstandingPayments
-      .filter((fa) => fa.student && (fa.student.phone || fa.student.father_phone))
+      .filter((fa) => fa.student && (fa.student.phone || (fa.student as any).father_phone))
       .map((fa) => {
-        const student = fa.student;
+        const student = fa.student as any;
         const name = getStudentName(student);
         const phone = student.phone || student.father_phone || '';
         
@@ -461,7 +461,7 @@ export async function scheduledClassReminder() {
 
       const enrollments = session.class_ref?.student_enrollments || [];
       enrollments.forEach((enrollment) => {
-        const student = enrollment.student;
+        const student = enrollment.student as any;
         if (student && (student.phone || student.father_phone)) {
           const name = getStudentName(student);
           const phone = student.phone || student.father_phone || '';

@@ -26,21 +26,21 @@ export default function WhatsAppDashboard() {
       label: 'Send Message', 
       href: '/dashboard/whatsapp/send', 
       icon: Send, 
-      style: { background: 'var(--gradient-primary)', color: 'white', border: 'none' },
+      style: { background: 'var(--gradient-primary)', color: 'white', borderStyle: 'none' },
       hoverStyle: { opacity: 0.9, transform: 'translateY(-1px)' }
     },
     { 
       label: 'Message Logs', 
       href: '/dashboard/whatsapp/logs', 
       icon: Clock, 
-      style: { background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' },
+      style: { background: 'var(--bg-primary)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' },
       hoverStyle: { background: 'var(--bg-secondary)', color: 'var(--primary)', borderColor: 'var(--primary-100)' }
     },
     { 
       label: 'API Settings', 
       href: '/dashboard/whatsapp/settings', 
       icon: SettingsIcon, 
-      style: { background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' },
+      style: { background: 'var(--bg-primary)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' },
       hoverStyle: { background: 'var(--bg-secondary)', color: 'var(--primary)', borderColor: 'var(--primary-100)' }
     },
   ];
@@ -156,7 +156,7 @@ export default function WhatsAppDashboard() {
                       textDecoration: 'none',
                       transition: 'all 0.2s ease',
                       cursor: 'pointer',
-                      boxShadow: isHovered && act.style.border === 'none' ? '0 4px 12px rgba(229, 57, 53, 0.25)' : 'none',
+                      boxShadow: isHovered && act.style.borderStyle === 'none' ? '0 4px 12px rgba(229, 57, 53, 0.25)' : 'none',
                       ...act.style,
                       ...(isHovered ? act.hoverStyle : {})
                     }}

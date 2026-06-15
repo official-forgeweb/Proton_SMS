@@ -70,11 +70,11 @@ router.get('/meta-status', async (req: Request, res: Response): Promise<void> =>
     if (resMeta.ok) {
       res.json({ success: true, status: 'OPERATIONAL', latency: `${latency}ms` });
     } else {
-      const errorJson = await resMeta.json().catch(() => ({}));
+      const errorJson = (await resMeta.json().catch(() => ({}))) as any;
       res.status(resMeta.status).json({
         success: false,
         status: 'DEGRADED',
-        error: errorJson.error?.message || 'Meta API responded with error status',
+        error: errorJson?.error?.message || 'Meta API responded with error status',
       });
     }
   } catch (error: any) {

@@ -159,7 +159,7 @@ export async function pushTemplateToMeta(templateId: string) {
       const headerMatches = template.header_content.match(/\{\{\d+\}\}/g) || [];
       if (headerMatches.length > 0) {
         headerComp.example = {
-          header_text: [template.sample_values?.[0] || 'Example Header'],
+          header_text: [(template.sample_values as any)?.[0] || 'Example Header'],
         };
       }
     }
@@ -229,7 +229,7 @@ export async function pushTemplateToMeta(templateId: string) {
   };
 
   try {
-    const metaResponse = await createTemplateOnMeta(metaPayload);
+    const metaResponse = (await createTemplateOnMeta(metaPayload)) as any;
     
     // Update local sync status
     await prisma.whatsAppTemplate.update({
@@ -372,7 +372,7 @@ export async function syncAllFromMeta() {
             header_content: headerContent || null,
             body_text: bodyText || '[Synced template body missing]',
             footer_text: footerText || null,
-            buttons: buttons.length > 0 ? buttons : null,
+            buttons: buttons.length > 0 ? (buttons as any) : undefined,
             sync_status: 'SYNCED',
             rejection_reason: metaTmpl.reason || null,
           },

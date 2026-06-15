@@ -209,13 +209,13 @@ router.get('/export', async (req: Request, res: Response): Promise<void> => {
 // GET /api/whatsapp/logs/:id -> Get single log detail
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
-    const log = await prisma.whatsAppLog.findUnique({
+    const id = req.params.id as string;
+    const log = (await prisma.whatsAppLog.findUnique({
       where: { id },
       include: {
         template: true,
       },
-    });
+    })) as any;
 
     if (!log) {
       res.status(404).json({ success: false, message: 'Log record not found' });
@@ -231,12 +231,12 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 // POST /api/whatsapp/logs/:id/resend -> Resend a failed message
 router.post('/:id/resend', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
-    const log = await prisma.whatsAppLog.findUnique({
+    const log = (await prisma.whatsAppLog.findUnique({
       where: { id },
       include: { template: true },
-    });
+    })) as any;
 
     if (!log) {
       res.status(404).json({ success: false, message: 'Log record not found' });

@@ -8,6 +8,7 @@ import {
 import { addToQueue } from '../../services/whatsapp/queue.service';
 import { generatePreview } from '../../services/whatsapp/template.service';
 import prisma from '../../config/database';
+import { env } from '../../config/env';
 
 const router = Router();
 
@@ -142,7 +143,7 @@ router.post('/test', async (req: Request, res: Response): Promise<void> => {
     const testResult = await sendTemplateMessage(
       phone,
       'welcome_student',
-      ['Test User', 'test@proton.com', 'ProtonTestPass1', CLIENT_PORTAL_URL],
+      ['Test User', 'test@proton.com', 'ProtonTestPass1', env.CLIENT_URL],
       {
         recipientName: 'Test Admin User',
         recipientType: 'CUSTOM',
@@ -190,7 +191,7 @@ router.get('/preview', async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    const previewHtml = generatePreview(template, parsedVars);
+    const previewHtml = generatePreview(template as any, parsedVars);
 
     res.json({ success: true, data: previewHtml });
   } catch (error: any) {

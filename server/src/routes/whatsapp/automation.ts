@@ -66,7 +66,7 @@ router.post('/rules', async (req: Request, res: Response): Promise<void> => {
 // PUT /api/whatsapp/automation/rules/:id -> Update rule
 router.put('/rules/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { name, trigger_event, template_id, target_group, conditions, cron_schedule, is_active } = req.body;
 
     const updated = await prisma.whatsAppAutomationRule.update({
@@ -91,7 +91,7 @@ router.put('/rules/:id', async (req: Request, res: Response): Promise<void> => {
 // DELETE /api/whatsapp/automation/rules/:id -> Delete rule
 router.delete('/rules/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await prisma.whatsAppAutomationRule.delete({ where: { id } });
     res.json({ success: true, message: 'Automation rule deleted successfully' });
   } catch (error: any) {
@@ -102,7 +102,7 @@ router.delete('/rules/:id', async (req: Request, res: Response): Promise<void> =
 // POST /api/whatsapp/automation/rules/:id/toggle -> Enable/disable rule
 router.post('/rules/:id/toggle', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { is_active } = req.body;
 
     if (is_active === undefined) {
@@ -128,7 +128,7 @@ router.post('/rules/:id/toggle', async (req: Request, res: Response): Promise<vo
 // POST /api/whatsapp/automation/rules/:id/test -> Test rule with sample data
 router.post('/rules/:id/test', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const rule = await prisma.whatsAppAutomationRule.findUnique({
       where: { id },
       include: { template: true },

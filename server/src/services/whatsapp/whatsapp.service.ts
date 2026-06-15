@@ -233,7 +233,7 @@ export async function sendTemplateMessage(
   try {
     const url = `${config.apiBaseUrl}/${config.apiVersion}/${config.phoneNumberId}/messages`;
     
-    const response = await retryWithBackoff(async () => {
+    const response = (await retryWithBackoff(async () => {
       const res = await fetch(url, {
         method: 'POST',
         headers: {
@@ -243,12 +243,12 @@ export async function sendTemplateMessage(
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json();
+      const json = (await res.json()) as any;
       if (!res.ok) {
         throw { status: res.status, data: json };
       }
       return json;
-    }, 3, 1000);
+    }, 3, 1000)) as any;
 
     const metaMessageId = response.messages?.[0]?.id;
 
@@ -347,7 +347,7 @@ export async function sendTextMessage(phone: string, text: string, meta: Message
 
   try {
     const url = `${config.apiBaseUrl}/${config.apiVersion}/${config.phoneNumberId}/messages`;
-    const response = await retryWithBackoff(async () => {
+    const response = (await retryWithBackoff(async () => {
       const res = await fetch(url, {
         method: 'POST',
         headers: {
@@ -357,12 +357,12 @@ export async function sendTextMessage(phone: string, text: string, meta: Message
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json();
+      const json = (await res.json()) as any;
       if (!res.ok) {
         throw { status: res.status, data: json };
       }
       return json;
-    }, 3, 1000);
+    }, 3, 1000)) as any;
 
     const metaMessageId = response.messages?.[0]?.id;
 
@@ -458,7 +458,7 @@ export async function sendMediaMessage(phone: string, type: 'image' | 'document'
 
   try {
     const apiURL = `${config.apiBaseUrl}/${config.apiVersion}/${config.phoneNumberId}/messages`;
-    const response = await retryWithBackoff(async () => {
+    const response = (await retryWithBackoff(async () => {
       const res = await fetch(apiURL, {
         method: 'POST',
         headers: {
@@ -468,12 +468,12 @@ export async function sendMediaMessage(phone: string, type: 'image' | 'document'
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json();
+      const json = (await res.json()) as any;
       if (!res.ok) {
         throw { status: res.status, data: json };
       }
       return json;
-    }, 3, 1000);
+    }, 3, 1000)) as any;
 
     const metaMessageId = response.messages?.[0]?.id;
 
@@ -532,7 +532,7 @@ export async function getTemplatesFromMeta() {
     headers: { 'Authorization': `Bearer ${config.accessToken}` },
   });
 
-  const json = await res.json();
+  const json = (await res.json()) as any;
   if (!res.ok) {
     throw new Error(json.error?.message || 'Failed to fetch templates from Meta');
   }
@@ -560,7 +560,7 @@ export async function createTemplateOnMeta(templateData: any) {
     body: JSON.stringify(templateData),
   });
 
-  const json = await res.json();
+  const json = (await res.json()) as any;
   if (!res.ok) {
     throw new Error(json.error?.message || 'Failed to create template on Meta');
   }
@@ -584,7 +584,7 @@ export async function deleteTemplateOnMeta(templateName: string) {
     headers: { 'Authorization': `Bearer ${config.accessToken}` },
   });
 
-  const json = await res.json();
+  const json = (await res.json()) as any;
   if (!res.ok) {
     throw new Error(json.error?.message || 'Failed to delete template on Meta');
   }
@@ -606,7 +606,7 @@ export async function getPhoneNumberInfo() {
     headers: { 'Authorization': `Bearer ${config.accessToken}` },
   });
 
-  const json = await res.json();
+  const json = (await res.json()) as any;
   if (!res.ok) {
     throw new Error(json.error?.message || 'Failed to fetch phone number info');
   }
@@ -665,7 +665,7 @@ export async function validatePhoneNumber(phone: string) {
       }),
     });
 
-    const json = await res.json();
+    const json = (await res.json()) as any;
     if (!res.ok) {
       throw new Error(json.error?.message || 'Verification endpoint error');
     }

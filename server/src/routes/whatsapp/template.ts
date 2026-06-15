@@ -76,7 +76,7 @@ router.get('/meta/list', async (req: Request, res: Response): Promise<void> => {
 // GET /api/whatsapp/templates/:id -> Get single local template
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const template = await prisma.whatsAppTemplate.findUnique({
       where: { id },
     });
@@ -114,7 +114,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 // PUT /api/whatsapp/templates/:id -> Update local template
 router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const {
       category,
       language,
@@ -167,10 +167,10 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
 // DELETE /api/whatsapp/templates/:id -> Delete template (local + Meta)
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { deleteFromMeta = 'false' } = req.query;
 
-    await deleteTemplate(id, deleteFromMeta === 'true');
+    await deleteTemplate(id, deleteFromMeta === 'true' as any);
     res.json({ success: true, message: 'Template deleted successfully' });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Server error' });
@@ -190,7 +190,7 @@ router.post('/sync', async (req: Request, res: Response): Promise<void> => {
 // POST /api/whatsapp/templates/:id/sync -> Sync single template status from Meta
 router.post('/:id/sync', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const result = await syncTemplateWithMeta(id);
     res.json({
       success: true,
@@ -205,7 +205,7 @@ router.post('/:id/sync', async (req: Request, res: Response): Promise<void> => {
 // POST /api/whatsapp/templates/:id/push -> Push local template to Meta for approval
 router.post('/:id/push', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const result = await pushTemplateToMeta(id);
     res.json({
       success: true,
