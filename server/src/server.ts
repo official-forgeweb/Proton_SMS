@@ -2,6 +2,7 @@ import app from './app';
 import { connectDB } from './config/database';
 import { seedData } from './data/store';
 import { env } from './config/env';
+import { initWhatsAppCrons } from './jobs/whatsapp.cron';
 
 const PORT = env.PORT;
 
@@ -11,6 +12,11 @@ const startServer = async (): Promise<void> => {
   const dbInit = async () => {
     try {
       await connectDB();
+      try {
+        initWhatsAppCrons();
+      } catch (err) {
+        console.error('⚠️ Failed to initialize WhatsApp cron jobs:', err);
+      }
       try {
         await seedData();
       } catch (err) {

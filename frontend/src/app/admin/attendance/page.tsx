@@ -6,6 +6,8 @@ import { Calendar, Users, BookOpen, Clock, Filter, Search, ChevronRight, UserChe
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import CustomSelect from '@/components/ui/CustomSelect';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 export default function AdminAttendancePage() {
     const router = useRouter();
@@ -94,11 +96,31 @@ export default function AdminAttendancePage() {
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <Calendar size={18} color="#6366F1" />
-                            <input 
-                                type="date" 
-                                value={selectedDate} 
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                style={{ padding: '10px', borderRadius: '10px', border: '1px solid #E2E8F0', fontWeight: 600, color: '#1E293B' }}
+                            <DatePicker
+                                selected={selectedDate ? new Date(selectedDate) : new Date()}
+                                onChange={(date: Date | null) => {
+                                    if (date) {
+                                        const yyyy = date.getFullYear();
+                                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                        const dd = String(date.getDate()).padStart(2, '0');
+                                        setSelectedDate(`${yyyy}-${mm}-${dd}`);
+                                    }
+                                }}
+                                dateFormat="dd-MM-yyyy"
+                                customInput={
+                                    <input 
+                                        style={{ 
+                                            padding: '10px', 
+                                            borderRadius: '10px', 
+                                            border: '1px solid #E2E8F0', 
+                                            fontWeight: 600, 
+                                            color: '#1E293B',
+                                            cursor: 'pointer',
+                                            width: '120px',
+                                            outline: 'none'
+                                        }} 
+                                    />
+                                }
                             />
                         </div>
 

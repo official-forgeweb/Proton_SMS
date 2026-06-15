@@ -166,18 +166,20 @@ export default function TeacherSessionAttendancePage() {
 
     return (
         <DashboardLayout requiredRole="teacher">
-            <div className="bg-mesh min-h-screen" style={{ padding: '0 12px 32px 12px' }}>
+            <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: 'calc(100vh - 40px)', borderRadius: '24px', paddingBottom: '100px', position: 'relative' }}>
                 
                 {/* Sticky Top Header Panel */}
                 <div style={{ 
-                    position: 'sticky', top: '-24px', zIndex: 10, 
+                    position: 'sticky', top: '-32px', zIndex: 10, 
                     background: 'rgba(255, 255, 255, 0.85)', 
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
                     borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
-                    padding: '18px 32px', margin: '-24px -24px 32px -24px', display: 'flex', 
+                    padding: '18px 32px', margin: '-32px -32px 32px -32px', display: 'flex', 
                     justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px',
-                    boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.04)'
+                    boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.04)',
+                    borderTopLeftRadius: '24px',
+                    borderTopRightRadius: '24px'
                 }}>
                     <div>
                         <button 
@@ -186,7 +188,7 @@ export default function TeacherSessionAttendancePage() {
                                 background: '#FFFFFF', border: '1px solid rgba(226, 232, 240, 0.8)', 
                                 borderRadius: '10px', padding: '6px 12px', cursor: 'pointer', display: 'inline-flex', 
                                 alignItems: 'center', gap: '6px', color: '#5E6278', 
-                                fontWeight: 700, fontSize: '12px', marginBottom: '12px', transition: 'all 0.2s',
+                                fontWeight: 700, fontSize: '12px', marginBottom: '16px', transition: 'all 0.2s',
                                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)'
                             }}
                             onMouseEnter={e => {
@@ -202,20 +204,28 @@ export default function TeacherSessionAttendancePage() {
                         >
                             <ArrowLeft size={13} strokeWidth={2.5} /> Back to Timetable
                         </button>
-                        <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            Roll Call
-                            <span style={{ color: '#E53935' }}>•</span>
-                            <span style={{ fontWeight: 600, color: '#5E6278', fontSize: '22px' }}>
-                                {sessionData?.subject?.canonical_name || sessionData?.subject || 'N/A'}
-                            </span>
-                        </h1>
-                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(26, 29, 59, 0.04)', color: '#1A1D3B', fontSize: '12px', padding: '6px 12px', borderRadius: '8px', fontWeight: 700 }}>
-                                <Users size={13} style={{ color: '#E53935' }} /> {sessionData?.class_ref?.class_name}
-                            </span>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(26, 29, 59, 0.04)', color: '#1A1D3B', fontSize: '12px', padding: '6px 12px', borderRadius: '8px', fontWeight: 700 }}>
-                                <Clock size={13} style={{ color: '#E53935' }} /> {sessionData?.start_time} - {sessionData?.end_time || 'N/A'}
-                            </span>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                            <div style={{ background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)', width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px rgba(229,57,53,0.25)' }}>
+                                <UserCheck size={22} strokeWidth={2.5} />
+                            </div>
+                            <div>
+                                <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    Roll Call
+                                    <span style={{ color: '#E53935' }}>•</span>
+                                    <span style={{ fontWeight: 600, color: '#5E6278', fontSize: '22px' }}>
+                                        {sessionData?.subject?.canonical_name || sessionData?.subject || 'N/A'}
+                                    </span>
+                                </h1>
+                                <div style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(26, 29, 59, 0.04)', color: '#1A1D3B', fontSize: '12px', padding: '4px 10px', borderRadius: '8px', fontWeight: 700 }}>
+                                        <Users size={13} style={{ color: '#E53935' }} /> {sessionData?.class_ref?.class_name}
+                                    </span>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(26, 29, 59, 0.04)', color: '#1A1D3B', fontSize: '12px', padding: '4px 10px', borderRadius: '8px', fontWeight: 700 }}>
+                                        <Clock size={13} style={{ color: '#E53935' }} /> {sessionData?.start_time} - {sessionData?.end_time || 'N/A'}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

@@ -2,9 +2,11 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import PermissionGuard from '@/components/PermissionGuard';
-import { Clock, BookOpen, Calendar, ChevronRight, Sparkles, BookMarked } from 'lucide-react';
+import { Clock, BookOpen, Calendar, ChevronRight, Sparkles, BookMarked, Users } from 'lucide-react';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 export default function TeacherAttendancePage() {
     const router = useRouter();
@@ -86,34 +88,78 @@ export default function TeacherAttendancePage() {
                             </p>
                         </div>
                         
-                        {/* Date Picker */}
-                        <div style={{ 
-                            background: 'rgba(255, 255, 255, 0.95)', 
-                            padding: '10px 18px', 
-                            borderRadius: '16px', 
-                            border: '1.5px solid rgba(226, 232, 240, 0.8)', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '12px',
-                            boxShadow: '0 4px 18px rgba(0,0,0,0.02)',
-                            transition: 'all 0.2s'
-                        }}
-                        onFocusCapture={(e) => {
-                            e.currentTarget.style.borderColor = '#E53935';
-                            e.currentTarget.style.boxShadow = '0 4px 18px rgba(229, 57, 53, 0.05)';
-                        }}
-                        onBlurCapture={(e) => {
-                            e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 0.8)';
-                            e.currentTarget.style.boxShadow = '0 4px 18px rgba(0,0,0,0.02)';
-                        }}
-                        >
-                            <Calendar size={18} color="#E53935" />
-                            <input 
-                                type="date" 
-                                value={selectedDate} 
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                style={{ border: 'none', outline: 'none', fontWeight: 700, color: '#1E293B', fontSize: '14px', background: 'transparent' }}
-                            />
+                        {/* Actions & Date Picker */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                            <button
+                                onClick={() => router.push('/teacher/attendance/register')}
+                                className="btn"
+                                style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '8px', 
+                                    padding: '12px 24px', 
+                                    borderRadius: '16px', 
+                                    fontWeight: 700, 
+                                    fontSize: '14px',
+                                    background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 12px rgba(229, 57, 53, 0.2)'
+                                }}
+                            >
+                                <Users size={16} /> View Attendance Sheet
+                            </button>
+
+                            {/* Date Picker */}
+                            <div style={{ 
+                                background: 'rgba(255, 255, 255, 0.95)', 
+                                padding: '10px 18px', 
+                                borderRadius: '16px', 
+                                border: '1.5px solid rgba(226, 232, 240, 0.8)', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '12px',
+                                boxShadow: '0 4px 18px rgba(0,0,0,0.02)',
+                                transition: 'all 0.2s'
+                            }}
+                            onFocusCapture={(e) => {
+                                e.currentTarget.style.borderColor = '#E53935';
+                                e.currentTarget.style.boxShadow = '0 4px 18px rgba(229, 57, 53, 0.05)';
+                            }}
+                            onBlurCapture={(e) => {
+                                e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 0.8)';
+                                e.currentTarget.style.boxShadow = '0 4px 18px rgba(0,0,0,0.02)';
+                            }}
+                            >
+                                <Calendar size={18} color="#E53935" />
+                                <DatePicker
+                                    selected={selectedDate ? new Date(selectedDate) : new Date()}
+                                    onChange={(date: Date | null) => {
+                                        if (date) {
+                                            const yyyy = date.getFullYear();
+                                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                            const dd = String(date.getDate()).padStart(2, '0');
+                                            setSelectedDate(`${yyyy}-${mm}-${dd}`);
+                                        }
+                                    }}
+                                    dateFormat="dd-MM-yyyy"
+                                    customInput={
+                                        <input 
+                                            style={{ 
+                                                border: 'none', 
+                                                outline: 'none', 
+                                                fontWeight: 700, 
+                                                color: '#1E293B', 
+                                                fontSize: '14px', 
+                                                background: 'transparent',
+                                                cursor: 'pointer',
+                                                width: '110px'
+                                            }} 
+                                        />
+                                    }
+                                />
+                            </div>
                         </div>
                     </div>
 

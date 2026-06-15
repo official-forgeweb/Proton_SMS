@@ -89,6 +89,10 @@ router.post('/', authenticateToken, authorize('admin'), async (req: Request, res
       tempPass: password
     });
 
+    // Trigger WhatsApp welcome automation (non-blocking)
+    const { onCoordinatorCreated } = require('../../services/whatsapp/automation.service');
+    onCoordinatorCreated(coordinator, password).catch((err: any) => console.error('WhatsApp Welcome Coordinator failed:', err));
+
     res.status(201).json({
       success: true,
       data: { coordinator, credentials: { email, password } },

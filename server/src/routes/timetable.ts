@@ -412,6 +412,10 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
       entry.id
     );
 
+    // Trigger WhatsApp timetable automation (non-blocking)
+    const { onTimetableCreated } = require('../../services/whatsapp/automation.service');
+    onTimetableCreated(entry).catch((err: any) => console.error('WhatsApp Timetable Created failed:', err));
+
     invalidateCache('/api/timetable');
     invalidateCache('/api/dashboard');
 

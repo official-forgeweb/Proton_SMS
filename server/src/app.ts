@@ -34,6 +34,15 @@ import searchRoutes from './routes/search';
 import coordinatorRoutes from './routes/coordinators';
 import subjectsRoutes from './routes/subjects';
 
+// WhatsApp module sub-routers
+import whatsappConfigRoutes from './routes/whatsapp/config';
+import whatsappTemplateRoutes from './routes/whatsapp/template';
+import whatsappMessageRoutes from './routes/whatsapp/message';
+import whatsappLogRoutes from './routes/whatsapp/log';
+import whatsappWebhookRoutes from './routes/whatsapp/webhook';
+import whatsappAutomationRoutes from './routes/whatsapp/automation';
+import whatsappDebugRoutes from './routes/whatsapp/debug';
+
 const app = express();
 
 // Security & Middleware
@@ -98,6 +107,15 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/coordinators', coordinatorRoutes);
 app.use('/api/subjects', subjectsRoutes);
+
+// WhatsApp Router mounts
+app.use('/api/whatsapp/config', whatsappConfigRoutes);
+app.use('/api/whatsapp/templates', whatsappTemplateRoutes);
+app.use('/api/whatsapp/send', whatsappMessageRoutes);
+app.use('/api/whatsapp/logs', whatsappLogRoutes);
+app.use('/api/whatsapp/webhook', whatsappWebhookRoutes);
+app.use('/api/whatsapp/automation', whatsappAutomationRoutes);
+app.use('/api/whatsapp/debug', whatsappDebugRoutes);
 
 // Root Welcome Route
 app.get('/', (req, res) => {

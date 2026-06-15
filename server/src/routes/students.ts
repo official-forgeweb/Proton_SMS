@@ -314,6 +314,10 @@ router.post('/bulk', authenticateToken, authorize('admin', 'coordinator'), async
           tempPass: tempPassword,
         });
 
+        // Trigger WhatsApp welcome automation (non-blocking)
+        const { onStudentCreated } = require('../../services/whatsapp/automation.service');
+        onStudentCreated(newStudent, tempPassword).catch((err: any) => console.error('WhatsApp Welcome Student failed:', err));
+
         if (class_id) {
           await prisma.studentClassEnrollment.create({
             data: {
@@ -504,6 +508,10 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
       proId: student.PRO_ID,
       tempPass: password,
     });
+
+    // Trigger WhatsApp welcome automation (non-blocking)
+    const { onStudentCreated } = require('../../services/whatsapp/automation.service');
+    onStudentCreated(student, password).catch((err: any) => console.error('WhatsApp Welcome Student failed:', err));
 
     res.status(201).json({
       success: true,

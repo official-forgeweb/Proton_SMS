@@ -265,6 +265,10 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher',
       }
     });
 
+    // Trigger WhatsApp query raised automation (non-blocking)
+    const { onQueryRaised } = require('../../services/whatsapp/automation.service');
+    onQueryRaised(query, student).catch((err: any) => console.error('WhatsApp Query Raised failed:', err));
+
     if (target_teacher_id) {
       const teacher = await prisma.teacher.findUnique({ where: { id: target_teacher_id }, select: { user_id: true } });
       if (teacher && teacher.user_id) {
@@ -528,6 +532,10 @@ router.post('/:id/replies', authenticateToken, async (req: Request, res: Respons
         }
       }
     });
+
+    // Trigger WhatsApp query responded automation (non-blocking)
+    const { onQueryResponded } = require('../../services/whatsapp/automation.service');
+    onQueryResponded(query, message, req.user!.email).catch((err: any) => console.error('WhatsApp Query Responded failed:', err));
 
     // Create Audit Log
     await prisma.queryAuditLog.create({

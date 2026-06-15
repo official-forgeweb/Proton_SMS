@@ -16,13 +16,15 @@ interface AttendanceRegisterClientProps {
   selectedClassId: string;
   selectedMonth: string; // YYYY-MM
   registerData: any;
+  basePath?: string;
 }
 
 export default function AttendanceRegisterClient({ 
   classes, 
   selectedClassId, 
   selectedMonth,
-  registerData 
+  registerData,
+  basePath = '/admin/attendance/register'
 }: AttendanceRegisterClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -73,13 +75,13 @@ export default function AttendanceRegisterClient({
   // Update filters in URL
   const handleClassChange = (classId: string) => {
     startTransition(() => {
-      router.push(`/admin/attendance/register?class_id=${classId}&month=${selectedMonth}`);
+      router.push(`${basePath}?class_id=${classId}&month=${selectedMonth}`);
     });
   };
 
   const handleMonthChange = (monthVal: string) => {
     startTransition(() => {
-      router.push(`/admin/attendance/register?class_id=${selectedClassId}&month=${monthVal}`);
+      router.push(`${basePath}?class_id=${selectedClassId}&month=${monthVal}`);
     });
   };
 

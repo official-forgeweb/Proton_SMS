@@ -20,6 +20,29 @@ const syncClassSubjects = async (tx: any, classId: string, subjectIds: string[])
   }
 };
 
+const notifyTeacherSchedules = async (schedules: any[]) => {
+  try {
+    const { onTeacherScheduleCreated } = require('../../services/whatsapp/automation.service');
+    for (const s of schedules) {
+      if (s.teacher_id) {
+        const teacher = await prisma.teacher.findUnique({ where: { id: s.teacher_id } });
+        if (teacher) {
+          const subject = await prisma.subject.findUnique({ where: { id: s.subject_id } });
+          const schedulePayload = {
+            date: s.days && s.days.length > 0 ? s.days.join(', ') : 'Custom Schedule',
+            subject: subject?.canonical_name || 'Subject',
+            start_time: s.time_start,
+            end_time: s.time_end
+          };
+          onTeacherScheduleCreated(schedulePayload, teacher).catch((err: any) => console.error('Teacher schedule WhatsApp notification failed:', err));
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[WhatsApp Schedule Automation] Failed:', err);
+  }
+};
+
 const router = Router();
 
 const generateClassCode = (): string =>
@@ -407,6 +430,7 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator'), async (re
           data: resolvedSchedules,
         });
         await syncClassSubjects(prisma, newClass.id, subjectIds);
+        notifyTeacherSchedules(resolvedSchedules).catch(err => console.error(err));
       }
     }
 
@@ -473,6 +497,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator'), async (
             data: resolvedSchedules,
           });
           await syncClassSubjects(prisma, id, subjectIds);
+          notifyTeacherSchedules(resolvedSchedules).catch(err => console.error(err));
         }
       } else {
         await syncClassSubjects(prisma, id, []);

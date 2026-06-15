@@ -609,13 +609,9 @@ h6 {
 
 /* ===== LAYOUT ===== */
 .main-content {
-  margin-left: 260px;
   min-height: 100vh;
   padding: 0;
   flex: 1;
-  width: calc(100vw - 260px);
-  min-width: calc(100vw - 260px);
-  max-width: calc(100vw - 260px);
   overflow-x: hidden;
 }
 
@@ -1285,7 +1281,7 @@ html, body {
 }
 
 /* Ensure the main container wraps neatly within screen boundaries */
-main, .main-content, .page-body, .page-container {
+.page-body, .page-container {
   max-width: 100% !important;
   overflow-x: hidden !important;
 }

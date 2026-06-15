@@ -67,6 +67,8 @@ model User {
   tests_created            Test[]
   homework_created         Homework[]
   google_sheet_sync_logs   GoogleSheetSyncLog[]
+  whatsapp_templates       WhatsAppTemplate[]
+  whatsapp_automations     WhatsAppAutomationRule[]
 
   @@map("users")
 }
@@ -1075,5 +1077,127 @@ model GoogleSheetSource {
 
   @@map("google_sheet_sources")
 }
+
+// ──────────────────────────────────────────────
+// WhatsApp Models
+// ──────────────────────────────────────────────
+
+model WhatsAppConfig {
+  id                         String    @id @default("global")
+  access_token               String?   @db.Text
+  phone_number_id            String?
+  business_account_id        String?
+  verify_token               String?
+  api_version                String    @default("v18.0")
+  api_base_url               String    @default("https://graph.facebook.com")
+  is_active                  Boolean   @default(false)
+  is_mock_mode               Boolean   @default(true)
+  daily_limit                Int       @default(250)
+  daily_counter              Int       @default(0)
+  last_reset_date            DateTime  @default(now())
+  webhook_url                String?
+  webhook_verified           Boolean   @default(false)
+  created_at                 DateTime  @default(now())
+  updated_at                 DateTime  @updatedAt
+
+  @@map("whatsapp_configs")
+}
+
+model WhatsAppTemplate {
+  id                    String                 @id @default(uuid())
+  meta_template_id      String?
+  name                  String                 @unique
+  category              String                 @default("UTILITY") // UTILITY | MARKETING | AUTHENTICATION
+  language              String                 @default("en_US")
+  status                String                 @default("DRAFT") // DRAFT | PENDING | APPROVED | REJECTED | PAUSED
+  header_type           String                 @default("NONE") // NONE | TEXT | IMAGE | DOCUMENT | VIDEO
+  header_content        String?                @db.Text // Value or URL
+  body_text             String                 @db.Text
+  footer_text           String?                @db.Text
+  buttons               Json?                  // Button configurations (JSON array)
+  variables_description Json?                  // Descriptions of variables (JSON)
+  sample_values         Json?                  // Sample values for Meta review (JSON)
+  sync_status           String                 @default("LOCAL_ONLY") // LOCAL_ONLY | SYNCED | OUT_OF_SYNC
+  rejection_reason      String?                @db.Text
+  created_by_id         String?
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+
+  // Relations
+  creator               User?                  @relation(fields: [created_by_id], references: [id])
+  logs                  WhatsAppLog[]
+  automation_rules      WhatsAppAutomationRule[]
+
+  @@map("whatsapp_templates")
+}
+
+model WhatsAppLog {
+  id                String            @id @default(uuid())
+  phone             String
+  recipient_name    String?
+  recipient_type    String            @default("CUSTOM") // STUDENT | TEACHER | COORDINATOR | PARENT | CUSTOM
+  recipient_user_id String?
+  template_id       String?
+  variables         Json?             // Variables sent (JSON)
+  meta_message_id   String?           @unique
+  status            String            @default("PENDING") // PENDING | SENT | DELIVERED | READ | FAILED | MOCK
+  sent_at           DateTime?
+  delivered_at      DateTime?
+  read_at           DateTime?
+  failed_at         DateTime?
+  error_code        String?
+  error_message     String?           @db.Text
+  direction         String            @default("OUTGOING") // OUTGOING | INCOMING
+  raw_request       Json?
+  raw_response      Json?
+  cost_estimation   Float             @default(0.0)
+  triggered_by      String            @default("MANUAL") // SYSTEM | MANUAL | AUTOMATION | WEBHOOK
+  automation_type   String?           // FEE_REMINDER | EXAM_ALERT | WELCOME | etc.
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
+
+  // Relations
+  template          WhatsAppTemplate? @relation(fields: [template_id], references: [id], onDelete: SetNull)
+
+  @@index([phone])
+  @@index([status])
+  @@index([created_at])
+  @@index([automation_type])
+  @@map("whatsapp_logs")
+}
+
+model WhatsAppWebhookLog {
+  id           String    @id @default(uuid())
+  event_type   String?
+  payload      Json
+  processed    Boolean   @default(false)
+  processed_at DateTime?
+  error        String?   @db.Text
+  created_at   DateTime  @default(now())
+
+  @@map("whatsapp_webhook_logs")
+}
+
+model WhatsAppAutomationRule {
+  id             String           @id @default(uuid())
+  name           String
+  trigger_event  String           // e.g. STUDENT_CREATED | TEACHER_CREATED | etc.
+  template_id    String
+  target_group   String           @default("ALL") // STUDENT | TEACHER | COORDINATOR | PARENT | ALL
+  is_active      Boolean          @default(true)
+  conditions     Json?            // Filter JSON
+  cron_schedule  String?
+  last_run       DateTime?
+  created_by_id  String?
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+
+  // Relations
+  template       WhatsAppTemplate @relation(fields: [template_id], references: [id])
+  creator        User?            @relation(fields: [created_by_id], references: [id])
+
+  @@map("whatsapp_automation_rules")
+}
+
 
 

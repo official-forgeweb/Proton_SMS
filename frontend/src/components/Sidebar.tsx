@@ -6,9 +6,10 @@ import { useLayoutStore } from '@/stores/layoutStore';
 import {
     LayoutDashboard, Users, GraduationCap, BookOpen,
     Calendar, CreditCard, BarChart3, Settings, LogOut, Phone,
-    X, Menu, Zap, Shield, Clock, Award
+    X, Menu, Zap, Shield, Clock, Award, Send, Terminal, MessageSquare
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import api from '@/lib/api';
 
 const adminNav = [
     {
@@ -29,6 +30,18 @@ const adminNav = [
         items: [
             { label: 'Fees', href: '/admin/fees', icon: CreditCard },
             { label: 'Reports', href: '/admin/reports', icon: BarChart3 },
+        ]
+    },
+    {
+        section: 'WHATSAPP',
+        items: [
+            { label: 'Dashboard', href: '/dashboard/whatsapp', icon: MessageSquare },
+            { label: 'Settings', href: '/dashboard/whatsapp/settings', icon: Settings },
+            { label: 'Templates', href: '/dashboard/whatsapp/templates', icon: BookOpen },
+            { label: 'Send Message', href: '/dashboard/whatsapp/send', icon: Send },
+            { label: 'Automations', href: '/dashboard/whatsapp/automations', icon: Zap },
+            { label: 'Message Logs', href: '/dashboard/whatsapp/logs', icon: Clock },
+            { label: 'Debug & Tools', href: '/dashboard/whatsapp/debug', icon: Terminal },
         ]
     },
     {
@@ -90,6 +103,18 @@ const coordinatorNav = [
             { label: 'Fees', href: '/coordinator/fees', icon: CreditCard },
             { label: 'Reports', href: '/coordinator/reports', icon: BarChart3 },
         ]
+    },
+    {
+        section: 'WHATSAPP',
+        items: [
+            { label: 'Dashboard', href: '/dashboard/whatsapp', icon: MessageSquare },
+            { label: 'Settings', href: '/dashboard/whatsapp/settings', icon: Settings },
+            { label: 'Templates', href: '/dashboard/whatsapp/templates', icon: BookOpen },
+            { label: 'Send Message', href: '/dashboard/whatsapp/send', icon: Send },
+            { label: 'Automations', href: '/dashboard/whatsapp/automations', icon: Zap },
+            { label: 'Message Logs', href: '/dashboard/whatsapp/logs', icon: Clock },
+            { label: 'Debug & Tools', href: '/dashboard/whatsapp/debug', icon: Terminal },
+        ]
     }
 ];
 
@@ -108,6 +133,7 @@ export default function Sidebar() {
     const [isMobile, setIsMobile] = useState(false);
     const [isTablet, setIsTablet] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [whatsappBadge, setWhatsappBadge] = useState<{ color: string; tooltip: string } | null>(null);
 
     // Track window sizes dynamically
     useEffect(() => {
@@ -130,6 +156,43 @@ export default function Sidebar() {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, [setSidebarCollapsed]);
+
+    // Fetch WhatsApp status for badge
+    useEffect(() => {
+        if (!user || (user.role !== 'admin' && user.role !== 'coordinator')) return;
+
+        const checkWhatsAppStatus = async () => {
+            try {
+                const [statusRes, templatesRes] = await Promise.all([
+                    api.get('/whatsapp/config/status'),
+                    api.get('/whatsapp/templates'),
+                ]);
+
+                const configStatus = statusRes.data?.data;
+                const localTemplates = templatesRes.data?.data || [];
+
+                const hasPendingTemplates = localTemplates.some(
+                    (t: any) => t.status === 'PENDING' || t.status === 'PENDING_REVIEW'
+                );
+
+                if (configStatus?.status === 'DISCONNECTED') {
+                    setWhatsappBadge({ color: '#EF4444', tooltip: 'WhatsApp Credentials Invalid / Disconnected' });
+                } else if (configStatus?.is_mock_mode) {
+                    setWhatsappBadge({ color: '#F59E0B', tooltip: 'WhatsApp Mock Mode Active' });
+                } else if (hasPendingTemplates) {
+                    setWhatsappBadge({ color: '#3B82F6', tooltip: 'Templates Pending Meta Review' });
+                } else {
+                    setWhatsappBadge(null);
+                }
+            } catch (err) {
+                // Fail silently in background
+            }
+        };
+
+        checkWhatsAppStatus();
+        const interval = setInterval(checkWhatsAppStatus, 60000); // Poll every minute
+        return () => clearInterval(interval);
+    }, [user]);
 
     // Handle Escape key closure on mobile drawer mode
     useEffect(() => {
@@ -158,6 +221,12 @@ export default function Sidebar() {
         if (!pathname) return false;
         if (pathname === item.href) return true;
         
+        // Base dashboard paths must match exactly to prevent sibling pages from highlighting them
+        const basePaths = ['/dashboard/whatsapp', '/admin', '/coordinator', '/teacher', '/student'];
+        if (item.href && basePaths.includes(item.href)) {
+            return pathname === item.href;
+        }
+
         if (item.href && item.href !== `/${user?.role}` && pathname.startsWith(item.href)) {
             return true;
         }
@@ -259,13 +328,27 @@ export default function Sidebar() {
                         <div key={section.section} style={{ marginBottom: '16px' }}>
                             {/* Section Label (Hide in collapsed mode) */}
                             {!isCurrentlyCollapsed ? (
-                                <div style={{ padding: '12px 12px 6px', marginBottom: 0 }}>
+                                <div style={{ padding: '12px 12px 6px', marginBottom: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <p style={{
                                         fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em',
                                         color: '#6B7280', textTransform: 'uppercase',
                                     }}>
                                         {section.section}
                                     </p>
+                                    {section.section === 'WHATSAPP' && whatsappBadge && (
+                                        <span 
+                                            title={whatsappBadge.tooltip}
+                                            style={{
+                                                width: '6px',
+                                                height: '6px',
+                                                borderRadius: '50%',
+                                                backgroundColor: whatsappBadge.color,
+                                                display: 'inline-block',
+                                                boxShadow: `0 0 6px ${whatsappBadge.color}`
+                                            }}
+                                            className="animate-pulse"
+                                        />
+                                    )}
                                 </div>
                             ) : (
                                 <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '12px 8px 6px' }} />
@@ -345,3 +428,4 @@ export default function Sidebar() {
         </>
     );
 }
+

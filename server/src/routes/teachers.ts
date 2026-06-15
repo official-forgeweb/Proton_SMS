@@ -146,6 +146,10 @@ router.post('/', authenticateToken, authorize('admin'), async (req: Request, res
       role: role_type || 'subject_teacher'
     });
 
+    // Trigger WhatsApp welcome automation (non-blocking)
+    const { onTeacherCreated } = require('../../services/whatsapp/automation.service');
+    onTeacherCreated(teacher, password).catch((err: any) => console.error('WhatsApp Welcome Teacher failed:', err));
+
     invalidateCache('/api/teachers');
     invalidateCache('/api/classes');
     invalidateCache('/api/dashboard');

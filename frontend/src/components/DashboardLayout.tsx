@@ -138,6 +138,13 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
 
     useEffect(() => {
         checkAuth();
+        console.log("COMPUTED_LAYOUT:", 
+            document.querySelector(".main-layout-root")?.clientWidth, 
+            document.querySelector(".main-content")?.clientWidth, 
+            document.querySelector(".page-body")?.clientWidth, 
+            document.querySelector(".page-body")?.scrollWidth,
+            window.getComputedStyle(document.querySelector(".main-content") || document.documentElement).marginLeft
+        );
     }, []);
 
 
@@ -415,7 +422,17 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 }
             `}} />
             <Sidebar />
-            <main className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
+            <main 
+                className="main-content" 
+                style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    marginLeft: currentSidebarWidth,
+                    width: `calc(100vw - ${currentSidebarWidth})`,
+                    minWidth: `calc(100vw - ${currentSidebarWidth})`,
+                    maxWidth: `calc(100vw - ${currentSidebarWidth})`
+                }}
+            >
                 {/* Server error banner - shown when user is authenticated but server is down */}
                 {serverError && (
                     <div style={{
