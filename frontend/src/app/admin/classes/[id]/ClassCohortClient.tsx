@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 import { customAlert, customConfirm } from '@/utils/dialog';
+import { useAuthStore } from '@/stores/authStore';
 
 interface ClassCohortClientProps {
   initialData: {
@@ -39,6 +40,8 @@ interface ClassCohortClientProps {
 
 export default function ClassCohortClient({ initialData }: ClassCohortClientProps) {
   const { class: cls, students, subject_counts, stats } = initialData;
+  const { user } = useAuthStore();
+  const basePath = user?.role === 'coordinator' ? '/coordinator' : '/admin';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'roster' | 'attendance' | 'academics'>('roster');
 
@@ -56,7 +59,7 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
       const res = await api.delete(`/classes/${cls.id}`);
       if (res.data.success) {
         await customAlert(`Class "${cls.class_name || cls.class_code}" deleted successfully.`, 'Delete Successful');
-        window.location.href = '/admin/classes';
+        window.location.href = `${basePath}/classes`;
       } else {
         await customAlert(res.data.message || 'Failed to delete class.', 'Error');
       }
@@ -140,7 +143,7 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
       {/* Header */}
       <div className="animate-fade-in-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
         <div>
-          <Link href="/admin/classes" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748B', fontWeight: 600, textDecoration: 'none', fontSize: '14px', marginBottom: '12px' }}>
+          <Link href={`${basePath}/classes`} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748B', fontWeight: 600, textDecoration: 'none', fontSize: '14px', marginBottom: '12px' }}>
             <ArrowLeft size={16} /> Back to Classes
           </Link>
           <span style={{ fontSize: '11px', fontWeight: 800, color: '#6366F1', background: 'rgba(99,102,241,0.1)', padding: '4px 10px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -410,7 +413,7 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
                           </td>
                           <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                             <Link 
-                              href={`/admin/students/${s.id}`} 
+                              href={`${basePath}/students/${s.id}`} 
                               style={{ 
                                 display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', 
                                 color: '#6366F1', fontWeight: 700, fontSize: '13px', background: '#EEF2F6', padding: '6px 12px', borderRadius: '8px' 
@@ -500,7 +503,7 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
                 </div>
                 <div style={{ marginTop: '24px' }}>
                   <Link 
-                    href="/admin/attendance" 
+                    href={`${basePath}/attendance`} 
                     style={{ 
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none', 
                       background: '#6366F1', color: 'white', fontWeight: 700, padding: '12px 24px', borderRadius: '12px', boxShadow: '0 8px 16px rgba(99,102,241,0.2)' 

@@ -50,7 +50,6 @@ let keepAliveInterval: NodeJS.Timeout | null = null;
 
 const startKeepAlive = () => {
   if (process.env.VERCEL) return; // Disable background keep-alive interval in serverless Vercel
-  if (process.env.NODE_ENV !== 'production') return;
   if (keepAliveInterval) return;
 
   const pingDatabase = async () => {

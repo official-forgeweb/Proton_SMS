@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
+import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 import { customAlert } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
@@ -12,6 +13,8 @@ import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AddClassPage() {
     const router = useRouter();
+    const { user } = useAuthStore();
+    const basePath = user?.role === 'coordinator' ? '/coordinator' : '/admin';
     const [teachers, setTeachers] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState<any>({
@@ -49,7 +52,7 @@ export default function AddClassPage() {
         setIsSubmitting(true);
         try {
             await api.post('/classes', formData);
-            router.push('/admin/classes');
+            router.push(`${basePath}/classes`);
         } catch (error) {
             console.error('Error creating batch:', error);
             await customAlert('Failed to create batch', 'Error');
@@ -62,9 +65,9 @@ export default function AddClassPage() {
         <FormPageLayout
             title="Create New Batch"
             subtitle="Set up a new class with schedule and teacher assignments"
-            backHref="/admin/classes"
+            backHref={`${basePath}/classes`}
             backLabel="Back to Classes"
-            requiredRole="admin"
+            requiredRole={['admin', 'coordinator']}
             icon={<Layers size={20} strokeWidth={2.5} />}
             maxWidth="1200px"
         >
@@ -215,7 +218,7 @@ export default function AddClassPage() {
                 </div>
 
                 <div className="form-actions">
-                    <button type="button" className="btn-cancel" onClick={() => router.push('/admin/classes')}>Cancel</button>
+                    <button type="button" className="btn-cancel" onClick={() => router.push(`${basePath}/classes`)}>Cancel</button>
                     <button type="submit" className="btn-submit" disabled={isSubmitting}>
                         {isSubmitting ? 'Creating...' : 'Create Batch'}
                     </button>

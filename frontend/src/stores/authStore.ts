@@ -55,6 +55,9 @@ function getInitialAuthState() {
 
 const initialState = getInitialAuthState();
 
+let lastCheckedTime = 0;
+const AUTH_CHECK_COOLDOWN = 60 * 1000; // 60 seconds
+
 export const useAuthStore = create<AuthState>((set, get) => ({
     user: initialState.user,
     isLoading: initialState.isLoading,
@@ -79,6 +82,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             // Set cookie for Server Components to read (httpOnly: false so JS can manage it)
             document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
 
+            lastCheckedTime = Date.now(); // Mark as verified immediately on login
             set({ user, isAuthenticated: true, isLoading: false, serverError: false });
         } catch (error: any) {
             throw new Error(error.response?.data?.message || 'Login failed');
@@ -90,11 +94,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         localStorage.removeItem('user');
         // Clear the access_token cookie
         document.cookie = 'access_token=; path=/; max-age=0; SameSite=Lax';
+        lastCheckedTime = 0;
         set({ user: null, isAuthenticated: false, isLoading: false, serverError: false });
         window.location.href = '/login';
     },
 
     checkAuth: async () => {
+        const now = Date.now();
+        
+        // If we are already authenticated, have a user object, and checked recently, skip calling /auth/me
+        if (get().isAuthenticated && get().user && (now - lastCheckedTime < AUTH_CHECK_COOLDOWN)) {
+            return;
+        }
+
         try {
             const token = localStorage.getItem('accessToken');
             if (!token) {
@@ -111,6 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             // Then verify with the server in the background
             const res = await api.get('/auth/me');
             const user = res.data.data;
+            lastCheckedTime = Date.now();
             localStorage.setItem('user', JSON.stringify(user));
             set({ user, isAuthenticated: true, isLoading: false, serverError: false });
         } catch (error: any) {
@@ -134,6 +147,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             // Genuine auth failure (401 token expired, 403 invalid token)
             localStorage.removeItem('accessToken');
             localStorage.removeItem('user');
+            lastCheckedTime = 0;
             set({ user: null, isAuthenticated: false, isLoading: false, serverError: false });
         }
     },

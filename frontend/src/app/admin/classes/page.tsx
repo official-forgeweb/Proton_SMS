@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { BookOpen, Plus, Calendar, Clock, Users, Download, Eye, Layers, Edit, Trash2, AlertCircle, Zap, CheckCircle2, Loader2, X, LayoutGrid, List } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useAuthStore } from '@/stores/authStore';
 
 const getSubjectStyles = (subject: string) => {
     const sub = (subject || '').toLowerCase();
@@ -36,6 +37,8 @@ const getSubjectStyles = (subject: string) => {
 
 export default function ClassesPage() {
     const router = useRouter();
+    const { user } = useAuthStore();
+    const basePath = user?.role === 'coordinator' ? '/coordinator' : '/admin';
     const [classes, setClasses] = useState<any[]>([]);
     const [teachers, setTeachers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -241,7 +244,7 @@ export default function ClassesPage() {
     `;
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={['admin', 'coordinator']}>
             <style dangerouslySetInnerHTML={{__html: customStyles}} />
             
             <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: '100%', borderRadius: '24px' }}>
@@ -315,7 +318,7 @@ export default function ClassesPage() {
                             <Zap size={16} strokeWidth={2.5} fill="currentColor" /> Bulk Seed Classes
                         </button>
                         <button
-                            onClick={() => router.push('/admin/classes/add')}
+                            onClick={() => router.push(`${basePath}/classes/add`)}
                             style={{
                                 background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
                                 color: 'white', border: 'none',
@@ -382,7 +385,7 @@ export default function ClassesPage() {
                             {classes.map((cls, idx) => {
                                 const enrollPercent = Math.min(100, Math.round(((cls.current_students_count || 0) / (cls.max_students || 40)) * 100));
                                 return (
-                                    <div key={cls.id} className="class-card animate-fade-in" onClick={() => router.push(`/admin/classes/${cls.id}`)} style={{ cursor: 'pointer', animationDelay: `${idx * 50}ms` }}>
+                                    <div key={cls.id} className="class-card animate-fade-in" onClick={() => router.push(`${basePath}/classes/${cls.id}`)} style={{ cursor: 'pointer', animationDelay: `${idx * 50}ms` }}>
                                         <div>
                                             {/* Top Row: Code and Status */}
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -483,7 +486,7 @@ export default function ClassesPage() {
                                             {/* Action Buttons Row */}
                                             <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid #F1F5F9', paddingTop: '16px' }} onClick={e => e.stopPropagation()}>
                                                 <button
-                                                    onClick={() => router.push(`/admin/classes/${cls.id}`)}
+                                                    onClick={() => router.push(`${basePath}/classes/${cls.id}`)}
                                                     style={{
                                                         flex: 1,
                                                         background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', color: 'white', border: 'none',
@@ -497,7 +500,7 @@ export default function ClassesPage() {
                                                     <Eye size={14} strokeWidth={2.5} /> View
                                                 </button>
                                                 <button
-                                                    onClick={() => router.push(`/admin/classes/${cls.id}/edit`)}
+                                                    onClick={() => router.push(`${basePath}/classes/${cls.id}/edit`)}
                                                     style={{
                                                         background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0',
                                                         borderRadius: '10px', padding: '9px 14px', fontSize: '13px', fontWeight: 700,
@@ -547,7 +550,7 @@ export default function ClassesPage() {
                                 </thead>
                                 <tbody>
                                     {classes.map((cls, idx) => (
-                                        <tr key={cls.id} className="table-row-hover" style={{ cursor: 'pointer' }} onClick={() => router.push(`/admin/classes/${cls.id}`)}>
+                                        <tr key={cls.id} className="table-row-hover" style={{ cursor: 'pointer' }} onClick={() => router.push(`${basePath}/classes/${cls.id}`)}>
                                             <td style={{ padding: '16px 20px' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                                     <div style={{ fontWeight: 800, fontSize: '16px', color: '#1A1D3B' }}>{cls.class_name}</div>
@@ -629,7 +632,7 @@ export default function ClassesPage() {
                                             </td>
                                             <td style={{ padding: '16px 20px', textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); router.push(`/admin/classes/${cls.id}/edit`); }}
+                                                    onClick={(e) => { e.stopPropagation(); router.push(`${basePath}/classes/${cls.id}/edit`); }}
                                                     style={{
                                                         background: '#FFFFFF', color: '#1A1D3B', border: '1px solid #E2E8F0',
                                                         borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700,
@@ -642,7 +645,7 @@ export default function ClassesPage() {
                                                     <Edit size={14} strokeWidth={2.5} /> Edit
                                                 </button>
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); router.push(`/admin/classes/${cls.id}`); }}
+                                                    onClick={(e) => { e.stopPropagation(); router.push(`${basePath}/classes/${cls.id}`); }}
                                                     style={{
                                                         background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', color: 'white', border: 'none',
                                                         borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: 700,

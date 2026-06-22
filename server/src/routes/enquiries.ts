@@ -94,15 +94,17 @@ router.get('/', authenticateToken, authorize('admin', 'coordinator', 'teacher'),
 
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
-    const total = await prisma.enquiry.count({ where });
     const skip = (pageNum - 1) * limitNum;
 
-    const enquiries = await prisma.enquiry.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
-      skip,
-      take: limitNum,
-    });
+    const [total, enquiries] = await Promise.all([
+      prisma.enquiry.count({ where }),
+      prisma.enquiry.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limitNum,
+      })
+    ]);
 
     const assignedToIds = [...new Set(enquiries.filter(e => e.assigned_to).map(e => e.assigned_to!))];
     let teacherMap: Record<string, string> = {};

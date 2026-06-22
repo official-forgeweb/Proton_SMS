@@ -65,17 +65,7 @@ app.use('/api/', limiter);
 app.use(compression());
 app.use(morgan('dev'));
 
-// Slow API Request Instrumentation (>200ms)
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    if (duration > 200) {
-      console.warn(`⚠️  SLOW API [${duration}ms] ${req.method} ${req.originalUrl}`);
-    }
-  });
-  next();
-});
+
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));

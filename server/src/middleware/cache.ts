@@ -3,6 +3,9 @@ import { Request, Response, NextFunction } from 'express';
 // Simple in-memory cache middleware with TTL
 const cacheStore = new Map<string, { data: unknown; timestamp: number }>();
 
+// Track pending requests for deduplication/collapsing
+const pendingRequests = new Map<string, Response[]>();
+
 export const cacheMiddleware = (ttlSeconds: number = 30) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     // Only cache GET requests
@@ -12,19 +15,45 @@ export const cacheMiddleware = (ttlSeconds: number = 30) => {
     }
 
     const key = `${req.originalUrl}_${req.user?.id || 'anon'}_${req.user?.role || 'none'}`;
+    
+    // 1. Check cache
     const cached = cacheStore.get(key);
-
     if (cached && Date.now() - cached.timestamp < ttlSeconds * 1000) {
       res.json(cached.data);
       return;
     }
 
-    // Override res.json to capture and cache the response
+    // 2. Check if a request for the same resource is already pending
+    if (pendingRequests.has(key)) {
+      // Queue this response object to receive the result when ready
+      pendingRequests.get(key)!.push(res);
+      return;
+    }
+
+    // Initialize the pending queue
+    pendingRequests.set(key, []);
+
+    // Override res.json to capture and cache the response, then resolve queued requests
     const originalJson = res.json.bind(res);
     res.json = (data: any) => {
+      // Save successful response to cache
       if (res.statusCode === 200 && data?.success) {
         cacheStore.set(key, { data, timestamp: Date.now() });
       }
+
+      // Retrieve and remove queue
+      const queuedResList = pendingRequests.get(key) || [];
+      pendingRequests.delete(key);
+
+      // Resolve all queued requests with the same response data
+      queuedResList.forEach((queuedRes) => {
+        try {
+          queuedRes.status(res.statusCode).json(data);
+        } catch (err: any) {
+          console.warn(`⚠️ [Cache Middleware] Failed to send collapsed response to queued request:`, err.message);
+        }
+      });
+
       return originalJson(data);
     };
 

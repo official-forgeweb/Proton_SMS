@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
+import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 import { customAlert } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
@@ -12,6 +13,8 @@ import CustomSelect from '@/components/ui/CustomSelect';
 export default function EditClassPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuthStore();
+    const basePath = user?.role === 'coordinator' ? '/coordinator' : '/admin';
     const [teachers, setTeachers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +69,7 @@ export default function EditClassPage() {
         setIsSubmitting(true);
         try {
             await api.put(`/classes/${params.id}`, formData);
-            router.push(`/admin/classes/${params.id}`);
+            router.push(`${basePath}/classes/${params.id}`);
         } catch (error) {
             console.error('Error updating batch:', error);
             await customAlert('Failed to update batch', 'Error');
@@ -79,9 +82,9 @@ export default function EditClassPage() {
         <FormPageLayout
             title="Edit Batch Details"
             subtitle="Update class schedule and teacher assignments"
-            backHref={`/admin/classes/${params.id}`}
+            backHref={`${basePath}/classes/${params.id}`}
             backLabel="Back to Class"
-            requiredRole="admin"
+            requiredRole={['admin', 'coordinator']}
             icon={<Edit2 size={20} strokeWidth={2.5} />}
             maxWidth="1200px"
         >
@@ -199,7 +202,7 @@ export default function EditClassPage() {
                     </div>
 
                     <div className="form-actions">
-                        <button type="button" className="btn-cancel" onClick={() => router.push(`/admin/classes/${params.id}`)}>Cancel</button>
+                        <button type="button" className="btn-cancel" onClick={() => router.push(`${basePath}/classes/${params.id}`)}>Cancel</button>
                         <button type="submit" className="btn-submit" disabled={isSubmitting}>
                             {isSubmitting ? 'Updating...' : 'Update Batch'}
                         </button>
