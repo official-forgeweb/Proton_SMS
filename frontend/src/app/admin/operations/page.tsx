@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { 
     FileText, ClipboardList, PenTool, Target, 
     Video, MessageSquare, Settings, Shield, Zap,
-    BookOpen, Send, Clock, Terminal
+    BookOpen, Send, Clock, Terminal, Award
 } from 'lucide-react';
 
 const adminTools = [
     { label: 'Study Materials', desc: 'Manage PDF notes & assets', href: '/admin/study-materials', icon: FileText, color: '#4F60FF', bg: '#EEF0FF' },
     { label: 'Video Lectures', desc: 'Manage recorded video classes', href: '/admin/video-lectures', icon: Video, color: '#E53935', bg: '#FFEBEE' },
     { label: 'Tests', desc: 'Create and monitor online tests', href: '/admin/tests', icon: ClipboardList, color: '#F97316', bg: '#FFF4E5' },
+    { label: 'HETs', desc: 'Daily learning & homework tests', href: '/admin/hets', icon: Award, color: '#EF4444', bg: '#FEF2F2' },
     { label: 'Homework', desc: 'Assignment tracking & grading', href: '/admin/homework', icon: PenTool, color: '#8B5CF6', bg: '#F3E8FF' },
     { label: 'Demos', desc: 'Schedule trial/demo classes', href: '/admin/demos', icon: Target, color: '#EC4899', bg: '#FCE7F3' },
     { label: 'Student Queries', desc: 'Resolve doubts and queries', href: '/admin/queries', icon: MessageSquare, color: '#14B8A6', bg: '#E6FFFA' },

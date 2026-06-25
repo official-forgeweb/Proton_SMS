@@ -33,6 +33,31 @@ export const cacheMiddleware = (ttlSeconds: number = 30) => {
     // Initialize the pending queue
     pendingRequests.set(key, []);
 
+    let queueResolved = false;
+    const resolveQueue = (statusCode: number, data: any) => {
+      if (queueResolved) return;
+      queueResolved = true;
+
+      const queuedResList = pendingRequests.get(key) || [];
+      pendingRequests.delete(key);
+
+      queuedResList.forEach((queuedRes) => {
+        try {
+          if (typeof data === 'string') {
+            try {
+              queuedRes.status(statusCode).json(JSON.parse(data));
+            } catch {
+              queuedRes.status(statusCode).send(data);
+            }
+          } else {
+            queuedRes.status(statusCode).json(data);
+          }
+        } catch (err: any) {
+          console.warn(`⚠️ [Cache Middleware] Failed to send collapsed response to queued request:`, err.message);
+        }
+      });
+    };
+
     // Override res.json to capture and cache the response, then resolve queued requests
     const originalJson = res.json.bind(res);
     res.json = (data: any) => {
@@ -40,22 +65,25 @@ export const cacheMiddleware = (ttlSeconds: number = 30) => {
       if (res.statusCode === 200 && data?.success) {
         cacheStore.set(key, { data, timestamp: Date.now() });
       }
-
-      // Retrieve and remove queue
-      const queuedResList = pendingRequests.get(key) || [];
-      pendingRequests.delete(key);
-
-      // Resolve all queued requests with the same response data
-      queuedResList.forEach((queuedRes) => {
-        try {
-          queuedRes.status(res.statusCode).json(data);
-        } catch (err: any) {
-          console.warn(`⚠️ [Cache Middleware] Failed to send collapsed response to queued request:`, err.message);
-        }
-      });
-
+      resolveQueue(res.statusCode, data);
       return originalJson(data);
     };
+
+    // Also override res.send as a fallback
+    const originalSend = res.send.bind(res);
+    res.send = (body: any) => {
+      resolveQueue(res.statusCode, body);
+      return originalSend(body);
+    };
+
+    // Clean up if connection closes or finishes without resolving the queue
+    const cleanup = () => {
+      if (!queueResolved) {
+        resolveQueue(500, { success: false, message: 'Request aborted or failed' });
+      }
+    };
+    res.on('finish', cleanup);
+    res.on('close', cleanup);
 
     next();
   };

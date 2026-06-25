@@ -33,6 +33,7 @@ import messageRoutes from './routes/messages';
 import searchRoutes from './routes/search';
 import coordinatorRoutes from './routes/coordinators';
 import subjectsRoutes from './routes/subjects';
+import hetRoutes from './routes/hets';
 
 // WhatsApp module sub-routers
 import whatsappConfigRoutes from './routes/whatsapp/config';
@@ -97,6 +98,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/coordinators', coordinatorRoutes);
 app.use('/api/subjects', subjectsRoutes);
+app.use('/api/hets', hetRoutes);
 
 // WhatsApp Router mounts
 app.use('/api/whatsapp/config', whatsappConfigRoutes);

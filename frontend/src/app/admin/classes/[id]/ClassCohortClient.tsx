@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   BookOpen, Users, Clock, Calendar, MapPin, 
@@ -43,7 +43,23 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
   const { user } = useAuthStore();
   const basePath = user?.role === 'coordinator' ? '/coordinator' : '/admin';
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'roster' | 'attendance' | 'academics'>('roster');
+  const [activeTab, setActiveTab] = useState<'roster' | 'attendance' | 'academics' | 'het'>('roster');
+  const [classHets, setClassHets] = useState<any[]>([]);
+  const [hetLoading, setHetLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'het' && classHets.length === 0) {
+      setHetLoading(true);
+      api.get('/hets', { params: { class_id: cls.id } })
+        .then(res => {
+          if (res.data?.success) {
+            setClassHets(res.data.data || []);
+          }
+        })
+        .catch(err => console.error('Failed to load class HETs', err))
+        .finally(() => setHetLoading(false));
+    }
+  }, [activeTab, cls.id, classHets.length]);
 
   // Class cohort delete validation & hooks
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -348,6 +364,12 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
             >
               Academics & Performance
             </button>
+            <button 
+              className={`tab-btn ${activeTab === 'het' ? 'active' : ''}`}
+              onClick={() => setActiveTab('het')}
+            >
+              HET Evaluations
+            </button>
           </div>
 
           {/* Roster Tab */}
@@ -592,6 +614,92 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
 
               </div>
 
+            </div>
+          )}
+
+          {/* HET Evaluations Tab */}
+          {activeTab === 'het' && (
+            <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0' }} className="animate-fade-in-up">
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1E293B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Award size={18} color="#E53935" /> Homework Evaluation Tests (HET) History
+              </h3>
+
+              {hetLoading ? (
+                <div style={{ padding: '40px', textAlign: 'center' }}>
+                  <div style={{ width: '30px', height: '30px', border: '3px solid #f3f3f3', borderTop: '3px solid #E53935', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+                </div>
+              ) : classHets.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>
+                  <Award size={36} style={{ opacity: 0.25, marginBottom: '12px' }} />
+                  <p style={{ fontWeight: 600, fontSize: '15px', margin: 0 }}>No HET records found</p>
+                  <p style={{ fontSize: '13px', margin: '4px 0 0 0' }}>No daily assessments have been scheduled for this class cohort.</p>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748B', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase' }}>HET Details</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748B', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase' }}>Subject</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748B', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase' }}>Assessor</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748B', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase' }}>Date</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748B', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase' }}>Passing Marks</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748B', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase' }}>Status</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'right', color: '#64748B', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {classHets.map((h) => {
+                        const isComp = h.status === 'completed';
+                        const isSch = h.status === 'scheduled';
+                        return (
+                          <tr key={h.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                            <td style={{ padding: '14px 16px' }}>
+                              <div style={{ fontWeight: 800, fontSize: '13.5px', color: '#1A1D3B' }}>{h.title}</div>
+                              <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500, marginTop: '2px' }}>Topic: {h.topic}</div>
+                            </td>
+                            <td style={{ padding: '14px 16px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 700, color: '#6366F1', background: 'rgba(99,102,241,0.08)', padding: '2px 8px', borderRadius: '6px' }}>
+                                {h.subject_name}
+                              </span>
+                            </td>
+                            <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 600, color: '#1A1D3B' }}>
+                              {h.teacher_name}
+                            </td>
+                            <td style={{ padding: '14px 16px', fontSize: '12.5px', color: '#64748B' }}>
+                              {new Date(h.date).toLocaleDateString()}
+                            </td>
+                            <td style={{ padding: '14px 16px', fontWeight: 700, color: '#1A1D3B', fontSize: '13px' }}>
+                              {h.passing_marks} <span style={{ color: '#94A3B8', fontWeight: 500 }}>/ {h.total_marks}</span>
+                            </td>
+                            <td style={{ padding: '14px 16px' }}>
+                              <span style={{
+                                padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase',
+                                background: isComp ? '#ECFDF5' : isSch ? '#E0F2FE' : '#F1F5F9',
+                                color: isComp ? '#059669' : isSch ? '#0369A1' : '#64748B',
+                              }}>
+                                {h.status}
+                              </span>
+                            </td>
+                            <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                              <Link 
+                                href={`${basePath}/hets/${h.id}`}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none',
+                                  color: 'white', background: '#1A1D3B', padding: '6px 12px', borderRadius: '8px',
+                                  fontSize: '12.5px', fontWeight: 700
+                                }}
+                              >
+                                Details
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 

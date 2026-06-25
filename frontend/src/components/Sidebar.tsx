@@ -20,6 +20,7 @@ const adminNav = [
             { label: 'Teachers', href: '/admin/teachers', icon: Users },
             { label: 'Coordinators', href: '/admin/coordinators', icon: Shield },
             { label: 'Classes', href: '/admin/classes', icon: BookOpen },
+            { label: 'HET Management', href: '/admin/hets', icon: Award },
             { label: 'Timetable', href: '/admin/timetable', icon: Calendar },
             { label: 'Enquiries', href: '/admin/enquiries', icon: Phone },
             { label: 'Operations', href: '/admin/operations', icon: Zap },
@@ -48,6 +49,7 @@ const teacherNavSections = [
             { label: 'My Schedule', href: '/teacher/timetable', icon: Calendar },
             { label: 'My Classes', href: '/teacher/classes', icon: BookOpen, permissionKey: 'classes' },
             { label: 'Students', href: '/teacher/students', icon: GraduationCap, permissionKey: 'students' },
+            { label: 'HET Management', href: '/teacher/hets', icon: Award },
             { label: 'Enquiries', href: '/teacher/enquiries', icon: Phone, permissionKey: 'enquiries' },
             { label: 'Operations', href: '/teacher/operations', icon: Zap },
         ]
@@ -62,6 +64,7 @@ const studentNavSections = [
             { label: 'Attendance', href: '/student/attendance', icon: Calendar },
             { label: 'My Schedule', href: '/student/timetable', icon: Clock },
             { label: 'Performance', href: '/student/performance', icon: Award },
+            { label: 'HET Performance', href: '/student/hets', icon: Award },
             { label: 'Operations', href: '/student/operations', icon: Zap },
         ]
     },
@@ -80,6 +83,7 @@ const coordinatorNav = [
             { label: 'Dashboard', href: '/coordinator', icon: LayoutDashboard },
             { label: 'Students', href: '/coordinator/students', icon: GraduationCap },
             { label: 'Classes', href: '/coordinator/classes', icon: BookOpen },
+            { label: 'HET Management', href: '/coordinator/hets', icon: Award },
             { label: 'Timetable', href: '/coordinator/timetable', icon: Calendar },
             { label: 'Enquiries', href: '/coordinator/enquiries', icon: Phone },
             { label: 'Operations', href: '/coordinator/operations', icon: Zap },

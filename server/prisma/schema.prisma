@@ -69,6 +69,8 @@ model User {
   google_sheet_sync_logs   GoogleSheetSyncLog[]
   whatsapp_templates       WhatsAppTemplate[]
   whatsapp_automations     WhatsAppAutomationRule[]
+  hets_created            HET[]                     @relation("HETCreator")
+  het_results_graded      HETResult[]               @relation("HETGrader")
 
   @@map("users")
 }
@@ -110,6 +112,7 @@ model Student {
   fee_payments            FeePayment[]
   queries                 StudentQuery[]
   remarks                 StudentRemark[]
+  het_results             HETResult[]
 
   @@index([academic_status])
   @@index([phone])
@@ -149,6 +152,7 @@ model Teacher {
   queries_targeted  StudentQuery[]    @relation("QueryTargetTeacher")
   remarks           StudentRemark[]
   activity_logs     TeacherActivityLog[]
+  hets              HET[]
 
   @@index([employment_status])
   @@map("teachers")
@@ -198,6 +202,7 @@ model Class {
   video_lectures       VideoLecture[]
   study_materials      StudyMaterial[]
   class_subjects       ClassSubject[]
+  hets                 HET[]
 
   @@index([status])
   @@index([primary_teacher_id])
@@ -1014,6 +1019,7 @@ model Subject {
   homeworks                   Homework[]
   video_lectures              VideoLecture[]
   study_materials             StudyMaterial[]
+  hets                        HET[]
 
   @@map("subjects")
 }
@@ -1197,6 +1203,59 @@ model WhatsAppAutomationRule {
   creator        User?            @relation(fields: [created_by_id], references: [id])
 
   @@map("whatsapp_automation_rules")
+}
+
+model HET {
+  id            String      @id @default(uuid())
+  title         String
+  class_id      String
+  subject_id    String
+  teacher_id    String
+  created_by    String
+  date          String      // e.g. "2026-06-25"
+  topic         String
+  description   String?     @db.Text
+  total_marks   Float
+  passing_marks Float
+  status        String      @default("draft") // draft | scheduled | completed | cancelled
+  remarks       String?     @db.Text
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  // Relations
+  class         Class       @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  subject       Subject     @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  teacher       Teacher     @relation(fields: [teacher_id], references: [id], onDelete: Cascade)
+  creator       User        @relation("HETCreator", fields: [created_by], references: [id])
+  results       HETResult[]
+
+  @@index([class_id])
+  @@index([subject_id])
+  @@index([teacher_id])
+  @@index([status])
+  @@map("hets")
+}
+
+model HETResult {
+  id             String    @id @default(uuid())
+  het_id         String
+  student_id     String
+  marks_obtained Float?
+  remarks        String?   @db.Text
+  graded_by      String?
+  graded_at      DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  // Relations
+  het            HET       @relation(fields: [het_id], references: [id], onDelete: Cascade)
+  student        Student   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  grader         User?     @relation("HETGrader", fields: [graded_by], references: [id], onDelete: SetNull)
+
+  @@unique([het_id, student_id])
+  @@index([het_id])
+  @@index([student_id])
+  @@map("het_results")
 }
 
 

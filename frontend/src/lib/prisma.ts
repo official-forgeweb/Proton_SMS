@@ -22,7 +22,8 @@ const getDatabaseUrl = () => {
     }
     if (!url.includes('connection_limit=')) {
       const separator = url.includes('?') ? '&' : '?';
-      url = `${url}${separator}connection_limit=5`;
+      const limit = process.env.VERCEL ? '3' : '20';
+      url = `${url}${separator}connection_limit=${limit}`;
     }
   }
   return url;
