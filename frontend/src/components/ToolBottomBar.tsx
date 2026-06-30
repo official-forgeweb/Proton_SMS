@@ -4,7 +4,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { 
     FileText, ClipboardList, PenTool, Target, 
     Video, MessageSquare, Shield, UserCheck, 
-    BarChart3, PlayCircle, Users, Bell, IndianRupee 
+    BarChart3, PlayCircle, Users, Bell, IndianRupee,
+    Settings, BookOpen, Send, Clock, Terminal, Zap
 } from 'lucide-react';
 
 const adminTools = [
@@ -53,12 +54,35 @@ const parentTools = [
     { label: 'Alerts', href: '/parent/notifications', icon: Bell },
 ];
 
+const whatsappTools = [
+    { label: 'Dashboard', href: '/dashboard/whatsapp', icon: MessageSquare },
+    { label: 'Settings', href: '/dashboard/whatsapp/settings', icon: Settings },
+    { label: 'Templates', href: '/dashboard/whatsapp/templates', icon: BookOpen },
+    { label: 'Send', href: '/dashboard/whatsapp/send', icon: Send },
+    { label: 'Automations', href: '/dashboard/whatsapp/automations', icon: Zap },
+    { label: 'Logs', href: '/dashboard/whatsapp/logs', icon: Clock },
+    { label: 'Debug', href: '/dashboard/whatsapp/debug', icon: Terminal },
+];
+
 export default function ToolBottomBar() {
     const pathname = usePathname();
     const { user } = useAuthStore();
     const permissions = user?.profile?.permissions || [];
     const role = user?.role as string | undefined;
 
+    // ── WhatsApp pages get their own dedicated bottom bar ──
+    const isWhatsappPage = pathname?.startsWith('/dashboard/whatsapp');
+    if (isWhatsappPage) {
+        return (
+            <BottomBarPill
+                tools={whatsappTools}
+                pathname={pathname}
+                accentColor="#25D366"
+            />
+        );
+    }
+
+    // ── Role-based tools bar (for tool sub-pages only, NOT the /operations hub) ──
     let tools: any[] = [];
     if (role === 'admin') tools = adminTools;
     else if (role === 'coordinator') tools = coordinatorTools;
@@ -68,16 +92,26 @@ export default function ToolBottomBar() {
 
     if (tools.length === 0) return null;
 
-    // Check if the current pathname is one of the tools, or a child path of one of the tools,
-    // or if pathname is exactly `/admin/operations`, `/teacher/operations`, etc.
+    // Show only on tool sub-pages (e.g. /admin/study-materials), NOT on /admin/operations itself
     const isOperationPage = pathname?.endsWith('/operations');
     const isToolPage = tools.some(t => {
         return pathname === t.href || 
             (t.href !== `/${role}` && pathname.startsWith(t.href + '/'));
     });
 
-    if (!isOperationPage && !isToolPage) return null;
+    if (isOperationPage || (!isToolPage)) return null;
 
+    return (
+        <BottomBarPill
+            tools={tools}
+            pathname={pathname}
+            accentColor="#E53935"
+        />
+    );
+}
+
+// ── Shared pill bar renderer ──
+function BottomBarPill({ tools, pathname, accentColor }: { tools: any[]; pathname: string; accentColor: string }) {
     return (
         <div style={{
             position: 'fixed',
@@ -87,21 +121,24 @@ export default function ToolBottomBar() {
             background: 'rgba(255, 255, 255, 0.88)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid rgba(229, 57, 53, 0.12)',
+            border: `1px solid ${accentColor}1F`,
             padding: '10px 20px',
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
             overflowX: 'auto',
             borderRadius: '100px', // Pill shape
-            boxShadow: '0 10px 30px rgba(229, 57, 53, 0.06), 0 1px 3px rgba(0,0,0,0.02)',
+            boxShadow: `0 10px 30px ${accentColor}0F, 0 1px 3px rgba(0,0,0,0.02)`,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             maxWidth: '90vw',
         }} className="tool-bottom-bar hide-scrollbar">
             <span style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', marginRight: '6px', whiteSpace: 'nowrap', letterSpacing: '0.08em' }}>JUMP TO:</span>
-            {tools.map((tool) => {
+            {tools.map((tool: any) => {
                 const Icon = tool.icon;
-                const isActive = pathname === tool.href || (tool.href !== '/teacher' && pathname.startsWith(tool.href));
+                // Exact match for /dashboard/whatsapp (root), prefix match for everything else
+                const isActive = tool.href === '/dashboard/whatsapp'
+                    ? pathname === tool.href
+                    : pathname === tool.href || pathname.startsWith(tool.href + '/');
                 return (
                     <Link
                         key={tool.href}
@@ -111,16 +148,16 @@ export default function ToolBottomBar() {
                             alignItems: 'center',
                             gap: '6px',
                             padding: '8px 14px',
-                            background: isActive ? 'rgba(229, 57, 53, 0.08)' : 'rgba(248, 249, 253, 0.65)',
-                            color: isActive ? '#E53935' : '#475569',
+                            background: isActive ? `${accentColor}14` : 'rgba(248, 249, 253, 0.65)',
+                            color: isActive ? accentColor : '#475569',
                             borderRadius: '50px',
                             textDecoration: 'none',
                             fontWeight: isActive ? 700 : 600,
                             fontSize: '12px',
                             whiteSpace: 'nowrap',
                             transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                            border: isActive ? '1px solid rgba(229, 57, 53, 0.25)' : '1px solid rgba(226, 232, 240, 0.5)',
-                            boxShadow: isActive ? '0 4px 12px rgba(229, 57, 53, 0.08)' : 'none'
+                            border: isActive ? `1px solid ${accentColor}40` : '1px solid rgba(226, 232, 240, 0.5)',
+                            boxShadow: isActive ? `0 4px 12px ${accentColor}14` : 'none'
                         }}
                         onMouseEnter={(e) => {
                             if (!isActive) {
@@ -129,7 +166,7 @@ export default function ToolBottomBar() {
                                 e.currentTarget.style.transform = 'translateY(-1px) scale(1.02)';
                             } else {
                                 e.currentTarget.style.transform = 'translateY(-1px) scale(1.02)';
-                                e.currentTarget.style.background = 'rgba(229, 57, 53, 0.12)';
+                                e.currentTarget.style.background = `${accentColor}1F`;
                             }
                         }}
                         onMouseLeave={(e) => {
@@ -139,7 +176,7 @@ export default function ToolBottomBar() {
                                 e.currentTarget.style.transform = 'translateY(0) scale(1)';
                             } else {
                                 e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                                e.currentTarget.style.background = 'rgba(229, 57, 53, 0.08)';
+                                e.currentTarget.style.background = `${accentColor}14`;
                             }
                         }}
                     >
