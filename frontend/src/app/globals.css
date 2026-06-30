@@ -677,7 +677,7 @@ h6 {
   border: none;
   cursor: pointer;
   padding: 8px;
-  borderRadius: 10px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1690,4 +1690,4 @@ select:not([multiple]) option {
   padding: 0 !important;
   overflow-x: auto !important;
 }
-
+
