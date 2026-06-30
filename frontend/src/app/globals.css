@@ -82,6 +82,7 @@
       radial-gradient(at 40% 20%, hsla(28,100%,74%,0.15) 0px, transparent 50%),
       radial-gradient(at 80% 0%, hsla(189,100%,56%,0.15) 0px, transparent 50%),
       radial-gradient(at 0% 50%, hsla(355,100%,93%,0.15) 0px, transparent 50%) !important;
+  width: calc(100% + 48px) !important;
 }
 
 [data-theme="dark"] {
@@ -609,10 +610,11 @@ h6 {
 
 /* ===== LAYOUT ===== */
 .main-content {
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   padding: 0;
   flex: 1;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .header-action-btn:hover {
@@ -1176,6 +1178,7 @@ h6 {
     margin: 0 !important;
     padding: 16px !important;
     border-radius: 12px !important;
+    width: 100% !important;
   }
 
   /* Content area padding reduction */
@@ -1401,7 +1404,7 @@ div:has(> table) {
    ========================================================== */
 
 /* VIEWPORT LEVEL LAYOUT LOCKS & SCROLL ARCHITECTURE */
-html, body, .main-layout-root {
+html, body, .main-layout-root, .main-content {
   height: 100vh !important;
   max-height: 100vh !important;
   overflow: hidden !important;
@@ -1562,5 +1565,129 @@ select:not([multiple]) option {
   font-weight: 500 !important;
   padding: 14px !important;
   font-size: 14.5px !important;
+}
+
+/* ==========================================================
+   CENTRALIZED PLATFORM-WIDE UI SPACING & OVERRIDES 
+   ========================================================== */
+
+/* 1. Global Page Container Setup & Responsive Padding */
+.page-body {
+  height: calc(100vh - 72px) !important;
+  overflow-y: auto !important;
+  flex: 1 !important;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  
+  /* Standardized Page Margins */
+  padding: 24px !important;
+  box-sizing: border-box !important;
+  
+  /* Centralized Premium Mesh Backdrop */
+  background-color: #f7f8fc !important;
+  background-image: 
+      radial-gradient(at 40% 20%, hsla(28,100%,74%,0.15) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(189,100%,56%,0.15) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(355,100%,93%,0.15) 0px, transparent 50%) !important;
+}
+
+@media (max-width: 1024px) {
+  .page-body {
+    padding: 20px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-body {
+    padding: 16px !important;
+  }
+}
+
+/* 2. Clear Spacing Overrides on Descendant bg-mesh and dashboard-container elements */
+.page-body .bg-mesh,
+.page-body .dashboard-container {
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  min-height: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* 3. Disable nested page body padding accumulation */
+.page-body .page-body {
+  padding: 0 !important;
+  margin: 0 !important;
+  height: auto !important;
+  overflow-y: visible !important;
+  background: transparent !important;
+}
+
+/* 4. Align Sticky Top Header Spacing with page boundaries */
+.dashboard-header {
+  padding: 16px 24px !important;
+}
+@media (max-width: 1024px) {
+  .dashboard-header {
+    padding: 16px 20px !important;
+  }
+}
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 12px 16px 12px 64px !important;
+  }
+}
+
+/* 5. Standardize Page Titles/Header Container spacing */
+.page-header {
+  padding: 0 !important;
+  background: transparent !important;
+  border-bottom: none !important;
+  margin-bottom: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+/* 6. Standardize card layout grid lines & margins */
+.glass-panel, .card, .stat-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* 7. Unified Grid gaps */
+.detail-grid-main,
+.detail-grid-double,
+.detail-grid-triple,
+.detail-grid-quad {
+  gap: 24px !important;
+}
+@media (max-width: 1024px) {
+  .detail-grid-main,
+  .detail-grid-double,
+  .detail-grid-triple,
+  .detail-grid-quad {
+    gap: 20px !important;
+  }
+}
+@media (max-width: 768px) {
+  .detail-grid-main,
+  .detail-grid-double,
+  .detail-grid-triple,
+  .detail-grid-quad {
+    gap: 16px !important;
+  }
+}
+
+/* 8. Table Container Width and margins */
+.table-responsive {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: auto !important;
 }
 
