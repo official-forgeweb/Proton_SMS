@@ -13,7 +13,7 @@ import {
   resumeQueue,
 } from '../../services/whatsapp/queue.service';
 import prisma from '../../config/database';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 const router = Router();
 
@@ -92,7 +92,7 @@ router.post('/simulate', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const mockMsgId = `simulated-wamid-${uuidv4()}`;
+    const mockMsgId = `simulated-wamid-${randomUUID()}`;
 
     // Log it as MOCK in database
     await prisma.whatsAppLog.create({

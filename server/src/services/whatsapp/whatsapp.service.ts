@@ -3,7 +3,7 @@ import { formatPhoneNumber } from '../../utils/whatsapp/formatPhone';
 import { decrypt } from '../../utils/whatsapp/encrypt';
 import { retryWithBackoff } from '../../utils/whatsapp/retryLogic';
 import { mapMetaError } from '../../utils/whatsapp/errorMapper';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 export interface MessageMeta {
   recipientName?: string;
@@ -210,7 +210,7 @@ export async function sendTemplateMessage(
 
   // 2. Mock Mode handling
   if (!config.isLive) {
-    const mockMsgId = `mock-msg-${uuidv4()}`;
+    const mockMsgId = `mock-msg-${randomUUID()}`;
     await logMessage({
       phone: formattedPhone,
       recipientName: meta.recipientName,
@@ -327,7 +327,7 @@ export async function sendTextMessage(phone: string, text: string, meta: Message
   };
 
   if (!config.isLive) {
-    const mockMsgId = `mock-msg-${uuidv4()}`;
+    const mockMsgId = `mock-msg-${randomUUID()}`;
     await logMessage({
       phone: formattedPhone,
       recipientName: meta.recipientName,
@@ -438,7 +438,7 @@ export async function sendMediaMessage(phone: string, type: 'image' | 'document'
   };
 
   if (!config.isLive) {
-    const mockMsgId = `mock-msg-${uuidv4()}`;
+    const mockMsgId = `mock-msg-${randomUUID()}`;
     await logMessage({
       phone: formattedPhone,
       recipientName: meta.recipientName,
