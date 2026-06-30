@@ -156,7 +156,7 @@ export default function CoordinatorReportsPage() {
                         <p style={{ color: '#1A1D3B', fontSize: '16px', fontWeight: 600 }}>Analyzing institutional parameters...</p>
                     </div>
                 ) : visualData ? (
-                    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', marginBottom: '40px', animationDelay: '100ms' }}>
+                    <div className="animate-fade-in dashboard-grid-2col" style={{ marginBottom: '40px', animationDelay: '100ms' }}>
                         
                         {/* Demographics Pie Chart */}
                         <div className="glass-card" style={{ padding: '28px' }}>

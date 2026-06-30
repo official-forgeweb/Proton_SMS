@@ -293,7 +293,7 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
     );
 
     return (
-        <div style={{ padding: '32px', margin: '0 auto', maxWidth: '1600px', display: 'flex', flexDirection: 'column', gap: '32px' }} className="animate-page-entry">
+        <div className="animate-page-entry dashboard-client-container">
             
             {/* 1. Header Section */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
@@ -341,11 +341,7 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
                     <p style={{ fontSize: '13px', color: '#8F92A1', marginTop: '4px', marginInline: 0 }}>Visual analysis of fee cashflows, enrollment growth, and lead metrics</p>
                 </div>
                 
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))',
-                    gap: '24px'
-                }}>
+                <div className="dashboard-grid-2col">
                     {/* Chart 1: Fee Collection */}
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Monthly Fee Collection</span>
@@ -405,12 +401,7 @@ export default function AdminDashboardClient({ data }: AdminDashboardClientProps
             </div>
 
             {/* 4. Split bottom segment: Recent Activity & System Alerts */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))',
-                gap: '24px',
-                alignItems: 'start'
-            }}>
+            <div className="dashboard-grid-2col" style={{ alignItems: 'start' }}>
                 
                 {/* Left Side: Recent Activity Feed */}
                 <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '18px' }}>

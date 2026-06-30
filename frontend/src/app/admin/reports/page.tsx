@@ -186,7 +186,7 @@ export default function ReportsPage() {
                         const hasEnquiries = visualData.enquiries && visualData.enquiries.length > 0;
 
                         return (
-                            <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', marginBottom: '40px', animationDelay: '100ms' }}>
+                            <div className="animate-fade-in dashboard-grid-2col" style={{ marginBottom: '40px', animationDelay: '100ms' }}>
                                 
                                 {/* Demographics Pie Chart */}
                                 <div className="glass-card" style={{ padding: '28px' }}>

@@ -210,7 +210,7 @@ export default function TeacherDashboardClient({ data }: Props) {
                 </div>
 
                 {/* ── Analytics Charts ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+                <div className="dashboard-grid-2col" style={{ marginBottom: '32px' }}>
                     {/* Performance Chart */}
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '28px', border: '1px solid #EEEEF5', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -315,7 +315,7 @@ export default function TeacherDashboardClient({ data }: Props) {
                 </div>
 
                 {/* ── Today's Sessions + Right Column ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', alignItems: 'start' }}>
+                <div className="dashboard-grid-2col" style={{ alignItems: 'start' }}>
                     
                     {/* Today's Schedule */}
                     <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '28px', border: '1px solid #EEEEF5' }}>
