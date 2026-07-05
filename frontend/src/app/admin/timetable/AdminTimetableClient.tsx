@@ -10,7 +10,8 @@ import CustomSelect from '@/components/ui/CustomSelect';
 import { customAlert, customConfirm } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { Calendar, Plus, Clock, Trash2, Edit2, AlertTriangle, CheckCircle, X, MapPin, User, ChevronRight, ChevronLeft, BookOpen, Layers } from 'lucide-react';
+import { Calendar, Plus, Clock, Trash2, Edit2, AlertTriangle, CheckCircle, X, MapPin, User, ChevronRight, ChevronLeft, BookOpen, Layers, Lock, Unlock, RefreshCw, BarChart2 } from 'lucide-react';
+import TimetableWizard from './TimetableWizard';
 
 const SUBJECT_PALETTES: Record<string, { bg: string; border: string; text: string; dot: string }> = {
     'Physics':     { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF', dot: '#3B82F6' },
@@ -24,8 +25,34 @@ const SUBJECT_PALETTES: Record<string, { bg: string; border: string; text: strin
     'Computer':    { bg: '#F0F9FF', border: '#BAE6FD', text: '#0C4A6E', dot: '#0EA5E9' },
 };
 
-const getSubjectPalette = (subject: string) =>
-    SUBJECT_PALETTES[subject] || { bg: '#F8FAFC', border: '#E2E8F0', text: '#475569', dot: '#94A3B8' };
+const DYNAMIC_PALETTES = [
+    { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF', dot: '#3B82F6' }, // Blue
+    { bg: '#FFF7ED', border: '#FED7AA', text: '#C2410C', dot: '#F97316' }, // Orange
+    { bg: '#F5F3FF', border: '#DDD6FE', text: '#5B21B6', dot: '#8B5CF6' }, // Purple
+    { bg: '#F0FDF4', border: '#BBF7D0', text: '#166534', dot: '#22C55E' }, // Green
+    { bg: '#FDF2F8', border: '#FBCFE8', text: '#9D174D', dot: '#EC4899' }, // Pink
+    { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E', dot: '#F59E0B' }, // Yellow/Amber
+    { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46', dot: '#10B981' }, // Teal
+    { bg: '#F0F9FF', border: '#BAE6FD', text: '#0C4A6E', dot: '#0EA5E9' }, // Sky Blue
+    { bg: '#FAF5FF', border: '#E9D5FF', text: '#6B21A8', dot: '#A855F7' }, // Purple/Violet
+    { bg: '#FFF1F2', border: '#FECDD3', text: '#9F1239', dot: '#F43F5E' }, // Rose/Red
+];
+
+const getSubjectPalette = (subject: string) => {
+    if (!subject) return { bg: '#F8FAFC', border: '#E2E8F0', text: '#475569', dot: '#94A3B8' };
+    
+    // Check direct match
+    const key = Object.keys(SUBJECT_PALETTES).find(k => subject.toLowerCase().includes(k.toLowerCase()));
+    if (key) return SUBJECT_PALETTES[key];
+    
+    // If not, calculate hash and select a dynamic palette
+    let hash = 0;
+    for (let i = 0; i < subject.length; i++) {
+        hash = subject.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % DYNAMIC_PALETTES.length;
+    return DYNAMIC_PALETTES[index];
+};
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const FULL_DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -80,10 +107,69 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
         setMounted(true);
     }, []);
     const [showModal, setShowModal] = useState(false);
-    const [showGenerateModal, setShowGenerateModal] = useState(false);
+    const [showWizard, setShowWizard] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generateSuccessMsg, setGenerateSuccessMsg] = useState('');
     const [editingEntry, setEditingEntry] = useState<any>(null);
+    const [isClearing, setIsClearing] = useState(false);
+    const [selectedSwapId, setSelectedSwapId] = useState<string | null>(null);
+    const [showAnalytics, setShowAnalytics] = useState(false);
+    const [analytics, setAnalytics] = useState<any>(null);
+
+    const handleToggleLock = async (entryId: string, currentLock: boolean) => {
+        try {
+            await api.put(`/timetable/${entryId}/lock`, { is_locked: !currentLock });
+            fetchTimetable();
+        } catch (error: any) {
+            console.error(error);
+            customAlert(error.response?.data?.message || 'Failed to toggle lock status.', 'Error');
+        }
+    };
+
+    const handleSwap = async (id2: string) => {
+        try {
+            const id1 = selectedSwapId;
+            setSelectedSwapId(null);
+            const res = await api.post('/timetable/swap', { id1, id2 });
+            customAlert(res.data.message || 'Slots swapped successfully.', 'Success');
+            fetchTimetable();
+        } catch (error: any) {
+            console.error(error);
+            setSelectedSwapId(null);
+            customAlert(error.response?.data?.message || 'Failed to swap slots.', 'Error');
+        }
+    };
+
+    const handleFetchAnalytics = async () => {
+        try {
+            const startStr = formatDateStr(weekDates[0]);
+            const endStr = formatDateStr(weekDates[6]);
+            const res = await api.get('/timetable/analytics', {
+                params: { start_date: startStr, end_date: endStr }
+            });
+            setAnalytics(res.data.data);
+            setShowAnalytics(true);
+        } catch (error: any) {
+            console.error(error);
+            customAlert(error.response?.data?.message || 'Failed to fetch analytics.', 'Error');
+        }
+    };
+
+    const handleClearTimetable = async () => {
+        if (!window.confirm('⚠️ WARNING: Are you sure you want to delete ALL timetable entries? This action cannot be undone and will completely clear the calendar!')) return;
+        try {
+            setIsClearing(true);
+            const res = await api.delete('/timetable/clear');
+            customAlert(res.data.message || 'Timetable cleared successfully.', 'Success');
+            window.location.reload();
+        } catch (error: any) {
+            console.error(error);
+            const msg = error.response?.data?.message || 'Failed to clear timetable.';
+            customAlert(msg, 'Error');
+        } finally {
+            setIsClearing(false);
+        }
+    };
 
     const [generateData, setGenerateData] = useState({
         class_id: '',
@@ -104,6 +190,12 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
     const [filterClass, setFilterClass] = useState('');
     const [filterSubject, setFilterSubject] = useState('');
     const [filterTeacher, setFilterTeacher] = useState('');
+
+    useEffect(() => {
+        if (classes.length > 0 && !filterClass) {
+            setFilterClass(classes[0].id);
+        }
+    }, [classes, filterClass]);
 
     const [weekOffset, setWeekOffset] = useState(0);
     const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
@@ -156,21 +248,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
         }
     };
 
-    const handleGenerate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsGenerating(true);
-        try {
-            const res = await api.post('/timetable/generate', generateData);
-            setShowGenerateModal(false);
-            setGenerateSuccessMsg(res.data.message);
-            fetchTimetable();
-            await customAlert(res.data.message || 'Timetable generated successfully.', 'Success');
-        } catch (error: any) {
-            await customAlert(error.response?.data?.message || 'Failed to generate timetable', 'Error');
-        } finally {
-            setIsGenerating(false);
-        }
-    };
+
 
     const handleDelete = async (id: string) => {
         const confirmed = await customConfirm('Are you sure you want to delete this schedule?', 'Confirm Deletion');
@@ -281,7 +359,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                     </div>
                     <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                         <button 
-                            onClick={() => setShowGenerateModal(true)}
+                            onClick={() => setShowWizard(true)}
                             className="hover-lift"
                             style={{ 
                                 display: 'flex', alignItems: 'center', gap: '10px', 
@@ -302,6 +380,58 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                             }}
                         >
                             <Calendar size={18} /> Auto-Generate Timetable
+                        </button>
+                        <button 
+                            onClick={handleClearTimetable}
+                            disabled={isClearing}
+                            className="hover-lift"
+                            style={{ 
+                                display: 'flex', alignItems: 'center', gap: '10px', 
+                                background: '#FEF2F2', color: '#EF4444', 
+                                border: '1px solid #FEE2E2', padding: '12px 20px', 
+                                borderRadius: '14px', fontWeight: 700, fontSize: '14px',
+                                boxShadow: '0 4px 12px rgba(239,68,68,0.05)',
+                                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                cursor: isClearing ? 'not-allowed' : 'pointer',
+                                opacity: isClearing ? 0.6 : 1
+                            }}
+                            onMouseEnter={e => {
+                                if (!isClearing) {
+                                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(239,68,68,0.15)';
+                                    e.currentTarget.style.background = '#FEE2E2';
+                                }
+                            }}
+                            onMouseLeave={e => {
+                                if (!isClearing) {
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.05)';
+                                    e.currentTarget.style.background = '#FEF2F2';
+                                }
+                            }}
+                        >
+                            <Trash2 size={18} /> {isClearing ? 'Clearing...' : 'Clear Timetable'}
+                        </button>
+                        <button 
+                            onClick={handleFetchAnalytics}
+                            className="hover-lift"
+                            style={{ 
+                                display: 'flex', alignItems: 'center', gap: '10px', 
+                                background: '#F5F3FF', color: '#8B5CF6', 
+                                border: '1px solid #DDD6FE', padding: '12px 20px', 
+                                borderRadius: '14px', fontWeight: 700, fontSize: '14px',
+                                boxShadow: '0 4px 12px rgba(139,92,246,0.05)',
+                                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                cursor: 'pointer'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.boxShadow = '0 8px 20px rgba(139,92,246,0.15)';
+                                e.currentTarget.style.background = '#DDD6FE';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(139,92,246,0.05)';
+                                e.currentTarget.style.background = '#F5F3FF';
+                            }}
+                        >
+                            <BarChart2 size={18} /> View Analytics
                         </button>
                         <button 
                             onClick={() => openModal()}
@@ -528,37 +658,62 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                                             return (
                                                 <div key={entry.id} style={{
                                                     background: isTest ? '#FFF1F2' : palette.bg,
-                                                    border: `1.5px solid ${isTest ? '#FECDD3' : palette.border}`,
+                                                    border: selectedSwapId === entry.id 
+                                                        ? '2.5px solid #A855F7' 
+                                                        : `1.5px solid ${isTest ? '#FECDD3' : palette.border}`,
+                                                    boxShadow: selectedSwapId === entry.id ? '0 0 10px rgba(168, 85, 247, 0.4)' : 'none',
                                                     borderRadius: '12px', padding: '10px 12px',
                                                     borderLeft: `4px solid ${statusColor}`,
                                                     transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer',
                                                     position: 'relative'
                                                 }}
                                                     onClick={() => {
-                                                        if (isTest) {
-                                                            router.push(`/${user?.role || 'admin'}/tests/${entry.id}`);
+                                                        if (selectedSwapId && selectedSwapId !== entry.id && !isTest) {
+                                                            handleSwap(entry.id);
+                                                        } else if (selectedSwapId === entry.id) {
+                                                            setSelectedSwapId(null);
                                                         } else {
-                                                            openModal(entry);
+                                                            if (isTest) {
+                                                                router.push(`/${user?.role || 'admin'}/tests/${entry.id}`);
+                                                            } else {
+                                                                openModal(entry);
+                                                            }
                                                         }
                                                     }}
-                                                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; }}
-                                                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                                    onMouseEnter={e => { if (selectedSwapId !== entry.id) e.currentTarget.style.transform = 'scale(1.03)'; }}
+                                                    onMouseLeave={e => { if (selectedSwapId !== entry.id) e.currentTarget.style.transform = 'scale(1)'; }}
                                                 >
                                                     {isTest && <span style={{ position: 'absolute', top: '4px', right: '6px', fontSize: '9px', fontWeight: 800, color: '#F43F5E', textTransform: 'uppercase', background: 'white', padding: '1px 4px', borderRadius: '4px', border: '1px solid #FECDD3' }}>TEST</span>}
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                        <p style={{ fontSize: '13px', fontWeight: 800, color: isTest ? '#9F1239' : palette.text, margin: 0, lineHeight: 1.2 }}>
-                                                            {entry.subject}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
+                                                        <p style={{ fontSize: '13px', fontWeight: 800, color: isTest ? '#9F1239' : palette.text, margin: 0, lineHeight: 1.2, flex: 1 }}>
+                                                            {entry.period_number ? `P${entry.period_number}: ` : ''}{entry.subject}
                                                         </p>
                                                         {!isTest && (
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }} 
-                                                                style={{ background: 'white', border: '1px solid #FEE2E2', borderRadius: '4px', cursor: 'pointer', padding: '2px', color: '#EF4444', opacity: 0.6 }} 
-                                                                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                                                                onMouseLeave={e => e.currentTarget.style.opacity = '0.6'}
-                                                                title="Delete"
-                                                            >
-                                                                <Trash2 size={12} strokeWidth={2.5} />
-                                                            </button>
+                                                            <div style={{ display: 'flex', gap: '3px', alignItems: 'center', flexShrink: 0 }}>
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); handleToggleLock(entry.id, entry.is_locked); }} 
+                                                                    style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', cursor: 'pointer', padding: '2px', color: entry.is_locked ? '#A855F7' : '#94A3B8', opacity: 0.8 }} 
+                                                                    title={entry.is_locked ? "Unlock session" : "Lock session"}
+                                                                >
+                                                                    {entry.is_locked ? <Lock size={10} /> : <Unlock size={10} />}
+                                                                </button>
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); setSelectedSwapId(selectedSwapId === entry.id ? null : entry.id); }} 
+                                                                    style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', cursor: 'pointer', padding: '2px', color: selectedSwapId === entry.id ? '#A855F7' : '#94A3B8', opacity: 0.8 }} 
+                                                                    title="Swap Slot"
+                                                                >
+                                                                    <RefreshCw size={10} />
+                                                                </button>
+                                                                {!entry.is_locked && (
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }} 
+                                                                        style={{ background: 'white', border: '1px solid #FEE2E2', borderRadius: '4px', cursor: 'pointer', padding: '2px', color: '#EF4444', opacity: 0.6 }} 
+                                                                        title="Delete"
+                                                                    >
+                                                                        <Trash2 size={10} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </div>
                                                     <p style={{ fontSize: '11px', color: '#64748B', margin: '4px 0 0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -679,36 +834,71 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
 
                                                     {/* Card */}
                                                     <div style={{
-                                                        flex: 1, background: isTest ? '#FFF1F2' : 'white', borderRadius: '18px',
-                                                        border: `1.5px solid ${isTest ? '#FECDD3' : palette.border}`,
+                                                        flex: 1, 
+                                                        background: isTest ? '#FFF1F2' : 'white', 
+                                                        borderRadius: '18px',
+                                                        border: selectedSwapId === entry.id
+                                                            ? '2.5px solid #A855F7'
+                                                            : `1.5px solid ${isTest ? '#FECDD3' : palette.border}`,
+                                                        boxShadow: selectedSwapId === entry.id ? '0 0 12px rgba(168, 85, 247, 0.4)' : 'none',
                                                         borderLeft: `5px solid ${isTest ? '#F43F5E' : palette.dot}`,
                                                         padding: '20px 24px',
                                                         transition: 'transform 0.2s, box-shadow 0.2s',
                                                         cursor: 'pointer',
                                                     }}
                                                         onClick={() => {
-                                                            if (isTest) {
-                                                                window.location.href = `/${user?.role || 'admin'}/tests/${entry.id}`;
+                                                            if (selectedSwapId && selectedSwapId !== entry.id && !isTest) {
+                                                                handleSwap(entry.id);
+                                                            } else if (selectedSwapId === entry.id) {
+                                                                setSelectedSwapId(null);
                                                             } else {
-                                                                openModal(entry);
+                                                                if (isTest) {
+                                                                    window.location.href = `/${user?.role || 'admin'}/tests/${entry.id}`;
+                                                                } else {
+                                                                    openModal(entry);
+                                                                }
                                                             }
                                                         }}
-                                                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateX(4px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${isTest ? '#F43F5E' : palette.dot}15`; }}
-                                                        onMouseLeave={e => { e.currentTarget.style.transform = 'translateX(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                                        onMouseEnter={e => { if (selectedSwapId !== entry.id) e.currentTarget.style.transform = 'translateX(4px)'; }}
+                                                        onMouseLeave={e => { if (selectedSwapId !== entry.id) e.currentTarget.style.transform = 'translateX(0)'; }}
                                                     >
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                                                             <div>
-                                                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: isTest ? '#9F1239' : '#1A1D3B', margin: 0 }}>{entry.subject}</h3>
+                                                                <h3 style={{ fontSize: '18px', fontWeight: 800, color: isTest ? '#9F1239' : '#1A1D3B', margin: 0 }}>
+                                                                    {entry.period_number ? `Period ${entry.period_number}: ` : ''}{entry.subject}
+                                                                </h3>
                                                                 <p style={{ fontSize: '13px', color: isTest ? '#F43F5E' : '#64748B', margin: '4px 0 0', fontWeight: 700 }}>
                                                                     {isTest ? 'EXAMINATION' : entry.class_ref?.class_name}
                                                                 </p>
                                                                 {isTest && <p style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>{entry.class_ref?.class_name}</p>}
                                                             </div>
-                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                                                 {!isTest && (
-                                                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }} style={{ padding: '6px', borderRadius: '8px', background: '#FEF2F2', border: '1px solid #FECACA', cursor: 'pointer', color: '#DC2626' }}>
-                                                                        <Trash2 size={14} />
-                                                                    </button>
+                                                                    <>
+                                                                        <button 
+                                                                            onClick={(e) => { e.stopPropagation(); handleToggleLock(entry.id, entry.is_locked); }} 
+                                                                            style={{ padding: '6px', borderRadius: '8px', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer', color: entry.is_locked ? '#A855F7' : '#94A3B8' }}
+                                                                            title={entry.is_locked ? "Unlock session" : "Lock session"}
+                                                                        >
+                                                                            {entry.is_locked ? <Lock size={14} /> : <Unlock size={14} />}
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={(e) => { e.stopPropagation(); setSelectedSwapId(selectedSwapId === entry.id ? null : entry.id); }} 
+                                                                            style={{ padding: '6px', borderRadius: '8px', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer', color: selectedSwapId === entry.id ? '#A855F7' : '#94A3B8' }}
+                                                                            title="Swap Slot"
+                                                                        >
+                                                                            <RefreshCw size={14} />
+                                                                        </button>
+                                                                        {!entry.is_locked && (
+                                                                            <button 
+                                                                                onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }} 
+                                                                                style={{ padding: '6px', borderRadius: '8px', background: '#FEF2F2', border: '1px solid #FECACA', cursor: 'pointer', color: '#DC2626' }}
+                                                                                title="Delete"
+                                                                            >
+                                                                                <Trash2 size={14} />
+                                                                            </button>
+                                                                        )}
+                                                                    </>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -945,93 +1135,65 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                 document.body
             )}
 
-            {/* Auto-Generate Modal */}
-            {mounted && showGenerateModal && createPortal(
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-                    <div style={{ background: '#FFFFFF', width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '32px', position: 'relative' }}>
-                        <button onClick={() => setShowGenerateModal(false)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer' }}>
-                            <X size={24} color="#A1A5B7" />
+            {/* New Intelligent Timetable Wizard */}
+            {mounted && showWizard && (
+                <TimetableWizard
+                    onClose={() => setShowWizard(false)}
+                    classes={classes}
+                    teachers={teachers}
+                    onSuccess={(msg) => {
+                        setGenerateSuccessMsg(msg);
+                        fetchTimetable();
+                    }}
+                />
+            )}
+
+            {/* Analytics Modal */}
+            {mounted && showAnalytics && analytics && createPortal(
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
+                    <div style={{ background: '#FFFFFF', width: '100%', maxWidth: '600px', borderRadius: '24px', padding: '32px', position: 'relative', border: '1px solid #E2E8F0', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+                        <button onClick={() => setShowAnalytics(false)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', cursor: 'pointer', padding: '6px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                            <X size={18} color="#64748B" />
                         </button>
-                        <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1A1D3B', marginBottom: '8px' }}>
-                            Auto-Generate Schedule
+                        <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#1A1D3B', marginBottom: '6px' }}>
+                            Timetable Analytics
                         </h2>
-                        <p style={{ color: '#5E6278', fontSize: '14px', marginBottom: '24px' }}>
-                            Automatically create daily schedule entries based on your batches' weekly class configurations.
+                        <p style={{ color: '#64748B', fontSize: '13px', marginBottom: '24px', fontWeight: 500 }}>
+                            Summary metrics for current weekly scheduling distribution.
                         </p>
-                        
-                        <form onSubmit={handleGenerate}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
-                                <div>
-                                    <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Target Class (Optional)</label>
-                                    <CustomSelect 
-                                        value={generateData.class_id}
-                                        onChange={(val) => setGenerateData({ ...generateData, class_id: val })}
-                                        placeholder="All Active Classes"
-                                        options={[
-                                            { value: '', label: 'All Active Classes' },
-                                            ...classes.map(c => ({ value: c.id, label: c.class_name }))
-                                        ]}
-                                    />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>Start Date</label>
-                                        <DatePicker
-                                            required
-                                            selected={generateData.start_date ? new Date(generateData.start_date) : null}
-                                            onChange={(date: Date | null) => setGenerateData({ ...generateData, start_date: date ? date.toISOString().split('T')[0] : '' })}
-                                            dateFormat="MMMM d, yyyy"
-                                            customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '13px', fontWeight: 700, color: '#1A1D3B', marginBottom: '8px', display: 'block' }}>End Date</label>
-                                        <DatePicker
-                                            required
-                                            selected={generateData.end_date ? new Date(generateData.end_date) : null}
-                                            onChange={(date: Date | null) => setGenerateData({ ...generateData, end_date: date ? date.toISOString().split('T')[0] : '' })}
-                                            dateFormat="MMMM d, yyyy"
-                                            customInput={<input style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #E2E8F0', outline: 'none' }} />}
-                                        />
-                                    </div>
-                                </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                            <div style={{ padding: '16px', borderRadius: '16px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Classes Scheduled</span>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: '#1A1D3B', marginTop: '4px' }}>{analytics.classes_scheduled}</div>
                             </div>
-                            <button
-                                disabled={isGenerating}
-                                style={{
-                                    width: '100%',
-                                    padding: '14px',
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    background: 'linear-gradient(135deg, #E53935 0%, #B71C1C 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '14px',
-                                    fontWeight: 700,
-                                    fontSize: '14px',
-                                    boxShadow: '0 4px 15px rgba(229, 57, 53, 0.3)',
-                                    transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                                    cursor: isGenerating ? 'not-allowed' : 'pointer',
-                                    opacity: isGenerating ? 0.8 : 1
-                                }}
-                                onMouseEnter={e => {
-                                    if (!isGenerating) {
-                                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(229, 57, 53, 0.4)';
-                                        e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                                    }
-                                }}
-                                onMouseLeave={e => {
-                                    if (!isGenerating) {
-                                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(229, 57, 53, 0.3)';
-                                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                                    }
-                                }}
-                            >
-                                {isGenerating ? 'Generating...' : <><Calendar size={18} /> Generate Schedule</>}
-                            </button>
-                        </form>
+                            <div style={{ padding: '16px', borderRadius: '16px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Teachers Utilized</span>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: '#1A1D3B', marginTop: '4px' }}>{analytics.teachers_utilized}</div>
+                            </div>
+                            <div style={{ padding: '16px', borderRadius: '16px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Total Teaching Slots</span>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: '#1A1D3B', marginTop: '4px' }}>{analytics.total_teaching_periods}</div>
+                            </div>
+                            <div style={{ padding: '16px', borderRadius: '16px', backgroundColor: '#FAF5FF', border: '1px solid #E9D5FF' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#A855F7', textTransform: 'uppercase' }}>Break Hours</span>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: '#A855F7', marginTop: '4px' }}>Daily Break Injected</div>
+                            </div>
+                        </div>
+
+                        <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#1A1D3B', marginBottom: '12px' }}>Teacher Lecture Distribution</h3>
+                        <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {Object.entries(analytics.teacher_load || {}).map(([id, load]: any) => (
+                                <div key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
+                                        {load.name || `Teacher ID: ${id.slice(0,8)}`}
+                                    </span>
+                                    <span style={{ fontSize: '12px', fontWeight: 800, color: load.weekly > 25 ? '#EF4444' : '#10B981', backgroundColor: load.weekly > 25 ? '#FEF2F2' : '#F0FDF4', padding: '4px 8px', borderRadius: '8px' }}>
+                                        {load.weekly} lectures/wk
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>,
                 document.body

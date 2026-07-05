@@ -6,7 +6,7 @@ import { MessageSquare } from 'lucide-react';
 export default function TeacherQueriesPage() {
     return (
         <DashboardLayout requiredRole="teacher">
-            <div style={{ padding: '32px', margin: '-24px', minHeight: 'calc(100vh - 40px)', background: '#F8FAFC', borderRadius: '24px', paddingBottom: '120px' }}>
+            <div className="bg-mesh" style={{ width: '100%' }}>
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '32px' }}>
                     <div>

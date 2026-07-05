@@ -334,7 +334,7 @@ router.post('/bulk-create', authenticateToken, authorize('admin', 'coordinator')
               teacher_id: null,
               time_start: '09:00',
               time_end: '10:00',
-              days: ['Monday', 'Wednesday', 'Friday']
+              days: []
             }))
           });
 

@@ -198,7 +198,7 @@ export default function EnquiriesPage() {
                 }
             ` }} />
 
-            <div style={{ padding: '32px', margin: '-24px', minHeight: '100%', background: '#F7F8FC' }}>
+            <div className="bg-mesh" style={{ width: '100%' }}>
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
                     <div>
