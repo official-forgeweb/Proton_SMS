@@ -2390,3 +2390,25 @@ select:not([multiple]) option {
   background: transparent !important;
 }
 
+/* ===== Platform-wide Sidebar Layout Optimization ===== */
+.sidebar {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@media (max-width: 767px) {
+  .sidebar {
+    transform: translateX(-100%) !important;
+    width: 260px !important;
+  }
+  .sidebar.open {
+    transform: translateX(0) !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    transform: translateX(0) !important;
+  }
+}
+
+

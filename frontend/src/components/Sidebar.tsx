@@ -222,8 +222,6 @@ export default function Sidebar() {
                     left: 0,
                     top: 0,
                     zIndex: 50,
-                    transition: hasInitializedMobile ? 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)' : 'none',
-                    transform: isMobile ? (isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
                 }}
             >
                 {/* Subtle dark radial glow for depth */}

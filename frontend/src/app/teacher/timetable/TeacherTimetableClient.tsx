@@ -309,6 +309,31 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                 }
                 .tt-timeline-card:hover { transform: translateX(8px) translateY(-2px); box-shadow: 0 14px 36px rgba(0,0,0,0.045); }
                 
+                .tt-controls-bar {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 20px;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-top: 36px;
+                    margin-bottom: 32px;
+                    padding: 20px 28px;
+                    border-radius: 26px;
+                    background: rgba(255, 255, 255, 0.8);
+                    backdrop-filter: blur(14px);
+                    border: 1px solid rgba(255, 255, 255, 0.5);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.015);
+                }
+                @media (max-width: 768px) {
+                    .tt-controls-bar {
+                        padding: 14px 16px;
+                        border-radius: 20px;
+                        gap: 16px;
+                        margin-top: 24px;
+                        margin-bottom: 24px;
+                    }
+                }
+
                 .tt-nav-btn {
                     background: #FFFFFF; border: 1px solid var(--border-primary); border-radius: 14px;
                     padding: 10px 16px; cursor: pointer; display: flex; align-items: center;
@@ -320,6 +345,7 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                     display: flex;
                     align-items: center;
                     gap: 12px;
+                    flex-wrap: wrap;
                 }
                 .tt-week-range-text {
                     font-weight: 800;
@@ -336,9 +362,10 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                         font-size: 13.5px;
                     }
                     .tt-week-nav-container {
-                        gap: 6px;
+                        gap: 8px;
                         width: 100%;
                         justify-content: center;
+                        flex-wrap: wrap;
                     }
                 }
                 
@@ -422,12 +449,7 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
 
             <div style={{ padding: '0 16px', maxWidth: '1400px', margin: '0 auto' }}>
                 {/* ── Top Controls Bar ── */}
-                <div className="tt-float" style={{
-                    display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'center',
-                    justifyContent: 'space-between', marginTop: '36px', marginBottom: '32px',
-                    padding: '20px 28px', borderRadius: '26px', background: 'rgba(255, 255, 255, 0.8)',
-                    backdropFilter: 'blur(14px)', border: '1px solid rgba(255, 255, 255, 0.5)',
-                    boxShadow: '0 6px 20px rgba(0,0,0,0.015)',
+                <div className="tt-float tt-controls-bar" style={{
                     animationDelay: '100ms'
                 }}>
                     {/* View Toggle */}

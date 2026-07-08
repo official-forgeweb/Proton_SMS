@@ -20,6 +20,141 @@ import ResponsiveTabs from '@/components/ui/ResponsiveTabs';
 import ResponsiveModal from '@/components/ui/ResponsiveModal';
 import CustomSelect from '@/components/ui/CustomSelect';
 
+function AdminStudentHETPerformanceTab({ studentId }: { studentId: string }) {
+    const [hetResults, setHetResults] = useState<any[]>([]);
+    const [hetLoading, setHetLoading] = useState(true);
+
+    useEffect(() => {
+        api.get(`/hets/student/${studentId}`)
+            .then(res => {
+                if (res.data?.success) {
+                    setHetResults(res.data.data || []);
+                }
+            })
+            .catch(err => console.error('Failed to load student HET results', err))
+            .finally(() => setHetLoading(false));
+    }, [studentId]);
+
+    const totalHets = hetResults.length;
+    const completedHets = hetResults.filter(r => r.marks_obtained !== null);
+    const totalCompleted = completedHets.length;
+    
+    let hetAverage = 0;
+    let hetHighest = 0;
+    let hetLowest = 100;
+    let hetPasses = 0;
+
+    if (totalCompleted > 0) {
+        let totalObtainedPct = 0;
+        completedHets.forEach(r => {
+            const pct = Math.round((r.marks_obtained / r.total_marks) * 100);
+            totalObtainedPct += pct;
+            if (pct > hetHighest) hetHighest = pct;
+            if (pct < hetLowest) hetLowest = pct;
+            if (r.marks_obtained >= r.passing_marks) hetPasses++;
+        });
+        hetAverage = Math.round(totalObtainedPct / totalCompleted);
+    } else {
+        hetLowest = 0;
+    }
+
+    const hetPassRate = totalCompleted > 0 ? Math.round((hetPasses / totalCompleted) * 100) : 0;
+
+    return (
+        <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* HET Mini Stats Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                <div className="stat-card" style={{ padding: '16px 20px', background: '#FAFBFF' }}>
+                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>HET Evaluated</span>
+                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#1A1D3B', margin: '4px 0 0 0' }}>
+                        {totalCompleted} <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>/ {totalHets} Total</span>
+                    </h4>
+                </div>
+                <div className="stat-card" style={{ padding: '16px 20px', background: '#FAFBFF' }}>
+                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Pass Rate</span>
+                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: 'var(--success)', margin: '4px 0 0 0' }}>
+                        {hetPassRate}% <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>({hetPasses} Passed)</span>
+                    </h4>
+                </div>
+                <div className="stat-card" style={{ padding: '16px 20px', background: '#FAFBFF' }}>
+                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>HET Average Score</span>
+                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: 'var(--info)', margin: '4px 0 0 0' }}>
+                        {hetAverage}% <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>Average</span>
+                    </h4>
+                </div>
+                <div className="stat-card" style={{ padding: '16px 20px', background: '#FAFBFF' }}>
+                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Highest Percentage</span>
+                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#0EA5E9', margin: '4px 0 0 0' }}>
+                        {hetHighest}% <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>Highest</span>
+                    </h4>
+                </div>
+            </div>
+
+            {/* HET Roster History */}
+            <div className="data-card">
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Poppins, sans-serif' }}>
+                    <Award size={20} color="var(--primary)" /> HET Results History
+                </h3>
+                
+                {hetLoading ? (
+                    <div style={{ padding: '40px', textAlign: 'center' }}>
+                        <div style={{ width: '30px', height: '30px', border: '3px solid #f3f3f3', borderTop: '3px solid var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+                    </div>
+                ) : hetResults.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px', background: '#F8F9FD', borderRadius: '12px' }}>
+                        <p style={{ color: 'var(--text-tertiary)', fontWeight: 500, margin: 0 }}>No daily Homework Evaluation Test (HET) records for this student.</p>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {hetResults.map((r, i) => {
+                            const isPass = r.marks_obtained !== null && r.marks_obtained >= r.passing_marks;
+                            return (
+                                <div key={r.id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-primary)', background: '#FAFBFF' }}>
+                                    <div>
+                                        <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>{r.title}</h4>
+                                        <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px', marginInline: 0, fontWeight: 500 }}>
+                                            Topic: <strong style={{ color: '#1A1D3B' }}>{r.topic}</strong> • 
+                                            Class: <strong style={{ color: '#1A1D3B' }}>{r.class_name}</strong> • 
+                                            Subject: <strong style={{ color: 'var(--info)' }}>{r.subject_name}</strong> • 
+                                            Date: {r.date ? new Date(r.date).toLocaleDateString() : 'N/A'}
+                                        </p>
+                                        {r.remarks && (
+                                            <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: '6px', marginInline: 0, paddingLeft: '8px', borderLeft: '2px solid var(--primary)' }}>
+                                                "{r.remarks}"
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        {r.marks_obtained !== null ? (
+                                            <>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <span style={{ fontSize: '16px', fontWeight: 950, color: '#1A1D3B' }}>{r.marks_obtained}</span>
+                                                    <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600 }}> / {r.total_marks} Marks</span>
+                                                </div>
+                                                <span style={{
+                                                    padding: '4px 10px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase',
+                                                    background: isPass ? 'var(--success-light)' : 'var(--primary-light)',
+                                                    color: isPass ? 'var(--success)' : 'var(--primary)'
+                                                }}>
+                                                    {isPass ? 'Passed' : 'Failed'}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', background: '#F1F5F9', padding: '4px 10px', borderRadius: '6px' }}>
+                                                Ungraded
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function StudentProfilePage() {
     const params = useParams();
     const router = useRouter();
@@ -1185,140 +1320,9 @@ export default function StudentProfilePage() {
                 })()}
 
                 {/* HET PERFORMANCE TAB */}
-                {activeTab === 'het' && (() => {
-                    const [hetResults, setHetResults] = useState<any[]>([]);
-                    const [hetLoading, setHetLoading] = useState(true);
-
-                    useEffect(() => {
-                        api.get(`/hets/student/${params.id}`)
-                            .then(res => {
-                                if (res.data?.success) {
-                                    setHetResults(res.data.data || []);
-                                }
-                            })
-                            .catch(err => console.error('Failed to load student HET results', err))
-                            .finally(() => setHetLoading(false));
-                    }, []);
-
-                    const totalHets = hetResults.length;
-                    const completedHets = hetResults.filter(r => r.marks_obtained !== null);
-                    const totalCompleted = completedHets.length;
-                    
-                    let hetAverage = 0;
-                    let hetHighest = 0;
-                    let hetLowest = 100;
-                    let hetPasses = 0;
-
-                    if (totalCompleted > 0) {
-                        let totalObtainedPct = 0;
-                        completedHets.forEach(r => {
-                            const pct = Math.round((r.marks_obtained / r.total_marks) * 100);
-                            totalObtainedPct += pct;
-                            if (pct > hetHighest) hetHighest = pct;
-                            if (pct < hetLowest) hetLowest = pct;
-                            if (r.marks_obtained >= r.passing_marks) hetPasses++;
-                        });
-                        hetAverage = Math.round(totalObtainedPct / totalCompleted);
-                    } else {
-                        hetLowest = 0;
-                    }
-
-                    const hetPassRate = totalCompleted > 0 ? Math.round((hetPasses / totalCompleted) * 100) : 0;
-
-                    return (
-                        <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                            {/* HET Mini Stats Cards */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                                <div className="stat-card" style={{ padding: '16px 20px', background: '#FAFBFF' }}>
-                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>HET Evaluated</span>
-                                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#1A1D3B', margin: '4px 0 0 0' }}>
-                                        {totalCompleted} <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>/ {totalHets} Total</span>
-                                    </h4>
-                                </div>
-                                <div className="stat-card" style={{ padding: '16px 20px', background: '#FAFBFF' }}>
-                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Pass Rate</span>
-                                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#10B981', margin: '4px 0 0 0' }}>
-                                        {hetPassRate}% <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>({hetPasses} Passed)</span>
-                                    </h4>
-                                </div>
-                                <div className="stat-card" style={{ padding: '16px 20px', background: '#FAFBFF' }}>
-                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>HET Average Score</span>
-                                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#7C3AED', margin: '4px 0 0 0' }}>
-                                        {hetAverage}% <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>Average</span>
-                                    </h4>
-                                </div>
-                                <div className="stat-card" style={{ padding: '16px 20px', background: '#FAFBFF' }}>
-                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#8F92A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Highest Percentage</span>
-                                    <h4 style={{ fontSize: '20px', fontWeight: 850, color: '#0EA5E9', margin: '4px 0 0 0' }}>
-                                        {hetHighest}% <span style={{ fontSize: '11px', color: '#8F92A1', fontWeight: 600 }}>Highest</span>
-                                    </h4>
-                                </div>
-                            </div>
-
-                            {/* HET Roster History */}
-                            <div className="data-card">
-                                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Award size={18} color="#E53935" /> HET Results History
-                                </h3>
-                                
-                                {hetLoading ? (
-                                    <div style={{ padding: '40px', textAlign: 'center' }}>
-                                        <div style={{ width: '30px', height: '30px', border: '3px solid #f3f3f3', borderTop: '3px solid #E53935', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
-                                    </div>
-                                ) : hetResults.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '40px', background: '#F8F9FD', borderRadius: '12px' }}>
-                                        <p style={{ color: '#8F92A1', fontWeight: 500, margin: 0 }}>No daily Homework Evaluation Test (HET) records for this student.</p>
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                        {hetResults.map((r, i) => {
-                                            const isPass = r.marks_obtained !== null && r.marks_obtained >= r.passing_marks;
-                                            return (
-                                                <div key={r.id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '16px', border: '1px solid #E2E8F0', background: '#FAFBFF' }}>
-                                                    <div>
-                                                        <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#1A1D3B', margin: 0 }}>{r.title}</h4>
-                                                        <p style={{ fontSize: '12px', color: '#64748B', marginTop: '4px', marginInline: 0, fontWeight: 500 }}>
-                                                            Topic: <strong style={{ color: '#1A1D3B' }}>{r.topic}</strong> • 
-                                                            Class: <strong style={{ color: '#1A1D3B' }}>{r.class_name}</strong> • 
-                                                            Subject: <strong style={{ color: '#6366F1' }}>{r.subject_name}</strong> • 
-                                                            Date: {new Date(r.date).toLocaleDateString()}
-                                                        </p>
-                                                        {r.remarks && (
-                                                            <p style={{ fontSize: '12.5px', color: '#475569', fontStyle: 'italic', marginTop: '6px', marginInline: 0, paddingLeft: '8px', borderLeft: '2px solid #E53935' }}>
-                                                                "{r.remarks}"
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                        {r.marks_obtained !== null ? (
-                                                            <>
-                                                                <div style={{ textAlign: 'right' }}>
-                                                                    <span style={{ fontSize: '16px', fontWeight: 900, color: '#1A1D3B' }}>{r.marks_obtained}</span>
-                                                                    <span style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}> / {r.total_marks}</span>
-                                                                </div>
-                                                                <span style={{
-                                                                    padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase',
-                                                                    background: isPass ? '#ECFDF5' : '#FEF2F2',
-                                                                    color: isPass ? '#059669' : '#EF4444'
-                                                                }}>
-                                                                    {isPass ? 'Passed' : 'Failed'}
-                                                                </span>
-                                                            </>
-                                                        ) : (
-                                                            <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', background: '#F1F5F9', padding: '4px 10px', borderRadius: '6px' }}>
-                                                                Ungraded
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })()}
+                {activeTab === 'het' && (
+                    <AdminStudentHETPerformanceTab studentId={params.id as string} />
+                )}
 
                 {/* ATTENDANCE TAB */}
                 {activeTab === 'attendance' && (
