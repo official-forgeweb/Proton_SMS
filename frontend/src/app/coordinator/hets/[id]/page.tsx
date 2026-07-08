@@ -1,6 +1,2 @@
-'use client';
-import HETDetailClient from '@/components/HETDetailClient';
-
-export default function CoordinatorHetDetailPage() {
-  return <HETDetailClient />;
-}
+import AdminPage from '@/app/admin/hets/[id]/page';
+export default AdminPage;

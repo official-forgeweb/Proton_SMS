@@ -164,7 +164,7 @@ export default function TeacherDashboardClient({ data }: Props) {
                 </div>
             </div>
 
-            <div style={{ padding: '0 24px', maxWidth: '1500px', margin: '0 auto' }}>
+            <div style={{ width: '100%' }}>
 
                 {/* ── Stats Grid ── */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px', marginTop: '32px', marginBottom: '32px' }}>

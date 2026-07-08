@@ -410,7 +410,7 @@ export default function StudentTimetablePage() {
                                                     >
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <p style={{ fontSize: '13px', fontWeight: 800, color: palette.text, margin: 0, lineHeight: 1.3 }}>
-                                                                {entry.subject}
+                                                                {entry.period_number ? `P${entry.period_number}: ` : ''}{entry.subject}
                                                             </p>
                                                             {entry.status !== 'scheduled' && (
                                                                 <span style={{ fontSize: '8px', fontWeight: 900, padding: '2px 5px', borderRadius: '4px', background: entry.status === 'completed' ? '#D1FAE5' : '#FEE2E2', color: entry.status === 'completed' ? '#065F46' : '#991B1B', textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1 }}>
@@ -547,7 +547,7 @@ export default function StudentTimetablePage() {
                                                         >
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                                                                 <div>
-                                                                    <h3 style={{ fontSize: '19px', fontWeight: 850, color: '#1A1D3B', margin: 0 }}>{entry.subject}</h3>
+                                                                    <h3 style={{ fontSize: '19px', fontWeight: 850, color: '#1A1D3B', margin: 0 }}>{entry.period_number ? `Period ${entry.period_number}: ` : ''}{entry.subject}</h3>
                                                                     <p style={{ fontSize: '13px', color: '#64748B', margin: '6px 0 0', fontWeight: 600 }}>
                                                                         {entry.class_ref?.class_name}
                                                                     </p>

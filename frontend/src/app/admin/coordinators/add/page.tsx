@@ -126,10 +126,15 @@ export default function AddCoordinatorPage() {
             accentColor="#7C3AED"
         >
             <form onSubmit={handleSubmit}>
-                <div className="form-section">
-                    <div className="form-section-title">
-                        <Shield size={16} strokeWidth={2.5} style={{ color: '#7C3AED' }} />
-                        Personal Information
+                {/* Personal Information Section */}
+                <div style={{ marginBottom: '28px' }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #F8FAFC', paddingBottom: '16px' }}>
+                        <span style={{ color: '#7C3AED', display: 'flex', alignItems: 'center' }}>
+                            <Shield size={18} strokeWidth={2.5} />
+                        </span>
+                        <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.01em' }}>
+                            Personal Information
+                        </h3>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div style={{ gridColumn: '1 / -1' }}>
@@ -163,10 +168,15 @@ export default function AddCoordinatorPage() {
                     </div>
                 </div>
 
-                <div className="form-section">
-                    <div className="form-section-title">
-                        <Shield size={16} strokeWidth={2.5} style={{ color: '#7C3AED' }} />
-                        Account Settings
+                {/* Account Settings Section */}
+                <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #F8FAFC', paddingBottom: '16px' }}>
+                        <span style={{ color: '#7C3AED', display: 'flex', alignItems: 'center' }}>
+                            <Shield size={18} strokeWidth={2.5} />
+                        </span>
+                        <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.01em' }}>
+                            Account Settings
+                        </h3>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', maxWidth: '50%' }}>
                         <div>
@@ -183,7 +193,7 @@ export default function AddCoordinatorPage() {
                     </div>
                 </div>
 
-                <div className="form-actions">
+                <div className="form-actions-sticky">
                     <button type="button" className="btn-cancel" onClick={() => router.push('/admin/coordinators')}>Cancel</button>
                     <button type="submit" className="btn-submit" disabled={isSubmitting} style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)' }}>
                         {isSubmitting ? 'Creating...' : 'Create Coordinator'}

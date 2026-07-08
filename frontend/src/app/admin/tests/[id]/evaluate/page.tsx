@@ -2,12 +2,15 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import { ArrowLeft, CheckCircle, Save, Users, AlertCircle } from 'lucide-react';
 
 export default function EvaluateTestPage() {
     const params = useParams();
     const router = useRouter();
+    const pathname = usePathname();
+    const basePath = pathname.startsWith('/coordinator') ? '/coordinator' : '/admin';
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
     const [testData, setTestData] = useState<any>(null);
     const [students, setStudents] = useState<any[]>([]);
     const [results, setResults] = useState<Record<string, { marks: string, present: boolean }>>({});
@@ -121,7 +124,7 @@ export default function EvaluateTestPage() {
             setTimeout(() => {
                 setNotification(null);
                 setTestData({ ...testData, status: 'completed' });
-                router.push(`/admin/tests/${params.id}`);
+                router.push(`${basePath}/tests/${params.id}`);
             }, 2000);
         } catch (error: any) {
             console.error(error);
@@ -132,7 +135,7 @@ export default function EvaluateTestPage() {
     };
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={requiredRole}>
             <div className="page-header">
                 <div>
                     <button onClick={() => router.back()} className="btn btn-secondary btn-sm" style={{ marginBottom: '12px', padding: '6px 12px' }}>

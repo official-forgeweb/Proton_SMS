@@ -8,11 +8,11 @@ import AdminFeesFallbackClient from './AdminFeesFallbackClient';
 export const dynamic = 'force-dynamic';
 
 export default async function FeesPage() {
-    const session = await requireRole('admin');
+    const session = await requireRole(['admin', 'coordinator']);
 
     if (!session) {
         return (
-            <DashboardLayout requiredRole="admin">
+            <DashboardLayout requiredRole={['admin', 'coordinator']}>
                 <AdminFeesFallbackClient />
             </DashboardLayout>
         );
@@ -22,14 +22,14 @@ export default async function FeesPage() {
         const data = await getFeesPageData();
 
         return (
-            <DashboardLayout requiredRole="admin">
+            <DashboardLayout requiredRole={['admin', 'coordinator']}>
                 <AdminFeesClient initialData={data} />
             </DashboardLayout>
         );
     } catch (error) {
         console.error('[FeesPage] Database query failed:', error);
         return (
-            <DashboardLayout requiredRole="admin">
+            <DashboardLayout requiredRole={['admin', 'coordinator']}>
                 <AdminFeesFallbackClient />
             </DashboardLayout>
         );

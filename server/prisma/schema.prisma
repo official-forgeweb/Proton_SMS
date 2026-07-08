@@ -203,6 +203,7 @@ model Class {
   study_materials      StudyMaterial[]
   class_subjects       ClassSubject[]
   hets                 HET[]
+  timetable_config     TimetableConfig?
 
   @@index([status])
   @@index([primary_teacher_id])
@@ -214,19 +215,22 @@ model Class {
 // ──────────────────────────────────────────────
 
 model Timetable {
-  id          String   @id @default(uuid())
-  class_id    String
-  subject_id  String
-  teacher_id  String?
-  date        String                // e.g. "2026-04-08"
-  start_time  String                // e.g. "17:00"
-  end_time    String?               // e.g. "18:00"
-  room        String?
-  online_link String?
-  notes       String?
-  status      String   @default("scheduled")  // scheduled | completed | cancelled
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id            String   @id @default(uuid())
+  class_id      String
+  subject_id    String
+  teacher_id    String?
+  date          String                // e.g. "2026-04-08"
+  start_time    String                // e.g. "17:00"
+  end_time      String?               // e.g. "18:00"
+  room          String?
+  online_link   String?
+  notes         String?
+  status        String   @default("scheduled")  // scheduled | completed | cancelled
+  period_number Int?                  // Period 1, 2, 3, etc.
+  is_locked     Boolean  @default(false)  // Locked lectures survive regeneration
+  generation_id String?               // Groups entries from one generation batch
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
   // Relations
   class_ref   Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
@@ -237,7 +241,44 @@ model Timetable {
   @@index([class_id, date])
   @@index([teacher_id, date])
   @@index([date])
+  @@index([generation_id])
   @@map("timetable")
+}
+
+// ──────────────────────────────────────────────
+// Timetable Config (Scheduling engine configuration per class)
+// ──────────────────────────────────────────────
+
+model TimetableConfig {
+  id                String   @id @default(uuid())
+  class_id          String   @unique
+  institute_start   String   @default("08:00")    // HH:mm
+  institute_end     String   @default("14:00")    // HH:mm
+  lecture_duration   Int      @default(45)         // minutes
+  working_days      String[] @default(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])
+  subject_frequencies String  @default("[]")       // JSON: [{subject_id, weekly_count, teacher_id}]
+  is_manual         Boolean  @default(false)
+  manual_slots      String   @default("[]")       // JSON: [{period_number, start_time, end_time, is_break, break_name}]
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  class_ref Class            @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  breaks    TimetableBreak[]
+
+  @@map("timetable_configs")
+}
+
+model TimetableBreak {
+  id               String @id @default(uuid())
+  config_id        String
+  break_name       String @default("Break")
+  after_period     Int    @default(4)
+  duration_minutes Int    @default(30)
+
+  config TimetableConfig @relation(fields: [config_id], references: [id], onDelete: Cascade)
+
+  @@map("timetable_breaks")
 }
 
 model ClassSchedule {
@@ -248,6 +289,7 @@ model ClassSchedule {
   time_start String?
   time_end   String?
   days       String[] @default([])
+  weekly_frequency Int @default(0)   // Weekly lecture count for this subject in this class
 
   // Relations
   class_ref Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
@@ -823,6 +865,8 @@ model SystemSetting {
   google_spreadsheet_id      String?
   google_sheet_name          String   @default("Videos")
   google_sync_interval_minutes Int    @default(5)
+
+  website_settings           Json?
 
   updated_at                 DateTime @updatedAt
 

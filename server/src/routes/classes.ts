@@ -334,7 +334,7 @@ router.post('/bulk-create', authenticateToken, authorize('admin', 'coordinator')
               teacher_id: null,
               time_start: '09:00',
               time_end: '10:00',
-              days: ['Monday', 'Wednesday', 'Friday']
+              days: []
             }))
           });
 
@@ -381,63 +381,94 @@ router.post('/bulk-create', authenticateToken, authorize('admin', 'coordinator')
 // POST /api/classes
 router.post('/', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { schedule, ...rest } = req.body;
+    const { schedule, timetable_config, ...rest } = req.body;
 
-    const newClass = await prisma.class.create({
-      data: {
-        class_code: generateClassCode(),
-        ...rest,
-        current_students_count: 0,
-        status: rest.status || 'upcoming',
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      const newClass = await tx.class.create({
+        data: {
+          class_code: generateClassCode(),
+          ...rest,
+          current_students_count: 0,
+          status: rest.status || 'upcoming',
+        },
+      });
+
+      if (timetable_config) {
+        const { institute_start, institute_end, lecture_duration, working_days, breaks, is_manual, manual_slots } = timetable_config;
+        const tc = await tx.timetableConfig.create({
+          data: {
+            class_id: newClass.id,
+            institute_start: institute_start || '08:00',
+            institute_end: institute_end || '14:00',
+            lecture_duration: Number(lecture_duration) || 45,
+            working_days: working_days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            is_manual: is_manual !== undefined ? Boolean(is_manual) : false,
+            manual_slots: manual_slots ? (typeof manual_slots === 'string' ? manual_slots : JSON.stringify(manual_slots)) : '[]'
+          }
+        });
+
+        if (breaks && Array.isArray(breaks)) {
+          await tx.timetableBreak.createMany({
+            data: breaks.map((b: any) => ({
+              config_id: tc.id,
+              break_name: b.break_name || 'Break',
+              after_period: Number(b.after_period) || 4,
+              duration_minutes: Number(b.duration_minutes) || 30
+            }))
+          });
+        }
+      }
+
+      if (schedule && Array.isArray(schedule) && schedule.length > 0) {
+        const resolvedSchedules = [];
+        const subjectIds: string[] = [];
+        for (const s of schedule) {
+          let subjectId = s.subject_id || s.subject;
+          if (subjectId && !isUUID(subjectId)) {
+            const canonicalName = await resolveCanonicalSubject(subjectId);
+            const key = getNormalizedKey(canonicalName);
+            let subjectRecord = await tx.subject.findUnique({ where: { normalized_key: key } });
+            if (!subjectRecord) {
+              subjectRecord = await tx.subject.create({
+                data: { canonical_name: canonicalName, normalized_key: key, is_active: true }
+              });
+            }
+            subjectId = subjectRecord.id;
+          }
+          if (subjectId) {
+            subjectIds.push(subjectId);
+            resolvedSchedules.push({
+              class_id: newClass.id,
+              subject_id: subjectId,
+              teacher_id: s.teacher_id || null,
+              time_start: s.time_start || '09:00',
+              time_end: s.time_end || '10:00',
+              days: s.days || [],
+            });
+          }
+        }
+
+        if (resolvedSchedules.length > 0) {
+          await tx.classSchedule.createMany({
+            data: resolvedSchedules,
+          });
+          await syncClassSubjects(tx, newClass.id, subjectIds);
+          notifyTeacherSchedules(resolvedSchedules).catch(err => console.error(err));
+        }
+      }
+
+      return tx.class.findUnique({
+        where: { id: newClass.id },
+        include: { schedule: { include: { subject: true } } },
+      });
+    }, {
+      maxWait: 10000,
+      timeout: 30000
     });
 
     invalidateCache('/api/classes');
     invalidateCache('/api/dashboard');
     invalidateCache('/api/timetable');
-
-    if (schedule && Array.isArray(schedule) && schedule.length > 0) {
-      const resolvedSchedules = [];
-      const subjectIds: string[] = [];
-      for (const s of schedule) {
-        let subjectId = s.subject_id || s.subject;
-        if (subjectId && !isUUID(subjectId)) {
-          const canonicalName = await resolveCanonicalSubject(subjectId);
-          const key = getNormalizedKey(canonicalName);
-          let subjectRecord = await prisma.subject.findUnique({ where: { normalized_key: key } });
-          if (!subjectRecord) {
-            subjectRecord = await prisma.subject.create({
-              data: { canonical_name: canonicalName, normalized_key: key, is_active: true }
-            });
-          }
-          subjectId = subjectRecord.id;
-        }
-        if (subjectId) {
-          subjectIds.push(subjectId);
-          resolvedSchedules.push({
-            class_id: newClass.id,
-            subject_id: subjectId,
-            teacher_id: s.teacher_id || null,
-            time_start: s.time_start || '09:00',
-            time_end: s.time_end || '10:00',
-            days: s.days || [],
-          });
-        }
-      }
-
-      if (resolvedSchedules.length > 0) {
-        await prisma.classSchedule.createMany({
-          data: resolvedSchedules,
-        });
-        await syncClassSubjects(prisma, newClass.id, subjectIds);
-        notifyTeacherSchedules(resolvedSchedules).catch(err => console.error(err));
-      }
-    }
-
-    const result = await prisma.class.findUnique({
-      where: { id: newClass.id },
-      include: { schedule: { include: { subject: true } } },
-    });
 
     res.status(201).json({ success: true, data: { ...result, id: result!.id } });
   } catch (error) {
@@ -450,64 +481,105 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator'), async (re
 router.put('/:id', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = paramId(req);
-    const { schedule, ...rest } = req.body;
+    const { schedule, timetable_config, ...rest } = req.body;
 
-    const updated = await prisma.class.update({
-      where: { id },
-      data: rest,
+    const result = await prisma.$transaction(async (tx) => {
+      const cls = await tx.class.update({
+        where: { id },
+        data: rest,
+      });
+
+      if (timetable_config) {
+        const { institute_start, institute_end, lecture_duration, working_days, breaks, is_manual, manual_slots } = timetable_config;
+        const tc = await tx.timetableConfig.upsert({
+          where: { class_id: id },
+          create: {
+            class_id: id,
+            institute_start: institute_start || '08:00',
+            institute_end: institute_end || '14:00',
+            lecture_duration: Number(lecture_duration) || 45,
+            working_days: working_days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            is_manual: is_manual !== undefined ? Boolean(is_manual) : false,
+            manual_slots: manual_slots ? (typeof manual_slots === 'string' ? manual_slots : JSON.stringify(manual_slots)) : '[]'
+          },
+          update: {
+            institute_start: institute_start || '08:00',
+            institute_end: institute_end || '14:00',
+            lecture_duration: Number(lecture_duration) || 45,
+            working_days: working_days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            is_manual: is_manual !== undefined ? Boolean(is_manual) : false,
+            manual_slots: manual_slots ? (typeof manual_slots === 'string' ? manual_slots : JSON.stringify(manual_slots)) : '[]'
+          }
+        });
+
+        await tx.timetableBreak.deleteMany({ where: { config_id: tc.id } });
+        if (breaks && Array.isArray(breaks)) {
+          await tx.timetableBreak.createMany({
+            data: breaks.map((b: any) => ({
+              config_id: tc.id,
+              break_name: b.break_name || 'Break',
+              after_period: Number(b.after_period) || 4,
+              duration_minutes: Number(b.duration_minutes) || 30
+            }))
+          });
+        }
+      }
+
+      if (schedule && Array.isArray(schedule)) {
+        await tx.classSchedule.deleteMany({ where: { class_id: id } });
+        if (schedule.length > 0) {
+          const resolvedSchedules = [];
+          const subjectIds: string[] = [];
+          for (const s of schedule) {
+            let subjectId = s.subject_id || s.subject;
+            if (subjectId && !isUUID(subjectId)) {
+              const canonicalName = await resolveCanonicalSubject(subjectId);
+              const key = getNormalizedKey(canonicalName);
+              let subjectRecord = await tx.subject.findUnique({ where: { normalized_key: key } });
+              if (!subjectRecord) {
+                subjectRecord = await tx.subject.create({
+                  data: { canonical_name: canonicalName, normalized_key: key, is_active: true }
+                });
+              }
+              subjectId = subjectRecord.id;
+            }
+            if (subjectId) {
+              subjectIds.push(subjectId);
+              resolvedSchedules.push({
+                class_id: id,
+                subject_id: subjectId,
+                teacher_id: s.teacher_id || null,
+                time_start: s.time_start || '09:00',
+                time_end: s.time_end || '10:00',
+                days: s.days || [],
+              });
+            }
+          }
+
+          if (resolvedSchedules.length > 0) {
+            await tx.classSchedule.createMany({
+              data: resolvedSchedules,
+            });
+            await syncClassSubjects(tx, id, subjectIds);
+            notifyTeacherSchedules(resolvedSchedules).catch(err => console.error(err));
+          }
+        } else {
+          await syncClassSubjects(tx, id, []);
+        }
+      }
+
+      return tx.class.findUnique({
+        where: { id },
+        include: { schedule: { include: { subject: true } } },
+      });
+    }, {
+      maxWait: 10000,
+      timeout: 30000
     });
 
     invalidateCache('/api/classes');
     invalidateCache('/api/dashboard');
     invalidateCache('/api/timetable');
-
-    if (schedule && Array.isArray(schedule)) {
-      await prisma.classSchedule.deleteMany({ where: { class_id: id } });
-      if (schedule.length > 0) {
-        const resolvedSchedules = [];
-        const subjectIds: string[] = [];
-        for (const s of schedule) {
-          let subjectId = s.subject_id || s.subject;
-          if (subjectId && !isUUID(subjectId)) {
-            const canonicalName = await resolveCanonicalSubject(subjectId);
-            const key = getNormalizedKey(canonicalName);
-            let subjectRecord = await prisma.subject.findUnique({ where: { normalized_key: key } });
-            if (!subjectRecord) {
-              subjectRecord = await prisma.subject.create({
-                data: { canonical_name: canonicalName, normalized_key: key, is_active: true }
-              });
-            }
-            subjectId = subjectRecord.id;
-          }
-          if (subjectId) {
-            subjectIds.push(subjectId);
-            resolvedSchedules.push({
-              class_id: id,
-              subject_id: subjectId,
-              teacher_id: s.teacher_id || null,
-              time_start: s.time_start || '09:00',
-              time_end: s.time_end || '10:00',
-              days: s.days || [],
-            });
-          }
-        }
-
-        if (resolvedSchedules.length > 0) {
-          await prisma.classSchedule.createMany({
-            data: resolvedSchedules,
-          });
-          await syncClassSubjects(prisma, id, subjectIds);
-          notifyTeacherSchedules(resolvedSchedules).catch(err => console.error(err));
-        }
-      } else {
-        await syncClassSubjects(prisma, id, []);
-      }
-    }
-
-    const result = await prisma.class.findUnique({
-      where: { id },
-      include: { schedule: { include: { subject: true } } },
-    });
 
     res.json({ success: true, data: { ...result, id: result!.id } });
   } catch (error: any) {
@@ -515,6 +587,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator'), async (
       res.status(404).json({ success: false, message: 'Class not found' });
       return;
     }
+    console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

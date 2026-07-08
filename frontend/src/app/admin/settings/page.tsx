@@ -14,6 +14,12 @@ export default function SettingsPage() {
     const [isTesting, setIsTesting] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
 
+    // Data Backups States
+    const [backups, setBackups] = useState<any[]>([]);
+    const [isLoadingBackups, setIsLoadingBackups] = useState(false);
+    const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+    const [restoringFilename, setRestoringFilename] = useState('');
+
     const navItems = [
         { label: 'General Info', icon: Building },
         { label: 'Security & Access', icon: Shield },
@@ -38,6 +44,96 @@ export default function SettingsPage() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    useEffect(() => {
+        if (activeNav === 'Data Backups') {
+            fetchBackups();
+        }
+    }, [activeNav]);
+
+    const fetchBackups = async () => {
+        try {
+            setIsLoadingBackups(true);
+            const res = await api.get('/settings/backups');
+            setBackups(res.data.data);
+        } catch (error) {
+            console.error(error);
+            customAlert('Failed to load backup snapshots.', 'Error');
+        } finally {
+            setIsLoadingBackups(false);
+        }
+    };
+
+    const handleCreateBackup = async () => {
+        try {
+            setIsCreatingBackup(true);
+            const res = await api.post('/settings/backups');
+            customAlert(res.data.message || 'Backup snapshot created successfully.', 'Success');
+            fetchBackups();
+        } catch (error: any) {
+            console.error(error);
+            const msg = error.response?.data?.message || 'Failed to create backup.';
+            customAlert(msg, 'Error');
+        } finally {
+            setIsCreatingBackup(false);
+        }
+    };
+
+    const handleDeleteBackup = async (filename: string) => {
+        if (!confirm(`Are you sure you want to delete backup snapshot ${filename}?`)) return;
+        try {
+            await api.delete(`/settings/backups/${filename}`);
+            fetchBackups();
+        } catch (error) {
+            console.error(error);
+            customAlert('Failed to delete backup file.', 'Error');
+        }
+    };
+
+    const handleRestoreBackup = async (filename: string) => {
+        if (!confirm(`WARNING: Restoring database to snapshot ${filename} will overwrite ALL current database records.\n\nAre you sure you want to proceed?`)) return;
+        try {
+            setRestoringFilename(filename);
+            const res = await api.post(`/settings/backups/${filename}/restore`);
+            customAlert(res.data.message || 'Database restored successfully!', 'Success');
+            fetchSettings();
+        } catch (error: any) {
+            console.error(error);
+            const msg = error.response?.data?.message || 'Database restoration failed.';
+            customAlert(msg, 'Restoration Failed');
+        } finally {
+            setRestoringFilename('');
+        }
+    };
+
+    const handleDownloadBackup = async (filename: string) => {
+        try {
+            const res = await api.get(`/settings/backups/${filename}`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error(error);
+            customAlert('Failed to download backup file.', 'Download Error');
+        }
+    };
+
+    const handleWebsiteChange = (key: string, val: any) => {
+        setSettings((prev: any) => {
+            const webSettings = prev.website_settings || {};
+            return {
+                ...prev,
+                website_settings: {
+                    ...webSettings,
+                    [key]: val
+                }
+            };
+        });
     };
 
     const handleTestConnection = async () => {
@@ -92,7 +188,8 @@ export default function SettingsPage() {
                 google_sheets_enabled: settings.google_sheets_enabled,
                 google_spreadsheet_id: settings.google_spreadsheet_id,
                 google_sheet_name: settings.google_sheet_name,
-                google_sync_interval_minutes: parseInt(settings.google_sync_interval_minutes) || 5
+                google_sync_interval_minutes: parseInt(settings.google_sync_interval_minutes) || 5,
+                website_settings: settings.website_settings
             });
             customAlert('System settings have been successfully updated.', 'Settings Saved');
         } catch (error) {
@@ -384,17 +481,193 @@ export default function SettingsPage() {
                                     </div>
                                 )}
 
-                                {(activeNav === 'Data Backups' || activeNav === 'Website Settings') && (
-                                    <div style={{ padding: '40px', textAlign: 'center', color: '#A1A5B7', background: '#F8F9FD', borderRadius: '16px' }}>
-                                        <Settings size={48} style={{ display: 'block', margin: '0 auto 16px', opacity: 0.5, color: '#1A1D3B' }} />
-                                        <h3 style={{ color: '#1A1D3B', fontSize: '18px', fontWeight: 700, margin: '0 0 8px 0' }}>Under Active Expansion</h3>
-                                        <p style={{ fontSize: '14px', fontWeight: 500, margin: 0, maxWidth: '300px', display: 'inline-block' }}>
-                                            The {activeNav} module will be available in the upcoming Version 2.4 core patch.
-                                        </p>
+                                {activeNav === 'Website Settings' && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                        <div style={{ gridColumn: 'span 2' }}>
+                                            <h4 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: 700, color: '#1A1D3B' }}>Hero / Landing Page Branding</h4>
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Hero Banner Title</label>
+                                            <input 
+                                                style={inputStyle} 
+                                                placeholder="e.g. Proton Coaching Portal"
+                                                value={settings.website_settings?.hero_title || ''} 
+                                                onChange={e => handleWebsiteChange('hero_title', e.target.value)} 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Hero Banner Subtitle</label>
+                                            <input 
+                                                style={inputStyle} 
+                                                placeholder="e.g. Empowering students to excel"
+                                                value={settings.website_settings?.hero_subtitle || ''} 
+                                                onChange={e => handleWebsiteChange('hero_subtitle', e.target.value)} 
+                                            />
+                                        </div>
+
+                                        <div style={{ gridColumn: 'span 2', marginTop: '10px' }}>
+                                            <h4 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: 700, color: '#1A1D3B' }}>SEO & Search Rankings</h4>
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Meta/SEO Title</label>
+                                            <input 
+                                                style={inputStyle} 
+                                                placeholder="e.g. Proton Coaching Institute"
+                                                value={settings.website_settings?.seo_title || ''} 
+                                                onChange={e => handleWebsiteChange('seo_title', e.target.value)} 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Meta/SEO Description</label>
+                                            <input 
+                                                style={inputStyle} 
+                                                placeholder="e.g. Premium courses for IIT-JEE & NEET preparation"
+                                                value={settings.website_settings?.seo_description || ''} 
+                                                onChange={e => handleWebsiteChange('seo_description', e.target.value)} 
+                                            />
+                                        </div>
+
+                                        <div style={{ gridColumn: 'span 2', marginTop: '10px' }}>
+                                            <h4 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: 700, color: '#1A1D3B' }}>Social Links & Contacts</h4>
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Facebook URL</label>
+                                            <input 
+                                                style={inputStyle} 
+                                                placeholder="https://facebook.com/..."
+                                                value={settings.website_settings?.facebook || ''} 
+                                                onChange={e => handleWebsiteChange('facebook', e.target.value)} 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Instagram URL</label>
+                                            <input 
+                                                style={inputStyle} 
+                                                placeholder="https://instagram.com/..."
+                                                value={settings.website_settings?.instagram || ''} 
+                                                onChange={e => handleWebsiteChange('instagram', e.target.value)} 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>LinkedIn URL</label>
+                                            <input 
+                                                style={inputStyle} 
+                                                placeholder="https://linkedin.com/in/..."
+                                                value={settings.website_settings?.linkedin || ''} 
+                                                onChange={e => handleWebsiteChange('linkedin', e.target.value)} 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>WhatsApp Contact Link</label>
+                                            <input 
+                                                style={inputStyle} 
+                                                placeholder="https://wa.me/..."
+                                                value={settings.website_settings?.whatsapp || ''} 
+                                                onChange={e => handleWebsiteChange('whatsapp', e.target.value)} 
+                                            />
+                                        </div>
+
+                                        <div style={{ gridColumn: 'span 2', marginTop: '10px' }}>
+                                            <h4 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: 700, color: '#1A1D3B' }}>Site Status & Mode</h4>
+                                        </div>
+                                        <div style={{ gridColumn: 'span 2' }}>
+                                            <ToggleSwitch 
+                                                label="Maintenance Mode" 
+                                                description="If enabled, all public portal routes are blocked with a maintenance screen."
+                                                checked={settings.website_settings?.maintenance_mode || false}
+                                                onChange={val => handleWebsiteChange('maintenance_mode', val)}
+                                            />
+                                        </div>
                                     </div>
                                 )}
 
-                                {['General Info', 'Security & Access', 'Notifications', 'Google Sheets'].includes(activeNav) && (
+                                {activeNav === 'Data Backups' && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8F9FD', padding: '16px', borderRadius: '12px', border: '1px solid #F1F4F9' }}>
+                                            <div>
+                                                <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700, color: '#1A1D3B' }}>Database Backup & Restoration</h4>
+                                                <p style={{ margin: 0, fontSize: '13px', color: '#8F92A1', fontWeight: 500 }}>Create snapshots of your core database records. Restore any snapshot in a single click.</p>
+                                            </div>
+                                            <button 
+                                                onClick={handleCreateBackup}
+                                                disabled={isCreatingBackup}
+                                                style={{
+                                                    padding: '10px 20px', 
+                                                    background: 'linear-gradient(135deg, #1A1D3B 0%, #31355B 100%)',
+                                                    color: 'white',
+                                                    border: 'none', 
+                                                    borderRadius: '10px', 
+                                                    fontWeight: 700,
+                                                    fontSize: '13px', 
+                                                    cursor: isCreatingBackup ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    opacity: isCreatingBackup ? 0.6 : 1,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px'
+                                                }}
+                                            >
+                                                {isCreatingBackup ? 'Backing Up...' : 'Create Backup'}
+                                            </button>
+                                        </div>
+
+                                        {isLoadingBackups ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                <div className="skeleton" style={{ height: '40px', borderRadius: '8px' }} />
+                                                <div className="skeleton" style={{ height: '40px', borderRadius: '8px' }} />
+                                            </div>
+                                        ) : backups.length === 0 ? (
+                                            <div style={{ padding: '32px', textAlign: 'center', color: '#A1A5B7', background: '#F8F9FD', borderRadius: '12px' }}>
+                                                No backups found. Click "Create Backup" to generate your first snapshot.
+                                            </div>
+                                        ) : (
+                                            <div style={{ overflowX: 'auto', border: '1px solid #F1F4F9', borderRadius: '12px' }}>
+                                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                                                    <thead>
+                                                        <tr style={{ background: '#F8F9FD', borderBottom: '1px solid #E2E8F0', color: '#5E6278', fontWeight: 600 }}>
+                                                            <th style={{ padding: '12px 16px' }}>Snapshot File</th>
+                                                            <th style={{ padding: '12px 16px' }}>Size</th>
+                                                            <th style={{ padding: '12px 16px' }}>Created Date</th>
+                                                            <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {backups.map((b: any) => (
+                                                            <tr key={b.filename} style={{ borderBottom: '1px solid #F1F4F9', color: '#1A1D3B' }}>
+                                                                <td style={{ padding: '12px 16px', fontWeight: 600 }}>{b.filename}</td>
+                                                                <td style={{ padding: '12px 16px' }}>{(b.size / 1024).toFixed(2)} KB</td>
+                                                                <td style={{ padding: '12px 16px' }}>{new Date(b.created_at).toLocaleString()}</td>
+                                                                <td style={{ padding: '12px 16px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                                    <button 
+                                                                        onClick={() => handleDownloadBackup(b.filename)}
+                                                                        style={{ padding: '6px 12px', background: 'white', color: '#4F60FF', border: '1px solid #E2E8F0', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                                                                    >
+                                                                        Download
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => handleRestoreBackup(b.filename)}
+                                                                        disabled={restoringFilename !== ''}
+                                                                        style={{ padding: '6px 12px', background: '#E8F5E9', color: '#2E7D32', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: restoringFilename !== '' ? 'not-allowed' : 'pointer' }}
+                                                                    >
+                                                                        {restoringFilename === b.filename ? 'Restoring...' : 'Restore'}
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => handleDeleteBackup(b.filename)}
+                                                                        style={{ padding: '6px 12px', background: '#FFEBEE', color: '#C62828', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {['General Info', 'Security & Access', 'Notifications', 'Google Sheets', 'Website Settings'].includes(activeNav) && (
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px', borderTop: '1px solid #F0F0F5', paddingTop: '20px' }}>
                                         <button 
                                             onClick={handleSave}

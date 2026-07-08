@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import DatePicker from 'react-datepicker';
@@ -11,6 +11,9 @@ import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AssignHomeworkPage() {
     const router = useRouter();
+    const pathname = usePathname();
+    const basePath = pathname.startsWith('/coordinator') ? '/coordinator' : '/admin';
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
     const [classes, setClasses] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
@@ -27,7 +30,7 @@ export default function AssignHomeworkPage() {
         setIsSubmitting(true);
         try {
             await api.post('/homework', formData);
-            router.push('/admin/homework');
+            router.push('${basePath}/homework');
         } catch (error) {
             console.error('Error assigning homework:', error);
             alert('Failed to assign homework');
@@ -40,9 +43,9 @@ export default function AssignHomeworkPage() {
         <FormPageLayout
             title="Assign New Homework"
             subtitle="Create and distribute a homework assignment to students"
-            backHref="/admin/homework"
+            backHref={`${basePath}/homework`}
             backLabel="Back to Homework"
-            requiredRole="admin"
+            requiredRole={requiredRole}
             icon={<PenTool size={20} strokeWidth={2.5} />}
         >
             <form onSubmit={handleSubmit}>
@@ -104,7 +107,7 @@ export default function AssignHomeworkPage() {
                 </div>
 
                 <div className="form-actions">
-                    <button type="button" className="btn-cancel" onClick={() => router.push('/admin/homework')}>Cancel</button>
+                    <button type="button" className="btn-cancel" onClick={() => router.push('${basePath}/homework')}>Cancel</button>
                     <button type="submit" className="btn-submit" disabled={isSubmitting}>
                         {isSubmitting ? 'Assigning...' : 'Assign Homework'}
                     </button>

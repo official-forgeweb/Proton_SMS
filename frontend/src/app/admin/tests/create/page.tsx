@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import axios from 'axios';
@@ -13,6 +13,9 @@ import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function CreateTestPage() {
     const router = useRouter();
+    const pathname = usePathname();
+    const basePath = pathname.startsWith('/coordinator') ? '/coordinator' : '/admin';
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
     const [classes, setClasses] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
@@ -33,7 +36,7 @@ export default function CreateTestPage() {
         setIsSubmitting(true);
         try {
             await api.post('/tests', formData);
-            router.push('/admin/tests');
+            router.push('${basePath}/tests');
         } catch (error) {
             console.error('Error creating test:', error);
             alert('Failed to create test');
@@ -79,9 +82,9 @@ export default function CreateTestPage() {
         <FormPageLayout
             title="Create New Assessment"
             subtitle="Design and schedule a new test or examination"
-            backHref="/admin/tests"
+            backHref={`${basePath}/tests`}
             backLabel="Back to Examinations"
-            requiredRole="admin"
+            requiredRole={requiredRole}
             icon={<ClipboardList size={20} strokeWidth={2.5} />}
         >
             <form onSubmit={handleSubmit}>
@@ -226,7 +229,7 @@ export default function CreateTestPage() {
                 </div>
 
                 <div className="form-actions">
-                    <button type="button" className="btn-cancel" onClick={() => router.push('/admin/tests')}>Cancel</button>
+                    <button type="button" className="btn-cancel" onClick={() => router.push('${basePath}/tests')}>Cancel</button>
                     <button type="submit" className="btn-submit" disabled={isSubmitting}>
                         {isSubmitting ? 'Creating...' : 'Initialize Test'}
                     </button>

@@ -2,11 +2,14 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { PenTool, Plus, Clock, Users } from 'lucide-react';
 
 export default function HomeworkPage() {
     const router = useRouter();
+    const pathname = usePathname();
+    const basePath = pathname.startsWith('/coordinator') ? '/coordinator' : '/admin';
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
     const [homework, setHomework] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -21,7 +24,7 @@ export default function HomeworkPage() {
 
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={requiredRole}>
             <div style={{ paddingBottom: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
                     <div>
@@ -30,7 +33,7 @@ export default function HomeworkPage() {
                             Assign and track student homework progress.
                         </p>
                     </div>
-                    <button onClick={() => router.push('/admin/homework/assign')} style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)' }}>
+                    <button onClick={() => router.push('${basePath}/homework/assign')} style={{ background: 'linear-gradient(135deg, #E53935 0%, #C62828 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '11px 22px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(229,57,53,0.3)' }}>
                         <Plus size={16} /> Assign Homework
                     </button>
                 </div>

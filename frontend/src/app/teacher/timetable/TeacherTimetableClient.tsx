@@ -31,8 +31,30 @@ const SUBJECT_PALETTES: Record<string, { bg: string; border: string; text: strin
     'Computer':    { bg: '#F0F9FF', border: '#BAE6FD', text: '#0C4A6E', dot: '#0EA5E9', glow: 'rgba(14, 165, 233, 0.15)' },
 };
 
-const getSubjectPalette = (subject: string) =>
-    SUBJECT_PALETTES[subject] || { bg: 'var(--bg-primary)', border: 'var(--border-primary)', text: 'var(--text-secondary)', dot: 'var(--text-tertiary)', glow: 'rgba(0, 0, 0, 0.05)' };
+const DYNAMIC_PALETTES = [
+    { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF', dot: '#3B82F6', glow: 'rgba(59, 130, 246, 0.15)' },
+    { bg: '#FFF7ED', border: '#FED7AA', text: '#C2410C', dot: '#F97316', glow: 'rgba(249, 115, 22, 0.15)' },
+    { bg: '#F5F3FF', border: '#DDD6FE', text: '#5B21B6', dot: '#8B5CF6', glow: 'rgba(139, 92, 246, 0.15)' },
+    { bg: '#F0FDF4', border: '#BBF7D0', text: '#166534', dot: '#22C55E', glow: 'rgba(34, 197, 94, 0.15)' },
+    { bg: '#FDF2F8', border: '#FBCFE8', text: '#9D174D', dot: '#EC4899', glow: 'rgba(236, 72, 153, 0.15)' },
+    { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E', dot: '#F59E0B', glow: 'rgba(245, 158, 11, 0.15)' },
+    { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46', dot: '#10B981', glow: 'rgba(16, 185, 129, 0.15)' },
+    { bg: '#F0F9FF', border: '#BAE6FD', text: '#0C4A6E', dot: '#0EA5E9', glow: 'rgba(14, 165, 233, 0.15)' },
+];
+
+const getSubjectPalette = (subject: string) => {
+    if (!subject) return { bg: 'var(--bg-primary)', border: 'var(--border-primary)', text: 'var(--text-secondary)', dot: 'var(--text-tertiary)', glow: 'rgba(0, 0, 0, 0.05)' };
+    
+    const key = Object.keys(SUBJECT_PALETTES).find(k => subject.toLowerCase().includes(k.toLowerCase()));
+    if (key) return SUBJECT_PALETTES[key];
+    
+    let hash = 0;
+    for (let i = 0; i < subject.length; i++) {
+        hash = subject.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % DYNAMIC_PALETTES.length;
+    return DYNAMIC_PALETTES[index];
+};
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -514,7 +536,7 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                                                 >
                                                     {isTest && <span style={{ position: 'absolute', top: '5px', right: '6px', fontSize: '8px', fontWeight: 850, color: '#EF4444', textTransform: 'uppercase', background: 'white', padding: '2px 6px', borderRadius: '5px', border: '1px solid #FECDD3', letterSpacing: '0.3px' }}>Test</span>}
                                                     {isOnline && !isTest && <span style={{ position: 'absolute', top: '5px', right: '6px', fontSize: '8px', fontWeight: 850, color: 'var(--success)', textTransform: 'uppercase', background: 'var(--success-light)', padding: '2px 6px', borderRadius: '5px', letterSpacing: '0.3px' }}>Live</span>}
-                                                    <p style={{ fontSize: '13.5px', fontWeight: 800, color: isTest ? '#B91C1C' : palette.text, margin: 0, lineHeight: 1.3 }}>{entry.subject}</p>
+                                                    <p style={{ fontSize: '13.5px', fontWeight: 800, color: isTest ? '#B91C1C' : palette.text, margin: 0, lineHeight: 1.3 }}>{entry.period_number ? `P${entry.period_number}: ` : ''}{entry.subject}</p>
                                                     <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '8px 0 0', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                         <Clock size={11} color="var(--primary)" /> {formatTime12(entry.start_time)}
                                                     </p>
@@ -597,7 +619,7 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                                                     }}>
                                                         <div style={{ flex: 1, marginRight: '20px' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                                                                <h3 style={{ fontSize: '19px', fontWeight: 800, color: isTest ? '#B91C1C' : '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif' }}>{entry.subject}</h3>
+                                                                <h3 style={{ fontSize: '19px', fontWeight: 800, color: isTest ? '#B91C1C' : '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif' }}>{entry.period_number ? `Period ${entry.period_number}: ` : ''}{entry.subject}</h3>
                                                                 <span style={{ fontSize: '11px', fontWeight: 800, padding: '4px 14px', borderRadius: '10px', background: isTest ? '#FFF1F2' : palette.bg, color: isTest ? '#EF4444' : palette.text, border: `1.5px solid ${isTest ? '#FECDD3' : palette.border}`, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                                                                     {isTest ? 'EXAMINATION' : entry.class_ref?.class_name}
                                                                 </span>

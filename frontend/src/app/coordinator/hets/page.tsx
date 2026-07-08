@@ -1,6 +1,2 @@
-'use client';
-import HETDashboardClient from '@/components/HETDashboardClient';
-
-export default function CoordinatorHetsPage() {
-  return <HETDashboardClient />;
-}
+import AdminPage from '@/app/admin/hets/page';
+export default AdminPage;

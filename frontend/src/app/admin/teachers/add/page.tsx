@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
-import { Users } from 'lucide-react';
+import { Users, GraduationCap, Briefcase } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
+import { SectionCard, FormGrid, FieldGroup, FormActions } from '@/components/form';
 
 export default function AddTeacherPage() {
     const router = useRouter();
@@ -35,81 +36,67 @@ export default function AddTeacherPage() {
     return (
         <FormPageLayout
             title="Onboard New Teacher"
-            subtitle="Register a new staff member into the system"
+            subtitle="Register a new staff member into the system with qualifications and credentials"
             backHref="/admin/teachers"
             backLabel="Back to Teachers"
             requiredRole="admin"
-            icon={<Users size={20} strokeWidth={2.5} />}
+            icon={<Users size={20} />}
+            maxWidth="1300px"
         >
             <form onSubmit={handleSubmit}>
-                <div className="form-section">
-                    <div className="form-section-title">
-                        <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
-                        Personal Information
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                        <div>
-                            <label className="form-label">First Name *</label>
-                            <input required className="form-input" value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} placeholder="Enter first name" />
-                        </div>
-                        <div>
-                            <label className="form-label">Last Name *</label>
-                            <input required className="form-input" value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} placeholder="Enter last name" />
-                        </div>
-                        <div>
-                            <label className="form-label">Email Address *</label>
-                            <input type="email" required className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="teacher@example.com" />
-                        </div>
-                        <div>
-                            <label className="form-label">Initial Password *</label>
-                            <input type="text" required className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Create login password" />
-                        </div>
-                        <div>
-                            <label className="form-label">Mobile Number *</label>
-                            <input required className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
-                        </div>
-                        <div>
-                            <label className="form-label">Gender</label>
-                            <CustomSelect
-                                value={formData.gender}
-                                onChange={val => setFormData({ ...formData, gender: val })}
-                                options={[
-                                    { value: 'male', label: 'Male' },
-                                    { value: 'female', label: 'Female' },
-                                    { value: 'other', label: 'Other' }
-                                ]}
-                            />
-                        </div>
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px', alignItems: 'start', marginBottom: '20px' }}>
+                    <SectionCard title="Personal Information" icon={<Users size={18} />}>
+                        <FormGrid columns={2}>
+                            <FieldGroup label="First Name" required>
+                                <input required className="form-input" value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} placeholder="Enter first name" />
+                            </FieldGroup>
+                            <FieldGroup label="Last Name" required>
+                                <input required className="form-input" value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} placeholder="Enter last name" />
+                            </FieldGroup>
+                            <FieldGroup label="Email Address" required>
+                                <input type="email" required className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="teacher@example.com" />
+                            </FieldGroup>
+                            <FieldGroup label="Initial Password" required>
+                                <input type="text" required className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Create login password" />
+                            </FieldGroup>
+                            <FieldGroup label="Mobile Number" required>
+                                <input required className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
+                            </FieldGroup>
+                            <FieldGroup label="Gender">
+                                <CustomSelect
+                                    value={formData.gender}
+                                    onChange={val => setFormData({ ...formData, gender: val })}
+                                    options={[
+                                        { value: 'male', label: 'Male' },
+                                        { value: 'female', label: 'Female' },
+                                        { value: 'other', label: 'Other' }
+                                    ]}
+                                />
+                            </FieldGroup>
+                        </FormGrid>
+                    </SectionCard>
+
+                    <SectionCard title="Professional Qualifications" icon={<GraduationCap size={18} />}>
+                        <FormGrid columns={2}>
+                            <FieldGroup label="Highest Degree" required>
+                                <input required className="form-input" value={formData.qualification} onChange={e => setFormData({ ...formData, qualification: e.target.value })} placeholder="e.g. B.Ed, M.Sc" />
+                            </FieldGroup>
+                            <FieldGroup label="Subject Specialization" required>
+                                <input required className="form-input" value={formData.specialization} onChange={e => setFormData({ ...formData, specialization: e.target.value })} placeholder="Mathematics, Physics etc." />
+                            </FieldGroup>
+                            <FieldGroup label="Experience (Years)">
+                                <input type="number" className="form-input" value={formData.experience_years} onChange={e => setFormData({ ...formData, experience_years: e.target.value })} placeholder="Years" />
+                            </FieldGroup>
+                        </FormGrid>
+                    </SectionCard>
                 </div>
 
-                <div className="form-section">
-                    <div className="form-section-title">
-                         <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
-                        Professional Qualifications
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.6fr', gap: '24px' }}>
-                        <div>
-                            <label className="form-label">Highest Degree *</label>
-                            <input required className="form-input" value={formData.qualification} onChange={e => setFormData({ ...formData, qualification: e.target.value })} placeholder="e.g. B.Ed, M.Sc" />
-                        </div>
-                        <div>
-                            <label className="form-label">Subject Specialization *</label>
-                            <input required className="form-input" value={formData.specialization} onChange={e => setFormData({ ...formData, specialization: e.target.value })} placeholder="Mathematics, Physics etc." />
-                        </div>
-                        <div>
-                            <label className="form-label">Experience</label>
-                            <input type="number" className="form-input" value={formData.experience_years} onChange={e => setFormData({ ...formData, experience_years: e.target.value })} placeholder="Years" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="form-actions">
+                <FormActions>
                     <button type="button" className="btn-cancel" onClick={() => router.push('/admin/teachers')}>Cancel</button>
                     <button type="submit" className="btn-submit" disabled={isSubmitting}>
                         {isSubmitting ? 'Saving...' : 'Onboard Teacher'}
                     </button>
-                </div>
+                </FormActions>
             </form>
         </FormPageLayout>
     );

@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
-import { Edit2 } from 'lucide-react';
+import { Edit2, Users, GraduationCap } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
+import { SectionCard, FormGrid, FieldGroup, FormActions } from '@/components/form';
 
 export default function EditTeacherPage() {
     const params = useParams();
@@ -53,44 +54,35 @@ export default function EditTeacherPage() {
         }
     };
 
+    if (isLoading) return null;
+
     return (
         <FormPageLayout
             title="Edit Teacher Details"
-            subtitle="Update staff member information"
+            subtitle="Update staff member profile details, credentials, and settings"
             backHref={`/admin/teachers/${params.id}`}
             backLabel="Back to Profile"
             requiredRole="admin"
-            icon={<Edit2 size={20} strokeWidth={2.5} />}
+            icon={<Edit2 size={20} />}
+            maxWidth="1000px"
         >
-            {isLoading ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
-                            {[1, 2, 3, 4, 5, 6].map(i => (
-                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
-                            ))}
-                        </div>
-                    ) :  (
-                <form onSubmit={handleSubmit}>
-                    <div className="form-section">
-                        <div className="form-section-title">Personal Information</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div>
-                                <label className="form-label">First Name *</label>
+            <form onSubmit={handleSubmit}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px', alignItems: 'start', marginBottom: '20px' }}>
+                    <SectionCard title="Personal Information" icon={<Users size={18} />}>
+                        <FormGrid columns={2}>
+                            <FieldGroup label="First Name" required>
                                 <input required className="form-input" value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="form-label">Last Name *</label>
+                            </FieldGroup>
+                            <FieldGroup label="Last Name" required>
                                 <input required className="form-input" value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="form-label">Email</label>
-                                <input type="email" className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="form-label">Phone *</label>
+                            </FieldGroup>
+                            <FieldGroup label="Email Address" required>
+                                <input type="email" required className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+                            </FieldGroup>
+                            <FieldGroup label="Mobile Number" required>
                                 <input required className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="form-label">Gender</label>
+                            </FieldGroup>
+                            <FieldGroup label="Gender">
                                 <CustomSelect
                                     value={formData.gender}
                                     onChange={val => setFormData({ ...formData, gender: val })}
@@ -100,40 +92,35 @@ export default function EditTeacherPage() {
                                         { value: 'other', label: 'Other' }
                                     ]}
                                 />
-                            </div>
-                            <div>
-                                <label className="form-label">Password</label>
+                            </FieldGroup>
+                            <FieldGroup label="Password">
                                 <input type="text" className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Leave blank to keep unchanged" />
-                            </div>
-                        </div>
-                    </div>
+                            </FieldGroup>
+                        </FormGrid>
+                    </SectionCard>
 
-                    <div className="form-section">
-                        <div className="form-section-title">Professional Details</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div>
-                                <label className="form-label">Qualification</label>
+                    <SectionCard title="Professional Qualifications" icon={<GraduationCap size={18} />}>
+                        <FormGrid columns={2}>
+                            <FieldGroup label="Highest Degree">
                                 <input className="form-input" value={formData.qualification} onChange={e => setFormData({ ...formData, qualification: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="form-label">Specialization</label>
+                            </FieldGroup>
+                            <FieldGroup label="Subject Specialization">
                                 <input className="form-input" value={formData.specialization} onChange={e => setFormData({ ...formData, specialization: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="form-label">Experience (Years)</label>
+                            </FieldGroup>
+                            <FieldGroup label="Experience (Years)">
                                 <input type="number" className="form-input" value={formData.experience_years} onChange={e => setFormData({ ...formData, experience_years: e.target.value })} />
-                            </div>
-                        </div>
-                    </div>
+                            </FieldGroup>
+                        </FormGrid>
+                    </SectionCard>
+                </div>
 
-                    <div className="form-actions">
-                        <button type="button" className="btn-cancel" onClick={() => router.push(`/admin/teachers/${params.id}`)}>Cancel</button>
-                        <button type="submit" className="btn-submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Updating...' : 'Save Changes'}
-                        </button>
-                    </div>
-                </form>
-            )}
+                <FormActions>
+                    <button type="button" className="btn-cancel" onClick={() => router.push(`/admin/teachers/${params.id}`)}>Cancel</button>
+                    <button type="submit" className="btn-submit" disabled={isSubmitting}>
+                        {isSubmitting ? 'Updating...' : 'Save Changes'}
+                    </button>
+                </FormActions>
+            </form>
         </FormPageLayout>
     );
 }

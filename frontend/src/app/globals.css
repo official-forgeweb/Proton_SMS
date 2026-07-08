@@ -2335,3 +2335,58 @@ select:not([multiple]) option {
     overflow: hidden;
   }
 }
+
+/* ============================================================
+   PLATFORM-WIDE LAYOUT SYSTEM STANDARDIZATION & OVERRIDES
+   ============================================================ */
+
+/* 1. Reset padding on the scrollable body so that the scrollbar sits directly beside the content area */
+.page-body {
+  padding: 0 !important;
+}
+
+/* 2. Unified Page Content Container: Handles standard margins, centering, and max-width centrally */
+.page-content-container {
+  padding: 24px !important;
+  margin: 0 auto !important;
+  max-width: 1600px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Responsive Scaling for the Central Page Content Container */
+@media (max-width: 1024px) {
+  .page-content-container {
+    padding: 20px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-content-container {
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content-container {
+    padding: 12px !important;
+  }
+}
+
+/* 3. Reset ad-hoc container wrappers globally so they do not add double-padding or nested margins */
+.dashboard-client-container,
+.bg-mesh,
+.page-container,
+.responsive-page-container {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+

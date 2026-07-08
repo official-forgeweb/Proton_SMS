@@ -1,4 +1,5 @@
 'use client';
+import { usePathname } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
 import { 
@@ -15,7 +16,7 @@ const adminTools = [
     { label: 'Homework', desc: 'Assignment tracking & grading', href: '/admin/homework', icon: PenTool, color: '#8B5CF6', bg: '#F3E8FF' },
     { label: 'Demos', desc: 'Schedule trial/demo classes', href: '/admin/demos', icon: Target, color: '#EC4899', bg: '#FCE7F3' },
     { label: 'Student Queries', desc: 'Resolve doubts and queries', href: '/admin/queries', icon: MessageSquare, color: '#14B8A6', bg: '#E6FFFA' },
-    { label: 'Access Control', desc: 'Manage roles and permissions', href: '/admin/permissions', icon: Shield, color: '#1A1D3B', bg: '#E2E8F0' },
+    { label: 'Access Control', desc: 'Manage roles and permissions', href: '${basePath}/permissions', icon: Shield, color: '#1A1D3B', bg: '#E2E8F0' },
 ];
 
 const whatsappTools = [
@@ -29,8 +30,11 @@ const whatsappTools = [
 ];
 
 export default function AdminOperationsPage() {
+    const pathname = usePathname();
+    const basePath = pathname.startsWith('/coordinator') ? '/coordinator' : '/admin';
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={requiredRole}>
             <div style={{ paddingBottom: '120px' }}>
                 <div style={{ marginBottom: '32px' }}>
                     <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -49,9 +53,12 @@ export default function AdminOperationsPage() {
                 }}>
                     {adminTools.map((tool) => {
                         const Icon = tool.icon;
+                        const href = tool.href.startsWith('/admin') 
+                            ? tool.href.replace('/admin', basePath) 
+                            : tool.href;
                         return (
                             <Link 
-                                href={tool.href} 
+                                href={href} 
                                 key={tool.label}
                                 className="hover-lift"
                                 style={{
