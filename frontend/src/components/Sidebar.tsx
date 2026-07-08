@@ -217,7 +217,7 @@ export default function Sidebar() {
                     borderRight: '1px solid rgba(255,255,255,0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    height: '100vh',
+                    height: '100dvh',
                     position: 'fixed',
                     left: 0,
                     top: 0,
@@ -232,15 +232,18 @@ export default function Sidebar() {
                 }} />
 
                 {/* Logo Section */}
-                <div style={{ 
-                    padding: isCurrentlyCollapsed ? '16px 0' : '16px 24px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    position: 'relative', 
-                    zIndex: 1,
-                    transition: 'padding 0.2s',
-                }}>
+                <div 
+                    className="sidebar-logo-container"
+                    style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        position: 'relative', 
+                        zIndex: 1,
+                        transition: 'all 0.2s ease',
+                        padding: isCurrentlyCollapsed ? '16px 0' : undefined,
+                    }}
+                >
                     <Link href={`/${user?.role}`} style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
                         <img 
                             src="/image.png" 
@@ -328,7 +331,14 @@ export default function Sidebar() {
                 </nav>
 
                 {/* Sign Out Section */}
-                <div style={{ padding: isCurrentlyCollapsed ? '6px 8px 16px' : '6px 24px 16px', position: 'relative', zIndex: 1 }}>
+                <div 
+                    className="sidebar-signout-container"
+                    style={{ 
+                        position: 'relative', 
+                        zIndex: 1,
+                        padding: isCurrentlyCollapsed ? '6px 8px 16px' : undefined,
+                    }}
+                >
                     <button
                         onClick={logout}
                         title={isCurrentlyCollapsed ? 'Sign Out' : undefined}

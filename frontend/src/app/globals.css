@@ -2393,6 +2393,8 @@ select:not([multiple]) option {
 /* ===== Platform-wide Sidebar Layout Optimization ===== */
 .sidebar {
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  height: 100vh !important;
+  height: 100dvh !important;
 }
 
 @media (max-width: 767px) {
@@ -2408,6 +2410,24 @@ select:not([multiple]) option {
 @media (min-width: 768px) {
   .sidebar {
     transform: translateX(0) !important;
+  }
+}
+
+.sidebar-logo-container {
+  padding: 16px 24px;
+}
+
+.sidebar-signout-container {
+  padding: 6px 24px 16px;
+}
+
+@media (max-width: 767px) {
+  .sidebar-logo-container {
+    padding: 12px 16px !important;
+  }
+  
+  .sidebar-signout-container {
+    padding: 6px 16px 12px !important;
   }
 }
 
