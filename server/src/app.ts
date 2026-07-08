@@ -77,7 +77,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With', 'Accept'],
 }));
 
-app.options('*', cors() as any);
+app.options(/.*/, cors() as any);
 
 // Rate limiting
 const limiter = rateLimit({
