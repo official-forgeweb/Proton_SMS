@@ -17,6 +17,7 @@ export default function AddStudentPage() {
     const emptyForm = {
         first_name: '', last_name: '', email: '', phone: '', date_of_birth: '',
         gender: 'male', school_name: '', admission_type: 'fresh',
+        address: '',
         father_name: '', father_phone: '', mother_name: '', mother_phone: '',
         class_ids: [] as string[],
         subjects: {} as Record<string, string[]>,
@@ -122,7 +123,7 @@ export default function AddStudentPage() {
             backLabel="Back to Students"
             requiredRole={['admin', 'coordinator']}
             icon={<Users size={20} />}
-            maxWidth="1000px"
+            maxWidth="1300px"
         >
             <form onSubmit={handleSubmit}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '20px', alignItems: 'start', marginBottom: '20px' }}>
@@ -164,6 +165,18 @@ export default function AddStudentPage() {
                                     />
                                 </FieldGroup>
                             </FormGrid>
+                            <div style={{ marginTop: '4px' }}>
+                                <FieldGroup label="Address">
+                                    <textarea
+                                        className="form-input"
+                                        value={formData.address}
+                                        onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                        placeholder="Enter full address"
+                                        rows={3}
+                                        style={{ height: 'auto', padding: '12px 16px', resize: 'vertical', minHeight: '80px', fontFamily: 'inherit' }}
+                                    />
+                                </FieldGroup>
+                            </div>
                         </SectionCard>
 
                         <SectionCard title="Parent / Guardian Details" icon={<Users size={18} />}>

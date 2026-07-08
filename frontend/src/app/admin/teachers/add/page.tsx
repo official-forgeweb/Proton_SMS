@@ -41,7 +41,7 @@ export default function AddTeacherPage() {
             backLabel="Back to Teachers"
             requiredRole="admin"
             icon={<Users size={20} />}
-            maxWidth="1000px"
+            maxWidth="1300px"
         >
             <form onSubmit={handleSubmit}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px', alignItems: 'start', marginBottom: '20px' }}>

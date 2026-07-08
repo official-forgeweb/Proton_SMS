@@ -653,7 +653,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 </header>
 
                 {/* Page Content */}
-                <div className="page-body" style={{ flex: 1, overflowY: 'auto' }}>
+                <div className="page-body" style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-secondary, #F4F5F9)' }}>
                     <div key={pathname} className="animate-page-entry page-content-container">
                         {children}
                     </div>

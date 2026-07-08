@@ -25,7 +25,7 @@ export default function FormPageLayout({
     requiredRole,
     icon,
     accentColor = '#E53935',
-    maxWidth = '1000px',
+    maxWidth = '1300px',
 }: FormPageLayoutProps) {
     const router = useRouter();
 
@@ -39,7 +39,7 @@ export default function FormPageLayout({
             position: relative;
             width: 100%;
             min-height: calc(100vh - 100px);
-            padding: 24px;
+            padding: 24px 24px 40px 24px;
             background: var(--bg-secondary, #F4F5F9);
             display: flex;
             flex-direction: column;
@@ -103,14 +103,14 @@ export default function FormPageLayout({
         /* Form Actions Sticky Bar */
         .form-actions-sticky {
             position: sticky;
-            bottom: -24px;
+            bottom: 0px;
             left: -32px;
             right: -32px;
             margin: 32px -32px -32px -32px;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.97);
             backdrop-filter: blur(12px);
             border-top: 1px solid var(--border-primary, #F0F0F5);
-            padding: 16px 32px;
+            padding: 20px 32px;
             border-bottom-left-radius: var(--radius-lg, 20px);
             border-bottom-right-radius: var(--radius-lg, 20px);
             display: flex;

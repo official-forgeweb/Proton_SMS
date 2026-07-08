@@ -7,7 +7,7 @@ import {
   TrendingUp, Award, AlertCircle, FileSpreadsheet, 
   Search, ArrowLeft, ChevronRight, UserCheck, 
   UserX, Percent, BarChart2, Star, ThumbsDown, 
-  Activity, GraduationCap, Trash2
+  Activity, GraduationCap, Trash2, Edit3
 } from 'lucide-react';
 import api from '@/lib/api';
 import { customAlert, customConfirm } from '@/utils/dialog';
@@ -183,6 +183,18 @@ export default function ClassCohortClient({ initialData }: ClassCohortClientProp
           >
             <FileSpreadsheet size={16} color="#10B981" /> Export Roster
           </button>
+
+          <Link
+            href={`${basePath}/classes/${cls.id}/edit`}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', borderRadius: '12px',
+              border: '1px solid #DBEAFE', background: '#EFF6FF', color: '#3B82F6', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#DBEAFE'}
+            onMouseLeave={e => e.currentTarget.style.background = '#EFF6FF'}
+          >
+            <Edit3 size={16} /> Edit Class
+          </Link>
           
           <button 
             onClick={() => setShowDeleteModal(true)}

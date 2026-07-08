@@ -216,7 +216,68 @@ export default function EditClassPage() {
         }
     };
 
-    if (isLoading) return null;
+    if (isLoading) {
+        return (
+            <FormPageLayout
+                title="Edit Batch Details"
+                subtitle="Update class schedule, timing config, and teacher assignments"
+                backHref={`${basePath}/classes/${params.id}`}
+                backLabel="Back to Class"
+                requiredRole={['admin', 'coordinator']}
+                icon={<Edit2 size={20} />}
+                maxWidth="1300px"
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* Basic Config Skeleton */}
+                    <div style={{ background: '#FFFFFF', border: '1px solid #F0F0F5', padding: '28px', borderRadius: '16px' }}>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #F8FAFC', paddingBottom: '16px' }}>
+                            <div className="skeleton" style={{ width: '18px', height: '18px', borderRadius: '4px' }} />
+                            <div className="skeleton" style={{ width: '200px', height: '18px', borderRadius: '8px' }} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
+                            {[1, 2, 3].map(i => (
+                                <div key={i}>
+                                    <div className="skeleton" style={{ width: '120px', height: '12px', borderRadius: '6px', marginBottom: '8px' }} />
+                                    <div className="skeleton" style={{ width: '100%', height: '46px', borderRadius: '10px' }} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Timing Config Skeleton */}
+                    <div style={{ background: '#FFFFFF', border: '1px solid #F0F0F5', padding: '28px', borderRadius: '16px' }}>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #F8FAFC', paddingBottom: '16px' }}>
+                            <div className="skeleton" style={{ width: '18px', height: '18px', borderRadius: '4px' }} />
+                            <div className="skeleton" style={{ width: '180px', height: '18px', borderRadius: '8px' }} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                            {[1, 2].map(i => (
+                                <div key={i}>
+                                    <div className="skeleton" style={{ width: '140px', height: '12px', borderRadius: '6px', marginBottom: '8px' }} />
+                                    <div className="skeleton" style={{ width: '100%', height: '46px', borderRadius: '10px' }} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Academic Planning Skeleton */}
+                    <div style={{ background: '#FFFFFF', border: '1px solid #F0F0F5', padding: '28px', borderRadius: '16px' }}>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #F8FAFC', paddingBottom: '16px' }}>
+                            <div className="skeleton" style={{ width: '18px', height: '18px', borderRadius: '4px' }} />
+                            <div className="skeleton" style={{ width: '220px', height: '18px', borderRadius: '8px' }} />
+                        </div>
+                        <div className="skeleton" style={{ width: '100%', height: '140px', borderRadius: '12px' }} />
+                    </div>
+
+                    {/* Buttons Skeleton */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #F0F0F5', paddingTop: '20px', marginTop: '12px' }}>
+                        <div className="skeleton" style={{ width: '90px', height: '44px', borderRadius: '10px' }} />
+                        <div className="skeleton" style={{ width: '140px', height: '44px', borderRadius: '10px' }} />
+                    </div>
+                </div>
+            </FormPageLayout>
+        );
+    }
 
     return (
         <FormPageLayout
@@ -226,7 +287,7 @@ export default function EditClassPage() {
             backLabel="Back to Class"
             requiredRole={['admin', 'coordinator']}
             icon={<Edit2 size={20} />}
-            maxWidth="1100px"
+            maxWidth="1300px"
         >
             <form onSubmit={handleSubmit}>
                 
