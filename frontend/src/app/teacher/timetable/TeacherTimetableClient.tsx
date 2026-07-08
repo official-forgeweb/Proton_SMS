@@ -316,6 +316,32 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                 }
                 .tt-nav-btn:hover { background: var(--primary-light); border-color: rgba(229, 57, 53, 0.18); transform: translateY(-1px); }
                 
+                .tt-week-nav-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+                .tt-week-range-text {
+                    font-weight: 800;
+                    font-size: 16px;
+                    color: #1A1D3B;
+                    min-width: 220px;
+                    text-align: center;
+                    font-family: 'Poppins', sans-serif;
+                    letter-spacing: -0.3px;
+                }
+                @media (max-width: 768px) {
+                    .tt-week-range-text {
+                        min-width: 140px;
+                        font-size: 13.5px;
+                    }
+                    .tt-week-nav-container {
+                        gap: 6px;
+                        width: 100%;
+                        justify-content: center;
+                    }
+                }
+                
                 .tt-view-btn {
                     padding: 11px 24px; border-radius: 14px; border: none; cursor: pointer;
                     font-weight: 700; font-size: 13.5px; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -423,9 +449,9 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                     </div>
 
                     {/* Week Navigation */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="tt-week-nav-container">
                         <button onClick={() => setWeekOffset(w => w - 1)} className="tt-nav-btn"><ChevronLeft size={20} color="var(--text-secondary)" /></button>
-                        <span suppressHydrationWarning style={{ fontWeight: 800, fontSize: '16px', color: '#1A1D3B', minWidth: '220px', textAlign: 'center', fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.3px' }}>
+                        <span suppressHydrationWarning className="tt-week-range-text">
                             {weekDates[0].toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – {weekDates[6].toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
                         <button onClick={() => setWeekOffset(w => w + 1)} className="tt-nav-btn"><ChevronRight size={20} color="var(--text-secondary)" /></button>
@@ -479,7 +505,7 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                     /* ── WEEK VIEW ── */
                     <div className="tt-float" style={{ borderRadius: '28px', overflow: 'hidden', border: '1px solid rgba(229, 57, 53, 0.05)', boxShadow: '0 8px 30px rgba(0,0,0,0.02)', background: '#FFFFFF', animationDelay: '200ms' }}>
                         {/* Week header row */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--border-primary)', background: '#FAFBFD' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', borderBottom: '1px solid var(--border-primary)', background: '#FAFBFD' }}>
                             {weekDates.map((d, i) => {
                                 const isToday = formatDateStr(d) === todayStr;
                                 const count = (entriesByDate[formatDateStr(d)] || []).length;
@@ -509,7 +535,7 @@ export default function TeacherTimetableClient({ initialTimetable, initialClasse
                             })}
                         </div>
                         {/* Week body grid */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', minHeight: '400px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', minHeight: '400px' }}>
                             {weekDates.map((d, i) => {
                                 const dateStr = formatDateStr(d);
                                 const dayEntries = entriesByDate[dateStr] || [];

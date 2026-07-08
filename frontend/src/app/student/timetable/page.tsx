@@ -343,7 +343,7 @@ export default function StudentTimetablePage() {
                             boxShadow: '0 8px 32px rgba(0,0,0,0.03)',
                         }}>
                             {/* Day headers */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #F1F5F9', background: '#FAFBFC' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', borderBottom: '1px solid #F1F5F9', background: '#FAFBFC' }}>
                                 {weekDates.map((d, i) => {
                                     const isToday = formatDateStr(d) === todayStr;
                                     return (
@@ -377,7 +377,7 @@ export default function StudentTimetablePage() {
                             </div>
 
                             {/* Grid body */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', minHeight: '380px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', minHeight: '380px' }}>
                                 {weekDates.map((d, i) => {
                                     const dateStr = formatDateStr(d);
                                     const dayEntries = entriesByDate[dateStr] || [];

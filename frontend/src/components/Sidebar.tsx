@@ -113,6 +113,7 @@ export default function Sidebar() {
     const [isMobile, setIsMobile] = useState(false);
     const [isTablet, setIsTablet] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [hasInitializedMobile, setHasInitializedMobile] = useState(false);
 
     // Track window sizes dynamically
     useEffect(() => {
@@ -122,6 +123,7 @@ export default function Sidebar() {
             const tablet = width >= 768 && width < 1024;
             setIsMobile(mobile);
             setIsTablet(tablet);
+            setHasInitializedMobile(true);
             
             // Set collapsed state automatically based on size
             if (mobile) {
@@ -220,7 +222,7 @@ export default function Sidebar() {
                     left: 0,
                     top: 0,
                     zIndex: 50,
-                    transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                    transition: hasInitializedMobile ? 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)' : 'none',
                     transform: isMobile ? (isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
                 }}
             >

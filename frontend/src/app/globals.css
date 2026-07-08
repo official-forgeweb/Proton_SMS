@@ -1176,7 +1176,7 @@ h1, h2, h3, h4, h5, h6, p, span, td, th {
   div[style*="grid-template-columns:repeat(7"],
   div[style*="gridTemplateColumns: 'repeat(7"],
   div[style*="gridTemplateColumns:'repeat(7"] {
-    min-width: 640px !important;
+    min-width: 850px !important;
   }
 }
 

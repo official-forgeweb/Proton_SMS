@@ -601,7 +601,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                         border: '1px solid #E2E8F0', boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
                     }}>
                         {/* Day headers */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #F1F5F9', background: '#FAFBFC' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', borderBottom: '1px solid #F1F5F9', background: '#FAFBFC' }}>
                             {weekDates.map((d, i) => {
                                 const isToday = formatDateStr(d) === todayStr;
                                 return (
@@ -635,7 +635,7 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
                         </div>
 
                         {/* Grid body */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', minHeight: '340px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', minHeight: '340px' }}>
                             {weekDates.map((d, i) => {
                                 const dateStr = formatDateStr(d);
                                 const dayEntries = entriesByDate[dateStr] || [];
