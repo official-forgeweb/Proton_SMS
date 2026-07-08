@@ -7,9 +7,11 @@ import api from '@/lib/api';
 import { customAlert } from '@/utils/dialog';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { Edit2, Plus, Clock, CalendarRange, Trash2 } from 'lucide-react';
+import { Edit2, Plus, Clock, CalendarClock, Trash2 } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
 import SubjectSelector from '@/components/SubjectSelector';
+import ClassTimingConfig from '@/components/ClassTimingConfig';
+import { SectionCard, FormGrid, FieldGroup, FormActions } from '@/components/form';
 
 export default function EditClassPage() {
     const params = useParams();
@@ -19,10 +21,22 @@ export default function EditClassPage() {
     const [teachers, setTeachers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [tcConfig, setTcConfig] = useState<any>(null);
+    
     const [formData, setFormData] = useState<any>({
-        class_name: '', grade_level: '', max_students: 30,
-        status: 'upcoming', schedule: [], start_date: ''
+        class_name: '', 
+        grade_level: '', 
+        max_students: 30,
+        status: 'upcoming', 
+        schedule: [], 
+        start_date: '',
+        timetable_config: {
+            institute_start: '08:00',
+            institute_end: '14:00',
+            lecture_duration: 45,
+            is_manual: false,
+            breaks: [],
+            manual_slots: []
+        }
     });
 
     const WEEKDAYS = [
@@ -42,19 +56,37 @@ export default function EditClassPage() {
                 api.get(`/timetable/config/${params.id}`).catch(() => ({ data: { data: null } }))
             ]).then(([classRes, teachersRes, configRes]) => {
                 const cls = classRes.data.data;
+                const loadedSchedule = (cls.schedule || []).map((s: any) => ({
+                    ...s,
+                    days: (s.days || []).map((d: string) => d.toLowerCase())
+                }));
+                
+                const tc = configRes.data.data || {
+                    institute_start: '08:00',
+                    institute_end: '14:00',
+                    lecture_duration: 45,
+                    is_manual: false,
+                    breaks: [],
+                    manual_slots: []
+                };
+
                 setFormData({
                     class_name: cls.class_name || '',
                     grade_level: cls.grade_level || '',
                     max_students: cls.max_students || 30,
                     status: cls.status || 'upcoming',
-                    schedule: (cls.schedule || []).map((s: any) => ({
-                        ...s,
-                        days: (s.days || []).map((d: string) => d.toLowerCase())
-                    })),
+                    schedule: loadedSchedule,
                     start_date: cls.start_date || '',
+                    timetable_config: {
+                        institute_start: tc.institute_start || '08:00',
+                        institute_end: tc.institute_end || '14:00',
+                        lecture_duration: tc.lecture_duration || 45,
+                        is_manual: tc.is_manual || false,
+                        breaks: tc.breaks || [],
+                        manual_slots: typeof tc.manual_slots === 'string' ? JSON.parse(tc.manual_slots || '[]') : (tc.manual_slots || [])
+                    }
                 });
                 setTeachers(teachersRes.data.data || []);
-                setTcConfig(configRes.data.data);
             }).catch(console.error).finally(() => setIsLoading(false));
         }
     }, [params.id]);
@@ -97,10 +129,37 @@ export default function EditClassPage() {
         setFormData({ ...formData, schedule: newSchedule });
     };
 
-    const parseTimeToMinutes = (t: string): number => {
-        if (!t) return 0;
-        const [h, m] = t.split(':').map(Number);
-        return h * 60 + m;
+    const calculatePeriodLimit = (tc: any): number => {
+        if (!tc) return 8;
+        if (tc.is_manual) {
+            return (tc.manual_slots || []).filter((s: any) => !s.is_break).length;
+        }
+        
+        const timeToMin = (t: string): number => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m;
+        };
+        const startMin = timeToMin(tc.institute_start || '08:00');
+        const endMin = timeToMin(tc.institute_end || '14:00');
+        const duration = Number(tc.lecture_duration) || 45;
+        
+        const breaksMap = new Map<number, any>();
+        (tc.breaks || []).forEach((b: any) => {
+            breaksMap.set(Number(b.after_period), b);
+        });
+
+        let currentMin = startMin;
+        let periodNum = 0;
+
+        while (currentMin + duration <= endMin) {
+            periodNum++;
+            currentMin += duration;
+            const brk = breaksMap.get(periodNum);
+            if (brk && currentMin + Number(brk.duration_minutes) <= endMin) {
+                currentMin += Number(brk.duration_minutes);
+            }
+        }
+        return periodNum;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -120,16 +179,7 @@ export default function EditClassPage() {
         }
 
         // 2. Validation: Compare planned lectures to available periods
-        let periodsLimit = 8;
-        if (tcConfig) {
-            const startMin = parseTimeToMinutes(tcConfig.institute_start);
-            const endMin = parseTimeToMinutes(tcConfig.institute_end);
-            const duration = tcConfig.lecture_duration || 45;
-            const breaksCount = tcConfig.breaks?.length || 0;
-            periodsLimit = Math.floor((endMin - startMin) / duration) - breaksCount;
-            if (periodsLimit <= 0) periodsLimit = 8;
-        }
-
+        const periodsLimit = calculatePeriodLimit(formData.timetable_config);
         const dayCounts: Record<string, number> = { monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0 };
         for (const session of formData.schedule) {
             for (const d of (session.days || [])) {
@@ -142,12 +192,12 @@ export default function EditClassPage() {
         const dayLabels: Record<string, string> = { monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday' };
         for (const [day, count] of Object.entries(dayCounts)) {
             if (count > periodsLimit) {
-                await customAlert(`${dayLabels[day]} has ${count} planned lectures but only ${periodsLimit} available periods. Please adjust subject weekdays.`, 'Error');
+                await customAlert(`${dayLabels[day]} has ${count} planned lectures but only ${periodsLimit} available periods. Please adjust subject weekdays or increase institute hours.`, 'Error');
                 return;
             }
         }
 
-        // 3. Warning: Teacher assigned but subject never scheduled (handled by first validation but added as a safety check)
+        // 3. Warning: Teacher assigned but subject never scheduled
         for (const session of formData.schedule) {
             if (session.teacher_id && (!session.days || session.days.length === 0)) {
                 await customAlert(`Assigned teacher for ${session.subject} will have no lectures.`, 'Warning');
@@ -166,234 +216,215 @@ export default function EditClassPage() {
         }
     };
 
+    if (isLoading) return null;
+
     return (
         <FormPageLayout
             title="Edit Batch Details"
-            subtitle="Update class schedule and teacher assignments"
+            subtitle="Update class schedule, timing config, and teacher assignments"
             backHref={`${basePath}/classes/${params.id}`}
             backLabel="Back to Class"
             requiredRole={['admin', 'coordinator']}
-            icon={<Edit2 size={20} strokeWidth={2.5} />}
-            maxWidth="1200px"
+            icon={<Edit2 size={20} />}
+            maxWidth="1100px"
         >
-            {isLoading ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
-                            {[1, 2, 3, 4, 5, 6].map(i => (
-                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
-                            ))}
-                        </div>
-                    ) :  (
-                <form onSubmit={handleSubmit}>
-                    <div className="form-section">
-                        <div className="form-section-title">Batch Information</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-                            <div>
-                                <label className="form-label">Batch Name *</label>
-                                <input required className="form-input" value={formData.class_name} onChange={e => setFormData({ ...formData, class_name: e.target.value })} placeholder="e.g. Proton 1" />
-                            </div>
-                            <div>
-                                <label className="form-label">Grade / Level *</label>
-                                <input required className="form-input" value={formData.grade_level} onChange={e => setFormData({ ...formData, grade_level: e.target.value })} placeholder="e.g. Class 11" />
-                            </div>
-                            <div>
-                                <label className="form-label">Max Students</label>
-                                <input type="number" required className="form-input" value={formData.max_students} onChange={e => setFormData({ ...formData, max_students: Number(e.target.value) })} />
-                            </div>
-                        </div>
-                    </div>
+            <form onSubmit={handleSubmit}>
+                
+                {/* Basic Configuration */}
+                <SectionCard title="Batch Basic Configuration" icon={<Edit2 size={18} />}>
+                    <FormGrid columns={3}>
+                        <FieldGroup label="Internal Batch Name" required>
+                            <input required className="form-input" value={formData.class_name} onChange={e => setFormData({ ...formData, class_name: e.target.value })} placeholder="e.g. Proton Alpha 1" />
+                        </FieldGroup>
+                        <FieldGroup label="Grade / Target Level" required>
+                            <input required className="form-input" value={formData.grade_level} onChange={e => setFormData({ ...formData, grade_level: e.target.value })} placeholder="e.g. Class 12 / JEE" />
+                        </FieldGroup>
+                        <FieldGroup label="Capacity (Students)">
+                            <input type="number" required className="form-input" value={formData.max_students} onChange={e => setFormData({ ...formData, max_students: Number(e.target.value) })} />
+                        </FieldGroup>
+                    </FormGrid>
+                </SectionCard>
 
-                    <div className="form-section">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <div className="form-section-title" style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <CalendarRange size={18} strokeWidth={2.5} style={{ color: '#6366F1' }} /> 
-                                Academic Planning (Weekly Subject Plan)
-                            </div>
-                            <button 
-                                type="button" 
-                                onClick={addSession} 
-                                className="btn-cancel" 
-                                style={{ 
-                                    padding: '8px 16px', 
-                                    fontSize: '13px', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '6px',
-                                    background: '#EEF2FF',
-                                    color: '#4F46E5',
-                                    border: '1px dashed #C7D2FE',
-                                    borderRadius: '10px'
-                                }}
-                            >
-                                <Plus size={16} strokeWidth={2.5} /> Add Subject to Class
-                            </button>
-                        </div>
+                {/* Timing Config Component */}
+                <ClassTimingConfig 
+                    value={formData.timetable_config} 
+                    onChange={tc => setFormData({ ...formData, timetable_config: tc })} 
+                />
 
-                        {formData.schedule && formData.schedule.length > 0 ? (
-                            <div style={{ border: '1px solid #E2E8F0', borderRadius: '16px', overflow: 'visible', position: 'relative' }}>
-                                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, textAlign: 'left' }}>
-                                    <thead>
-                                        <tr style={{ background: '#F8FAFC' }}>
-                                            <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', borderBottom: '1px solid #E2E8F0', borderTopLeftRadius: '16px' }}>Subject</th>
-                                            <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', borderBottom: '1px solid #E2E8F0' }}>Teaching Days</th>
-                                            <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', borderBottom: '1px solid #E2E8F0' }}>Assigned Teacher</th>
-                                            <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', borderBottom: '1px solid #E2E8F0', textAlign: 'center', width: '80px' }}>Count</th>
-                                            <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', borderBottom: '1px solid #E2E8F0', textAlign: 'center', width: '60px', borderTopRightRadius: '16px' }}></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {formData.schedule.map((session: any, i: number) => {
-                                            const activeDays = session.days || [];
-                                            return (
-                                                <tr key={i} style={{ borderBottom: i < formData.schedule.length - 1 ? '1px solid #F1F5F9' : 'none', position: 'relative', zIndex: formData.schedule.length - i }}>
-                                                    {/* Subject selector */}
-                                                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', position: 'relative' }}>
-                                                        <SubjectSelector 
-                                                            value={typeof session.subject === 'string' ? session.subject : (session.subject?.canonical_name || '')} 
-                                                            onChange={val => updateSession(i, 'subject', val)} 
-                                                            placeholder="Select Subject..."
-                                                            required
-                                                        />
-                                                    </td>
-
-                                                    {/* Weekday toggle chips */}
-                                                    <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'nowrap' }}>
-                                                            {WEEKDAYS.map(day => {
-                                                                const isSelected = activeDays.includes(day.key);
-                                                                return (
-                                                                    <button
-                                                                        key={day.key}
-                                                                        type="button"
-                                                                        onClick={() => toggleWeekday(i, day.key)}
-                                                                        style={{
-                                                                            padding: '5px 10px',
-                                                                            borderRadius: '6px',
-                                                                            fontSize: '11px',
-                                                                            fontWeight: 700,
-                                                                            cursor: 'pointer',
-                                                                            border: isSelected ? 'none' : '1px solid #E2E8F0',
-                                                                            transition: 'all 0.15s ease',
-                                                                            background: isSelected ? '#6366F1' : '#FFFFFF',
-                                                                            color: isSelected ? '#FFFFFF' : '#64748B',
-                                                                            boxShadow: isSelected ? '0 2px 6px rgba(99, 102, 241, 0.25)' : 'none',
-                                                                            minWidth: '38px',
-                                                                            textAlign: 'center' as const,
-                                                                        }}
-                                                                    >
-                                                                        {day.label}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Teacher selection dropdown */}
-                                                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', position: 'relative' }}>
-                                                        <CustomSelect
-                                                            options={[
-                                                                { value: '', label: 'Select Teacher...' },
-                                                                ...teachers.map(t => ({ value: t.id, label: `${t.first_name || ''} ${t.last_name || ''}`.trim() }))
-                                                            ]}
-                                                            value={session.teacher_id?._id || session.teacher_id || ''}
-                                                            onChange={val => updateSession(i, 'teacher_id', val)}
-                                                        />
-                                                    </td>
-
-                                                    {/* Weekly Count Badge */}
-                                                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
-                                                        <span style={{ 
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            width: '32px',
-                                                            height: '32px',
-                                                            borderRadius: '8px',
-                                                            fontSize: '14px',
-                                                            fontWeight: 800,
-                                                            color: activeDays.length > 0 ? '#4F46E5' : '#CBD5E1',
-                                                            background: activeDays.length > 0 ? '#EEF2FF' : '#F8FAFC',
-                                                            border: activeDays.length > 0 ? '1.5px solid #C7D2FE' : '1.5px solid #E2E8F0',
-                                                        }}>
-                                                            {activeDays.length}
-                                                        </span>
-                                                    </td>
-
-                                                    {/* Remove Button */}
-                                                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={() => removeSession(i)} 
-                                                            style={{ 
-                                                                background: '#FEE2E2', 
-                                                                color: '#EF4444', 
-                                                                width: '30px', 
-                                                                height: '30px', 
-                                                                borderRadius: '8px', 
-                                                                border: 'none', 
-                                                                cursor: 'pointer', 
-                                                                display: 'inline-flex', 
-                                                                alignItems: 'center', 
-                                                                justifyContent: 'center',
-                                                                transition: 'background-color 0.2s'
-                                                            }}
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <div style={{ textAlign: 'center', padding: '48px', background: '#F8FAFC', borderRadius: '16px', border: '2px dashed #E2E8F0', color: '#64748B', fontSize: '14px', fontWeight: 600 }}>
-                                <CalendarRange size={32} style={{ display: 'block', margin: '0 auto 12px', opacity: 0.3, color: '#4F46E5' }} />
-                                No subjects mapped to this class yet.<br />
-                                <span style={{ fontSize: '13px', fontWeight: 500, color: '#94A3B8', marginTop: '4px', display: 'inline-block' }}>
-                                    Click &quot;Add Subject to Class&quot; to assign subjects, teachers, and weekly teaching days.
-                                </span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="form-section">
-                        <div className="form-section-title">Batch Settings</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div>
-                                <label className="form-label">Batch Status</label>
-                                <CustomSelect
-                                    options={[
-                                        { value: 'upcoming', label: 'Upcoming' },
-                                        { value: 'ongoing', label: 'Ongoing' },
-                                        { value: 'completed', label: 'Completed' }
-                                    ]}
-                                    value={formData.status}
-                                    onChange={val => setFormData({ ...formData, status: val })}
-                                />
-                            </div>
-                            {formData.status === 'upcoming' && (
-                                <div>
-                                    <label className="form-label">Starts From</label>
-                                    <DatePicker
-                                        showMonthDropdown scrollableYearDropdown dropdownMode="select"
-                                        selected={formData.start_date ? new Date(formData.start_date) : null}
-                                        onChange={(date: Date | null) => { if (date) setFormData({ ...formData, start_date: date.toISOString().split('T')[0] }); }}
-                                        dateFormat="MMMM d, yyyy" placeholderText="Pick Start Date"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="form-actions">
-                        <button type="button" className="btn-cancel" onClick={() => router.push(`${basePath}/classes/${params.id}`)}>Cancel</button>
-                        <button type="submit" className="btn-submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Updating...' : 'Update Batch'}
+                {/* Subject Mapping Table */}
+                <SectionCard 
+                    title="Academic Planning (Weekly Subject Plan)" 
+                    icon={<Clock size={18} />}
+                    description="Map subjects to this class, choose allowed weekdays, and allot teachers."
+                >
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                        <button
+                            type="button"
+                            onClick={addSession}
+                            style={{
+                                padding: '8px 16px', borderRadius: '10px', background: '#1E293B', border: 'none',
+                                color: 'white', fontSize: '13px', fontWeight: 800, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: '8px'
+                            }}
+                        >
+                            <Plus size={16} /> Add Subject to Class
                         </button>
                     </div>
-                </form>
-            )}
+
+                    {formData.schedule && formData.schedule.length > 0 ? (
+                        <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'visible', position: 'relative' }}>
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, textAlign: 'left' }}>
+                                <thead>
+                                    <tr style={{ background: '#F8FAFC' }}>
+                                        <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', borderBottom: '1px solid #E2E8F0', borderTopLeftRadius: '12px' }}>Subject</th>
+                                        <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', borderBottom: '1px solid #E2E8F0' }}>Teaching Days</th>
+                                        <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', borderBottom: '1px solid #E2E8F0' }}>Assigned Teacher</th>
+                                        <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', borderBottom: '1px solid #E2E8F0', textAlign: 'center', width: '80px' }}>Count</th>
+                                        <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', borderBottom: '1px solid #E2E8F0', textAlign: 'center', width: '60px', borderTopRightRadius: '12px' }}></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {formData.schedule.map((session: any, i: number) => {
+                                        const activeDays = session.days || [];
+                                        return (
+                                            <tr key={i} style={{ borderBottom: i < formData.schedule.length - 1 ? '1px solid #F1F5F9' : 'none', position: 'relative', zIndex: formData.schedule.length - i }}>
+                                                <td style={{ padding: '12px 16px', verticalAlign: 'middle', position: 'relative' }}>
+                                                    <SubjectSelector 
+                                                        value={session.subject} 
+                                                        onChange={val => updateSession(i, 'subject', val)} 
+                                                        placeholder="Select Subject..."
+                                                        required
+                                                    />
+                                                </td>
+
+                                                <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'nowrap' }}>
+                                                        {WEEKDAYS.map(day => {
+                                                            const isSelected = activeDays.includes(day.key);
+                                                            return (
+                                                                <button
+                                                                    key={day.key}
+                                                                    type="button"
+                                                                    onClick={() => toggleWeekday(i, day.key)}
+                                                                    style={{
+                                                                        padding: '5px 10px',
+                                                                        borderRadius: '6px',
+                                                                        fontSize: '11px',
+                                                                        fontWeight: 700,
+                                                                        cursor: 'pointer',
+                                                                        border: isSelected ? 'none' : '1px solid #E2E8F0',
+                                                                        transition: 'all 0.15s ease',
+                                                                        background: isSelected ? '#E53935' : '#FFFFFF',
+                                                                        color: isSelected ? '#FFFFFF' : '#64748B',
+                                                                        boxShadow: isSelected ? '0 2px 6px rgba(229, 57, 53, 0.25)' : 'none',
+                                                                        minWidth: '38px',
+                                                                        textAlign: 'center' as const,
+                                                                    }}
+                                                                >
+                                                                    {day.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </td>
+
+                                                <td style={{ padding: '12px 16px', verticalAlign: 'middle', position: 'relative' }}>
+                                                    <CustomSelect
+                                                        options={[
+                                                            { value: '', label: 'Select Teacher...' },
+                                                            ...teachers.map(t => ({ value: t.id, label: `${t.first_name} ${t.last_name}` }))
+                                                        ]}
+                                                        value={session.teacher_id?._id || session.teacher_id || ''}
+                                                        onChange={val => updateSession(i, 'teacher_id', val)}
+                                                    />
+                                                </td>
+
+                                                <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+                                                    <span style={{ 
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        borderRadius: '8px',
+                                                        fontSize: '14px',
+                                                        fontWeight: 800,
+                                                        color: activeDays.length > 0 ? '#E53935' : '#CBD5E1',
+                                                        background: activeDays.length > 0 ? 'rgba(229,57,53,0.05)' : '#F8FAFC',
+                                                        border: activeDays.length > 0 ? '1.5px solid rgba(229,57,53,0.15)' : '1.5px solid #E2E8F0',
+                                                    }}>
+                                                        {activeDays.length}
+                                                    </span>
+                                                </td>
+
+                                                <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => removeSession(i)} 
+                                                        style={{ 
+                                                            background: '#FEE2E2', 
+                                                            color: '#EF4444', 
+                                                            width: '30px', 
+                                                            height: '30px', 
+                                                            borderRadius: '8px', 
+                                                            border: 'none', 
+                                                            cursor: 'pointer', 
+                                                            display: 'inline-flex', 
+                                                            alignItems: 'center', 
+                                                            justifyContent: 'center',
+                                                        }}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '32px', border: '2px dashed #E2E8F0', borderRadius: '12px', color: '#64748B', fontSize: '13px' }}>
+                            No subjects configured. Click "Add Subject to Class" to get started.
+                        </div>
+                    )}
+                </SectionCard>
+
+                {/* Batch Lifecycle */}
+                <SectionCard title="Batch Lifecycle" icon={<CalendarClock size={18} />}>
+                    <FormGrid columns={2}>
+                        <FieldGroup label="Current Operational Status">
+                            <CustomSelect
+                                options={[
+                                    { value: 'upcoming', label: 'Upcoming / Registration Open' },
+                                    { value: 'ongoing', label: 'Ongoing / In-Session' },
+                                    { value: 'completed', label: 'Completed' }
+                                ]}
+                                value={formData.status}
+                                onChange={val => setFormData({ ...formData, status: val })}
+                            />
+                        </FieldGroup>
+                        {formData.status === 'upcoming' && (
+                            <FieldGroup label="Anticipated Start Date">
+                                <DatePicker
+                                    showMonthDropdown scrollableYearDropdown dropdownMode="select"
+                                    selected={formData.start_date ? new Date(formData.start_date) : null}
+                                    onChange={(date: Date | null) => { if (date) setFormData({ ...formData, start_date: date.toISOString().split('T')[0] }); }}
+                                    dateFormat="MMMM d, yyyy" placeholderText="Pick a date"
+                                />
+                            </FieldGroup>
+                        )}
+                    </FormGrid>
+                </SectionCard>
+
+                {/* Form Footer Action Buttons */}
+                <FormActions>
+                    <button type="button" className="btn-cancel" onClick={() => router.push(`${basePath}/classes/${params.id}`)}>Cancel</button>
+                    <button type="submit" className="btn-submit" disabled={isSubmitting}>
+                        {isSubmitting ? 'Saving Changes...' : 'Save Changes'}
+                    </button>
+                </FormActions>
+            </form>
         </FormPageLayout>
     );
 }

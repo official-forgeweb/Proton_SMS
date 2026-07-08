@@ -3,10 +3,13 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Target, Calendar, Clock, ChevronRight, MessageSquare, Phone } from 'lucide-react';
 import api from '@/lib/api';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function DemoClassesPage() {
     const router = useRouter();
+    const pathname = usePathname();
+    const basePath = pathname.startsWith('/coordinator') ? '/coordinator' : '/admin';
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
     const [demos, setDemos] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -28,7 +31,7 @@ export default function DemoClassesPage() {
 
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={requiredRole}>
             <div className="page-header">
                 <div>
                     <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Demo Classes</h1>
@@ -90,7 +93,7 @@ export default function DemoClassesPage() {
                                     <button
                                         className="btn btn-secondary btn-sm"
                                         style={{ flex: 1, justifyContent: 'center' }}
-                                        onClick={() => router.push(`/admin/demos/${demo.id}/remark?enquiry=${demo.enquiry_id}`)}
+                                        onClick={() => router.push(`${basePath}/demos/${demo.id}/remark?enquiry=${demo.enquiry_id}`)}
                                     >
                                         <MessageSquare size={14} /> Add Remark
                                     </button>

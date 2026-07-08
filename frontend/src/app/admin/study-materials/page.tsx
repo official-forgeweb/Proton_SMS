@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import axios from 'axios';
@@ -9,6 +10,8 @@ import ClassSubjectSelector from '@/components/ClassSubjectSelector';
 import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AdminStudyMaterialsPage() {
+    const pathname = usePathname();
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
     const [materials, setMaterials] = useState<any[]>([]);
     const [classes, setClasses] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -139,7 +142,7 @@ export default function AdminStudyMaterialsPage() {
     };
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={requiredRole}>
             <div className="page-header" style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>

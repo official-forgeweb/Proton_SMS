@@ -8,12 +8,15 @@ import {
   ArrowLeft, Search, FileSpreadsheet, Percent, AlertCircle,
   TrendingUp, Award, Clock, ArrowUpRight, ShieldAlert
 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 export default function TestProfilePage() {
     const params = useParams();
     const router = useRouter();
+    const pathname = usePathname();
+    const basePath = pathname.startsWith('/coordinator') ? '/coordinator' : '/admin';
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
     const [test, setTest] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -44,7 +47,7 @@ export default function TestProfilePage() {
 
     if (isLoading) {
         return (
-            <DashboardLayout requiredRole="admin">
+            <DashboardLayout requiredRole={requiredRole}>
                 <div style={{ padding: '80px 24px', textAlign: 'center' }}>
                     <div className="spinner" style={{ margin: '0 auto' }} />
                     <p style={{ color: '#64748B', marginTop: '16px', fontWeight: 600 }}>Loading Test Analytics...</p>
@@ -55,10 +58,10 @@ export default function TestProfilePage() {
 
     if (!test) {
         return (
-            <DashboardLayout requiredRole="admin">
+            <DashboardLayout requiredRole={requiredRole}>
                 <div style={{ padding: '80px 24px', textAlign: 'center' }}>
                     <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#1E293B' }}>Test not found</h3>
-                    <button className="btn btn-primary" onClick={() => router.push('/admin/tests')} style={{ marginTop: '16px' }}>Back to Tests</button>
+                    <button className="btn btn-primary" onClick={() => router.push('${basePath}/tests')} style={{ marginTop: '16px' }}>Back to Tests</button>
                 </div>
             </DashboardLayout>
         );
@@ -118,7 +121,7 @@ export default function TestProfilePage() {
     const totalAppeared = results.length - totalAbsent;
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={requiredRole}>
             <div style={{ padding: '24px', maxWidth: '1600px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
                 
                 {/* CSS Keyframes & Animations */}
@@ -142,10 +145,10 @@ export default function TestProfilePage() {
                         transition: all 0.2s;
                     }
                     .filter-badge.active {
-                        background: #6366F1;
+                        background: #E53935;
                         color: white;
-                        border-color: #6366F1;
-                        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+                        border-color: #E53935;
+                        box-shadow: 0 4px 12px rgba(229, 57, 53, 0.2);
                     }
                 `}} />
 
@@ -153,12 +156,12 @@ export default function TestProfilePage() {
                 <div className="animate-fade" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
                         <button 
-                            onClick={() => router.push('/admin/tests')}
+                            onClick={() => router.push('${basePath}/tests')}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: '#64748B', fontWeight: 600, fontSize: '14px', marginBottom: '12px' }}
                         >
                             <ArrowLeft size={16} /> Back to Tests
                         </button>
-                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#6366F1', background: 'rgba(99,102,241,0.1)', padding: '4px 10px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#E53935', background: 'rgba(229, 57, 53,0.1)', padding: '4px 10px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                             {test.test_code}
                         </span>
                         <h1 style={{ fontSize: '32px', fontWeight: 900, color: '#1E293B', marginTop: '6px', marginInline: 0 }}>{test.test_name}</h1>
@@ -183,7 +186,7 @@ export default function TestProfilePage() {
                         <button 
                             className="btn btn-primary" 
                             onClick={() => router.push(`/admin/tests/${test.id}/evaluate`)}
-                            style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: 700, boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)' }}
+                            style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: 700, boxShadow: '0 4px 12px rgba(229, 57, 53, 0.2)' }}
                         >
                             Evaluate Scores
                         </button>
@@ -193,7 +196,7 @@ export default function TestProfilePage() {
                 {/* KPI Test Statistics Grid */}
                 <div className="animate-fade" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px', marginBottom: '32px', animationDelay: '0.1s' }}>
                     <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                        <div style={{ padding: '14px', background: 'rgba(99,102,241,0.08)', borderRadius: '16px', color: '#6366F1' }}>
+                        <div style={{ padding: '14px', background: 'rgba(229, 57, 53,0.08)', borderRadius: '16px', color: '#E53935' }}>
                             <Users size={24} />
                         </div>
                         <div>
@@ -242,7 +245,7 @@ export default function TestProfilePage() {
                         {/* Interactive query filter panel */}
                         <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <ClipboardList size={18} color="#6366F1" /> Smart Filters
+                                <ClipboardList size={18} color="#E53935" /> Smart Filters
                             </h3>
 
                             {/* Search bar */}
@@ -309,7 +312,7 @@ export default function TestProfilePage() {
                         {(test.description || (test.images && test.images.length > 0)) && (
                             <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                                    <Info size={18} color="#6366F1" /> Syllabus Details
+                                    <Info size={18} color="#E53935" /> Syllabus Details
                                 </h3>
                                 
                                 {test.description && (
@@ -323,7 +326,7 @@ export default function TestProfilePage() {
                                         {test.images.map((img: string, idx: number) => (
                                             <a key={idx} href={img} target="_blank" rel="noopener noreferrer" style={{ display: 'block', borderRadius: '12px', overflow: 'hidden', border: '1px solid #E2E8F0', cursor: 'pointer', textDecoration: 'none' }}>
                                                 <img src={img} alt={`Attachment ${idx + 1}`} style={{ width: '100%', height: '80px', objectFit: 'cover', display: 'block' }} />
-                                                <div style={{ padding: '6px', background: 'white', fontSize: '10px', fontWeight: 700, color: '#6366F1', textAlign: 'center' }}>
+                                                <div style={{ padding: '6px', background: 'white', fontSize: '10px', fontWeight: 700, color: '#E53935', textAlign: 'center' }}>
                                                     Document {idx + 1}
                                                 </div>
                                             </a>
@@ -340,7 +343,7 @@ export default function TestProfilePage() {
                         
                         <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <ClipboardList size={18} color="#6366F1" /> Results Sheet Ledger
+                                <ClipboardList size={18} color="#E53935" /> Results Sheet Ledger
                             </h3>
                             <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', background: '#F1F5F9', padding: '4px 12px', borderRadius: '20px' }}>
                                 Showing {filteredResults.length} of {results.length} Candidates
@@ -385,7 +388,7 @@ export default function TestProfilePage() {
                                                         <span style={{ fontWeight: 700, color: '#1E293B' }}>{r.student_name}</span>
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '16px 24px', fontFamily: 'monospace', fontWeight: 700, color: '#6366F1' }}>
+                                                <td style={{ padding: '16px 24px', fontFamily: 'monospace', fontWeight: 700, color: '#E53935' }}>
                                                     {r.pro_id}
                                                 </td>
                                                 <td style={{ padding: '16px 24px', fontWeight: 600, color: '#334155' }}>

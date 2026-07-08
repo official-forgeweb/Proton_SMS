@@ -2,7 +2,7 @@
 import { ReactNode } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Home, ChevronRight } from 'lucide-react';
 
 interface FormPageLayoutProps {
     children: ReactNode;
@@ -25,52 +25,35 @@ export default function FormPageLayout({
     requiredRole,
     icon,
     accentColor = '#E53935',
-    maxWidth = '100%',
+    maxWidth = '1000px',
 }: FormPageLayoutProps) {
     const router = useRouter();
 
     const customStyles = `
-        @keyframes meshGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
         @keyframes slideUpFade {
-            from { opacity: 0; transform: translateY(40px); }
+            from { opacity: 0; transform: translateY(16px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes headerIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
         }
         
         .page-container {
             position: relative;
             width: 100%;
-            padding: 24px 0 120px 0;
-            background: transparent;
-            overflow: hidden;
+            min-height: calc(100vh - 100px);
+            padding: 24px;
+            background: var(--bg-secondary, #F4F5F9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .premium-mesh {
             position: absolute;
-            top: -10%; left: -10%; right: -10%; bottom: -10%;
+            top: 0; left: 0; right: 0; bottom: 0;
             z-index: 0;
             background: 
-                radial-gradient(circle at 10% 20%, hsla(355, 100%, 93%, 0.4) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, hsla(210, 100%, 90%, 0.4) 0%, transparent 40%);
-            background-size: 200% 200%;
-            animation: meshGradient 30s ease infinite;
-            opacity: 0.5;
-        }
-
-        .noise-overlay {
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            opacity: 0.02;
+                radial-gradient(circle at 10% 10%, rgba(229, 57, 53, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(26, 29, 59, 0.02) 0%, transparent 40%);
             pointer-events: none;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
         .form-central-card {
@@ -78,132 +61,161 @@ export default function FormPageLayout({
             z-index: 10;
             width: 100%;
             background: #FFFFFF;
-            border-radius: 24px;
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 
-                0 12px 40px rgba(26, 29, 59, 0.04),
-                0 0 0 1px rgba(226, 232, 240, 0.4);
-            padding: 48px;
+            border-radius: var(--radius-lg, 20px);
+            border: 1px solid var(--border-primary, #F0F0F5);
+            box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.04));
+            padding: 32px;
             margin: 0 auto;
-            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: slideUpFade 0.35s var(--ease-premium, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+            display: flex;
+            flex-direction: column;
         }
 
+        /* Responsive Form Inputs */
         .form-input {
             width: 100%;
-            padding: 16px 20px;
-            background: #F8F9FD;
-            border: 1.5px solid #E2E8F0;
-            border-radius: 16px;
-            font-size: 15px;
+            height: 46px;
+            padding: 0 16px;
+            background: #FFFFFF;
+            border: 1.5px solid var(--border-secondary, #E4E6EF);
+            border-radius: var(--radius-sm, 10px);
+            font-size: 14px;
             font-weight: 500;
-            color: #1A1D3B;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-primary, #1A1D3B);
+            transition: all 0.15s ease;
             outline: none;
         }
 
         .form-input:focus {
-            border-color: var(--accentColor, #E53935);
-            background: #FFFFFF;
-            box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1);
-            transform: translateY(-2px);
+            border-color: #E53935;
+            box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
         }
 
         .form-label {
-            font-size: 11px;
-            font-weight: 800;
-            color: #5E6278;
-            margin-bottom: 12px;
-            display: block;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .form-section {
-            background: #F8F9FD;
-            border: 1px solid #F1F2F7;
-            padding: 32px;
-            border-radius: 24px;
-            margin-bottom: 32px;
-            transition: all 0.3s ease;
-        }
-        .form-section:hover {
-            border-color: #E2E8F0;
-        }
-
-        .form-section-title {
-            font-size: 17px;
+            font-size: 12px;
             font-weight: 700;
-            color: #1A1D3B;
-            margin-bottom: 24px;
+            color: var(--text-secondary, #5E6278);
+            margin-bottom: 8px;
+            display: block;
+            letter-spacing: 0.02em;
+        }
+
+        /* Form Actions Sticky Bar */
+        .form-actions-sticky {
+            position: sticky;
+            bottom: -24px;
+            left: -32px;
+            right: -32px;
+            margin: 32px -32px -32px -32px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-primary, #F0F0F5);
+            padding: 16px 32px;
+            border-bottom-left-radius: var(--radius-lg, 20px);
+            border-bottom-right-radius: var(--radius-lg, 20px);
             display: flex;
-            align-items: center;
+            justify-content: flex-end;
             gap: 12px;
+            z-index: 100;
         }
 
         .btn-submit {
-            padding: 16px 40px;
-            background: var(--accentColor, #E53935);
+            height: 44px;
+            padding: 0 24px;
+            background: var(--gradient-primary, linear-gradient(135deg, #E53935 0%, #C62828 100%));
             color: white;
             border: none;
-            border-radius: 18px;
-            font-weight: 800;
-            font-size: 16px;
+            border-radius: var(--radius-sm, 10px);
+            font-weight: 700;
+            font-size: 14px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(229, 57, 53, 0.2);
         }
 
         .btn-submit:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 20px rgba(229, 57, 53, 0.3);
+        }
+        
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
         }
 
         .btn-cancel {
-            padding: 16px 40px;
+            height: 44px;
+            padding: 0 24px;
             background: #FFFFFF;
-            color: #5E6278;
-            border: 1.5px solid #E2E8F0;
-            border-radius: 18px;
-            font-weight: 700;
-            font-size: 16px;
+            color: var(--text-secondary, #5E6278);
+            border: 1.5px solid var(--border-secondary, #E4E6EF);
+            border-radius: var(--radius-sm, 10px);
+            font-weight: 600;
+            font-size: 14px;
             cursor: pointer;
             transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-cancel:hover {
-            background: #F8F9FD;
-            color: #1A1D3B;
-            border-color: #CBD5E1;
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 20px;
-            margin-top: 40px;
-            padding-top: 32px;
-            border-top: 1.5px solid #F1F2F7;
-        }
-
-        .form-actions-left {
-            display: flex;
-            justify-content: flex-start;
-            gap: 20px;
-            margin-top: 40px;
-            padding-top: 32px;
-            border-top: 1.5px solid #F1F2F7;
+            background: var(--bg-secondary, #F4F5F9);
+            color: var(--text-primary, #1A1D3B);
+            border-color: var(--border-secondary, #E4E6EF);
         }
 
         .react-datepicker-wrapper { width: 100%; }
         .react-datepicker__input-container input {
-            width: 100%; padding: 16px 20px; background: #F8F9FD; border: 1.5px solid #E2E8F0; 
-            border-radius: 16px; font-size: 15px; color: #1A1D3B; outline: none; transition: all 0.3s;
+            width: 100%; height: 46px; padding: 0 16px; background: #FFFFFF; border: 1.5px solid var(--border-secondary, #E4E6EF); 
+            border-radius: var(--radius-sm, 10px); font-size: 14px; color: var(--text-primary, #1A1D3B); outline: none; transition: all 0.15s;
+            font-weight: 500;
         }
         .react-datepicker__input-container input:focus {
-            border-color: var(--accentColor, #E53935); background: #FFF; box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1);
+            border-color: #E53935; box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .page-container {
+                padding: 16px 12px 40px 12px;
+            }
+            .form-central-card {
+                padding: 20px 16px;
+                border-radius: var(--radius-md, 14px);
+            }
+            .form-actions-sticky {
+                bottom: -16px;
+                left: -16px;
+                right: -16px;
+                margin: 24px -16px -16px -16px;
+                padding: 12px 16px;
+                border-bottom-left-radius: var(--radius-md, 14px);
+                border-bottom-right-radius: var(--radius-md, 14px);
+            }
         }
     `;
+
+    // Deduce Breadcrumb labels
+    const getBreadcrumbs = () => {
+        const pathSegments = backHref.split('/').filter(Boolean);
+        const homeRole = requiredRole === 'coordinator' ? 'coordinator' : 'admin';
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', fontSize: '12px', color: 'var(--text-tertiary, #A1A5B7)', fontWeight: 600 }}>
+                <Home size={14} style={{ cursor: 'pointer' }} onClick={() => router.push(`/${homeRole}`)} />
+                <ChevronRight size={12} />
+                <span style={{ cursor: 'pointer', textTransform: 'capitalize' }} onClick={() => router.push(backHref)}>
+                    {backLabel || pathSegments[pathSegments.length - 1] || 'Dashboard'}
+                </span>
+                <ChevronRight size={12} />
+                <span style={{ color: '#E53935', fontWeight: 700 }}>{title}</span>
+            </div>
+        );
+    };
 
     return (
         <DashboardLayout requiredRole={requiredRole}>
@@ -211,59 +223,63 @@ export default function FormPageLayout({
             
             <div className="page-container" style={{ '--accentColor': accentColor } as React.CSSProperties}>
                 <div className="premium-mesh" />
-                <div className="noise-overlay" />
 
-                <div className="form-central-card" style={{ maxWidth }}>
-                    {/* Back Button */}
-                    <div style={{ position: 'absolute', top: '32px', left: '48px' }}>
-                        <button
-                            onClick={() => router.push(backHref)}
-                            style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '8px',
-                                background: 'white', border: '1px solid #E2E8F0', 
-                                cursor: 'pointer', color: '#5E6278', fontSize: '12px', fontWeight: 800,
-                                padding: '10px 18px', borderRadius: '14px', transition: 'all 0.3s ease',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
-                            }}
-                        >
-                            <ArrowLeft size={16} strokeWidth={3} /> {backLabel.toUpperCase()}
-                        </button>
-                    </div>
+                <div style={{ width: '100%', maxWidth, display: 'flex', flexDirection: 'column' }}>
+                    {getBreadcrumbs()}
 
-                    {/* Header */}
-                    <div style={{ textAlign: 'center', marginBottom: '56px', animation: 'headerIn 0.8s ease' }}>
-                        {icon && (
-                            <div style={{
-                                background: accentColor,
-                                width: '72px', height: '72px', borderRadius: '24px',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: 'white', margin: '0 auto 28px',
-                                boxShadow: `0 10px 20px rgba(229,57,53,0.2)`,
-                            }}>
-                                {icon}
+                    <div className="form-central-card">
+                        {/* Header Details */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-primary, #F0F0F5)', paddingBottom: '20px', marginBottom: '28px' }}>
+                            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                                {icon && (
+                                    <div style={{
+                                        background: 'rgba(229, 57, 53, 0.05)',
+                                        width: '42px', height: '42px', borderRadius: '10px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: '#E53935',
+                                    }}>
+                                        {icon}
+                                    </div>
+                                )}
+                                <div>
+                                    <h1 style={{
+                                        fontSize: '20px', fontWeight: 800, color: 'var(--text-primary, #1A1D3B)',
+                                        fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em', margin: 0,
+                                        lineHeight: 1.2
+                                    }}>
+                                        {title}
+                                    </h1>
+                                    {subtitle && (
+                                        <p style={{ 
+                                            fontSize: '13px', color: 'var(--text-secondary, #5E6278)', fontWeight: 500, 
+                                            margin: '4px 0 0 0', lineHeight: 1.4
+                                        }}>
+                                             {subtitle}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
-                        )}
-                        <h1 style={{
-                            fontSize: '36px', fontWeight: 900, color: '#1A1D3B',
-                            fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.04em', margin: 0,
-                            lineHeight: 1
-                        }}>
-                            {title}
-                        </h1>
-                        {subtitle && (
-                            <p style={{ 
-                                fontSize: '17px', color: '#5E6278', fontWeight: 500, 
-                                marginTop: '16px', maxWidth: '540px', margin: '16px auto 0',
-                                lineHeight: 1.6
-                            }}>
-                                 {subtitle}
-                            </p>
-                        )}
-                    </div>
 
-                    {/* Content */}
-                    <div style={{ position: 'relative' }}>
-                        {children}
+                            <button
+                                type="button"
+                                onClick={() => router.push(backHref)}
+                                style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    background: 'white', border: '1.5px solid var(--border-secondary, #E4E6EF)', 
+                                    cursor: 'pointer', color: 'var(--text-secondary, #5E6278)', fontSize: '13px', fontWeight: 700,
+                                    padding: '8px 14px', borderRadius: '8px', transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#CBD5E1'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#E4E6EF'; }}
+                            >
+                                <ArrowLeft size={14} /> Back
+                            </button>
+                        </div>
+
+                        {/* Form Content Body */}
+                        <div style={{ position: 'relative', flex: 1 }}>
+                            {children}
+                        </div>
                     </div>
                 </div>
             </div>

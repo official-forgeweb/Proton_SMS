@@ -40,6 +40,8 @@ export interface ClassConfig {
     working_days: string[];     // ["Monday", "Tuesday", ...]
     breaks: BreakConfig[];
     subjects: SubjectFrequency[];
+    is_manual?: boolean;
+    manual_slots?: TimeSlot[];
 }
 
 export interface TimeSlot {
@@ -192,7 +194,12 @@ export function generateTimetable(
     const classTeachingSlotsMap = new Map<string, TimeSlot[]>();
 
     for (const cfg of classConfigs) {
-        const allSlots = generateTimeSlots(cfg.institute_start, cfg.institute_end, cfg.lecture_duration, cfg.breaks);
+        let allSlots: TimeSlot[] = [];
+        if (cfg.is_manual && cfg.manual_slots && cfg.manual_slots.length > 0) {
+            allSlots = cfg.manual_slots;
+        } else {
+            allSlots = generateTimeSlots(cfg.institute_start, cfg.institute_end, cfg.lecture_duration, cfg.breaks);
+        }
         classSlotsMap.set(cfg.class_id, allSlots);
         classTeachingSlotsMap.set(cfg.class_id, allSlots.filter(s => !s.is_break));
     }

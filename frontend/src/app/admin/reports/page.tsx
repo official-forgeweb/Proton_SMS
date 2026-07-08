@@ -1,4 +1,5 @@
 'use client';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { BarChart3, TrendingUp, Download, PieChart, Activity, ArrowRight, Loader2, Calendar, FileText, ChevronRight, Share2, Sparkles } from 'lucide-react';
@@ -8,6 +9,9 @@ import { jsonToCsv, downloadCsv } from '@/lib/csv';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Legend, CartesianGrid } from 'recharts';
 
 export default function ReportsPage() {
+    const pathname = usePathname();
+    const basePath = pathname.startsWith('/coordinator') ? '/coordinator' : '/admin';
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
     const [downloading, setDownloading] = useState<string | null>(null);
     const [visualData, setVisualData] = useState<any>(null);
     const [loadingVisuals, setLoadingVisuals] = useState(true);
@@ -108,7 +112,7 @@ export default function ReportsPage() {
     `;
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={requiredRole}>
             <style dangerouslySetInnerHTML={{__html: customStyles}} />
             
             <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: 'calc(100vh - 40px)', borderRadius: '24px' }}>

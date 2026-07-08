@@ -2,12 +2,16 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { ClipboardList, Plus, Calendar, FileText, CheckCircle, Clock, BookOpen, Target, Timer, Trophy, ChevronRight, LayoutGrid, Search, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function TestsPage() {
     const router = useRouter();
+    const pathname = usePathname();
+    const basePath = pathname.startsWith('/coordinator') ? '/coordinator' : '/admin';
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
+
     const [tests, setTests] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -82,7 +86,7 @@ export default function TestsPage() {
     `;
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={requiredRole}>
             <style dangerouslySetInnerHTML={{__html: customStyles}} />
             
             <div className="bg-mesh" style={{ padding: '32px', margin: '-24px', minHeight: 'calc(100vh - 40px)', borderRadius: '24px' }}>
@@ -114,7 +118,7 @@ export default function TestsPage() {
                                 onBlur={e => e.target.style.borderColor = '#E2E8F0'}
                             />
                         </div>
-                        <button onClick={() => router.push('/admin/tests/create')} style={{ background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '12px 24px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(26,29,59,0.4)', transition: 'all 0.2s' }}>
+                        <button onClick={() => router.push(`${basePath}/tests/create`)} style={{ background: 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '12px 24px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(26,29,59,0.4)', transition: 'all 0.2s' }}>
                             <Plus size={20} strokeWidth={2.5} /> Create Test
                         </button>
                     </div>
@@ -123,9 +127,11 @@ export default function TestsPage() {
                 {/* Tests Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                     {isLoading ? (
-                        [1, 2, 3, 4, 5, 6].map(i => (
-                            <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
-                        ))
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', width: '100%', padding: '0px' }}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="animate-fade-in glass-panel" style={{ height: '140px', borderRadius: '16px', animationDelay: `${i * 100}ms`, border: '1px solid rgba(226, 232, 240, 0.8)', background: '#F8F9FD' }} />
+                            ))}
+                        </div>
                     ) :  filteredTests.length === 0 ? (
                         <div style={{ gridColumn: '1 / -1', background: 'white', border: '2px dashed #E2E8F0', borderRadius: '24px', padding: '100px', textAlign: 'center' }}>
                             <div style={{ width: '80px', height: '80px', background: '#F8F9FD', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
@@ -159,7 +165,7 @@ export default function TestsPage() {
                                         <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1A1D3B', fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.01em', marginBottom: '6px' }}>
                                             {test.test_name}
                                         </h3>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
                                             <span style={{ fontSize: '14px', color: '#5E6278', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                 <BookOpen size={14} /> {test.subject}
                                             </span>
@@ -167,6 +173,13 @@ export default function TestsPage() {
                                                 <LayoutGrid size={14} /> {test.class_name}
                                             </span>
                                         </div>
+
+                                        {test.creator_name && (
+                                            <div style={{ fontSize: '12px', color: '#5E6278', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', background: '#F8FAFC', padding: '6px 12px', borderRadius: '10px', width: 'fit-content', border: '1px solid #F1F5F9' }}>
+                                                <span style={{ color: '#E53935', fontWeight: 700 }}>Created By:</span>
+                                                <span style={{ color: '#1A1D3B' }}>{test.creator_name} <span style={{ fontSize: '10px', color: '#7E8299', background: '#E2E8F0', padding: '2px 6px', borderRadius: '4px', marginLeft: '2px' }}>{test.creator_role?.toUpperCase()}</span></span>
+                                            </div>
+                                        )}
 
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
                                             <div style={{ background: '#F8FAFC', padding: '10px', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
@@ -190,7 +203,7 @@ export default function TestsPage() {
                                         </div>
 
                                         <button
-                                            onClick={() => router.push(`/admin/tests/${test.id}`)}
+                                            onClick={() => router.push(`${basePath}/tests/${test.id}`)}
                                             style={{ 
                                                 width: '100%', padding: '12px', borderRadius: '12px', 
                                                 background: isCompleted ? 'linear-gradient(135deg, #1A1D3B 0%, #0D0F21 100%)' : '#FFFFFF', 

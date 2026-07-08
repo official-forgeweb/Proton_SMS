@@ -352,14 +352,14 @@ export default function AdminVideoLecturesPage() {
     };
 
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={['admin', 'coordinator']}>
             <div style={{ paddingBottom: '40px' }}>
                 
                 {/* 1. Page Header */}
                 <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
                     <div>
                         <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1D3B', margin: 0, display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'Poppins, sans-serif' }}>
-                            <Video size={28} color="#4F60FF" /> Content Sync Center
+                            <Video size={28} color="#E53935" /> Content Sync Center
                         </h1>
                         <p style={{ color: '#5E6278', fontSize: '15px', marginTop: '6px', fontWeight: 500 }}>
                             Automate student video lectures by synchronizing dynamic data models directly from Google Sheets.
@@ -372,10 +372,10 @@ export default function AdminVideoLecturesPage() {
                             disabled={isSyncing || sources.filter(s => s.is_enabled).length === 0}
                             style={{ 
                                 display: 'flex', alignItems: 'center', gap: '10px',
-                                background: isSyncing ? '#A1A5B7' : 'linear-gradient(135deg, #4F60FF 0%, #3144E5 100%)',
+                                background: isSyncing ? '#A1A5B7' : 'linear-gradient(135deg, #E53935 0%, #C62828 100%)',
                                 color: 'white', border: 'none', padding: '12px 24px',
                                 borderRadius: '14px', fontWeight: 700, fontSize: '14px',
-                                boxShadow: isSyncing ? 'none' : '0 4px 15px rgba(79, 96, 255, 0.3)',
+                                boxShadow: isSyncing ? 'none' : '0 4px 15px rgba(229, 57, 53, 0.3)',
                                 transition: 'all 0.2s', cursor: (isSyncing || sources.filter(s => s.is_enabled).length === 0) ? 'not-allowed' : 'pointer'
                             }}
                         >
@@ -392,8 +392,8 @@ export default function AdminVideoLecturesPage() {
                         style={{
                             padding: '12px 24px', fontSize: '14px', fontWeight: 700,
                             background: 'none', border: 'none', outline: 'none', cursor: 'pointer',
-                            color: activeTab === 'lectures' ? '#4F60FF' : '#5E6278',
-                            borderBottom: activeTab === 'lectures' ? '3px solid #4F60FF' : '3px solid transparent',
+                            color: activeTab === 'lectures' ? '#E53935' : '#5E6278',
+                            borderBottom: activeTab === 'lectures' ? '3px solid #E53935' : '3px solid transparent',
                             transition: 'all 0.2s', paddingBottom: '14px'
                         }}
                     >
@@ -404,8 +404,8 @@ export default function AdminVideoLecturesPage() {
                         style={{
                             padding: '12px 24px', fontSize: '14px', fontWeight: 700,
                             background: 'none', border: 'none', outline: 'none', cursor: 'pointer',
-                            color: activeTab === 'sources' ? '#4F60FF' : '#5E6278',
-                            borderBottom: activeTab === 'sources' ? '3px solid #4F60FF' : '3px solid transparent',
+                            color: activeTab === 'sources' ? '#E53935' : '#5E6278',
+                            borderBottom: activeTab === 'sources' ? '3px solid #E53935' : '3px solid transparent',
                             transition: 'all 0.2s', paddingBottom: '14px'
                         }}
                     >
@@ -416,8 +416,8 @@ export default function AdminVideoLecturesPage() {
                         style={{
                             padding: '12px 24px', fontSize: '14px', fontWeight: 700,
                             background: 'none', border: 'none', outline: 'none', cursor: 'pointer',
-                            color: activeTab === 'logs' ? '#4F60FF' : '#5E6278',
-                            borderBottom: activeTab === 'logs' ? '3px solid #4F60FF' : '3px solid transparent',
+                            color: activeTab === 'logs' ? '#E53935' : '#5E6278',
+                            borderBottom: activeTab === 'logs' ? '3px solid #E53935' : '3px solid transparent',
                             transition: 'all 0.2s', paddingBottom: '14px'
                         }}
                     >
@@ -517,7 +517,7 @@ export default function AdminVideoLecturesPage() {
                                                     <td style={{ padding: '16px 12px', fontWeight: 700, color: '#1A1D3B', fontSize: '14px' }}>
                                                         {lecture.class_name || 'N/A'}
                                                     </td>
-                                                    <td style={{ padding: '16px 12px', fontWeight: 600, color: '#4F60FF', fontSize: '14px' }}>
+                                                    <td style={{ padding: '16px 12px', fontWeight: 600, color: '#E53935', fontSize: '14px' }}>
                                                         {lecture.subject}
                                                     </td>
                                                     <td style={{ padding: '16px 12px', color: '#5E6278', fontSize: '14px' }}>
@@ -550,7 +550,7 @@ export default function AdminVideoLecturesPage() {
                                                                     </div>
                                                                     <button 
                                                                         onClick={() => setSelectedLecture(lecture)}
-                                                                        style={{ background: 'none', border: 'none', color: '#4F60FF', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                                                        style={{ background: 'none', border: 'none', color: '#E53935', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                                                                     >
                                                                         View Details <Info size={14} />
                                                                     </button>
@@ -589,9 +589,9 @@ export default function AdminVideoLecturesPage() {
                             <button 
                                 onClick={handleOpenAddSource}
                                 style={{
-                                    display: 'flex', alignItems: 'center', gap: '6px', background: '#4F60FF', color: 'white',
+                                    display: 'flex', alignItems: 'center', gap: '6px', background: '#E53935', color: 'white',
                                     border: 'none', padding: '10px 18px', borderRadius: '12px', fontWeight: 700, fontSize: '13px',
-                                    cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 10px rgba(79, 96, 255, 0.2)'
+                                    cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 10px rgba(229, 57, 53, 0.2)'
                                 }}
                             >
                                 <Plus size={16} /> Add Source
@@ -638,7 +638,7 @@ export default function AdminVideoLecturesPage() {
                                                 onClick={() => handleSyncSource(source.id)}
                                                 disabled={syncingSourceId === source.id}
                                                 style={{
-                                                    background: '#F0F2FF', color: '#4F60FF', border: 'none',
+                                                    background: '#F0F2FF', color: '#E53935', border: 'none',
                                                     padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px',
                                                     cursor: syncingSourceId === source.id ? 'not-allowed' : 'pointer'
                                                 }}
@@ -852,7 +852,7 @@ export default function AdminVideoLecturesPage() {
 
                             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '16px' }}>
                                 <button type="button" onClick={() => setShowSourceForm(false)} className="btn-secondary" style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: 700 }}>Cancel</button>
-                                <button type="submit" disabled={isSavingSource} className="btn-primary" style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: 700, background: '#4F60FF', border: 'none', color: 'white', cursor: 'pointer' }}>
+                                <button type="submit" disabled={isSavingSource} className="btn-primary" style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: 700, background: '#E53935', border: 'none', color: 'white', cursor: 'pointer' }}>
                                     {isSavingSource ? 'Saving...' : 'Save Configuration'}
                                 </button>
                             </div>
@@ -874,10 +874,10 @@ export default function AdminVideoLecturesPage() {
                         </h2>
                         
                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 700, background: '#ECF2FF', color: '#4F60FF', padding: '4px 10px', borderRadius: '6px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, background: '#ECF2FF', color: '#E53935', padding: '4px 10px', borderRadius: '6px' }}>
                                 Class: {selectedLecture.class_name || 'N/A'}
                             </span>
-                            <span style={{ fontSize: '12px', fontWeight: 700, background: '#ECF2FF', color: '#4F60FF', padding: '4px 10px', borderRadius: '6px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, background: '#ECF2FF', color: '#E53935', padding: '4px 10px', borderRadius: '6px' }}>
                                 Subject: {selectedLecture.subject}
                             </span>
                         </div>
@@ -937,7 +937,7 @@ export default function AdminVideoLecturesPage() {
                                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#A1A5B7', textTransform: 'uppercase' }}>Study Notes & Resources</span>
                                 <div style={{ fontSize: '14px', color: '#1A1D3B', fontWeight: 600, marginTop: '4px' }}>
                                     {selectedLecture.notes.startsWith('http') ? (
-                                        <a href={selectedLecture.notes} target="_blank" rel="noreferrer" style={{ color: '#4F60FF', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <a href={selectedLecture.notes} target="_blank" rel="noreferrer" style={{ color: '#E53935', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             Access Resource Link <ExternalLink size={14} />
                                         </a>
                                     ) : (

@@ -1,11 +1,15 @@
 'use client';
+import { usePathname } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import StudentProfileEnquiries from '@/components/StudentProfileEnquiries';
 import { MessageSquare } from 'lucide-react';
 
 export default function AdminQueriesPage() {
+    const pathname = usePathname();
+    const basePath = pathname.startsWith('/coordinator') ? '/coordinator' : '/admin';
+    const requiredRole = pathname.startsWith('/coordinator') ? 'coordinator' : 'admin';
     return (
-        <DashboardLayout requiredRole="admin">
+        <DashboardLayout requiredRole={requiredRole}>
             <div className="bg-mesh" style={{ width: '100%' }}>
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '32px' }}>

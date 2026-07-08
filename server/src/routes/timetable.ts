@@ -231,7 +231,7 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
 
     // 1. Save or update configs for classes if config object was passed in
     if (config) {
-        const { institute_start, institute_end, lecture_duration, working_days, breaks, subjects } = config;
+        const { institute_start, institute_end, lecture_duration, working_days, breaks, subjects, is_manual, manual_slots } = config;
         
         for (const classId of class_ids) {
             await prisma.$transaction(async (tx) => {
@@ -244,14 +244,18 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
                         institute_end: institute_end || '14:00',
                         lecture_duration: Number(lecture_duration) || 45,
                         working_days: working_days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-                        subject_frequencies: JSON.stringify((subjects || []).map((s: any) => ({ ...s, teacher_id: s.teacher_id || null })))
+                        subject_frequencies: JSON.stringify((subjects || []).map((s: any) => ({ ...s, teacher_id: s.teacher_id || null }))),
+                        is_manual: is_manual !== undefined ? Boolean(is_manual) : false,
+                        manual_slots: manual_slots ? (typeof manual_slots === 'string' ? manual_slots : JSON.stringify(manual_slots)) : '[]'
                     },
                     update: {
                         institute_start: institute_start || '08:00',
                         institute_end: institute_end || '14:00',
                         lecture_duration: Number(lecture_duration) || 45,
                         working_days: working_days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-                        subject_frequencies: JSON.stringify((subjects || []).map((s: any) => ({ ...s, teacher_id: s.teacher_id || null })))
+                        subject_frequencies: JSON.stringify((subjects || []).map((s: any) => ({ ...s, teacher_id: s.teacher_id || null }))),
+                        is_manual: is_manual !== undefined ? Boolean(is_manual) : false,
+                        manual_slots: manual_slots ? (typeof manual_slots === 'string' ? manual_slots : JSON.stringify(manual_slots)) : '[]'
                     }
                 });
 
@@ -342,7 +346,9 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
                 after_period: b.after_period,
                 duration_minutes: b.duration_minutes
             })),
-            subjects: subjectsList
+            subjects: subjectsList,
+            is_manual: tc.is_manual,
+            manual_slots: JSON.parse(tc.manual_slots || '[]')
         });
     }
 
@@ -561,7 +567,7 @@ router.get('/analytics', authenticateToken, authorize('admin', 'coordinator'), a
 // POST /api/timetable/config
 router.post('/config', authenticateToken, authorize('admin', 'coordinator'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { class_id, institute_start, institute_end, lecture_duration, working_days, breaks, subjects } = req.body;
+    const { class_id, institute_start, institute_end, lecture_duration, working_days, breaks, subjects, is_manual, manual_slots } = req.body;
     if (!class_id) {
       res.status(400).json({ success: false, message: 'class_id is required' });
       return;
@@ -576,14 +582,18 @@ router.post('/config', authenticateToken, authorize('admin', 'coordinator'), asy
           institute_end: institute_end || '14:00',
           lecture_duration: Number(lecture_duration) || 45,
           working_days: working_days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-          subject_frequencies: JSON.stringify(subjects || [])
+          subject_frequencies: JSON.stringify(subjects || []),
+          is_manual: is_manual !== undefined ? Boolean(is_manual) : false,
+          manual_slots: manual_slots ? (typeof manual_slots === 'string' ? manual_slots : JSON.stringify(manual_slots)) : '[]'
         },
         update: {
           institute_start: institute_start || '08:00',
           institute_end: institute_end || '14:00',
           lecture_duration: Number(lecture_duration) || 45,
           working_days: working_days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-          subject_frequencies: JSON.stringify(subjects || [])
+          subject_frequencies: JSON.stringify(subjects || []),
+          is_manual: is_manual !== undefined ? Boolean(is_manual) : false,
+          manual_slots: manual_slots ? (typeof manual_slots === 'string' ? manual_slots : JSON.stringify(manual_slots)) : '[]'
         }
       });
 

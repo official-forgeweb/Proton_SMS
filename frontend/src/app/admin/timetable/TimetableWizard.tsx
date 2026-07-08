@@ -40,6 +40,14 @@ export default function TimetableWizard({ onClose, classes, teachers, onSuccess 
     const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
     const [searchClassQuery, setSearchClassQuery] = useState('');
 
+    const allSelectedHaveConfig = useMemo(() => {
+        if (selectedClassIds.length === 0) return false;
+        return selectedClassIds.every(id => {
+            const clsObj = classes.find(c => c.id === id);
+            return !!clsObj?.timetable_config;
+        });
+    }, [selectedClassIds, classes]);
+
     // Step 2: Academic Calendar (Working Days)
     const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const [workingDays, setWorkingDays] = useState<string[]>(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']);
@@ -223,7 +231,7 @@ export default function TimetableWizard({ onClose, classes, teachers, onSuccess 
                 class_ids: selectedClassIds,
                 start_date: startDate,
                 end_date: endDate,
-                config: payloadConfig,
+                config: allSelectedHaveConfig ? undefined : payloadConfig,
                 override_conflicts: overrideConflicts
             });
 
@@ -631,6 +639,17 @@ export default function TimetableWizard({ onClose, classes, teachers, onSuccess 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                             <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1E293B', margin: 0 }}>Target Date Range & Final Generation</h3>
                             
+                            {allSelectedHaveConfig && (
+                                <div style={{
+                                    padding: '16px 20px', borderRadius: '16px', border: '1px solid #C7D2FE',
+                                    backgroundColor: '#EEF2FF', color: '#4338CA', fontSize: '13px', fontWeight: 650,
+                                    display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'
+                                }}>
+                                    <CheckCircle size={16} /> 
+                                    Selected classes already have timings configured. Scheduling will respect each class's timing grid.
+                                </div>
+                            )}
+
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
@@ -725,7 +744,13 @@ export default function TimetableWizard({ onClose, classes, teachers, onSuccess 
                 }}>
                     <button 
                         disabled={step === 1 || isGenerating}
-                        onClick={() => setStep(step - 1)}
+                        onClick={() => {
+                            if (step === 5 && allSelectedHaveConfig) {
+                                setStep(1);
+                            } else {
+                                setStep(step - 1);
+                            }
+                        }}
                         style={{
                             display: 'flex', alignItems: 'center', gap: '6px',
                             padding: '12px 20px', borderRadius: '14px', border: '1px solid #E2E8F0',
@@ -739,7 +764,13 @@ export default function TimetableWizard({ onClose, classes, teachers, onSuccess 
                     {step < 5 ? (
                         <button 
                             disabled={step === 1 && selectedClassIds.length === 0}
-                            onClick={() => setStep(step + 1)}
+                            onClick={() => {
+                                if (step === 1 && allSelectedHaveConfig) {
+                                    setStep(5);
+                                } else {
+                                    setStep(step + 1);
+                                }
+                            }}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '6px',
                                 padding: '12px 24px', borderRadius: '14px', border: 'none',

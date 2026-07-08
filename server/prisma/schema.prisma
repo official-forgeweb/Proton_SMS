@@ -257,6 +257,8 @@ model TimetableConfig {
   lecture_duration   Int      @default(45)         // minutes
   working_days      String[] @default(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])
   subject_frequencies String  @default("[]")       // JSON: [{subject_id, weekly_count, teacher_id}]
+  is_manual         Boolean  @default(false)
+  manual_slots      String   @default("[]")       // JSON: [{period_number, start_time, end_time, is_break, break_name}]
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 

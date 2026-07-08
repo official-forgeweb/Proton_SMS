@@ -1,6 +1,3 @@
 'use client';
-import HETEditClient from '@/components/HETEditClient';
-
-export default function CoordinatorHetEditPage() {
-  return <HETEditClient />;
-}
+import AdminPage from '@/app/admin/hets/[id]/edit/page';
+export default AdminPage;
