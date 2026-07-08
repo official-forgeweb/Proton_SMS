@@ -427,6 +427,7 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
                 style={{ 
                     display: 'flex', 
                     flexDirection: 'column',
+                    position: 'relative',
                     marginLeft: currentSidebarWidth,
                     width: `calc(100vw - ${currentSidebarWidth})`,
                     minWidth: `calc(100vw - ${currentSidebarWidth})`,

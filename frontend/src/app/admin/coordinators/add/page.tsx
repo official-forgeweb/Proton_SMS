@@ -5,6 +5,7 @@ import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import { Shield, Copy, Check } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
+import { SectionCard, FormGrid, FieldGroup, FormActions } from '@/components/form';
 
 export default function AddCoordinatorPage() {
     const router = useRouter();
@@ -124,82 +125,67 @@ export default function AddCoordinatorPage() {
             requiredRole="admin"
             icon={<Shield size={20} strokeWidth={2.5} />}
             accentColor="#7C3AED"
+            maxWidth="1300px"
         >
             <form onSubmit={handleSubmit}>
-                {/* Personal Information Section */}
-                <div style={{ marginBottom: '28px' }}>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #F8FAFC', paddingBottom: '16px' }}>
-                        <span style={{ color: '#7C3AED', display: 'flex', alignItems: 'center' }}>
-                            <Shield size={18} strokeWidth={2.5} />
-                        </span>
-                        <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.01em' }}>
-                            Personal Information
-                        </h3>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <label className="form-label">Full Name *</label>
-                            <input required className="form-input" value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} placeholder="Enter coordinator's full name" />
-                        </div>
-                        <div>
-                            <label className="form-label">Email Address *</label>
-                            <input type="email" required className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="coordinator@example.com" />
-                        </div>
-                        <div>
-                            <label className="form-label">Initial Password</label>
-                            <input type="text" className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Auto-generated if left blank" />
-                        </div>
-                        <div>
-                            <label className="form-label">Mobile Number</label>
-                            <input className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
-                        </div>
-                        <div>
-                            <label className="form-label">Gender</label>
-                            <CustomSelect
-                                value={formData.gender}
-                                onChange={val => setFormData({ ...formData, gender: val })}
-                                options={[
-                                    { value: 'male', label: 'Male' },
-                                    { value: 'female', label: 'Female' },
-                                    { value: 'other', label: 'Other' }
-                                ]}
-                            />
-                        </div>
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px', alignItems: 'start', marginBottom: '20px' }}>
+                    {/* Left Column */}
+                    <SectionCard title="Personal Information" icon={<Shield size={18} />}>
+                        <FormGrid columns={2}>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <FieldGroup label="Full Name" required>
+                                    <input required className="form-input" value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} placeholder="Enter coordinator's full name" />
+                                </FieldGroup>
+                            </div>
+                            <FieldGroup label="Email Address" required>
+                                <input type="email" required className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="coordinator@example.com" />
+                            </FieldGroup>
+                            <FieldGroup label="Initial Password">
+                                <input type="text" className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Auto-generated if left blank" />
+                            </FieldGroup>
+                            <FieldGroup label="Mobile Number">
+                                <input className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
+                            </FieldGroup>
+                            <FieldGroup label="Gender">
+                                <CustomSelect
+                                    value={formData.gender}
+                                    onChange={val => setFormData({ ...formData, gender: val })}
+                                    options={[
+                                        { value: 'male', label: 'Male' },
+                                        { value: 'female', label: 'Female' },
+                                        { value: 'other', label: 'Other' }
+                                    ]}
+                                />
+                            </FieldGroup>
+                        </FormGrid>
+                    </SectionCard>
+
+                    {/* Right Column */}
+                    <SectionCard title="Account Settings" icon={<Shield size={18} />}>
+                        <FormGrid columns={1}>
+                            <FieldGroup label="Status">
+                                <CustomSelect
+                                    value={formData.status}
+                                    onChange={val => setFormData({ ...formData, status: val })}
+                                    options={[
+                                        { value: 'active', label: 'Active' },
+                                        { value: 'inactive', label: 'Inactive' }
+                                    ]}
+                                />
+                            </FieldGroup>
+                        </FormGrid>
+                    </SectionCard>
                 </div>
 
-                {/* Account Settings Section */}
-                <div style={{ marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #F8FAFC', paddingBottom: '16px' }}>
-                        <span style={{ color: '#7C3AED', display: 'flex', alignItems: 'center' }}>
-                            <Shield size={18} strokeWidth={2.5} />
-                        </span>
-                        <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1A1D3B', margin: 0, fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.01em' }}>
-                            Account Settings
-                        </h3>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', maxWidth: '50%' }}>
-                        <div>
-                            <label className="form-label">Status</label>
-                            <CustomSelect
-                                value={formData.status}
-                                onChange={val => setFormData({ ...formData, status: val })}
-                                options={[
-                                    { value: 'active', label: 'Active' },
-                                    { value: 'inactive', label: 'Inactive' }
-                                ]}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="form-actions-sticky">
+                <FormActions>
                     <button type="button" className="btn-cancel" onClick={() => router.push('/admin/coordinators')}>Cancel</button>
-                    <button type="submit" className="btn-submit" disabled={isSubmitting} style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)' }}>
+                    <button type="submit" className="btn-submit" disabled={isSubmitting} style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)', boxShadow: '0 4px 12px rgba(124,58,237,0.2)' }}>
                         {isSubmitting ? 'Creating...' : 'Create Coordinator'}
                     </button>
-                </div>
+                </FormActions>
             </form>
         </FormPageLayout>
+    );
+}
     );
 }

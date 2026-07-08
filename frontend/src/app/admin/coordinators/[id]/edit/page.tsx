@@ -5,6 +5,7 @@ import FormPageLayout from '@/components/FormPageLayout';
 import api from '@/lib/api';
 import { Shield, Check } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
+import { SectionCard, FormGrid, FieldGroup, FormActions } from '@/components/form';
 
 interface EditCoordinatorPageProps {
     params: Promise<{ id: string }>;
@@ -97,71 +98,64 @@ export default function EditCoordinatorPage({ params }: EditCoordinatorPageProps
             requiredRole="admin"
             icon={<Shield size={20} strokeWidth={2.5} />}
             accentColor="#7C3AED"
+            maxWidth="1300px"
         >
             <form onSubmit={handleSubmit}>
-                <div className="form-section">
-                    <div className="form-section-title">
-                        <Shield size={16} strokeWidth={2.5} style={{ color: '#7C3AED' }} />
-                        Personal Information
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <label className="form-label">Full Name *</label>
-                            <input required className="form-input" value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} placeholder="Enter coordinator's full name" />
-                        </div>
-                        <div>
-                            <label className="form-label">Email Address *</label>
-                            <input type="email" required className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="coordinator@example.com" />
-                        </div>
-                        <div>
-                            <label className="form-label">Update Password</label>
-                            <input type="text" className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Leave blank to keep unchanged" />
-                        </div>
-                        <div>
-                            <label className="form-label">Mobile Number</label>
-                            <input className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
-                        </div>
-                        <div>
-                            <label className="form-label">Gender</label>
-                            <CustomSelect
-                                value={formData.gender}
-                                onChange={val => setFormData({ ...formData, gender: val })}
-                                options={[
-                                    { value: 'male', label: 'Male' },
-                                    { value: 'female', label: 'Female' },
-                                    { value: 'other', label: 'Other' }
-                                ]}
-                            />
-                        </div>
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px', alignItems: 'start', marginBottom: '20px' }}>
+                    {/* Left Column */}
+                    <SectionCard title="Personal Information" icon={<Shield size={18} />}>
+                        <FormGrid columns={2}>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <FieldGroup label="Full Name" required>
+                                    <input required className="form-input" value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} placeholder="Enter coordinator's full name" />
+                                </FieldGroup>
+                            </div>
+                            <FieldGroup label="Email Address" required>
+                                <input type="email" required className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="coordinator@example.com" />
+                            </FieldGroup>
+                            <FieldGroup label="Update Password">
+                                <input type="text" className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Leave blank to keep unchanged" />
+                            </FieldGroup>
+                            <FieldGroup label="Mobile Number">
+                                <input className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
+                            </FieldGroup>
+                            <FieldGroup label="Gender">
+                                <CustomSelect
+                                    value={formData.gender}
+                                    onChange={val => setFormData({ ...formData, gender: val })}
+                                    options={[
+                                        { value: 'male', label: 'Male' },
+                                        { value: 'female', label: 'Female' },
+                                        { value: 'other', label: 'Other' }
+                                    ]}
+                                />
+                            </FieldGroup>
+                        </FormGrid>
+                    </SectionCard>
+
+                    {/* Right Column */}
+                    <SectionCard title="Account Settings" icon={<Shield size={18} />}>
+                        <FormGrid columns={1}>
+                            <FieldGroup label="Status">
+                                <CustomSelect
+                                    value={formData.status}
+                                    onChange={val => setFormData({ ...formData, status: val })}
+                                    options={[
+                                        { value: 'active', label: 'Active' },
+                                        { value: 'inactive', label: 'Inactive' }
+                                    ]}
+                                />
+                            </FieldGroup>
+                        </FormGrid>
+                    </SectionCard>
                 </div>
 
-                <div className="form-section">
-                    <div className="form-section-title">
-                        <Shield size={16} strokeWidth={2.5} style={{ color: '#7C3AED' }} />
-                        Account Settings
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', maxWidth: '50%' }}>
-                        <div>
-                            <label className="form-label">Status</label>
-                            <CustomSelect
-                                value={formData.status}
-                                onChange={val => setFormData({ ...formData, status: val })}
-                                options={[
-                                    { value: 'active', label: 'Active' },
-                                    { value: 'inactive', label: 'Inactive' }
-                                ]}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="form-actions">
+                <FormActions>
                     <button type="button" className="btn-cancel" onClick={() => router.push('/admin/coordinators')}>Cancel</button>
-                    <button type="submit" className="btn-submit" disabled={isSubmitting} style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)' }}>
+                    <button type="submit" className="btn-submit" disabled={isSubmitting} style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)', boxShadow: '0 4px 12px rgba(124,58,237,0.2)' }}>
                         {isSubmitting ? 'Saving...' : 'Save Changes'}
                     </button>
-                </div>
+                </FormActions>
             </form>
         </FormPageLayout>
     );

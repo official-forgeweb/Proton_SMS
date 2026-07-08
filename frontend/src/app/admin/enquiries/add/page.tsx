@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 import { Phone, User, Mail, MapPin, Target, MessageSquare, Users } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
+import { SectionCard, FormGrid, FieldGroup, FormActions } from '@/components/form';
 
 export default function AddEnquiryPage() {
     const router = useRouter();
@@ -50,6 +51,7 @@ export default function AddEnquiryPage() {
             backLabel="Back to Enquiries"
             requiredRole={['admin', 'coordinator']}
             icon={<MessageSquare size={20} strokeWidth={2.5} />}
+            maxWidth="1300px"
         >
             <form onSubmit={handleSubmit}>
                 {/* Mode Selector */}
@@ -72,155 +74,143 @@ export default function AddEnquiryPage() {
                     </div>
                 </div>
 
-                <div className="form-section">
-                    <div className="form-section-title">
-                        <User size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
-                        Student Information
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '20px', alignItems: 'start', marginBottom: '20px' }}>
+                    {/* Left Column */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <SectionCard title="Student Information" icon={<User size={18} />}>
+                            <FormGrid columns={2}>
+                                <FieldGroup label="Student Full Name" required>
+                                    <input
+                                        required
+                                        className="form-input"
+                                        value={formData.student_name}
+                                        onChange={(e) => setFormData(p => ({ ...p, student_name: e.target.value }))}
+                                        placeholder="e.g. Aryan Sharma"
+                                    />
+                                </FieldGroup>
+                                <FieldGroup label="Primary Phone Number" required>
+                                    <input
+                                        required
+                                        className="form-input"
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
+                                        placeholder="+91 XXXXX XXXXX"
+                                    />
+                                </FieldGroup>
+                                {enquiryMode === 'walk_in' && (
+                                    <>
+                                        <FieldGroup label="Email Address">
+                                            <input
+                                                className="form-input"
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
+                                                placeholder="email@example.com"
+                                            />
+                                        </FieldGroup>
+                                        <FieldGroup label="Current Grade / Class">
+                                            <input
+                                                className="form-input"
+                                                value={formData.current_class}
+                                                onChange={(e) => setFormData(p => ({ ...p, current_class: e.target.value }))}
+                                                placeholder="e.g. Class 10th / XII"
+                                            />
+                                        </FieldGroup>
+                                    </>
+                                )}
+                            </FormGrid>
+                        </SectionCard>
 
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                        <div>
-                            <label className="form-label">Student Full Name *</label>
-                            <input
-                                required
-                                className="form-input"
-                                value={formData.student_name}
-                                onChange={(e) => setFormData(p => ({ ...p, student_name: e.target.value }))}
-                                placeholder="e.g. Aryan Sharma"
-                            />
-                        </div>
-                        <div>
-                            <label className="form-label">Primary Phone Number *</label>
-                            <input
-                                required
-                                className="form-input"
-                                value={formData.phone}
-                                onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
-                                placeholder="+91 XXXXX XXXXX"
-                            />
-                        </div>
                         {enquiryMode === 'walk_in' && (
-                            <>
-                                <div>
-                                    <label className="form-label">Email Address</label>
-                                    <input
-                                        className="form-input"
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
-                                        placeholder="email@example.com"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="form-label">Current Grade / Class</label>
-                                    <input
-                                        className="form-input"
-                                        value={formData.current_class}
-                                        onChange={(e) => setFormData(p => ({ ...p, current_class: e.target.value }))}
-                                        placeholder="e.g. Class 10th / XII"
-                                    />
-                                </div>
-                            </>
+                            <SectionCard title="Parent / Guardian Details" icon={<Users size={18} />}>
+                                <FormGrid columns={2}>
+                                    <FieldGroup label="Parent / Guardian Name" required={enquiryMode === 'walk_in'}>
+                                        <input
+                                            required={enquiryMode === 'walk_in'}
+                                            className="form-input"
+                                            value={formData.parent_name}
+                                            onChange={(e) => setFormData(p => ({ ...p, parent_name: e.target.value }))}
+                                            placeholder="Full Name of Father/Mother"
+                                        />
+                                    </FieldGroup>
+                                    <FieldGroup label="Emergency Phone" required={enquiryMode === 'walk_in'}>
+                                        <input
+                                            required={enquiryMode === 'walk_in'}
+                                            className="form-input"
+                                            value={formData.parent_phone}
+                                            onChange={(e) => setFormData(p => ({ ...p, parent_phone: e.target.value }))}
+                                            placeholder="Contact Number"
+                                        />
+                                    </FieldGroup>
+                                </FormGrid>
+                            </SectionCard>
                         )}
                     </div>
-                </div>
 
-                {enquiryMode === 'walk_in' && (
-                    <div className="form-section">
-                        <div className="form-section-title">
-                            <Users size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
-                            Parent / Guardian Details
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
-                            <div>
-                                <label className="form-label">Parent / Guardian Name *</label>
-                                <input
-                                    required={enquiryMode === 'walk_in'}
-                                    className="form-input"
-                                    value={formData.parent_name}
-                                    onChange={(e) => setFormData(p => ({ ...p, parent_name: e.target.value }))}
-                                    placeholder="Full Name of Father/Mother"
-                                />
+                    {/* Right Column */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <SectionCard title="Enquiry Preferences" icon={<Target size={18} />}>
+                            <FormGrid columns={2}>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <FieldGroup label="Interested Course" required>
+                                        <input
+                                            required
+                                            className="form-input"
+                                            value={formData.interested_course}
+                                            onChange={(e) => setFormData(p => ({ ...p, interested_course: e.target.value }))}
+                                            placeholder="e.g. JEE Advanced / NEET"
+                                        />
+                                    </FieldGroup>
+                                </div>
+                                <FieldGroup label="Lead Source">
+                                    <CustomSelect 
+                                        value={formData.source} 
+                                        onChange={val => setFormData(p => ({ ...p, source: val }))}
+                                        options={[
+                                            { value: 'offline_publicity', label: 'Offline Publicity' },
+                                            { value: 'social_media', label: 'Social Media' },
+                                            { value: 'google', label: 'Google' },
+                                            { value: 'referral', label: 'Referral through Student/Parent' },
+                                            { value: 'other', label: 'Other' }
+                                        ]}
+                                    />
+                                </FieldGroup>
+                                <FieldGroup label="Priority">
+                                    <CustomSelect 
+                                        value={formData.priority} 
+                                        onChange={val => setFormData(p => ({ ...p, priority: val }))}
+                                        options={[
+                                            { value: 'low', label: 'Low' },
+                                            { value: 'medium', label: 'Medium' },
+                                            { value: 'high', label: 'High' },
+                                            { value: 'urgent', label: 'Critical' }
+                                        ]}
+                                    />
+                                </FieldGroup>
+                            </FormGrid>
+                            <div style={{ marginTop: '24px' }}>
+                                <FieldGroup label="Initial Note / Remark">
+                                    <textarea
+                                        className="form-input"
+                                        style={{ height: '100px', resize: 'vertical', paddingTop: '10px' }}
+                                        value={formData.note}
+                                        onChange={(e) => setFormData(p => ({ ...p, note: e.target.value }))}
+                                        placeholder="Add any initial observations, requirements, or conversation summaries here..."
+                                    />
+                                </FieldGroup>
                             </div>
-                            <div>
-                                <label className="form-label">Emergency Phone *</label>
-                                <input
-                                    required={enquiryMode === 'walk_in'}
-                                    className="form-input"
-                                    value={formData.parent_phone}
-                                    onChange={(e) => setFormData(p => ({ ...p, parent_phone: e.target.value }))}
-                                    placeholder="Contact Number"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <div className="form-section">
-                    <div className="form-section-title">
-                        <Target size={16} strokeWidth={2.5} style={{ color: '#E53935' }} /> 
-                        Enquiry Preferences
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr', gap: '20px' }}>
-                        <div>
-                            <label className="form-label">Interested Course *</label>
-                            <input
-                                required
-                                className="form-input"
-                                value={formData.interested_course}
-                                onChange={(e) => setFormData(p => ({ ...p, interested_course: e.target.value }))}
-                                placeholder="e.g. JEE Advanced / NEET"
-                            />
-                        </div>
-                        <div>
-                            <label className="form-label">Lead Source</label>
-                            <CustomSelect 
-                                value={formData.source} 
-                                onChange={val => setFormData(p => ({ ...p, source: val }))}
-                                options={[
-                                    { value: 'offline_publicity', label: 'Offline Publicity' },
-                                    { value: 'social_media', label: 'Social Media' },
-                                    { value: 'google', label: 'Google' },
-                                    { value: 'referral', label: 'Referral through Student/Parent' },
-                                    { value: 'other', label: 'Other' }
-                                ]}
-                            />
-                        </div>
-                        <div>
-                            <label className="form-label">Priority</label>
-                            <CustomSelect 
-                                value={formData.priority} 
-                                onChange={val => setFormData(p => ({ ...p, priority: val }))}
-                                options={[
-                                    { value: 'low', label: 'Low' },
-                                    { value: 'medium', label: 'Medium' },
-                                    { value: 'high', label: 'High' },
-                                    { value: 'urgent', label: 'Critical' }
-                                ]}
-                            />
-                        </div>
-                    </div>
-                    
-                    <div style={{ marginTop: '24px' }}>
-                        <label className="form-label">Initial Note / Remark</label>
-                        <textarea
-                            className="form-input"
-                            style={{ height: '100px', resize: 'vertical' }}
-                            value={formData.note}
-                            onChange={(e) => setFormData(p => ({ ...p, note: e.target.value }))}
-                            placeholder="Add any initial observations, requirements, or conversation summaries here..."
-                        />
+                        </SectionCard>
                     </div>
                 </div>
 
-                <div className="form-actions">
+                <FormActions>
                     <button type="button" className="btn-cancel" onClick={() => router.push(`${basePath}/enquiries`)}>
                         Cancel
                     </button>
                     <button type="submit" className="btn-submit" disabled={isSubmitting}>
                         {isSubmitting ? 'Processing...' : 'Create Enquiry'}
                     </button>
-                </div>
+                </FormActions>
             </form>
         </FormPageLayout>
     );

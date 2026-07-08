@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { 
@@ -10,6 +11,7 @@ import {
 import api from '@/lib/api';
 import { customAlert } from '@/utils/dialog';
 import CustomSelect from '@/components/ui/CustomSelect';
+import CustomTimePicker from '@/components/ui/CustomTimePicker';
 
 interface SubjectFrequency {
     subject_id: string;
@@ -35,6 +37,11 @@ interface Props {
 
 export default function TimetableWizard({ onClose, classes, teachers, onSuccess }: Props) {
     const [step, setStep] = useState(1);
+    const [portalContainer, setPortalContainer] = useState<Element | null>(null);
+
+    useEffect(() => {
+        setPortalContainer(document.querySelector('.main-content') || document.body);
+    }, []);
     
     // Step 1: Select Classes
     const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
@@ -250,9 +257,11 @@ export default function TimetableWizard({ onClose, classes, teachers, onSuccess 
         }
     };
 
-    return (
+    if (!portalContainer) return null;
+
+    return createPortal(
         <div style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
+            position: 'absolute', inset: 0, zIndex: 9999,
             backgroundColor: 'rgba(15, 23, 42, 0.65)',
             backdropFilter: 'blur(8px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -425,28 +434,18 @@ export default function TimetableWizard({ onClose, classes, teachers, onSuccess 
                                     <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
                                         Institute Start Time
                                     </label>
-                                    <input 
-                                        type="time" 
+                                    <CustomTimePicker 
                                         value={instituteStart}
-                                        onChange={(e) => setInstituteStart(e.target.value)}
-                                        style={{
-                                            width: '100%', padding: '12px 16px', borderRadius: '14px',
-                                            border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '15px'
-                                        }}
+                                        onChange={(val) => setInstituteStart(val)}
                                     />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
                                         Institute End Time
                                     </label>
-                                    <input 
-                                        type="time" 
+                                    <CustomTimePicker 
                                         value={instituteEnd}
-                                        onChange={(e) => setInstituteEnd(e.target.value)}
-                                        style={{
-                                            width: '100%', padding: '12px 16px', borderRadius: '14px',
-                                            border: '1.5px solid #E2E8F0', outline: 'none', fontSize: '15px'
-                                        }}
+                                        onChange={(val) => setInstituteEnd(val)}
                                     />
                                 </div>
                             </div>
@@ -798,6 +797,7 @@ export default function TimetableWizard({ onClose, classes, teachers, onSuccess 
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        portalContainer
     );
 }

@@ -8,49 +8,68 @@ const router = Router();
 // GET /api/dashboard/admin
 router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cacheMiddleware(30), async (req: Request, res: Response): Promise<void> => {
   try {
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const rawAggs = await prisma.$queryRaw<any[]>`
+      SELECT
+        (SELECT COUNT(*)::integer FROM students) as "totalStudents",
+        (SELECT COUNT(*)::integer FROM students WHERE academic_status = 'active') as "activeStudents",
+        (SELECT COUNT(*)::integer FROM teachers) as "totalTeachers",
+        (SELECT COUNT(*)::integer FROM teachers WHERE employment_status = 'active') as "activeTeachers",
+        (SELECT COUNT(*)::integer FROM classes) as "totalClasses",
+        (SELECT COUNT(*)::integer FROM classes WHERE status = 'ongoing') as "activeClasses",
+        (SELECT COUNT(*)::integer FROM enquiries) as "totalEnquiries",
+        (SELECT COUNT(*)::integer FROM enquiries WHERE status = 'new') as "newEnquiries",
+        (SELECT COUNT(*)::integer FROM demo_classes) as "totalDemos",
+        (SELECT COUNT(*)::integer FROM demo_classes WHERE status = 'completed') as "completedDemos",
+        (SELECT COUNT(*)::integer FROM enquiries WHERE status IN ('contacted', 'demo_scheduled', 'demo_completed', 'enrolled')) as "contacted",
+        (SELECT COUNT(*)::integer FROM enquiries WHERE status IN ('demo_scheduled', 'demo_completed', 'enrolled')) as "demoScheduled",
+        (SELECT COUNT(*)::integer FROM enquiries WHERE status IN ('demo_completed', 'enrolled')) as "demoCompleted",
+        (SELECT COUNT(*)::integer FROM enquiries WHERE converted_to_student = true) as "enrolled",
+        COALESCE((SELECT SUM(amount_paid) FROM fee_payments WHERE payment_status = 'completed')::float, 0.0) as "revenuePaid",
+        COALESCE((SELECT SUM(total_pending) FROM student_fee_assignments)::float, 0.0) as "revenuePending",
+        (SELECT COUNT(*)::integer FROM tests WHERE test_date > ${todayStr}) as "upcomingTestsCount",
+        (SELECT COUNT(*)::integer FROM attendance WHERE attendance_date = ${todayStr} AND status = 'present') as "todayPresent",
+        (SELECT COUNT(*)::integer FROM attendance WHERE attendance_date = ${todayStr} AND status = 'absent') as "todayAbsent",
+        (SELECT COUNT(*)::integer FROM attendance) as "totalAttendanceCount",
+        (SELECT COUNT(*)::integer FROM attendance WHERE status = 'present') as "totalPresentCount",
+        COALESCE((SELECT SUM(percentage) FROM test_results)::float, 0.0) as "totalTestScore",
+        (SELECT COUNT(*)::integer FROM test_results) as "totalTestCount"
+    `;
+
+    const agg = rawAggs[0] || {};
+    const totalStudents = agg.totalStudents || 0;
+    const activeStudents = agg.activeStudents || 0;
+    const totalTeachers = agg.totalTeachers || 0;
+    const activeTeachers = agg.activeTeachers || 0;
+    const totalClasses = agg.totalClasses || 0;
+    const activeClasses = agg.activeClasses || 0;
+    const totalEnquiries = agg.totalEnquiries || 0;
+    const newEnquiries = agg.newEnquiries || 0;
+    const totalDemos = agg.totalDemos || 0;
+    const completedDemos = agg.completedDemos || 0;
+    const contacted = agg.contacted || 0;
+    const demoScheduled = agg.demoScheduled || 0;
+    const demoCompleted = agg.demoCompleted || 0;
+    const enrolled = agg.enrolled || 0;
+    const totalRevenue = agg.revenuePaid || 0;
+    const totalPending = agg.revenuePending || 0;
+    const upcomingTestsCount = agg.upcomingTestsCount || 0;
+    const todayPresent = agg.todayPresent || 0;
+    const todayAbsent = agg.todayAbsent || 0;
+    const totalAttendanceCount = agg.totalAttendanceCount || 0;
+    const totalPresentCount = agg.totalPresentCount || 0;
+    const totalTestScore = agg.totalTestScore || 0;
+    const totalTestCount = agg.totalTestCount || 0;
+
     const [
-      totalStudents, activeStudents,
-      totalTeachers, activeTeachers,
-      totalClasses, activeClasses,
-      totalEnquiries, newEnquiries,
-      totalDemos, completedDemos,
-      contacted, demoScheduled, demoCompleted, enrolled,
-      revenueAgg, pendingAgg,
       recentStudents, recentPayments, recentEnquiries,
       genderAgg,
       topStudents,
-      upcomingTestsCount,
-      todayPresent,
-      todayAbsent,
-      totalAttendanceCount,
-      totalPresentCount,
-      totalTestScore,
-      totalTestCount,
       payments, studentRegistrations, enquiryRegistrations,
       monthlyPerformance,
       monthlyAttendance
     ] = await Promise.all([
-      prisma.student.count(),
-      prisma.student.count({ where: { academic_status: 'active' } }),
-      prisma.teacher.count(),
-      prisma.teacher.count({ where: { employment_status: 'active' } }),
-      prisma.class.count(),
-      prisma.class.count({ where: { status: 'ongoing' } }),
-      prisma.enquiry.count(),
-      prisma.enquiry.count({ where: { status: 'new' } }),
-      prisma.demoClass.count(),
-      prisma.demoClass.count({ where: { status: 'completed' } }),
-      prisma.enquiry.count({ where: { status: { in: ['contacted', 'demo_scheduled', 'demo_completed', 'enrolled'] } } }),
-      prisma.enquiry.count({ where: { status: { in: ['demo_scheduled', 'demo_completed', 'enrolled'] } } }),
-      prisma.enquiry.count({ where: { status: { in: ['demo_completed', 'enrolled'] } } }),
-      prisma.enquiry.count({ where: { converted_to_student: true } }),
-      prisma.feePayment.aggregate({
-        where: { payment_status: 'completed' },
-        _sum: { amount_paid: true },
-      }),
-      prisma.studentFeeAssignment.aggregate({
-        _sum: { total_pending: true },
-      }),
       prisma.student.findMany({ orderBy: { created_at: 'desc' }, take: 5 }),
       prisma.feePayment.findMany({
         orderBy: { created_at: 'desc' },
@@ -64,31 +83,26 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
         take: 5,
         include: { student: { select: { first_name: true, last_name: true, PRO_ID: true } } },
       }),
-      prisma.test.count({ where: { test_date: { gt: new Date().toISOString().split('T')[0] } } }),
-      prisma.attendance.count({ where: { attendance_date: new Date().toISOString().split('T')[0], status: 'present' } }),
-      prisma.attendance.count({ where: { attendance_date: new Date().toISOString().split('T')[0], status: 'absent' } }),
-      prisma.attendance.count(),
-      prisma.attendance.count({ where: { status: 'present' } }),
-      prisma.testResult.aggregate({ _sum: { percentage: true } }),
-      prisma.testResult.count(),
       prisma.feePayment.findMany({
         where: { payment_status: 'completed', created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
         select: { amount_paid: true, payment_date: true, created_at: true },
       }),
       prisma.student.findMany({
+        where: { created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
         select: { created_at: true },
       }),
-      prisma.enquiry.findMany({ where: { created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
+      prisma.enquiry.findMany({
+        where: { created_at: { gte: new Date(new Date().getFullYear(), 0, 1) } },
         select: { created_at: true },
       }),
-      prisma.$queryRaw`
+      prisma.$queryRaw<any[]>`
         SELECT EXTRACT(MONTH FROM created_at) as month, AVG(percentage) as "avgScore"
         FROM test_results
         WHERE created_at IS NOT NULL
         GROUP BY EXTRACT(MONTH FROM created_at)
         ORDER BY month
       `,
-      prisma.$queryRaw`
+      prisma.$queryRaw<any[]>`
         SELECT
           EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD')) as month,
           SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as "presentCount",
@@ -98,10 +112,7 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
         GROUP BY EXTRACT(MONTH FROM TO_DATE(attendance_date, 'YYYY-MM-DD'))
         ORDER BY month
       `
-    ]) as [number, number, number, number, number, number, number, number, number, number, number, number, number, number, any, any, any[], any[], any[], any[], any[], number, number, number, number, number, any, number, any[], any[], any[], any[], any[]];
-
-    const totalRevenue = revenueAgg._sum.amount_paid || 0;
-    const totalPending = pendingAgg._sum.total_pending || 0;
+    ]);
 
     const recentActivity = [
       ...recentStudents.map(s => ({ type: 'enrollment', message: `New enrollment: ${s.first_name} ${s.last_name} (${s.PRO_ID})`, time: s.created_at })),
@@ -131,13 +142,13 @@ router.get('/admin', authenticateToken, authorize('admin', 'coordinator'), cache
       return { name, Fees: total };
     });
 
+    const baseCount = totalStudents - studentRegistrations.length;
     const monthlyStudents = monthNames.map((name, index) => {
-      const count = studentRegistrations.filter(s => {
+      const countInCurrentYear = studentRegistrations.filter(s => {
         const date = new Date(s.created_at);
-        return date.getFullYear() < new Date().getFullYear() || 
-               (date.getFullYear() === new Date().getFullYear() && date.getMonth() <= index);
+        return date.getMonth() <= index;
       }).length;
-      return { name, Students: count };
+      return { name, Students: baseCount + countInCurrentYear };
     });
 
     const monthlyEnquiries = monthNames.map((name, index) => {

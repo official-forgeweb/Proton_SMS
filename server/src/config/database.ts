@@ -7,6 +7,10 @@ const getDatabaseUrl = () => {
       const separator = url.includes('?') ? '&' : '?';
       url = `${url}${separator}pgbouncer=true&connect_timeout=15`;
     }
+    if (!url.includes('statement_cache_size=')) {
+      const separator = url.includes('?') ? '&' : '?';
+      url = `${url}${separator}statement_cache_size=0`;
+    }
     if (!url.includes('connection_limit=')) {
       const separator = url.includes('?') ? '&' : '?';
       // In serverless (Vercel), limit connections per lambda to 3 to avoid exhausting pool

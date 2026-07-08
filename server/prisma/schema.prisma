@@ -116,6 +116,7 @@ model Student {
 
   @@index([academic_status])
   @@index([phone])
+  @@index([created_at])
   @@map("students")
 }
 
@@ -155,6 +156,7 @@ model Teacher {
   hets              HET[]
 
   @@index([employment_status])
+  @@index([created_at])
   @@map("teachers")
 }
 
@@ -374,6 +376,7 @@ model Enquiry {
   @@index([status])
   @@index([assigned_to])
   @@index([phone])
+  @@index([created_at])
   @@map("enquiries")
 }
 
@@ -448,6 +451,7 @@ model Attendance {
   @@index([student_id, attendance_date])
   @@index([class_id, attendance_date])
   @@index([timetable_id])
+  @@index([created_at])
   @@map("attendance")
 }
 
@@ -503,6 +507,7 @@ model TestResult {
 
   @@index([test_id])
   @@index([student_id])
+  @@index([created_at])
   @@map("test_results")
 }
 
@@ -676,6 +681,7 @@ model FeePayment {
 
   @@index([student_id])
   @@index([payment_status])
+  @@index([created_at])
   @@map("fee_payments")
 }
 
