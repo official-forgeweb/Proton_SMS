@@ -5,11 +5,20 @@ import fs from 'fs';
 import path from 'path';
 
 const router = Router();
-const BACKUP_DIR = path.join(__dirname, '../../backups');
 
-// Ensure backup directory exists
-if (!fs.existsSync(BACKUP_DIR)) {
-    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+// On Vercel (serverless), the filesystem is read-only except /tmp
+const isVercel = !!process.env.VERCEL;
+const BACKUP_DIR = isVercel
+    ? path.join('/tmp', 'backups')
+    : path.join(__dirname, '../../backups');
+
+// Ensure backup directory exists (graceful – never crash the server on startup)
+try {
+    if (!fs.existsSync(BACKUP_DIR)) {
+        fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
+} catch (err) {
+    console.warn('⚠️ Could not create backup directory:', (err as Error).message);
 }
 
 // 1. List existing backup files
