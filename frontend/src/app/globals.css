@@ -2431,4 +2431,17 @@ select:not([multiple]) option {
   }
 }
 
+@media (max-width: 768px) {
+  .dashboard-header-search {
+    max-width: 200px !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .dashboard-header-search {
+    max-width: 150px !important;
+  }
+}
+
+
 

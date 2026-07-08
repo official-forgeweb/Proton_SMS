@@ -632,13 +632,14 @@ export default function DashboardLayout({ children, requiredRole }: DashboardLay
 
 
                         {/* User Info */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}>
                             <img
                                 src={avatarImgUrl}
                                 alt={userName}
                                 style={{
                                     width: '40px', height: '40px', borderRadius: '50%',
                                     border: '2px solid #EEEEF5',
+                                    flexShrink: 0
                                 }}
                             />
                             <div className="dashboard-user-text" style={{ textAlign: 'left' }}>
