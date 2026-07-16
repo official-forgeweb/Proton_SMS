@@ -13,6 +13,16 @@
       }
     }
   ],
+  "crons": [
+    {
+      "path": "/api/whatsapp/test/fee-reminder",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/whatsapp/test/timetable",
+      "schedule": "0 7 * * 1"
+    }
+  ],
   "routes": [
     {
       "src": "/(.*)",

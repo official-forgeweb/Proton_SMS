@@ -45,6 +45,10 @@ import whatsappWebhookRoutes from './routes/whatsapp/webhook';
 import whatsappAutomationRoutes from './routes/whatsapp/automation';
 import whatsappDebugRoutes from './routes/whatsapp/debug';
 
+// Twilio Sandbox Integration Routers
+import whatsappTestRoutes from './routes/whatsapp.test.routes';
+import whatsappCustomWebhookRoutes from './routes/whatsapp.webhook.routes';
+
 const app = express();
 
 // Security & Middleware
@@ -126,6 +130,8 @@ app.use('/api/subjects', subjectsRoutes);
 app.use('/api/hets', hetRoutes);
 
 // WhatsApp Router mounts
+app.use('/api/whatsapp/test', whatsappTestRoutes);
+app.use('/api/whatsapp/webhook', whatsappCustomWebhookRoutes);
 app.use('/api/whatsapp/config', whatsappConfigRoutes);
 app.use('/api/whatsapp/templates', whatsappTemplateRoutes);
 app.use('/api/whatsapp/send', whatsappMessageRoutes);
