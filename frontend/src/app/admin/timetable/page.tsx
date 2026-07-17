@@ -7,6 +7,7 @@ import { requireRole } from '@/lib/sharedAuth';
 import { getTimetableData } from '@/services/dataAccess';
 import DashboardLayout from '@/components/DashboardLayout';
 import AdminTimetableClient from './AdminTimetableClient';
+import AdminTimetableFallbackClient from './AdminTimetableFallbackClient';
 
 export const dynamic = 'force-dynamic';
 
