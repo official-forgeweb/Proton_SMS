@@ -319,20 +319,43 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
             where: { class_id: c.id }
         });
 
-        const subjectsList = scheduleRecords.map(sr => {
-            const allowedDays = (sr.days || []).map((d: string) => {
-                return d.charAt(0).toUpperCase() + d.slice(1).toLowerCase();
+        let subjectsList = scheduleRecords
+            .filter(sr => sr.subject_id)
+            .map(sr => {
+                const rawDays = (sr.days || []).map((d: string) => {
+                    return d.charAt(0).toUpperCase() + d.slice(1).toLowerCase();
+                });
+
+                // If no specific days configured in Academic Planning, fallback to working_days
+                const allowedDays = rawDays.length > 0 ? rawDays : [...tc.working_days];
+
+                return {
+                    subject_id: sr.subject_id || '',
+                    subject_name: sr.subject_id ? subjectMap.get(sr.subject_id) : undefined,
+                    teacher_id: sr.teacher_id || null,
+                    teacher_name: sr.teacher_id ? teacherMap.get(sr.teacher_id) : undefined,
+                    // Use weekly_frequency from DB if set, else derive from configured days, else default to 3
+                    weekly_count: sr.weekly_frequency > 0
+                        ? sr.weekly_frequency
+                        : (rawDays.length > 0 ? rawDays.length : Math.min(allowedDays.length, 3)),
+                    allowed_days: allowedDays
+                };
             });
 
-            return {
-                subject_id: sr.subject_id || '',
-                subject_name: sr.subject_id ? subjectMap.get(sr.subject_id) : undefined,
-                teacher_id: sr.teacher_id || null,
-                teacher_name: sr.teacher_id ? teacherMap.get(sr.teacher_id) : undefined,
-                weekly_count: allowedDays.length,
-                allowed_days: allowedDays
-            };
-        }).filter(s => s.subject_id !== '');
+        // Fallback: if no ClassSchedule records exist, use TimetableConfig.subject_frequencies (wizard config)
+        if (subjectsList.length === 0) {
+            const savedSubjects: any[] = JSON.parse(tc.subject_frequencies || '[]');
+            subjectsList = savedSubjects
+                .filter((s: any) => s.subject_id)
+                .map((s: any) => ({
+                    subject_id: s.subject_id,
+                    subject_name: s.subject_name || (s.subject_id ? subjectMap.get(s.subject_id) : undefined),
+                    teacher_id: s.teacher_id || null,
+                    teacher_name: s.teacher_name || (s.teacher_id ? teacherMap.get(s.teacher_id) : undefined),
+                    weekly_count: s.weekly_count || 3,
+                    allowed_days: s.allowed_days || [...tc.working_days]
+                }));
+        }
 
         classConfigs.push({
             class_id: c.id,
@@ -351,6 +374,7 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
             manual_slots: JSON.parse(tc.manual_slots || '[]')
         });
     }
+
 
     // 3. Load locked/attendance entries in the date range
     const dateStrStart = start_date.split('T')[0];

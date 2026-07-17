@@ -427,13 +427,14 @@ export async function getTimetableData(filters: TimetableFilters = {}) {
         where.date = { gte: filters.start_date, lte: filters.end_date };
       }
 
-      const [timetable, classes, teachers] = await Promise.all([
+      const [timetableRaw, classes, teachers] = await Promise.all([
         prisma.timetable.findMany({
           where,
           orderBy: [{ date: 'asc' }, { start_time: 'asc' }],
           include: {
             class_ref: { select: { class_name: true, class_code: true } },
             teacher: { select: { first_name: true, last_name: true } },
+            subject: { select: { canonical_name: true } },
           },
         }),
         prisma.class.findMany({
@@ -445,6 +446,13 @@ export async function getTimetableData(filters: TimetableFilters = {}) {
           select: { id: true, first_name: true, last_name: true },
         }),
       ]);
+
+      // Map timetable to match the API route's response format (subject as string, type field)
+      const timetable = timetableRaw.map(t => ({
+        ...t,
+        subject: (t as any).subject?.canonical_name || '',
+        type: 'class' as const,
+      }));
 
       return { timetable, classes, teachers };
     });

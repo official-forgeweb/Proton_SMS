@@ -72,5 +72,3 @@ export default async function AdminTimetablePage() {
         );
     }
 }
-
-import AdminTimetableFallbackClient from './AdminTimetableFallbackClient';
