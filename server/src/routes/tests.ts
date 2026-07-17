@@ -309,7 +309,7 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
     }
 
     // Trigger WhatsApp test scheduled automation (non-blocking)
-    const { onTestScheduled } = require('../../services/whatsapp/automation.service');
+    const { onTestScheduled } = require('../services/whatsapp/automation.service');
     onTestScheduled(test).catch((err: any) => console.error('WhatsApp Test Scheduled failed:', err));
 
     res.status(201).json({ success: true, data: { ...test, id: test.id, subject: subRec.canonical_name } });

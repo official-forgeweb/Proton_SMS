@@ -22,7 +22,7 @@ const syncClassSubjects = async (tx: any, classId: string, subjectIds: string[])
 
 const notifyTeacherSchedules = async (schedules: any[]) => {
   try {
-    const { onTeacherScheduleCreated } = require('../../services/whatsapp/automation.service');
+    const { onTeacherScheduleCreated } = require('../services/whatsapp/automation.service');
     for (const s of schedules) {
       if (s.teacher_id) {
         const teacher = await prisma.teacher.findUnique({ where: { id: s.teacher_id } });

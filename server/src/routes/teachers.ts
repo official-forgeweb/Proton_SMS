@@ -147,7 +147,7 @@ router.post('/', authenticateToken, authorize('admin'), async (req: Request, res
     });
 
     // Trigger WhatsApp welcome automation (non-blocking)
-    const { onTeacherCreated } = require('../../services/whatsapp/automation.service');
+    const { onTeacherCreated } = require('../services/whatsapp/automation.service');
     onTeacherCreated(teacher, password).catch((err: any) => console.error('WhatsApp Welcome Teacher failed:', err));
 
     invalidateCache('/api/teachers');

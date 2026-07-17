@@ -315,7 +315,7 @@ router.post('/bulk', authenticateToken, authorize('admin', 'coordinator'), async
         });
 
         // Trigger WhatsApp welcome automation (non-blocking)
-        const { onStudentCreated } = require('../../services/whatsapp/automation.service');
+        const { onStudentCreated } = require('../services/whatsapp/automation.service');
         onStudentCreated(newStudent, tempPassword).catch((err: any) => console.error('WhatsApp Welcome Student failed:', err));
 
         if (class_id) {
@@ -510,7 +510,7 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
     });
 
     // Trigger WhatsApp welcome automation (non-blocking)
-    const { onStudentCreated } = require('../../services/whatsapp/automation.service');
+    const { onStudentCreated } = require('../services/whatsapp/automation.service');
     onStudentCreated(student, password).catch((err: any) => console.error('WhatsApp Welcome Student failed:', err));
 
     res.status(201).json({
