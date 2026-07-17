@@ -1,25 +1,38 @@
 import twilio from 'twilio';
 
-// Environment variables
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const sandboxNumber = process.env.TWILIO_SANDBOX_NUMBER || 'whatsapp:+14155238886';
-const testPhoneNumber = process.env.TEST_PHONE_NUMBER || '+919999999999';
-const vercelAppUrl = process.env.VERCEL_APP_URL || 'https://your-app.vercel.app';
-const institutionName = process.env.INSTITUTION_NAME || 'ABC Institute';
+// Dynamic helper getters for environment variables
+function getSandboxNumber(): string {
+  return process.env.TWILIO_SANDBOX_NUMBER || 'whatsapp:+14155238886';
+}
 
-// Initialize Twilio client if credentials exist
-let client: any = null;
-if (accountSid && authToken && accountSid.startsWith('AC')) {
-  try {
-    client = twilio(accountSid, authToken);
-  } catch (err: any) {
-    console.error('⚠️ Twilio Initialization Error:', err.message);
+function getTestPhoneNumber(): string {
+  return process.env.TEST_PHONE_NUMBER || '+919999999999';
+}
+
+function getVercelAppUrl(): string {
+  return process.env.VERCEL_APP_URL || 'https://your-app.vercel.app';
+}
+
+function getInstitutionName(): string {
+  return process.env.INSTITUTION_NAME || 'ABC Institute';
+}
+
+function getTwilioClient(): any {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+  if (accountSid && authToken && accountSid.startsWith('AC')) {
+    try {
+      return twilio(accountSid, authToken);
+    } catch (err: any) {
+      console.error('⚠️ Twilio Initialization Error:', err.message);
+    }
   }
+  return null;
 }
 
 export function formatWhatsAppNumber(phone?: string): string {
-  const target = phone || testPhoneNumber;
+  const target = phone || getTestPhoneNumber();
   if (!target) return 'whatsapp:+919999999999';
   if (target.startsWith('whatsapp:')) return target;
   if (target.startsWith('+')) return `whatsapp:${target}`;
@@ -34,7 +47,7 @@ export interface SendWhatsAppParams {
 
 export async function sendWhatsAppMessage({ to, body, mediaUrl }: SendWhatsAppParams) {
   const formattedTo = formatWhatsAppNumber(to);
-  const formattedFrom = formatWhatsAppNumber(sandboxNumber);
+  const formattedFrom = formatWhatsAppNumber(getSandboxNumber());
 
   console.log(`\n========================================`);
   console.log(`📲 [WhatsApp Send Request]`);
@@ -43,6 +56,8 @@ export async function sendWhatsAppMessage({ to, body, mediaUrl }: SendWhatsAppPa
   console.log(`   MediaUrl: ${mediaUrl || 'None'}`);
   console.log(`   Body:\n${body}`);
   console.log(`========================================\n`);
+
+  const client = getTwilioClient();
 
   if (!client) {
     console.warn('⚠️ Twilio Client not active (using mock mode or invalid credentials).');
@@ -113,7 +128,7 @@ export async function sendInquiryConfirmation(data: {
   const course = data.courseName || 'General Coaching';
   const inquiryDate = data.date || new Date().toISOString().split('T')[0];
   const counselor = data.counselorPhone || '+91 98765 43210';
-  const instName = process.env.INSTITUTION_NAME || institutionName;
+  const instName = getInstitutionName();
 
   const body = `🎓 *Inquiry Received - ${instName}*\n\n` +
     `Dear *${name}*,\n` +
@@ -149,8 +164,8 @@ export async function sendFeeReminder(data: {
   const type = data.feeType || 'Tuition Fee';
   const amount = data.amountDue || '5,000';
   const due = data.dueDate || new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const link = data.paymentLink || `${process.env.VERCEL_APP_URL || vercelAppUrl}/fees`;
-  const instName = process.env.INSTITUTION_NAME || institutionName;
+  const link = data.paymentLink || `${getVercelAppUrl()}/fees`;
+  const instName = getInstitutionName();
 
   const body = `🔔 *Fee Due Reminder - ${instName}*\n\n` +
     `Dear *${pName}*,\n\n` +
@@ -187,8 +202,8 @@ export async function sendStudyMaterialNotification(data: {
   const topic = data.topicName || 'Thermodynamics & Heat Laws';
   const date = data.uploadDate || new Date().toISOString().split('T')[0];
   const teacher = data.uploadedBy || 'Dr. H.C. Verma';
-  const link = data.materialUrl || `${process.env.VERCEL_APP_URL || vercelAppUrl}/study-material/physics-notes.pdf`;
-  const instName = process.env.INSTITUTION_NAME || institutionName;
+  const link = data.materialUrl || `${getVercelAppUrl()}/study-material/physics-notes.pdf`;
+  const instName = getInstitutionName();
 
   const body = `📚 *New Study Material Uploaded - ${instName}*\n\n` +
     `Hello *${sName}*,\n` +
@@ -225,8 +240,8 @@ export async function sendVideoLectureNotification(data: {
   const title = data.lectureTitle || 'Integration by Parts Masterclass';
   const mins = data.duration || '45';
   const instructor = data.instructorName || 'Prof. R.D. Sharma';
-  const link = data.videoUrl || `${process.env.VERCEL_APP_URL || vercelAppUrl}/lectures/math-ch4`;
-  const instName = process.env.INSTITUTION_NAME || institutionName;
+  const link = data.videoUrl || `${getVercelAppUrl()}/lectures/math-ch4`;
+  const instName = getInstitutionName();
 
   const body = `🎥 *New Video Lecture Published - ${instName}*\n\n` +
     `Hello *${sName}*,\n` +
@@ -263,7 +278,7 @@ export async function sendWeeklyTimetable(data: {
   const sDate = data.startDate || '2026-07-20';
   const eDate = data.endDate || '2026-07-26';
   const documentUrl = data.pdfUrl || 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
-  const instName = process.env.INSTITUTION_NAME || institutionName;
+  const instName = getInstitutionName();
 
   const body = `📅 *Weekly Timetable - ${instName}*\n\n` +
     `Hello *${sName}*,\n\n` +
@@ -295,7 +310,7 @@ export async function sendAttendanceNotification(data: {
   const total = parseInt(String(data.totalClasses || 40), 10);
   const attended = parseInt(String(data.attendedClasses || 34), 10);
   const pct = typeof data.percentage === 'number' ? data.percentage : Math.round((attended / total) * 100);
-  const instName = process.env.INSTITUTION_NAME || institutionName;
+  const instName = getInstitutionName();
 
   let statusText = '';
   let statusEmoji = '';
@@ -343,8 +358,8 @@ export async function sendMarketingMessage(data: {
   const type = (data.messageType || 'new_course').toUpperCase();
   const mTitle = data.title || '🚀 New Crash Course Admissions Open for JEE / NEET!';
   const mDesc = data.description || 'Join our expert-led revision series with comprehensive test analysis and 1-on-1 mentorship sessions.';
-  const link = data.infoLink || `${process.env.VERCEL_APP_URL || vercelAppUrl}/admissions`;
-  const instName = process.env.INSTITUTION_NAME || institutionName;
+  const link = data.infoLink || `${getVercelAppUrl()}/admissions`;
+  const instName = getInstitutionName();
 
   let dateLine = '';
   if (data.eventOrOfferDate) {
@@ -371,8 +386,8 @@ export async function sendMarketingMessage(data: {
 // ─────────────────────────────────────────────────────────────
 export function processIncomingKeyword(incomingBody: string): string {
   const text = (incomingBody || '').toLowerCase().trim();
-  const appUrl = process.env.VERCEL_APP_URL || vercelAppUrl;
-  const instName = process.env.INSTITUTION_NAME || institutionName;
+  const appUrl = getVercelAppUrl();
+  const instName = getInstitutionName();
 
   if (text.includes('fee') || text.includes('payment') || text.includes('pay')) {
     return `💳 *${instName} Fee Portal*\n\n` +

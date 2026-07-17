@@ -489,3 +489,115 @@ export async function scheduledClassReminder() {
     console.error('[Automation] Daily class reminder automated cron job failed:', error);
   }
 }
+
+/**
+ * Triggered when new study material is uploaded.
+ * Sends WhatsApp notification to all enrolled students in the class.
+ */
+export async function onStudyMaterialCreated(material: any) {
+  try {
+    if (!material.class_id) return;
+
+    const enrollments = await prisma.studentClassEnrollment.findMany({
+      where: { class_id: material.class_id, enrollment_status: 'active' },
+      include: { student: true },
+    });
+
+    const subject = material.subject_id
+      ? await prisma.subject.findUnique({ where: { id: material.subject_id } })
+      : null;
+
+    const subjectName = subject?.canonical_name || 'General';
+    const topicName = material.title || 'Study Material';
+    const materialUrl = material.pdf_url || '';
+
+    let uploaderName = 'Teacher';
+    if (material.uploaded_by) {
+      const uploaderUser = await prisma.user.findUnique({
+        where: { id: material.uploaded_by },
+        include: { teacher: true, coordinator: true }
+      });
+      if (uploaderUser?.teacher) {
+        uploaderName = `${uploaderUser.teacher.first_name || ''} ${uploaderUser.teacher.last_name || ''}`.trim();
+      } else if (uploaderUser?.coordinator) {
+        uploaderName = uploaderUser.coordinator.full_name || 'Coordinator';
+      }
+    }
+
+    const { sendStudyMaterialNotification } = require('../whatsapp.service');
+
+    for (const enrollment of enrollments) {
+      const student = enrollment.student as any;
+      if (student && (student.phone || student.father_phone)) {
+        const destPhone = student.phone || student.father_phone;
+        const studentName = getStudentName(student);
+        await sendStudyMaterialNotification({
+          to: destPhone,
+          studentName,
+          subjectName,
+          topicName,
+          materialUrl,
+          uploadedBy: uploaderName
+        }).catch((err: any) => console.error('Error sending study material WhatsApp:', err));
+      }
+    }
+  } catch (error) {
+    console.error('[Automation] Error sending study material WhatsApp:', error);
+  }
+}
+
+/**
+ * Triggered when a new video lecture is created.
+ * Sends WhatsApp notification to all enrolled students in the class.
+ */
+export async function onVideoLectureCreated(lecture: any) {
+  try {
+    if (!lecture.class_id) return;
+
+    const enrollments = await prisma.studentClassEnrollment.findMany({
+      where: { class_id: lecture.class_id, enrollment_status: 'active' },
+      include: { student: true },
+    });
+
+    const subject = lecture.subject_id
+      ? await prisma.subject.findUnique({ where: { id: lecture.subject_id } })
+      : null;
+
+    const subjectName = subject?.canonical_name || 'General';
+    const lectureTitle = lecture.title || 'Video Lecture';
+    const videoUrl = lecture.video_url || '';
+
+    let instructorName = 'Instructor';
+    if (lecture.uploaded_by) {
+      const uploaderUser = await prisma.user.findUnique({
+        where: { id: lecture.uploaded_by },
+        include: { teacher: true, coordinator: true }
+      });
+      if (uploaderUser?.teacher) {
+        instructorName = `${uploaderUser.teacher.first_name || ''} ${uploaderUser.teacher.last_name || ''}`.trim();
+      } else if (uploaderUser?.coordinator) {
+        instructorName = uploaderUser.coordinator.full_name || 'Coordinator';
+      }
+    }
+
+    const { sendVideoLectureNotification } = require('../whatsapp.service');
+
+    for (const enrollment of enrollments) {
+      const student = enrollment.student as any;
+      if (student && (student.phone || student.father_phone)) {
+        const destPhone = student.phone || student.father_phone;
+        const studentName = getStudentName(student);
+        await sendVideoLectureNotification({
+          to: destPhone,
+          studentName,
+          subjectName,
+          lectureTitle,
+          videoUrl,
+          instructorName
+        }).catch((err: any) => console.error('Error sending video lecture WhatsApp:', err));
+      }
+    }
+  } catch (error) {
+    console.error('[Automation] Error sending video lecture WhatsApp:', error);
+  }
+}

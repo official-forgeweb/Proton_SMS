@@ -60,6 +60,10 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
             }
         });
 
+        // Trigger WhatsApp Notification
+        const { onStudyMaterialCreated } = require('../services/whatsapp/automation.service');
+        onStudyMaterialCreated(material).catch((err: any) => console.error('WhatsApp Study Material Notification failed:', err));
+
         res.status(201).json({ success: true, data: material });
     } catch (error) {
         console.error(error);

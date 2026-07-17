@@ -123,13 +123,16 @@ router.post('/upload', authenticateToken, authorize('admin', 'coordinator', 'tea
       return;
     }
 
+    const { onVideoLectureCreated } = require('../services/whatsapp/automation.service');
+
     for (let i = 0; i < recordsToInsert.length; i++) {
       const record = recordsToInsert[i];
       try {
-        await prisma.videoLecture.create({
+        const createdLecture = await prisma.videoLecture.create({
             data: record
         });
         inserted++;
+        onVideoLectureCreated(createdLecture).catch((err: any) => console.error('WhatsApp Video Lecture Notification failed:', err));
       } catch (err: any) {
         skipped++;
         if (err.code === 'P2002') {
@@ -168,6 +171,7 @@ router.post('/confirm-upload', authenticateToken, authorize('admin', 'coordinato
     let inserted = 0;
     let skipped = 0;
     const errors: Array<{ reason: string }> = [];
+    const { onVideoLectureCreated } = require('../services/whatsapp/automation.service');
 
     for (let i = 0; i < records.length; i++) {
         try {
@@ -177,8 +181,9 @@ router.post('/confirm-upload', authenticateToken, authorize('admin', 'coordinato
                 record.subject_id = subRec.id;
                 delete record.subject;
             }
-            await prisma.videoLecture.create({ data: record });
+            const createdLecture = await prisma.videoLecture.create({ data: record });
             inserted++;
+            onVideoLectureCreated(createdLecture).catch((err: any) => console.error('WhatsApp Video Lecture Notification failed:', err));
         } catch (err: any) {
             skipped++;
             if (err.code === 'P2002') {

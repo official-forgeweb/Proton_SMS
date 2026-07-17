@@ -156,13 +156,21 @@ export async function handleIncomingMessage(req: Request, res: Response) {
 
     const replyMessage = whatsappService.processIncomingKeyword(body);
 
-    if (from) {
-      await whatsappService.sendWhatsAppMessage({ to: from, body: replyMessage });
-    }
+    const isTwilioForm =
+      (req.headers['content-type'] && req.headers['content-type'].includes('application/x-www-form-urlencoded')) ||
+      Boolean(req.body.From || req.body.SmsSid || req.body.MessageSid);
 
-    if (req.headers['content-type'] && req.headers['content-type'].includes('application/x-www-form-urlencoded')) {
+    if (isTwilioForm) {
+      // Returning TwiML XML to Twilio - Twilio automatically sends this reply to the user.
+      // Do NOT call whatsappService.sendWhatsAppMessage here to prevent duplicate messaging & timeouts.
       res.setHeader('Content-Type', 'text/xml');
       return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${replyMessage}</Message></Response>`);
+    }
+
+    // For non-form requests (e.g. Postman / Admin UI sending JSON):
+    let apiResult = null;
+    if (from) {
+      apiResult = await whatsappService.sendWhatsAppMessage({ to: from, body: replyMessage });
     }
 
     return res.status(200).json({
@@ -170,7 +178,8 @@ export async function handleIncomingMessage(req: Request, res: Response) {
       message: 'Auto-reply processed successfully',
       incomingMessage: body,
       sender: from,
-      replyMessage: replyMessage
+      replyMessage: replyMessage,
+      apiResult
     });
   } catch (error: any) {
     console.error('❌ Incoming Webhook Error:', error.message);
@@ -193,6 +202,11 @@ export async function handleDeliveryStatus(req: Request, res: Response) {
     console.log(`   Status:      ${messageStatus}`);
     if (errorCode) {
       console.log(`   Error Code:  ${errorCode} - ${errorMessage}`);
+    }
+
+    if (req.headers['content-type'] && req.headers['content-type'].includes('application/x-www-form-urlencoded')) {
+      res.setHeader('Content-Type', 'text/xml');
+      return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`);
     }
 
     return res.status(200).json({

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getWhatsAppConfig } from '../../services/whatsapp/whatsapp.service';
 import { processWebhookPayload } from '../../services/whatsapp/webhook.service';
+import * as whatsappController from '../../controllers/whatsapp.controller';
 import prisma from '../../config/database';
 
 const router = Router();
@@ -39,9 +40,23 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 // POST /api/whatsapp/webhook -> Receive Incoming Messages & Status Updates
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const payload = req.body;
+    const payload = req.body || {};
 
-    // Process the payload asynchronously (non-blocking) to respond to Meta immediately
+    // Auto-detect if request is from Twilio Webhook (Form-urlencoded or Twilio fields present)
+    const isTwilio =
+      (req.headers['content-type'] && req.headers['content-type'].includes('application/x-www-form-urlencoded')) ||
+      Boolean(payload.From || payload.from || payload.SmsSid || payload.MessageSid || payload.Body || payload.body);
+
+    if (isTwilio) {
+      if (payload.MessageStatus || payload.SmsStatus) {
+        await whatsappController.handleDeliveryStatus(req, res);
+        return;
+      }
+      await whatsappController.handleIncomingMessage(req, res);
+      return;
+    }
+
+    // Process Meta Cloud API payload
     processWebhookPayload(payload).catch(err => {
       console.error('[WhatsApp Webhook] Processing failed:', err);
     });
