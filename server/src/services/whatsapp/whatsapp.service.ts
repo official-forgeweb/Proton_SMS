@@ -208,8 +208,50 @@ export async function sendTemplateMessage(
     },
   };
 
-  // 2. Mock Mode handling
+  // 2. Mock / Sandbox Mode handling (Fallback to Twilio Sandbox if Twilio credentials exist)
   if (!config.isLive) {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+    if (accountSid && authToken && accountSid.startsWith('AC')) {
+      try {
+        const { sendWhatsAppMessage } = require('../whatsapp.service');
+        const tmpl = await prisma.whatsAppTemplate.findUnique({ where: { name: templateName } });
+
+        let bodyText = tmpl?.body_text || '';
+        if (bodyText) {
+          variables.forEach((v, i) => {
+            bodyText = bodyText.replace(new RegExp(`\\{\\{${i + 1}\\}\\}`, 'g'), String(v));
+          });
+        } else {
+          bodyText = `📋 *[${templateName.replace(/_/g, ' ').toUpperCase()}]*\n\n` +
+            variables.map((v, i) => `• ${v}`).join('\n');
+        }
+
+        const twilioRes = await sendWhatsAppMessage({ to: formattedPhone, body: bodyText });
+        if (twilioRes && twilioRes.success && !twilioRes.mock) {
+          await logMessage({
+            phone: formattedPhone,
+            recipientName: meta.recipientName,
+            recipientType,
+            recipientUserId: meta.recipientUserId,
+            templateName,
+            variables,
+            metaMessageId: twilioRes.messageId || `TWILIO_${Date.now()}`,
+            status: 'SENT',
+            direction: 'OUTGOING',
+            rawRequest: payload,
+            rawResponse: twilioRes,
+            triggeredBy: trigger,
+            automationType: meta.automationType,
+          });
+          return { success: true, messageId: twilioRes.messageId, mode: 'TWILIO_SANDBOX' };
+        }
+      } catch (err: any) {
+        console.error('⚠️ Twilio Sandbox dispatch error in sendTemplateMessage:', err.message);
+      }
+    }
+
     const mockMsgId = `mock-msg-${randomUUID()}`;
     await logMessage({
       phone: formattedPhone,

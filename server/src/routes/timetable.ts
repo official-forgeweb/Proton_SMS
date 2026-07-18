@@ -342,7 +342,22 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
                 };
             });
 
-        // Fallback: if no ClassSchedule records exist, use TimetableConfig.subject_frequencies (wizard config)
+        // Fallback 1: if no ClassSchedule records exist, use ClassSubject table (subjects assigned to this class)
+        if (subjectsList.length === 0) {
+            const classSubjects = await prisma.classSubject.findMany({
+                where: { class_id: c.id }
+            });
+            subjectsList = classSubjects.map(cs => ({
+                subject_id: cs.subject_id,
+                subject_name: subjectMap.get(cs.subject_id),
+                teacher_id: null,
+                teacher_name: undefined,
+                weekly_count: Math.min(tc.working_days.length, 3),
+                allowed_days: [...tc.working_days]
+            }));
+        }
+
+        // Fallback 2: if still no subjects, use TimetableConfig.subject_frequencies (wizard config)
         if (subjectsList.length === 0) {
             const savedSubjects: any[] = JSON.parse(tc.subject_frequencies || '[]');
             subjectsList = savedSubjects
@@ -355,6 +370,19 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
                     weekly_count: s.weekly_count || 3,
                     allowed_days: s.allowed_days || [...tc.working_days]
                 }));
+        }
+
+        // Fallback 3: if still no subjects, use active master subjects from database
+        if (subjectsList.length === 0) {
+            const activeSubjects = await prisma.subject.findMany({ where: { is_active: true } });
+            subjectsList = activeSubjects.map(s => ({
+                subject_id: s.id,
+                subject_name: s.canonical_name,
+                teacher_id: null,
+                teacher_name: undefined,
+                weekly_count: Math.min(tc.working_days.length, 3),
+                allowed_days: [...tc.working_days]
+            }));
         }
 
         classConfigs.push({
@@ -486,6 +514,11 @@ router.post('/generate', authenticateToken, authorize('admin', 'coordinator'), a
 
     invalidateCache('/api/timetable');
     invalidateCache('/api/dashboard');
+
+    if (createdCount > 0) {
+        const { onWeeklyTimetableGenerated } = require('../services/whatsapp/automation.service');
+        onWeeklyTimetableGenerated(class_ids, dateStrStart, dateStrEnd).catch((err: any) => console.error('WhatsApp Batch Timetable notification failed:', err));
+    }
 
     res.json({
         success: true,
@@ -781,7 +814,7 @@ router.post('/', authenticateToken, authorize('admin', 'coordinator', 'teacher')
   try {
     const { class_id, subject, teacher_id, date, start_time, end_time, room, online_link, notes } = req.body;
 
-    let finalTeacherId = teacher_id;
+    let finalTeacherId = teacher_id || null;
     if (req.user!.role === 'teacher') {
         const teacher = await prisma.teacher.findUnique({ where: { user_id: req.user!.id } });
         if (!teacher) {
@@ -884,7 +917,7 @@ router.put('/:id', authenticateToken, authorize('admin', 'coordinator', 'teacher
       data: {
         class_id,
         subject_id: subRec ? subRec.id : undefined,
-        teacher_id: req.user!.role === 'teacher' ? existing.teacher_id : teacher_id,
+        teacher_id: req.user!.role === 'teacher' ? existing.teacher_id : (teacher_id || null),
         date,
         start_time,
         end_time,

@@ -192,6 +192,92 @@ export async function onTimetableCreated(timetable: any) {
 }
 
 /**
+ * Triggered when batch timetable auto-generation completes for classes.
+ * Sends weekly timetable notification to students and teachers of each target class.
+ */
+export async function onWeeklyTimetableGenerated(classIds: string[], startDate: string, endDate: string) {
+  try {
+    const studentRule = await getActiveRuleTemplate('TIMETABLE_CREATED');
+    const teacherRule = await getActiveRuleTemplate('TEACHER_SCHEDULE_CREATED');
+
+    for (const classId of classIds) {
+      const classRecord = await prisma.class.findUnique({ where: { id: classId } });
+      const className = classRecord?.class_name || 'Class';
+
+      // 1. Queue messages for Enrolled Students
+      if (studentRule.isActive && studentRule.templateName) {
+        const enrollments = await prisma.studentClassEnrollment.findMany({
+          where: { class_id: classId, enrollment_status: 'active' },
+          include: { student: true },
+        });
+
+        const studentMessages = enrollments
+          .filter((e) => e.student && (e.student.phone || (e.student as any).father_phone))
+          .map((e) => {
+            const student = e.student as any;
+            const name = getStudentName(student);
+            const phone = student.phone || student.father_phone || '';
+            return {
+              phone,
+              templateName: studentRule.templateName!,
+              variables: [name, `${startDate} to ${endDate}`, `Batch: ${className}`],
+              meta: {
+                recipientName: name,
+                recipientType: 'STUDENT' as const,
+                recipientUserId: student.user_id,
+                triggeredBy: 'AUTOMATION' as const,
+                automationType: 'WEEKLY_TIMETABLE',
+              },
+            };
+          });
+
+        if (studentMessages.length > 0) {
+          addToQueue(studentMessages);
+        }
+      }
+
+      // 2. Queue messages for Assigned Teachers
+      if (teacherRule.isActive && teacherRule.templateName) {
+        const entries = await prisma.timetable.findMany({
+          where: { class_id: classId, date: { gte: startDate, lte: endDate }, teacher_id: { not: null } },
+          include: { teacher: true, subject: true },
+        });
+
+        const teacherMap = new Map<string, any>();
+        entries.forEach((entry) => {
+          if (entry.teacher && entry.teacher.phone) {
+            teacherMap.set(entry.teacher.id, entry.teacher);
+          }
+        });
+
+        const teacherMessages: Array<any> = [];
+        teacherMap.forEach((teacher) => {
+          const tName = `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || 'Teacher';
+          teacherMessages.push({
+            phone: teacher.phone,
+            templateName: teacherRule.templateName!,
+            variables: [tName, `${startDate} to ${endDate}`, `Class: ${className}`, `See portal for period details`],
+            meta: {
+              recipientName: tName,
+              recipientType: 'TEACHER' as const,
+              recipientUserId: teacher.user_id,
+              triggeredBy: 'AUTOMATION' as const,
+              automationType: 'TEACHER_SCHEDULE',
+            },
+          });
+        });
+
+        if (teacherMessages.length > 0) {
+          addToQueue(teacherMessages);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[Automation] Error triggering batch timetable WhatsApp notifications:', error);
+  }
+}
+
+/**
  * Sends timetable schedule updates directly to the teacher.
  */
 export async function onTeacherScheduleCreated(schedule: any, teacher: any) {

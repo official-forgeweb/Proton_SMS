@@ -243,8 +243,9 @@ export default function AdminTimetableClient({ initialTimetable, initialClasses,
             setShowModal(false);
             setEditingEntry(null);
             fetchTimetable();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            customAlert(error.response?.data?.message || 'Failed to save schedule entry.', 'Error');
         }
     };
 

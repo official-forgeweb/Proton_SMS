@@ -225,7 +225,9 @@ export default function ClassSubjectSelector({
           type="text"
           value={search}
           onChange={(e) => {
-            setSearch(e.target.value);
+            const val = e.target.value;
+            setSearch(val);
+            onChange(val);
             setIsOpen(true);
             setActiveIndex(-1);
           }}
